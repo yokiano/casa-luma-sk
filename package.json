@@ -12,10 +12,13 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"test:unit": "vitest",
 		"test": "npm run test:unit -- --run && npm run test:e2e",
-		"test:e2e": "playwright test"
+		"test:e2e": "playwright test",
+		"scrape:lazada": "node scripts/scrape-lazada.mjs",
+		"add:procurement": "tsx scripts/add-procurement-from-lazada.ts"
 	},
 	"devDependencies": {
 		"@iconify/svelte": "^5.0.2",
+		"@internationalized/date": "^3.10.0",
 		"@lucide/svelte": "^0.544.0",
 		"@playwright/test": "^1.49.1",
 		"@sveltejs/adapter-auto": "^6.0.0",
@@ -26,6 +29,7 @@
 		"@tailwindcss/typography": "^0.5.15",
 		"@tailwindcss/vite": "^4.0.0",
 		"@vitest/browser": "^3.2.3",
+		"bits-ui": "^2.11.4",
 		"clsx": "^2.1.1",
 		"playwright": "^1.53.0",
 		"svelte": "^5.0.0",
@@ -33,6 +37,7 @@
 		"tailwind-merge": "^3.3.1",
 		"tailwind-variants": "^3.1.1",
 		"tailwindcss": "^4.0.0",
+		"tsx": "^4.19.2",
 		"tw-animate-css": "^1.4.0",
 		"typescript": "^5.0.0",
 		"vite": "^7.0.4",
@@ -46,6 +51,7 @@
 	},
 	"dependencies": {
 		"@notionhq/client": "^5.1.0",
+		"dotenv": "^16.4.5",
 		"valibot": "^1.1.0"
 	}
 }

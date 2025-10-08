@@ -1,10 +1,11 @@
 // Notion Client Setup for Casa Luma Workshops
 import { Client } from '@notionhq/client';
-import { 
-	NOTION_API_KEY, 
-	NOTION_EVENTS_DB_ID, 
-	NOTION_RSVPS_DB_ID, 
-	NOTION_WAITLIST_DB_ID 
+import {
+	NOTION_API_KEY,
+	NOTION_EVENTS_DB_ID,
+	NOTION_RSVPS_DB_ID,
+	NOTION_WAITLIST_DB_ID,
+	NOTION_MENU_DB_ID
 } from '$env/static/private';
 import type { Event, RSVP, WaitlistEntry } from '$lib/types/workshops';
 
@@ -21,7 +22,8 @@ const getNotionClient = () => {
 export const NOTION_DBS = {
 	EVENTS: NOTION_EVENTS_DB_ID || '',
 	RSVPS: NOTION_RSVPS_DB_ID || '',
-	WAITLIST: NOTION_WAITLIST_DB_ID || ''
+	WAITLIST: NOTION_WAITLIST_DB_ID || '',
+	MENU: NOTION_MENU_DB_ID || ''
 } as const;
 
 // Validate database IDs are set
@@ -68,6 +70,10 @@ export const isEmail = (property: any): property is { email: string | null } => 
 
 export const isPhone = (property: any): property is { phone_number: string | null } => {
 	return property?.phone_number !== undefined;
+};
+
+export const isUrlProp = (property: any): property is { url: string | null } => {
+	return property?.url !== undefined;
 };
 
 export const isCheckbox = (property: any): property is { checkbox: boolean } => {
@@ -152,6 +158,13 @@ export const getCheckboxValue = (property: any): boolean => {
 		return property.checkbox;
 	}
 	return false;
+};
+
+export const getUrlValue = (property: any): string => {
+	if (isUrlProp(property) && property.url) {
+		return property.url;
+	}
+	return '';
 };
 
 export const getFilesUrls = (property: any): string[] => {

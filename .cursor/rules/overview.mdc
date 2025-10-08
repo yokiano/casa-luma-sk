@@ -14,4 +14,13 @@ try to avoid templatish design, like chip/s elements or boring border-radius, it
 - Montessori-inspired minimalism
 - don't use emojis! we don't do that here.
 
+## Stack and Coding Style
 
+- We use tailwindcss for styling. always! no need for scoped styles unless very much needed.
+- We use shadcn/svelte for UI components. Whenever possible of course. if need to install new components, do it.
+
+
+## Coding mistakes to avoid
+
+- You are trying to fetch environment variables using process.env. Instead, import from $env/static/private. it is supported by SvelteKit.
+- We shuld avoid using $effect. it is mostly not necessary. use $derived instead. $effect is ONLY (well mostly) for cases where there is a side effect that needs to be triggered by a state change.

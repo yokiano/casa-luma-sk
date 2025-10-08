@@ -5,6 +5,14 @@ export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
 }
 
+export function toTitleCase(value: string) {
+	return value
+		.split(/\s+/)
+		.filter(Boolean)
+		.map((segment) => segment[0]?.toUpperCase() + segment.slice(1).toLowerCase())
+		.join(" ");
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type WithoutChild<T> = T extends { child?: any } ? Omit<T, "child"> : T;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
