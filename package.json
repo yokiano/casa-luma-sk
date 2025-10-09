@@ -12,9 +12,7 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"test:unit": "vitest",
 		"test": "npm run test:unit -- --run && npm run test:e2e",
-		"test:e2e": "playwright test",
-		"scrape:lazada": "node scripts/scrape-lazada.mjs",
-		"add:procurement": "tsx scripts/add-procurement-from-lazada.ts"
+		"test:e2e": "playwright test"
 	},
 	"devDependencies": {
 		"@iconify/svelte": "^5.0.2",
@@ -28,10 +26,11 @@
 		"@tailwindcss/forms": "^0.5.9",
 		"@tailwindcss/typography": "^0.5.15",
 		"@tailwindcss/vite": "^4.0.0",
+		"@types/node": "^24.7.0",
 		"@vitest/browser": "^3.2.3",
 		"bits-ui": "^2.11.4",
 		"clsx": "^2.1.1",
-		"playwright": "^1.53.0",
+		"playwright": "^1.56.0",
 		"svelte": "^5.0.0",
 		"svelte-check": "^4.0.0",
 		"tailwind-merge": "^3.3.1",

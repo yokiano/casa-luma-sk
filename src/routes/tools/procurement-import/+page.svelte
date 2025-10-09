@@ -72,7 +72,9 @@
     scrapeError = null;
     isScraping = true;
     try {
+      console.log("######## urls", urls);
       const results = await scrapeMultipleProducts({ urls });
+      console.log("######## results", results);
       const nextDrafts = results.map((result) => toDraft(result));
       drafts = nextDrafts;
     } catch (error) {
@@ -175,9 +177,9 @@
         >
           {#if isScraping}
             <span class="h-3 w-3 animate-spin rounded-full border-2 border-white/60 border-t-transparent"></span>
-            Scraping...
+            Fetching...
           {:else}
-            Scrape Products
+            Fetch Products
           {/if}
         </button>
 
@@ -186,7 +188,7 @@
           class="inline-flex items-center gap-2 rounded-full border border-[#7a6550] px-6 py-2 text-sm font-semibold text-[#7a6550] shadow-sm transition hover:bg-[#f7f1ea]"
           onclick={addManualDraft}
         >
-          Add Manual Item
+          Add Item Manually
         </button>
       </div>
     </div>

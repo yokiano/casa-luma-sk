@@ -37,20 +37,20 @@ export async function getProcurementMeta(): Promise<ProcurementMetadata> {
   }
   
   const dataSourceId = database.data_sources[0].id;
-  console.log("######## dataSourceId", dataSourceId);
+  // console.log("######## dataSourceId", dataSourceId);
   if (!dataSourceId) {
     throw new Error('Data source ID is missing');
   }
   
   // Retrieve the actual data source schema
   const dataSource = await notion.dataSources.retrieve({ data_source_id: dataSourceId });
-  console.log("######## dataSource", dataSource);
+  // console.log("######## dataSource", dataSource);
   if (!dataSource || !dataSource.properties) {
     throw new Error('Failed to retrieve data source schema');
   }
   
   const properties = dataSource.properties;
-  console.log("######## properties", properties);
+  // console.log("######## properties", properties);
   const departments = extractSelectOptions(properties, 'Department');
   const statuses = extractStatusOptions(properties, 'Status');
   const objectCategories = extractMultiSelectOptions(properties, 'Object Category');

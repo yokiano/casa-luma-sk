@@ -1,4 +1,7 @@
 import type { ScrapeResult } from '$lib/tools/types';
+import { chromium } from 'playwright';
+import fs from 'node:fs';
+import path from 'node:path';
 
 /**
  * Fetch a URL with a desktop browser-like User-Agent to avoid bot blocks.
@@ -179,8 +182,6 @@ async function scrapeWithHttp(url: string, debug = false): Promise<ScrapeResult>
 
   if (debug) {
     try {
-      const fs = await import('node:fs');
-      const path = await import('node:path');
       const dir = path.resolve('scripts/.cache');
       fs.mkdirSync(dir, { recursive: true });
       fs.writeFileSync(path.join(dir, 'lazada_http.html'), html, 'utf8');
@@ -196,7 +197,6 @@ async function scrapeWithHttp(url: string, debug = false): Promise<ScrapeResult>
 async function scrapeWithPlaywright(url: string, debug = false): Promise<ScrapeResult> {
   let browser: any;
   try {
-    const { chromium } = await import('playwright');
     browser = await chromium.launch({ headless: true });
     const context = await browser.newContext({
       userAgent:
@@ -328,8 +328,6 @@ async function scrapeWithPlaywright(url: string, debug = false): Promise<ScrapeR
 
     if (debug) {
       try {
-        const fs = await import('node:fs');
-        const path = await import('node:path');
         const dir = path.resolve('scripts/.cache');
         fs.mkdirSync(dir, { recursive: true });
         fs.writeFileSync(path.join(dir, 'lazada_dom.html'), await page.content(), 'utf8');
