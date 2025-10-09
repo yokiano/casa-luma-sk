@@ -1,7 +1,7 @@
 <script lang="ts">
 	import LogoImage from '$lib/assets/logo/logo-no-sun-transparent.png';
 </script>
-
+<!-- dummy comment -->
 <!-- Hero Section -->
 <section class="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-[#F9EDE8] via-[#FFF5F0] to-[#F9EDE8] px-6 py-20 relative overflow-hidden">
 	<!-- Decorative background elements -->
