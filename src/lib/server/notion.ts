@@ -1,21 +1,19 @@
 // Notion Client Setup for Casa Luma Workshops
-import { Client } from '@notionhq/client';
 import {
 	NOTION_API_KEY,
 	NOTION_EVENTS_DB_ID,
+	NOTION_MENU_DB_ID,
 	NOTION_RSVPS_DB_ID,
 	NOTION_WAITLIST_DB_ID,
-	NOTION_MENU_DB_ID,
-	NOTION_JOB_OPENINGS_DB_ID
 } from '$env/static/private';
-import type { Event, RSVP, WaitlistEntry } from '$lib/types/workshops';
+import { Client } from '@notionhq/client';
 
 // Initialize Notion client
 const getNotionClient = () => {
 	if (!NOTION_API_KEY) {
 		throw new Error('NOTION_API_KEY is not defined in environment variables');
 	}
-	
+
 	return new Client({ auth: NOTION_API_KEY });
 };
 
@@ -25,7 +23,6 @@ export const NOTION_DBS = {
 	RSVPS: NOTION_RSVPS_DB_ID || '',
 	WAITLIST: NOTION_WAITLIST_DB_ID || '',
 	MENU: NOTION_MENU_DB_ID || '',
-	JOB_OPENINGS: NOTION_JOB_OPENINGS_DB_ID || ''
 } as const;
 
 // Validate database IDs are set
