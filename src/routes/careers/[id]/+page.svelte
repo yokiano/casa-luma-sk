@@ -17,6 +17,13 @@
 			if (!id) throw new Error('Job ID is required');
 			const result = await getJobOpening(id);
 			opening = result;
+			console.log('Job Opening Data:', result);
+			console.log('All Properties:', result.properties);
+			console.log('Point of Contact:', result.properties.pointOfContact);
+			console.log('__props keys:', Object.keys(result.properties.__props));
+			console.log('Raw Point of Contact:', result.properties.__props['Point of Contact']);
+			console.log('Keys in result.properties:', Object.keys(result.properties));
+			console.log('pointOfContact value from result:', (result.properties as any).pointOfContact);
 			error = null;
 		} catch (e) {
 			console.error('[DETAIL] Error fetching job opening:', e);
@@ -178,9 +185,12 @@
 						Apply Now
 						<span>→</span>
 					</a>
-					<p class="text-sm text-slate-600 mt-4">
-						Email: <a href="mailto:careers@casaluma.com" class="text-slate-900 hover:underline">careers@casaluma.com</a>
-					</p>
+					<div class="text-sm text-slate-600 mt-4 space-y-1">
+						<div>Email: <a href="mailto:careers@casaluma.com" class="text-slate-900 hover:underline">careers@casaluma.com</a></div>
+						{#if opening.properties.pointOfContact?.text}
+							<div>Contact: {opening.properties.pointOfContact.text}</div>
+						{/if}
+					</div>
 				</div>
 			</div>
 

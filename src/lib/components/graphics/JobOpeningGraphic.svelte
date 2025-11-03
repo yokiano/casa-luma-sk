@@ -14,6 +14,7 @@
 	const experienceLevel = opening.properties.experienceLevel?.name;
 	const salary = opening.properties.expectedSalary ?? 0;
 	const openPositions = opening.properties.openPositions ?? 0;
+	const pointOfContact = (opening.properties as any).pointOfContact?.text;
 	
 	const formatSalary = (sal: number): string => {
 		if (sal === 0) return 'Negotiable';
@@ -87,7 +88,19 @@
 				</div>
 			{/if}
 
-			{#if salary > 0}
+			{#if pointOfContact}
+				<div style="display: flex; flex-direction: column; align-items: center;">
+					<div style="font-size: 32px; margin-bottom: 8px;">👤</div>
+					<div style="font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: #1e293b; opacity: 0.6; margin-bottom: 4px;">
+						Point of Contact
+					</div>
+					<div style="font-size: 18px; font-weight: 600; color: #0f172a;">
+						{pointOfContact}
+					</div>
+				</div>
+			{/if}
+
+			<!--{#if salary > 0}
 				<div style="display: flex; flex-direction: column; align-items: center;">
 					<div style="font-size: 32px; margin-bottom: 8px;">💰</div>
 					<div style="font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: #1e293b; opacity: 0.6; margin-bottom: 4px;">
@@ -97,7 +110,7 @@
 						{formatSalary(salary)}
 					</div>
 				</div>
-			{/if}
+			{/if}-->
 		</div>
 
 		<!-- Divider -->

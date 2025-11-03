@@ -21,7 +21,8 @@ export const JOB_OPENINGS_PROP_VALUES = {
   "Internship",
   "Temporary",
   "Freelance",
-  "Seasonal"
+  "Seasonal",
+  "Part Time / Shifts"
 ] as const,
 "experienceLevel": [
   "Entry-level",
@@ -31,7 +32,8 @@ export const JOB_OPENINGS_PROP_VALUES = {
   "Lead",
   "Manager",
   "Director",
-  "Executive"
+  "Executive",
+  "Basic"
 ] as const,
 "jobBoards": [
   "Facebook Groups",
@@ -49,7 +51,10 @@ export const JOB_OPENINGS_PROP_VALUES = {
   "Leadership",
   "Problem Solving",
   "English",
-  "Handyman"
+  "Handyman",
+  "Coffee Machine",
+  "Cashier",
+  "Customer Service"
 ] as const,
 "status": [
   "Draft",
@@ -75,7 +80,8 @@ export const JOB_OPENINGS_PROPS_TO_IDS = {
   "openingDate": "muO_",
   "status": "pUJ_",
   "jobTitle": "title",
-  "jobPost": "Snli"
+  "jobPost": "Snli",
+  "pointOfContact": "Bng%3E"
 } as const
 export const JOB_OPENINGS_IDS_TO_PROPS = {
   "%40DSX": "location",
@@ -91,7 +97,8 @@ export const JOB_OPENINGS_IDS_TO_PROPS = {
   "muO_": "openingDate",
   "pUJ_": "status",
   "title": "jobTitle",
-  "Snli": "jobPost"
+  "Snli": "jobPost",
+  "Bng%3E": "pointOfContact"
 } as const
 export const JOB_OPENINGS_PROPS_TO_TYPES = {
   "location": "select",
@@ -107,7 +114,8 @@ export const JOB_OPENINGS_PROPS_TO_TYPES = {
   "openingDate": "date",
   "status": "status",
   "jobTitle": "title",
-  "jobPost": "rich_text"
+  "jobPost": "rich_text",
+  "pointOfContact": "rich_text"
 } as const
 
   export type JobOpeningsDTOProperties = keyof typeof JOB_OPENINGS_PROPS_TO_IDS

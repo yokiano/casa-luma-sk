@@ -18,6 +18,12 @@
 			parts.push(jobPostData.text.trim());
 		}
 
+		// Add point of contact if available
+		const pointOfContactData = (opening.properties as any).pointOfContact;
+		if (pointOfContactData?.text) {
+			parts.push(`Contact: ${pointOfContactData.text.trim()}`);
+		}
+
 		// Add employment type
 		if (opening.properties.employmentType) {
 			parts.push(`Employment Type: ${opening.properties.employmentType.name}`);

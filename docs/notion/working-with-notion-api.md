@@ -159,6 +159,38 @@ This will:
 
 ---
 
+### Understanding ResponseDTO Property Getters
+
+**ResponseDTO** classes automatically transform Notion's complex property types into convenient getters. Instead of accessing raw Notion data, you get clean TypeScript objects:
+
+**Rich Text Properties** (like descriptions, job posts, etc):
+```typescript
+const dto = new JobOpeningsResponseDTO(rawPage);
+
+// DTO transforms this automatically:
+dto.properties.jobPost
+// Returns: { text: 'Full text...', links: [...], rich_text: [...] }
+
+// Easy text access
+const text = opening.properties.jobPost?.text;
+```
+
+**Select/Multi-Select Properties**:
+```typescript
+dto.properties.department      // Returns: { name: 'Engineering', color: '...' }
+dto.properties.requiredSkills  // Returns: { values: ['JavaScript', 'React'], multi_select: [...] }
+```
+
+**Number/Date Properties**:
+```typescript
+dto.properties.openPositions   // Returns: number or undefined
+dto.properties.openingDate     // Returns: { start: '2025-01-15', end?: '...' } or null
+```
+
+**Important**: All properties in the DTO are already mapped by the generator. If a property exists in your Notion database schema, you can access it via `opening.properties.[propertyName]`. The DTO's `__data` object (line 63-79 in response.dto.ts) shows all available mappings.
+
+---
+
 ### Step 3: Create Remote Functions
 
 **File**: `src/lib/[feature].remote.ts`

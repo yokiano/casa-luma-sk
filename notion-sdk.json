@@ -365,6 +365,12 @@
           "_type": "rich_text",
           "varName": "jobPost",
           "readOnly": false
+        },
+        "Bng%3E": {
+          "_name": "Point of Contact",
+          "_type": "rich_text",
+          "varName": "pointOfContact",
+          "readOnly": false
         }
       }
     },

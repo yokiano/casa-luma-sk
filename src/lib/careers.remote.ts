@@ -57,6 +57,15 @@ export const getJobOpening = query(
 		}
 
 		// Convert DTO to POJO for serialization
-		return toPojo(new JobOpeningsResponseDTO(page));
+		const dto = new JobOpeningsResponseDTO(page);
+		console.log('[Server] DTO keys:', Object.keys(dto));
+		console.log('[Server] DTO.properties keys:', Object.keys(dto.properties));
+		console.log('[Server] pointOfContact from DTO:', (dto.properties as any).pointOfContact);
+		const pojo = toPojo(dto);
+		console.log('[Server] POJO.properties keys:', Object.keys(pojo.properties));
+		console.log('[Server] pointOfContact from POJO:', (pojo.properties as any).pointOfContact);
+		// Manually add pointOfContact since toPojo is not extracting it
+		(pojo.properties as any).pointOfContact = (dto.properties as any).pointOfContact;
+		return pojo;
 	}
 );

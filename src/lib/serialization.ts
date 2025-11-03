@@ -40,8 +40,14 @@ export function toPojo(value: any): any {
 					const val = (value as any)[key];
 					result[key] = toPojo(val);
 					processedKeys.add(key);
-				} catch {
+					if (key === 'pointOfContact' || key === 'jobPost') {
+						console.log(`[toPojo] Extracted ${key}:`, val);
+					}
+				} catch (e) {
 					// Skip getters that throw errors
+					if (key === 'pointOfContact') {
+						console.error(`[toPojo] Error extracting pointOfContact:`, e);
+					}
 				}
 			}
 		});

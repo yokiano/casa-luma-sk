@@ -75,6 +75,7 @@ export class JobOpeningsPropertiesResponseDTO {
       status: this.__props['Status'],
       jobTitle: this.__props['Job Title'],
       jobPost: this.__props['Job Post'],
+      pointOfContact: this.__props['Point of Contact'],
     }
   }
 
@@ -152,6 +153,14 @@ export class JobOpeningsPropertiesResponseDTO {
       text: this.__props['Job Post']?.rich_text ? this.__props['Job Post'].rich_text.reduce((acc, item) => acc + item.plain_text, '') : undefined,
       links: this.__props['Job Post']?.rich_text ? this.__props['Job Post'].rich_text.filter((item) => item.href?.length).map((item) => item.href) : [],
       rich_text: this.__props['Job Post']?.rich_text,
+    }
+  }
+
+  get pointOfContact() {
+    return {
+      text: this.__props['Point of Contact']?.rich_text ? this.__props['Point of Contact'].rich_text.reduce((acc, item) => acc + item.plain_text, '') : undefined,
+      links: this.__props['Point of Contact']?.rich_text ? this.__props['Point of Contact'].rich_text.filter((item) => item.href?.length).map((item) => item.href) : [],
+      rich_text: this.__props['Point of Contact']?.rich_text,
     }
   }
 }

@@ -20,6 +20,7 @@ export type JobOpeningsPropertiesPatch = {
   status?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'status' }>['status']
   jobTitle?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   jobPost?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
+  pointOfContact?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
 }
 
   
@@ -193,6 +194,28 @@ export class JobOpeningsPatchDTO {
                       link: props.jobPost?.url ? { url: props.jobPost.url } : undefined
                     },
                     annotations: props.jobPost.annotations
+                  },
+                ]
+      }
+    }
+
+    if (props?.pointOfContact !== undefined) {
+      this.__data.properties['Bng%3E'] = {
+        type: 'rich_text',
+        rich_text: typeof props.pointOfContact === 'string' 
+          ? [{ type: 'text', text: { content: props.pointOfContact } }]
+          : Array.isArray(props.pointOfContact)
+            ? props.pointOfContact
+            : props.pointOfContact === null
+              ? []
+              : [
+                  {
+                    type: 'text',
+                    text: {
+                      content: props.pointOfContact.text,
+                      link: props.pointOfContact?.url ? { url: props.pointOfContact.url } : undefined
+                    },
+                    annotations: props.pointOfContact.annotations
                   },
                 ]
       }
