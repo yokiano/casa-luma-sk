@@ -97,7 +97,6 @@ this component is a simple counter with a label and a value.
     {@render children()}
   {/if}
 </div>
-```
 
 ## Usage Examples
 
@@ -134,6 +133,44 @@ this component is a simple counter with a label and a value.
 ### Snippets Location in the file
 
 The snippet definition ({#snippet}{/snippet}) should be located inside the markup, not in the script block. perferably after the script block before the markup.
+
+### ❌ Overusing $effect
+
+**Problem**: `$effect` adds unnecessary reactivity overhead. It's often the wrong tool.
+
+**Wrong** - Using effect for simple initialization:
+```ts
+$effect.pre(() => {
+  loadData();
+});
+```
+
+**Better** - Just call the function directly:
+```ts
+async function loadData() {
+  // fetch logic
+}
+
+loadData();
+```
+
+**When to use $effect**: 
+- Side effects that must re-run when specific state changes
+- Cleanup operations (using `return () => { cleanup() }`)
+- Very rarely needed in practice - prefer `$derived` instead
+
+**Better alternative for computed values** - Use `$derived`:
+```ts
+// ❌ Don't do this with effect
+$effect(() => {
+  totalPrice = items.reduce((sum, item) => sum + item.price, 0);
+});
+
+// ✅ Use $derived instead
+const totalPrice = $derived(items.reduce((sum, item) => sum + item.price, 0));
+```
+
+---
 
 ### Props Typing
 

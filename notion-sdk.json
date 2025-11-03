@@ -1,0 +1,675 @@
+{
+  "ignore": [
+    {
+      "name": "Document Hub",
+      "id": "26ffc77d-b4f3-803e-98ba-edc0d7ec0e16"
+    },
+    {
+      "name": "Tasks Pre Launch",
+      "id": "26ffc77d-b4f3-8071-99dc-ef5139bbb69a"
+    }
+  ],
+  "databases": {
+    "283fc77d-b4f3-80c1-813f-ef4b9bb08f8f": {
+      "_name": "Procurement",
+      "varName": "procurement",
+      "pathName": "procurement",
+      "properties": {
+        "%3AasX": {
+          "_name": "Supplier",
+          "_type": "rich_text",
+          "varName": "supplier",
+          "readOnly": false
+        },
+        "ByA%3F": {
+          "_name": "Parent item",
+          "_type": "relation",
+          "varName": "parentItem",
+          "readOnly": false
+        },
+        "D%7DIr": {
+          "_name": "Link",
+          "_type": "rich_text",
+          "varName": "link",
+          "readOnly": false
+        },
+        "G%7DHG": {
+          "_name": "Tracking Number",
+          "_type": "rich_text",
+          "varName": "trackingNumber",
+          "readOnly": false
+        },
+        "U%60kx": {
+          "_name": "Department",
+          "_type": "multi_select",
+          "varName": "department",
+          "readOnly": false
+        },
+        "WP%3Ev": {
+          "_name": "Notes",
+          "_type": "rich_text",
+          "varName": "notes",
+          "readOnly": false
+        },
+        "%5C%5DWc": {
+          "_name": "Invoice",
+          "_type": "files",
+          "varName": "invoice",
+          "readOnly": false
+        },
+        "aSo%3B": {
+          "_name": "Tags",
+          "_type": "multi_select",
+          "varName": "tags",
+          "readOnly": false
+        },
+        "dGR%7C": {
+          "_name": "Total Price",
+          "_type": "formula",
+          "varName": "totalPrice",
+          "readOnly": false
+        },
+        "eug%5C": {
+          "_name": "Price (THB)",
+          "_type": "number",
+          "varName": "priceThb",
+          "readOnly": false
+        },
+        "iSMi": {
+          "_name": "Sub-item",
+          "_type": "relation",
+          "varName": "subItem",
+          "readOnly": false
+        },
+        "jPNR": {
+          "_name": "Paid From",
+          "_type": "select",
+          "varName": "paidFrom",
+          "readOnly": false
+        },
+        "k%3Bz%3C": {
+          "_name": "Image",
+          "_type": "files",
+          "varName": "image",
+          "readOnly": false
+        },
+        "sb%3Dq": {
+          "_name": "Price 10/10",
+          "_type": "number",
+          "varName": "price_1010",
+          "readOnly": false
+        },
+        "uz%3En": {
+          "_name": "Quantity",
+          "_type": "number",
+          "varName": "quantity",
+          "readOnly": false
+        },
+        "wI%60N": {
+          "_name": "Object Category",
+          "_type": "multi_select",
+          "varName": "objectCategory",
+          "readOnly": false
+        },
+        "~NX%5B": {
+          "_name": "Status",
+          "_type": "status",
+          "varName": "status",
+          "readOnly": false
+        },
+        "title": {
+          "_name": "Item",
+          "_type": "title",
+          "varName": "item",
+          "readOnly": false
+        },
+        "%3DKtU": {
+          "_name": "Created by",
+          "_type": "created_by",
+          "varName": "createdBy",
+          "readOnly": true
+        },
+        "%40rim": {
+          "_name": "Last edited by",
+          "_type": "last_edited_by",
+          "varName": "lastEditedBy",
+          "readOnly": true
+        },
+        "%5DhP%3F": {
+          "_name": "Created time",
+          "_type": "created_time",
+          "varName": "createdTime",
+          "readOnly": true
+        },
+        "ak%7BJ": {
+          "_name": "Last edited time",
+          "_type": "last_edited_time",
+          "varName": "lastEditedTime",
+          "readOnly": true
+        }
+      }
+    },
+    "288ce863-4e80-4e7a-aa23-83fbf2224cda": {
+      "_name": "Hourly Reports",
+      "varName": "hourlyReports",
+      "pathName": "hourly-reports",
+      "properties": {
+        "QY%3FD": {
+          "_name": "Employee",
+          "_type": "people",
+          "varName": "employee",
+          "readOnly": false
+        },
+        "SXma": {
+          "_name": "Tasks/Description",
+          "_type": "rich_text",
+          "varName": "tasksDescription",
+          "readOnly": false
+        },
+        "Ttd%5C": {
+          "_name": "End Time",
+          "_type": "date",
+          "varName": "endTime",
+          "readOnly": false
+        },
+        "%5CLjc": {
+          "_name": "Work Date",
+          "_type": "date",
+          "varName": "workDate",
+          "readOnly": false
+        },
+        "%5EdMJ": {
+          "_name": "Start Time",
+          "_type": "date",
+          "varName": "startTime",
+          "readOnly": false
+        },
+        "_%5B%5B%5C": {
+          "_name": "Status",
+          "_type": "status",
+          "varName": "status",
+          "readOnly": false
+        },
+        "j%3A%60P": {
+          "_name": "Notes",
+          "_type": "rich_text",
+          "varName": "notes",
+          "readOnly": false
+        },
+        "title": {
+          "_name": "Report Title",
+          "_type": "title",
+          "varName": "reportTitle",
+          "readOnly": false
+        },
+        "NG%3Eq": {
+          "_name": "Submitted On",
+          "_type": "created_time",
+          "varName": "submittedOn",
+          "readOnly": true
+        },
+        "hhDf": {
+          "_name": "Submitted By",
+          "_type": "created_by",
+          "varName": "submittedBy",
+          "readOnly": true
+        }
+      }
+    },
+    "284fc77d-b4f3-8079-ac1d-fc3ac4e76992": {
+      "_name": "Menu Items",
+      "varName": "menuItems",
+      "pathName": "menu-items",
+      "properties": {
+        "%40w%3Bd": {
+          "_name": "Description",
+          "_type": "rich_text",
+          "varName": "description",
+          "readOnly": false
+        },
+        "B%5CRW": {
+          "_name": "Dietary Options",
+          "_type": "multi_select",
+          "varName": "dietaryOptions",
+          "readOnly": false
+        },
+        "QFbw": {
+          "_name": "COGS",
+          "_type": "number",
+          "varName": "cogs",
+          "readOnly": false
+        },
+        "QGW%3B": {
+          "_name": "Price",
+          "_type": "number",
+          "varName": "price",
+          "readOnly": false
+        },
+        "SLSP": {
+          "_name": "Ingridients",
+          "_type": "multi_select",
+          "varName": "ingridients",
+          "readOnly": false
+        },
+        "a%5DkJ": {
+          "_name": "Allergens",
+          "_type": "multi_select",
+          "varName": "allergens",
+          "readOnly": false
+        },
+        "t%3DM%40": {
+          "_name": "Image",
+          "_type": "files",
+          "varName": "image",
+          "readOnly": false
+        },
+        "z%40vA": {
+          "_name": "Category",
+          "_type": "select",
+          "varName": "category",
+          "readOnly": false
+        },
+        "title": {
+          "_name": "Name",
+          "_type": "title",
+          "varName": "name",
+          "readOnly": false
+        }
+      }
+    },
+    "283fc77d-b4f3-808e-b6f5-fd96ff3722e7": {
+      "_name": "Job Openings",
+      "varName": "jobOpenings",
+      "pathName": "job-openings",
+      "properties": {
+        "%40DSX": {
+          "_name": "Location",
+          "_type": "select",
+          "varName": "location",
+          "readOnly": false
+        },
+        "DUmM": {
+          "_name": "Requirements",
+          "_type": "rich_text",
+          "varName": "requirements",
+          "readOnly": false
+        },
+        "EnG%3F": {
+          "_name": "Department",
+          "_type": "select",
+          "varName": "department",
+          "readOnly": false
+        },
+        "JfQ%3B": {
+          "_name": "Employment Type",
+          "_type": "select",
+          "varName": "employmentType",
+          "readOnly": false
+        },
+        "SF%3FZ": {
+          "_name": "Experience Level",
+          "_type": "select",
+          "varName": "experienceLevel",
+          "readOnly": false
+        },
+        "Sbsi": {
+          "_name": "Job Boards",
+          "_type": "multi_select",
+          "varName": "jobBoards",
+          "readOnly": false
+        },
+        "Vds%3A": {
+          "_name": "Required Skills",
+          "_type": "multi_select",
+          "varName": "requiredSkills",
+          "readOnly": false
+        },
+        "Y%3Cej": {
+          "_name": "Open Positions",
+          "_type": "number",
+          "varName": "openPositions",
+          "readOnly": false
+        },
+        "%5Cjb%7D": {
+          "_name": "Expected Salary",
+          "_type": "number",
+          "varName": "expectedSalary",
+          "readOnly": false
+        },
+        "anDd": {
+          "_name": "Responsibilities",
+          "_type": "rich_text",
+          "varName": "responsibilities",
+          "readOnly": false
+        },
+        "muO_": {
+          "_name": "Opening Date",
+          "_type": "date",
+          "varName": "openingDate",
+          "readOnly": false
+        },
+        "pUJ_": {
+          "_name": "Status",
+          "_type": "status",
+          "varName": "status",
+          "readOnly": false
+        },
+        "title": {
+          "_name": "Job Title",
+          "_type": "title",
+          "varName": "jobTitle",
+          "readOnly": false
+        },
+        "Snli": {
+          "_name": "Job Post",
+          "_type": "rich_text",
+          "varName": "jobPost",
+          "readOnly": false
+        }
+      }
+    },
+    "e58b0c4f-cfba-4ec2-8573-c128e7d4e441": {
+      "_name": "Casa Luma Events",
+      "varName": "casaLumaEvents",
+      "pathName": "casa-luma-events",
+      "properties": {
+        "%3AJCP": {
+          "_name": "Status",
+          "_type": "select",
+          "varName": "status",
+          "readOnly": false
+        },
+        "%3B%3ERu": {
+          "_name": "Price",
+          "_type": "number",
+          "varName": "price",
+          "readOnly": false
+        },
+        "%3CRm%3B": {
+          "_name": "Waitlist Entries",
+          "_type": "relation",
+          "varName": "waitlistEntries",
+          "readOnly": false
+        },
+        "%3E%5CgQ": {
+          "_name": "Short Description",
+          "_type": "rich_text",
+          "varName": "shortDescription",
+          "readOnly": false
+        },
+        "A%5CK%3C": {
+          "_name": "Language",
+          "_type": "select",
+          "varName": "language",
+          "readOnly": false
+        },
+        "KZUb": {
+          "_name": "Available Spots",
+          "_type": "formula",
+          "varName": "availableSpots",
+          "readOnly": false
+        },
+        "PU_Q": {
+          "_name": "Gallery",
+          "_type": "files",
+          "varName": "gallery",
+          "readOnly": false
+        },
+        "RgFs": {
+          "_name": "Description",
+          "_type": "rich_text",
+          "varName": "description",
+          "readOnly": false
+        },
+        "SH%60R": {
+          "_name": "Featured Image",
+          "_type": "files",
+          "varName": "featuredImage",
+          "readOnly": false
+        },
+        "TNDu": {
+          "_name": "Slug",
+          "_type": "formula",
+          "varName": "slug",
+          "readOnly": false
+        },
+        "%5EYVv": {
+          "_name": "Requirements",
+          "_type": "rich_text",
+          "varName": "requirements",
+          "readOnly": false
+        },
+        "cHDA": {
+          "_name": "Registration Status",
+          "_type": "select",
+          "varName": "registrationStatus",
+          "readOnly": false
+        },
+        "eae%7C": {
+          "_name": "Recurrence Type",
+          "_type": "select",
+          "varName": "recurrenceType",
+          "readOnly": false
+        },
+        "gmnU": {
+          "_name": "Capacity",
+          "_type": "number",
+          "varName": "capacity",
+          "readOnly": false
+        },
+        "kLjM": {
+          "_name": "Date",
+          "_type": "date",
+          "varName": "date",
+          "readOnly": false
+        },
+        "qC%3B%60": {
+          "_name": "End Date",
+          "_type": "date",
+          "varName": "endDate",
+          "readOnly": false
+        },
+        "wMP%40": {
+          "_name": "RSVPs",
+          "_type": "relation",
+          "varName": "rsvPs",
+          "readOnly": false
+        },
+        "x%5Dcl": {
+          "_name": "Location",
+          "_type": "select",
+          "varName": "location",
+          "readOnly": false
+        },
+        "yevg": {
+          "_name": "Instructor",
+          "_type": "people",
+          "varName": "instructor",
+          "readOnly": false
+        },
+        "z%3AD_": {
+          "_name": "Event Type",
+          "_type": "select",
+          "varName": "eventType",
+          "readOnly": false
+        },
+        "%7D%7Ch%3F": {
+          "_name": "Tags",
+          "_type": "multi_select",
+          "varName": "tags",
+          "readOnly": false
+        },
+        "title": {
+          "_name": "Event Name",
+          "_type": "title",
+          "varName": "eventName",
+          "readOnly": false
+        },
+        "XyyG": {
+          "_name": "Created",
+          "_type": "created_time",
+          "varName": "created",
+          "readOnly": true
+        },
+        "YlCE": {
+          "_name": "Updated",
+          "_type": "last_edited_time",
+          "varName": "updated",
+          "readOnly": true
+        }
+      }
+    },
+    "0ba8660f-72da-4e26-8383-42cf3065162e": {
+      "_name": "Casa Luma RSVPs",
+      "varName": "casaLumaRsvPs",
+      "pathName": "casa-luma-rsv-ps",
+      "properties": {
+        "%3DQSs": {
+          "_name": "Notes",
+          "_type": "rich_text",
+          "varName": "notes",
+          "readOnly": false
+        },
+        "%3DsE%5B": {
+          "_name": "Dietary Restrictions",
+          "_type": "multi_select",
+          "varName": "dietaryRestrictions",
+          "readOnly": false
+        },
+        "D_%5D%3E": {
+          "_name": "Source",
+          "_type": "select",
+          "varName": "source",
+          "readOnly": false
+        },
+        "F%5EiO": {
+          "_name": "Confirmed At",
+          "_type": "date",
+          "varName": "confirmedAt",
+          "readOnly": false
+        },
+        "LNBq": {
+          "_name": "Number of Guests",
+          "_type": "number",
+          "varName": "numberOfGuests",
+          "readOnly": false
+        },
+        "MZRS": {
+          "_name": "Status",
+          "_type": "select",
+          "varName": "status",
+          "readOnly": false
+        },
+        "PnW%40": {
+          "_name": "Phone",
+          "_type": "phone_number",
+          "varName": "phone",
+          "readOnly": false
+        },
+        "_LMp": {
+          "_name": "Event",
+          "_type": "relation",
+          "varName": "event",
+          "readOnly": false
+        },
+        "%60%5BuY": {
+          "_name": "Email",
+          "_type": "email",
+          "varName": "email",
+          "readOnly": false
+        },
+        "cFDH": {
+          "_name": "Check-in Status",
+          "_type": "checkbox",
+          "varName": "checkInStatus",
+          "readOnly": false
+        },
+        "fI%40f": {
+          "_name": "Guest Name",
+          "_type": "rich_text",
+          "varName": "guestName",
+          "readOnly": false
+        },
+        "wKeg": {
+          "_name": "Internal Notes",
+          "_type": "rich_text",
+          "varName": "internalNotes",
+          "readOnly": false
+        },
+        "wxji": {
+          "_name": "Payment Status",
+          "_type": "select",
+          "varName": "paymentStatus",
+          "readOnly": false
+        },
+        "title": {
+          "_name": "RSVP ID",
+          "_type": "title",
+          "varName": "rsvpId",
+          "readOnly": false
+        },
+        "kjlj": {
+          "_name": "Created At",
+          "_type": "created_time",
+          "varName": "createdAt",
+          "readOnly": true
+        }
+      }
+    },
+    "50b53d99-8b2a-415d-b9ee-2cf8a3968e0c": {
+      "_name": "Casa Luma Waitlist",
+      "varName": "casaLumaWaitlist",
+      "pathName": "casa-luma-waitlist",
+      "properties": {
+        "%3BQKj": {
+          "_name": "Converted to RSVP",
+          "_type": "relation",
+          "varName": "convertedToRsvp",
+          "readOnly": false
+        },
+        "IObD": {
+          "_name": "Phone",
+          "_type": "phone_number",
+          "varName": "phone",
+          "readOnly": false
+        },
+        "h%3D%5Df": {
+          "_name": "Event",
+          "_type": "relation",
+          "varName": "event",
+          "readOnly": false
+        },
+        "i%5C%3EY": {
+          "_name": "Notified",
+          "_type": "checkbox",
+          "varName": "notified",
+          "readOnly": false
+        },
+        "tJ%7BV": {
+          "_name": "Guest Name",
+          "_type": "rich_text",
+          "varName": "guestName",
+          "readOnly": false
+        },
+        "y%3BE%3A": {
+          "_name": "Email",
+          "_type": "email",
+          "varName": "email",
+          "readOnly": false
+        },
+        "title": {
+          "_name": "Waitlist ID",
+          "_type": "title",
+          "varName": "waitlistId",
+          "readOnly": false
+        },
+        "MPcT": {
+          "_name": "Added At",
+          "_type": "created_time",
+          "varName": "addedAt",
+          "readOnly": true
+        }
+      }
+    }
+  }
+}

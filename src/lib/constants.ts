@@ -89,6 +89,15 @@ export const SOCIAL_LINKS = {
 	email: 'mailto:hello@casaluma.com'
 } as const;
 
+export const FOOTER_LINKS = [
+	{ label: 'Open Play', href: '/open-play' },
+	{ label: 'Memberships', href: '/memberships' },
+	{ label: 'Workshops', href: '/workshops3' },
+	{ label: 'Careers', href: '/careers' },
+	{ label: 'About', href: '/about' },
+	{ label: 'Contact', href: '/contact' }
+] as const;
+
 // Pricing & Memberships
 export interface Membership {
 	id: string;

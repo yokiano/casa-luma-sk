@@ -12,7 +12,8 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"test:unit": "vitest",
 		"test": "npm run test:unit -- --run && npm run test:e2e",
-		"test:e2e": "playwright test"
+		"test:e2e": "playwright test",
+		"notion:generate": "dotenv -- npx notion-ts-client generate"
 	},
 	"devDependencies": {
 		"@iconify/svelte": "^5.0.2",
@@ -30,6 +31,9 @@
 		"@vitest/browser": "^3.2.3",
 		"bits-ui": "^2.11.4",
 		"clsx": "^2.1.1",
+		"cross-env": "^10.1.0",
+		"dotenv-cli": "^11.0.0",
+		"notion-ts-client": "^0.2.18",
 		"playwright": "^1.56.0",
 		"svelte": "^5.0.0",
 		"svelte-check": "^4.0.0",
@@ -51,6 +55,7 @@
 	"dependencies": {
 		"@notionhq/client": "^5.1.0",
 		"dotenv": "^16.4.5",
+		"modern-screenshot": "^4.6.6",
 		"valibot": "^1.1.0"
 	}
 }
