@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { getOpenJobOpenings } from '$lib/careers.remote';
 	import type { JobOpeningsResponseDTO } from '$lib/notion-sdk/dbs/job-openings';
+  import AllJobsGraphicGenerator from '$lib/components/jobs/AllJobsGraphicGenerator.svelte';
 
 	let openings = $state<JobOpeningsResponseDTO[]>([]);
 	let isLoading = $state(true);
@@ -39,7 +40,6 @@
 		});
 	};
 </script>
-
 <div class="min-h-screen bg-gradient-to-b from-amber-50 to-white">
 	<!-- Header -->
 	<div class="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
@@ -71,6 +71,10 @@
 			</div>
 		{:else}
 			<div class="grid gap-6">
+    <div class="rounded-3xl border border-amber-100 bg-white/70 p-6 shadow-sm">
+      <AllJobsGraphicGenerator {openings} />
+    </div>
+
 				{#each openings as opening (opening.id)}
 					<a
 						href="/careers/{opening.id}"
