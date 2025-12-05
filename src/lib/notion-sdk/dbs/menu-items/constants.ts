@@ -51,7 +51,8 @@ export const MENU_ITEMS_PROPS_TO_IDS = {
   "allergens": "a%5DkJ",
   "image": "t%3DM%40",
   "category": "z%40vA",
-  "name": "title"
+  "name": "title",
+  "loyverseId": "%5B%3DN%3E"
 } as const
 export const MENU_ITEMS_IDS_TO_PROPS = {
   "%40w%3Bd": "description",
@@ -62,7 +63,8 @@ export const MENU_ITEMS_IDS_TO_PROPS = {
   "a%5DkJ": "allergens",
   "t%3DM%40": "image",
   "z%40vA": "category",
-  "title": "name"
+  "title": "name",
+  "%5B%3DN%3E": "loyverseId"
 } as const
 export const MENU_ITEMS_PROPS_TO_TYPES = {
   "description": "rich_text",
@@ -73,7 +75,8 @@ export const MENU_ITEMS_PROPS_TO_TYPES = {
   "allergens": "multi_select",
   "image": "files",
   "category": "select",
-  "name": "title"
+  "name": "title",
+  "loyverseId": "rich_text"
 } as const
 
   export type MenuItemsDTOProperties = keyof typeof MENU_ITEMS_PROPS_TO_IDS

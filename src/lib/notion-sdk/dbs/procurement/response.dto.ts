@@ -87,13 +87,10 @@ export class ProcurementPropertiesResponseDTO {
   }
 
 
-  get supplier() {
-    return {
-      text: this.__props['Supplier']?.rich_text ? this.__props['Supplier'].rich_text.reduce((acc, item) => acc + item.plain_text, '') : undefined,
-      links: this.__props['Supplier']?.rich_text ? this.__props['Supplier'].rich_text.filter((item) => item.href?.length).map((item) => item.href) : [],
-      rich_text: this.__props['Supplier']?.rich_text,
-    }
+  get supplierIds() {
+    return (this.__props['Supplier']?.relation as unknown as Array<{ id: string }>).map((item) => item.id)  
   }
+
 
   get parentItemIds() {
     return (this.__props['Parent item']?.relation as unknown as Array<{ id: string }>).map((item) => item.id)  

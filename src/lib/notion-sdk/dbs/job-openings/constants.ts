@@ -22,7 +22,8 @@ export const JOB_OPENINGS_PROP_VALUES = {
   "Temporary",
   "Freelance",
   "Seasonal",
-  "Part Time / Shifts"
+  "Part Time / Shifts",
+  "Full Time / Part Time"
 ] as const,
 "experienceLevel": [
   "Entry-level",
@@ -50,11 +51,16 @@ export const JOB_OPENINGS_PROP_VALUES = {
   "Project Management",
   "Leadership",
   "Problem Solving",
-  "English",
+  "Good English",
   "Handyman",
   "Coffee Machine",
   "Cashier",
-  "Customer Service"
+  "Customer Service",
+  "Hygiene",
+  "Kitchen Tasks",
+  "Western Cooking",
+  "Team Player",
+  "Basic English"
 ] as const,
 "status": [
   "Draft",

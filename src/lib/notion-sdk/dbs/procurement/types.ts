@@ -30,7 +30,7 @@ import { PROCUREMENT_PROPS_TO_IDS } from './constants'
 
 export interface ProcurementResponse extends WithOptional<Omit<DatabaseObjectResponse, 'properties'>, 'title'| 'description'| 'is_inline'| 'url'| 'public_url'> {
   properties: {
-    "Supplier": RichTextPropertyItemObjectResponse,
+    "Supplier": RelationPropertyItemObjectResponse,
     "Parent item": RelationPropertyItemObjectResponse,
     "Link": RichTextPropertyItemObjectResponse,
     "Tracking Number": RichTextPropertyItemObjectResponse,
@@ -58,7 +58,7 @@ export interface ProcurementResponse extends WithOptional<Omit<DatabaseObjectRes
 export type ProcurementResponseProperties = keyof ProcurementResponse['properties']
 export type ProcurementPath = Join<PathsToStringProps<ProcurementResponse>>
 
-type ProcurementSupplierPropertyFilter = TextPropertyFilter
+type ProcurementSupplierPropertyFilter = RelationPropertyFilter
 type ProcurementParentItemPropertyFilter = RelationPropertyFilter
 type ProcurementLinkPropertyFilter = TextPropertyFilter
 type ProcurementTrackingNumberPropertyFilter = TextPropertyFilter

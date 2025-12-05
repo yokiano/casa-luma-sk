@@ -15,6 +15,7 @@ export type MenuItemsPropertiesPatch = {
   image?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'files' }>['files']
   category?: MenuItemsResponse['properties']['Category']['select']['name']
   name?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
+  loyverseId?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
 }
 
   
@@ -123,6 +124,28 @@ export class MenuItemsPatchDTO {
                       link: props.name?.url ? { url: props.name.url } : undefined
                     },
                     annotations: props.name.annotations
+                  },
+                ]
+      }
+    }
+
+    if (props?.loyverseId !== undefined) {
+      this.__data.properties['%5B%3DN%3E'] = {
+        type: 'rich_text',
+        rich_text: typeof props.loyverseId === 'string' 
+          ? [{ type: 'text', text: { content: props.loyverseId } }]
+          : Array.isArray(props.loyverseId)
+            ? props.loyverseId
+            : props.loyverseId === null
+              ? []
+              : [
+                  {
+                    type: 'text',
+                    text: {
+                      content: props.loyverseId.text,
+                      link: props.loyverseId?.url ? { url: props.loyverseId.url } : undefined
+                    },
+                    annotations: props.loyverseId.annotations
                   },
                 ]
       }

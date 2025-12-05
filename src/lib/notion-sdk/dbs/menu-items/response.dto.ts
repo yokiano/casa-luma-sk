@@ -70,6 +70,7 @@ export class MenuItemsPropertiesResponseDTO {
       image: this.__props['Image'],
       category: this.__props['Category'],
       name: this.__props['Name'],
+      loyverseId: this.__props['LoyverseID'],
     }
   }
 
@@ -126,6 +127,14 @@ export class MenuItemsPropertiesResponseDTO {
       text: this.__props['Name']?.title ? this.__props['Name'].title.reduce((acc, item) => acc + item.plain_text, '') : undefined,
       links: this.__props['Name']?.title ? this.__props['Name'].title.filter((item) => item.href?.length).map((item) => item.href) : [],
       title: this.__props['Name']?.title,
+    }
+  }
+
+  get loyverseId() {
+    return {
+      text: this.__props['LoyverseID']?.rich_text ? this.__props['LoyverseID'].rich_text.reduce((acc, item) => acc + item.plain_text, '') : undefined,
+      links: this.__props['LoyverseID']?.rich_text ? this.__props['LoyverseID'].rich_text.filter((item) => item.href?.length).map((item) => item.href) : [],
+      rich_text: this.__props['LoyverseID']?.rich_text,
     }
   }
 }

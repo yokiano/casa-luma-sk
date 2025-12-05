@@ -27,7 +27,8 @@ export interface MenuItemsResponse extends WithOptional<Omit<DatabaseObjectRespo
     "Allergens": Omit<MultiSelectPropertyItemObjectResponse, 'multi_select'> & { multi_select: [{ id: StringRequest, name: 'Dairy', color: 'blue' } | { id: StringRequest, name: 'Eggs', color: 'yellow' } | { id: StringRequest, name: 'Gluten', color: 'brown' } | { id: StringRequest, name: 'Wheat', color: 'orange' } | { id: StringRequest, name: 'Nuts', color: 'brown' } | { id: StringRequest, name: 'Peanuts', color: 'red' } | { id: StringRequest, name: 'Soy', color: 'green' } | { id: StringRequest, name: 'Fish', color: 'blue' } | { id: StringRequest, name: 'Shellfish', color: 'pink' } | { id: StringRequest, name: 'Sesame', color: 'yellow' }]},
     "Image": FilesPropertyItemObjectResponse,
     "Category": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'Appetizer', color: 'yellow' } | { id: StringRequest, name: 'Main Course', color: 'red' } | { id: StringRequest, name: 'Dessert', color: 'pink' } | { id: StringRequest, name: 'Beverage', color: 'blue' } | { id: StringRequest, name: 'Breakfast', color: 'orange' } | { id: StringRequest, name: 'Lunch', color: 'green' } | { id: StringRequest, name: 'Dinner', color: 'purple' } | { id: StringRequest, name: 'Sides', color: 'brown' }},
-    "Name": TitlePropertyItemObjectResponse
+    "Name": TitlePropertyItemObjectResponse,
+    "LoyverseID": RichTextPropertyItemObjectResponse
   }
 }
 
@@ -87,8 +88,9 @@ type MenuItemsCategoryPropertyFilter =
   | ExistencePropertyFilter      
 
 type MenuItemsNamePropertyFilter = TextPropertyFilter
+type MenuItemsLoyverseIdPropertyFilter = TextPropertyFilter
 
-export type MenuItemsPropertyFilter = { description: MenuItemsDescriptionPropertyFilter } | { dietaryOptions: MenuItemsDietaryOptionsPropertyFilter } | { cogs: MenuItemsCogsPropertyFilter } | { price: MenuItemsPricePropertyFilter } | { ingridients: MenuItemsIngridientsPropertyFilter } | { allergens: MenuItemsAllergensPropertyFilter } | { image: MenuItemsImagePropertyFilter } | { category: MenuItemsCategoryPropertyFilter } | { name: MenuItemsNamePropertyFilter }
+export type MenuItemsPropertyFilter = { description: MenuItemsDescriptionPropertyFilter } | { dietaryOptions: MenuItemsDietaryOptionsPropertyFilter } | { cogs: MenuItemsCogsPropertyFilter } | { price: MenuItemsPricePropertyFilter } | { ingridients: MenuItemsIngridientsPropertyFilter } | { allergens: MenuItemsAllergensPropertyFilter } | { image: MenuItemsImagePropertyFilter } | { category: MenuItemsCategoryPropertyFilter } | { name: MenuItemsNamePropertyFilter } | { loyverseId: MenuItemsLoyverseIdPropertyFilter }
 
 export type MenuItemsQuery = Omit<QueryDatabaseBodyParameters, 'filter' | 'sorts'> & {
   sorts?: Array<

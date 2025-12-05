@@ -7,6 +7,18 @@
     {
       "name": "Tasks Pre Launch",
       "id": "26ffc77d-b4f3-8071-99dc-ef5139bbb69a"
+    },
+    {
+      "name": "Job Prospects",
+      "id": "505310d2-281e-44f1-9392-034539d209cf"
+    },
+    {
+      "name": "Suppliers",
+      "id": "839a6083-9aaa-4cf7-add0-a8397534726a"
+    },
+    {
+      "name": "Employees",
+      "id": "cf220f8b-4efc-4cae-b7e4-6723c4f5e3e9"
     }
   ],
   "databases": {
@@ -17,7 +29,7 @@
       "properties": {
         "%3AasX": {
           "_name": "Supplier",
-          "_type": "rich_text",
+          "_type": "relation",
           "varName": "supplier",
           "readOnly": false
         },
@@ -273,6 +285,12 @@
           "_name": "Name",
           "_type": "title",
           "varName": "name",
+          "readOnly": false
+        },
+        "%5B%3DN%3E": {
+          "_name": "LoyverseID",
+          "_type": "rich_text",
+          "varName": "loyverseId",
           "readOnly": false
         }
       }

@@ -6,7 +6,7 @@ RichTextItemRequest
 type TypeFromRecord<Obj, Type> = Obj extends Record<string, infer T> ? Extract<T, Type> : never
 
 export type ProcurementPropertiesPatch = {
-  supplier?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
+  supplier?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'relation' }>['relation']
   parentItem?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'relation' }>['relation']
   link?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   trackingNumber?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
@@ -46,23 +46,8 @@ export class ProcurementPatchDTO {
     
     if (props?.supplier !== undefined) {
       this.__data.properties['%3AasX'] = {
-        type: 'rich_text',
-        rich_text: typeof props.supplier === 'string' 
-          ? [{ type: 'text', text: { content: props.supplier } }]
-          : Array.isArray(props.supplier)
-            ? props.supplier
-            : props.supplier === null
-              ? []
-              : [
-                  {
-                    type: 'text',
-                    text: {
-                      content: props.supplier.text,
-                      link: props.supplier?.url ? { url: props.supplier.url } : undefined
-                    },
-                    annotations: props.supplier.annotations
-                  },
-                ]
+        type: 'relation',
+        relation: props.supplier,
       }
     }
 

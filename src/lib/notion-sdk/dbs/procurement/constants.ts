@@ -118,7 +118,7 @@ export const PROCUREMENT_IDS_TO_PROPS = {
   "ak%7BJ": "lastEditedTime"
 } as const
 export const PROCUREMENT_PROPS_TO_TYPES = {
-  "supplier": "rich_text",
+  "supplier": "relation",
   "parentItem": "relation",
   "link": "rich_text",
   "trackingNumber": "rich_text",
