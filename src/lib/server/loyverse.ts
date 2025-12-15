@@ -196,6 +196,12 @@ class LoyverseClient {
     });
   }
 
+  async deleteItem(id: string): Promise<void> {
+    await this.request<void>(`/items/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
   async uploadImage(itemId: string, imageUrl: string): Promise<void> {
     // 1. Fetch the image from the source URL
     const imageResponse = await fetch(imageUrl);
@@ -221,4 +227,3 @@ class LoyverseClient {
 
 
 export const loyverse = new LoyverseClient();
-

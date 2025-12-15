@@ -61,7 +61,7 @@ const toMenuItem = (page: any): MenuItem => {
 		? (getFormulaValue(props[MENU_PROPERTIES.slug]) as string)
 		: '';
 
-	const gallery = getFilesUrls(props[MENU_PROPERTIES.gallery]);
+	const gallery = getFilesUrls(props[MENU_PROPERTIES.gallery], page.id);
 	const sectionValue = getSelectValue(props[MENU_PROPERTIES.section]);
 	const categoryValue = getSelectValue(props[MENU_PROPERTIES.category]) || 'General';
 	const availabilityValue = getSelectValue(props[MENU_PROPERTIES.availabilityWindow]);
@@ -85,7 +85,7 @@ const toMenuItem = (page: any): MenuItem => {
 		availabilityWindow: availabilityValue
 			? (availabilityValue as MenuItem['availabilityWindow'])
 			: undefined,
-		image: getFilesUrls(props[MENU_PROPERTIES.image])[0],
+		image: getFilesUrls(props[MENU_PROPERTIES.image], page.id)[0],
 		gallery: gallery.length > 0 ? gallery : undefined,
 		tags: getMultiSelectValues(props[MENU_PROPERTIES.tags]),
 		order: getNumberValue(props[MENU_PROPERTIES.order]) || 0

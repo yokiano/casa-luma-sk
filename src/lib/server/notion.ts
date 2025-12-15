@@ -166,11 +166,16 @@ export const getUrlValue = (property: any): string => {
 	return '';
 };
 
-export const getFilesUrls = (property: any): string[] => {
+export const getFilesUrls = (property: any, blockId?: string): string[] => {
 	if (isFiles(property)) {
 		return property.files.map(file => {
 			if (file.file) return file.file.url;
-			if (file.external) return file.external.url;
+			if (file.external) {
+				if (blockId) {
+					return `https://www.notion.so/image/${encodeURIComponent(file.external.url)}?table=block&id=${blockId}&cache=v2`;
+				}
+				return file.external.url;
+			}
 			return '';
 		}).filter(Boolean);
 	}

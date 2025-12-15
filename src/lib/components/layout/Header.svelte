@@ -5,7 +5,7 @@
 	let mobileMenuOpen = $state(false);
 </script>
 
-<header class="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b border-border">
+<header class=" bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b border-border">
 	<nav class="container mx-auto px-4 sm:px-6 lg:px-8">
 		<div class="flex h-16 items-center justify-between">
 			<!-- Logo -->

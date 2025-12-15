@@ -205,3 +205,15 @@ export const PAY_AS_YOU_GO: PayAsYouGo[] = [
 	}
 ];
 
+// Replicate Models
+export const REPLICATE_MODELS = {
+	FLUX_SCHNELL: 'black-forest-labs/flux-schnell',
+	IMAGEN_4_FAST: 'google/imagen-4-fast',
+} as const;
+
+export type ReplicateModel = (typeof REPLICATE_MODELS)[keyof typeof REPLICATE_MODELS];
+
+export const REPLICATE_MODEL_LABELS: Record<ReplicateModel, string> = {
+	[REPLICATE_MODELS.FLUX_SCHNELL]: 'Flux Schnell',
+	[REPLICATE_MODELS.IMAGEN_4_FAST]: 'Google Imagen 4 Fast',
+};

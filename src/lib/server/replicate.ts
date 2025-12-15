@@ -1,7 +1,9 @@
 import { REPLICATE_API_KEY } from '$env/static/private';
+import { REPLICATE_MODELS } from '$lib/constants';
 
 const REPLICATE_API_URL = 'https://api.replicate.com/v1';
-const MODEL_VERSION = 'google/imagen-4-fast';
+
+export type ReplicateModel = (typeof REPLICATE_MODELS)[keyof typeof REPLICATE_MODELS];
 
 type PredictionStatus = 'starting' | 'processing' | 'succeeded' | 'failed' | 'canceled';
 
@@ -20,6 +22,7 @@ type PredictionResult = CreatePredictionResponse;
 
 type GenerateImageOptions = {
 	prompt: string;
+	model?: string;
 	aspectRatio?: string;
 	negativePrompt?: string;
 	guidanceScale?: number;
@@ -40,21 +43,40 @@ const getHeaders = () => {
 };
 
 async function createPrediction(options: GenerateImageOptions): Promise<CreatePredictionResponse> {
-	// Using model name format (owner/name:version or owner/name for latest)
-	const requestBody = {
-		version: MODEL_VERSION,
-		input: {
-			prompt: options.prompt,
-			aspect_ratio: options.aspectRatio ?? '16:9',
-			...(options.negativePrompt && { negative_prompt: options.negativePrompt }),
-			...(options.guidanceScale && { guidance_scale: options.guidanceScale }),
-			...(options.seed && { seed: options.seed })
-		}
+	const modelVersion = options.model || REPLICATE_MODELS.IMAGEN_4_FAST;
+	
+	// Different models accept different inputs
+	const input: Record<string, any> = {
+		prompt: options.prompt,
+		aspect_ratio: options.aspectRatio ?? '16:9',
+		...(options.seed && { seed: options.seed })
 	};
 
-	console.log('[Replicate] Creating prediction with:', JSON.stringify(requestBody, null, 2));
+	// Add model-specific parameters
+	if (modelVersion === REPLICATE_MODELS.IMAGEN_4_FAST) {
+		if (options.negativePrompt) input.negative_prompt = options.negativePrompt;
+		if (options.guidanceScale) input.guidance_scale = options.guidanceScale;
+	} else if (modelVersion === REPLICATE_MODELS.FLUX_SCHNELL) {
+		// Flux Schnell doesn't typically use negative_prompt or guidance_scale in the same way 
+		// or might have different parameter names. For now we'll stick to basic prompt + aspect_ratio
+		// which are generally supported or ignored safely.
+		// Note: Flux Schnell usually produces output as webp
+		input.go_fast = true; // Optimization often available on Replicate for Flux
+		input.disable_safety_checker = true;
+	}
 
-	const response = await fetch(`${REPLICATE_API_URL}/predictions`, {
+	// Use the model endpoint to always use the latest version
+	// endpoint: https://api.replicate.com/v1/models/{owner}/{name}/predictions
+	const url = `${REPLICATE_API_URL}/models/${modelVersion}/predictions`;
+	
+	const requestBody = {
+		input
+	};
+
+	console.log(`[Replicate] Creating prediction for ${modelVersion} at ${url}`);
+	console.log('[Replicate] Input:', JSON.stringify(input, null, 2));
+
+	const response = await fetch(url, {
 		method: 'POST',
 		headers: getHeaders(),
 		body: JSON.stringify(requestBody)
@@ -84,11 +106,11 @@ async function getPrediction(url: string): Promise<PredictionResult> {
 	return (await response.json()) as PredictionResult;
 }
 
-export async function generateImagen4Fast(options: GenerateImageOptions) {
+export async function generateImage(options: GenerateImageOptions) {
 	const prediction = await createPrediction(options);
 
 	let current = prediction;
-	const maxAttempts = 20;
+	const maxAttempts = 40; // Increased for potentially slower models
 	let attempt = 0;
 
 	while (
@@ -96,7 +118,7 @@ export async function generateImagen4Fast(options: GenerateImageOptions) {
 		attempt < maxAttempts
 	) {
 		attempt += 1;
-		await sleep(1500);
+		await sleep(2000); // Increased sleep
 		current = await getPrediction(current.urls.get);
 	}
 

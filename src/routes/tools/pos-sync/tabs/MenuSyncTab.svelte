@@ -10,7 +10,18 @@
       <h2 class="text-xl font-bold">Menu Items</h2>
       <p class="text-gray-500 text-sm">Sync Notion Menu Items to Loyverse</p>
     </div>
-    <div class="flex gap-2">
+    <div class="flex items-center gap-4">
+      <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none">
+        <input 
+          type="checkbox" 
+          bind:checked={state.deleteOrphans} 
+          class="rounded border-gray-300 text-black focus:ring-black"
+        />
+        Delete items not in Notion
+      </label>
+      
+      <div class="h-6 w-px bg-gray-300"></div>
+
       <button 
         class="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded text-sm font-medium transition-colors"
         onclick={() => state.fetchStatus()}
@@ -41,6 +52,7 @@
         <li>Created: {state.lastReport.created}</li>
         <li>Updated: {state.lastReport.updated}</li>
         <li>Linked: {state.lastReport.linked}</li>
+        <li>Deleted: {state.lastReport.deleted}</li>
       </ul>
       {#if state.lastReport.errors.length > 0}
         <div class="mt-2 text-red-600">
@@ -98,6 +110,8 @@
                   <span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">Modified</span>
                 {:else if item.status === 'LINKED_ONLY'}
                   <span class="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-medium">Linking</span>
+                {:else if item.status === 'NOT_IN_NOTION'}
+                  <span class="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-medium">Orphan</span>
                 {:else}
                   <span class="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs font-medium">{item.status}</span>
                 {/if}
@@ -111,13 +125,19 @@
                   </ul>
                 {:else if item.status === 'NOT_IN_LOYVERSE'}
                   <span class="text-xs">Will be created in Loyverse</span>
+                {:else if item.status === 'NOT_IN_NOTION'}
+                  {#if state.deleteOrphans}
+                    <span class="text-xs text-red-600 font-medium">Will be deleted</span>
+                  {:else}
+                     <span class="text-xs">Enable delete option to remove</span>
+                  {/if}
                 {/if}
               </td>
               <td class="p-4 text-right">
-                {#if item.status !== 'SYNCED'}
+                {#if item.status !== 'SYNCED' && item.status !== 'NOT_IN_NOTION'}
                   <button 
                     class="text-blue-600 hover:text-blue-800 text-xs font-medium"
-                    onclick={() => state.syncSelected([item.notionId])}
+                    onclick={() => item.notionId && state.syncSelected([item.notionId])}
                     disabled={state.syncing}
                   >
                     Sync
@@ -131,4 +151,3 @@
     {/if}
   </div>
 </div>
-

@@ -694,6 +694,201 @@
           "readOnly": true
         }
       }
+    },
+    "2139dd55-8a06-46d3-9346-472f77c0e89a": {
+      "_name": "Signage",
+      "varName": "signage",
+      "pathName": "signage",
+      "properties": {
+        "%40Gj%7C": {
+          "_name": "Location",
+          "_type": "select",
+          "varName": "location",
+          "readOnly": false
+        },
+        "%40WZI": {
+          "_name": "Type",
+          "_type": "select",
+          "varName": "type",
+          "readOnly": false
+        },
+        "CsT%5C": {
+          "_name": "Copy",
+          "_type": "rich_text",
+          "varName": "copy",
+          "readOnly": false
+        },
+        "Q%3FI%5D": {
+          "_name": "Sign ID",
+          "_type": "rich_text",
+          "varName": "signId",
+          "readOnly": false
+        },
+        "U%3A%3F%3A": {
+          "_name": "Status",
+          "_type": "status",
+          "varName": "status",
+          "readOnly": false
+        },
+        "title": {
+          "_name": "Name",
+          "_type": "title",
+          "varName": "name",
+          "readOnly": false
+        }
+      }
+    },
+    "7eedde78-abd9-46a5-815f-0320a2442521": {
+      "_name": "Pay-for-Play Items",
+      "varName": "payForPlayItems",
+      "pathName": "pay-for-play-items",
+      "properties": {
+        "%3Bh~%60": {
+          "_name": "Stock",
+          "_type": "number",
+          "varName": "stock",
+          "readOnly": false
+        },
+        "KX%5CR": {
+          "_name": "Price",
+          "_type": "number",
+          "varName": "price",
+          "readOnly": false
+        },
+        "%5EF%60d": {
+          "_name": "Category",
+          "_type": "select",
+          "varName": "category",
+          "readOnly": false
+        },
+        "bZUB": {
+          "_name": "COGS",
+          "_type": "number",
+          "varName": "cogs",
+          "readOnly": false
+        },
+        "dN%3DU": {
+          "_name": "Description",
+          "_type": "rich_text",
+          "varName": "description",
+          "readOnly": false
+        },
+        "m%3CbL": {
+          "_name": "Supplier",
+          "_type": "relation",
+          "varName": "supplier",
+          "readOnly": false
+        },
+        "yBrb": {
+          "_name": "Image",
+          "_type": "files",
+          "varName": "image",
+          "readOnly": false
+        },
+        "title": {
+          "_name": "Name",
+          "_type": "title",
+          "varName": "name",
+          "readOnly": false
+        },
+        "LK%3EH": {
+          "_name": "Created time",
+          "_type": "created_time",
+          "varName": "createdTime",
+          "readOnly": true
+        },
+        "bH%3E~": {
+          "_name": "Last edited time",
+          "_type": "last_edited_time",
+          "varName": "lastEditedTime",
+          "readOnly": true
+        },
+        "gZPb": {
+          "_name": "Last edited by",
+          "_type": "last_edited_by",
+          "varName": "lastEditedBy",
+          "readOnly": true
+        },
+        "zkV%7C": {
+          "_name": "Created by",
+          "_type": "created_by",
+          "varName": "createdBy",
+          "readOnly": true
+        }
+      }
+    },
+    "6324a9fa-968d-4e71-9608-c7c1c6a64c93": {
+      "_name": "Open Play POS Items",
+      "varName": "openPlayPosItems",
+      "pathName": "open-play-pos-items",
+      "properties": {
+        "%3BTO~": {
+          "_name": "Highlight",
+          "_type": "checkbox",
+          "varName": "highlight",
+          "readOnly": false
+        },
+        "%3C%5DT%3A": {
+          "_name": "Icon Char",
+          "_type": "rich_text",
+          "varName": "iconChar",
+          "readOnly": false
+        },
+        "RWeU": {
+          "_name": "Food Discount",
+          "_type": "rich_text",
+          "varName": "foodDiscount",
+          "readOnly": false
+        },
+        "Y%3E%7Cv": {
+          "_name": "ID",
+          "_type": "rich_text",
+          "varName": "id",
+          "readOnly": false
+        },
+        "sQCI": {
+          "_name": "Workshops Included",
+          "_type": "rich_text",
+          "varName": "workshopsIncluded",
+          "readOnly": false
+        },
+        "tgPF": {
+          "_name": "Duration",
+          "_type": "rich_text",
+          "varName": "duration",
+          "readOnly": false
+        },
+        "vzoC": {
+          "_name": "Perks",
+          "_type": "multi_select",
+          "varName": "perks",
+          "readOnly": false
+        },
+        "xUkM": {
+          "_name": "Access",
+          "_type": "rich_text",
+          "varName": "access",
+          "readOnly": false
+        },
+        "%7B%5BoE": {
+          "_name": "Price (Baht)",
+          "_type": "number",
+          "varName": "priceBaht",
+          "readOnly": false
+        },
+        "title": {
+          "_name": "Name",
+          "_type": "title",
+          "varName": "name",
+          "readOnly": false
+        },
+        "O%3D%5Dz": {
+          "_name": "Category",
+          "_type": "select",
+          "varName": "category",
+          "readOnly": false
+        }
+      }
     }
   }
 }

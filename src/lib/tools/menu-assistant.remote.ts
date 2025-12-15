@@ -1,11 +1,13 @@
 import { command } from '$app/server';
 import * as v from 'valibot';
 
-import { generateImagen4Fast } from '$lib/server/replicate';
+import { REPLICATE_MODELS } from '$lib/constants';
+import { generateImage } from '$lib/server/replicate';
 import { updateMenuItemVisuals } from '$lib/server/notion/menu';
 
 const GenerateInputSchema = v.object({
 	prompt: v.pipe(v.string(), v.trim(), v.minLength(8, 'Prompt must be at least 8 characters')),
+	model: v.optional(v.string()),
 	aspectRatio: v.optional(v.pipe(v.string(), v.trim())),
 	negativePrompt: v.optional(v.pipe(v.string(), v.trim(), v.maxLength(400))),
 	guidanceScale: v.optional(v.number('Guidance scale must be a number')),
@@ -13,8 +15,9 @@ const GenerateInputSchema = v.object({
 });
 
 export const generateMenuImage = command(GenerateInputSchema, async (input) => {
-	const result = await generateImagen4Fast({
+	const result = await generateImage({
 		prompt: input.prompt,
+		model: input.model || REPLICATE_MODELS.IMAGEN_4_FAST,
 		aspectRatio: input.aspectRatio,
 		negativePrompt: input.negativePrompt,
 		guidanceScale: input.guidanceScale,

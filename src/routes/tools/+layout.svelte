@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
   import { page } from '$app/state';
+  import { Toaster } from "$lib/components/ui/sonner";
 
   const tabs = [
     { href: '/tools/procurement-import', label: 'Procurement Import' },
@@ -16,6 +17,8 @@
     return currentPath === href || currentPath.startsWith(`${href}/`);
   };
 </script>
+
+<Toaster />
 
 <div class="min-h-screen bg-[#f6f1eb] text-[#2c2925]">
   <header class="border-b border-[#d3c5b8] bg-white/70 backdrop-blur">

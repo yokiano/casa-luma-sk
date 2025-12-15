@@ -6,12 +6,16 @@ export class MenuSyncState {
   syncing = $state(false);
   lastReport = $state<SyncReport | null>(null);
   error = $state<string | null>(null);
+  
+  // Options
+  deleteOrphans = $state(false);
 
   // Computed: Items that need attention
   itemsToSync = $derived(this.items.filter(i => 
     i.status === 'NOT_IN_LOYVERSE' || 
     i.status === 'MODIFIED' || 
-    i.status === 'LINKED_ONLY'
+    i.status === 'LINKED_ONLY' ||
+    (this.deleteOrphans && i.status === 'NOT_IN_NOTION')
   ));
 
   constructor() {
@@ -37,7 +41,9 @@ export class MenuSyncState {
     this.error = null;
     try {
       // Sync everything
-      this.lastReport = await syncMenuItems({});
+      this.lastReport = await syncMenuItems({ 
+        deleteOrphans: this.deleteOrphans 
+      });
       // Refresh status after sync
       await this.fetchStatus();
     } catch (e: any) {
@@ -53,6 +59,12 @@ export class MenuSyncState {
     this.lastReport = null;
     this.error = null;
     try {
+      // Note: We intentionally don't pass deleteOrphans here as this is a partial sync
+      // unless we want to support deleting specific orphaned items which would require passing their IDs somehow?
+      // But itemIds are Notion IDs. Orphans don't have Notion IDs.
+      // So syncSelected can't really target orphans with the current API design unless we change input to accept Loyverse IDs too.
+      // For now, syncSelected only updates Notion -> Loyverse.
+      
       this.lastReport = await syncMenuItems({ itemIds });
       await this.fetchStatus();
     } catch (e: any) {
@@ -63,4 +75,3 @@ export class MenuSyncState {
     }
   }
 }
-

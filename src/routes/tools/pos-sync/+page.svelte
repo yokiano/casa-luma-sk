@@ -3,9 +3,9 @@
 
   const tabs = [
     { id: 'menu', label: 'Menu Items', component: MenuSyncTab },
-    { id: 'procurement', label: 'Procurement', component: null },
-    { id: 'events', label: 'Events', component: null },
-    { id: 'waitlist', label: 'Waitlist', component: null }
+    { id: 'open-play', label: 'Open Play / Memberships', component: null },
+    { id: 'pay-for-play', label: 'Pay for Play', component: null },
+    { id: 'store-items', label: 'Store Items', component: null }
   ];
 
   let activeTabId = $state('menu');
