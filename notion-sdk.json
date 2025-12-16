@@ -15,10 +15,6 @@
     {
       "name": "Suppliers",
       "id": "839a6083-9aaa-4cf7-add0-a8397534726a"
-    },
-    {
-      "name": "Employees",
-      "id": "cf220f8b-4efc-4cae-b7e4-6723c4f5e3e9"
     }
   ],
   "databases": {
@@ -886,6 +882,187 @@
           "_name": "Category",
           "_type": "select",
           "varName": "category",
+          "readOnly": false
+        }
+      }
+    },
+    "cf220f8b-4efc-4cae-b7e4-6723c4f5e3e9": {
+      "_name": "Employees",
+      "varName": "employees",
+      "pathName": "employees",
+      "properties": {
+        "%3CK%5BF": {
+          "_name": "Visa Expiry",
+          "_type": "date",
+          "varName": "visaExpiry",
+          "readOnly": false
+        },
+        "%3D%3EfR": {
+          "_name": "Work Permit Expiry",
+          "_type": "date",
+          "varName": "workPermitExpiry",
+          "readOnly": false
+        },
+        "%3FOvv": {
+          "_name": "Photo",
+          "_type": "files",
+          "varName": "photo",
+          "readOnly": false
+        },
+        "%3FdnC": {
+          "_name": "Salary (THB)",
+          "_type": "number",
+          "varName": "salaryThb",
+          "readOnly": false
+        },
+        "B%5C%7BK": {
+          "_name": "Languages",
+          "_type": "multi_select",
+          "varName": "languages",
+          "readOnly": false
+        },
+        "Bop%3E": {
+          "_name": "Employment Type",
+          "_type": "select",
+          "varName": "employmentType",
+          "readOnly": false
+        },
+        "EIXp": {
+          "_name": "Emergency Contact",
+          "_type": "rich_text",
+          "varName": "emergencyContact",
+          "readOnly": false
+        },
+        "HpjN": {
+          "_name": "Department",
+          "_type": "select",
+          "varName": "department",
+          "readOnly": false
+        },
+        "KpQj": {
+          "_name": "End Date",
+          "_type": "date",
+          "varName": "endDate",
+          "readOnly": false
+        },
+        "MUL%3E": {
+          "_name": "Nationality",
+          "_type": "select",
+          "varName": "nationality",
+          "readOnly": false
+        },
+        "PPRm": {
+          "_name": "WhatsApp/LINE",
+          "_type": "rich_text",
+          "varName": "whatsAppLine",
+          "readOnly": false
+        },
+        "QVjs": {
+          "_name": "Work Permit Number",
+          "_type": "rich_text",
+          "varName": "workPermitNumber",
+          "readOnly": false
+        },
+        "Xtg%3C": {
+          "_name": "Email",
+          "_type": "email",
+          "varName": "email",
+          "readOnly": false
+        },
+        "Z%60%60%5E": {
+          "_name": "Payment Frequency",
+          "_type": "select",
+          "varName": "paymentFrequency",
+          "readOnly": false
+        },
+        "crRF": {
+          "_name": "Skills",
+          "_type": "rich_text",
+          "varName": "skills",
+          "readOnly": false
+        },
+        "dNc~": {
+          "_name": "Full Name",
+          "_type": "rich_text",
+          "varName": "fullName",
+          "readOnly": false
+        },
+        "deEH": {
+          "_name": "Documents",
+          "_type": "files",
+          "varName": "documents",
+          "readOnly": false
+        },
+        "dw%7Bq": {
+          "_name": "Address",
+          "_type": "rich_text",
+          "varName": "address",
+          "readOnly": false
+        },
+        "gdZF": {
+          "_name": "Notes",
+          "_type": "rich_text",
+          "varName": "notes",
+          "readOnly": false
+        },
+        "jNcC": {
+          "_name": "Bank Account Details",
+          "_type": "rich_text",
+          "varName": "bankAccountDetails",
+          "readOnly": false
+        },
+        "lJ%7CL": {
+          "_name": "Phone",
+          "_type": "phone_number",
+          "varName": "phone",
+          "readOnly": false
+        },
+        "o%5DfK": {
+          "_name": "Position",
+          "_type": "multi_select",
+          "varName": "position",
+          "readOnly": false
+        },
+        "owDI": {
+          "_name": "Bio",
+          "_type": "rich_text",
+          "varName": "bio",
+          "readOnly": false
+        },
+        "pi%5Dw": {
+          "_name": "Hometown",
+          "_type": "rich_text",
+          "varName": "hometown",
+          "readOnly": false
+        },
+        "r%7BrR": {
+          "_name": "Emergency Phone",
+          "_type": "rich_text",
+          "varName": "emergencyPhone",
+          "readOnly": false
+        },
+        "vCD%5E": {
+          "_name": "Employment Status",
+          "_type": "status",
+          "varName": "employmentStatus",
+          "readOnly": false
+        },
+        "wUr%5B": {
+          "_name": "Reports To",
+          "_type": "people",
+          "varName": "reportsTo",
+          "readOnly": false
+        },
+        "zLrJ": {
+          "_name": "Start Date",
+          "_type": "date",
+          "varName": "startDate",
+          "readOnly": false
+        },
+        "title": {
+          "_name": "Nickname",
+          "_type": "title",
+          "varName": "nickname",
           "readOnly": false
         }
       }
