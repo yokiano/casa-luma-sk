@@ -71,6 +71,8 @@ export class MenuItemsPropertiesResponseDTO {
       category: this.__props['Category'],
       name: this.__props['Name'],
       loyverseId: this.__props['LoyverseID'],
+      archived: this.__props['Archived'],
+      grandCategory: this.__props['Grand Category'],
     }
   }
 
@@ -136,5 +138,13 @@ export class MenuItemsPropertiesResponseDTO {
       links: this.__props['LoyverseID']?.rich_text ? this.__props['LoyverseID'].rich_text.filter((item) => item.href?.length).map((item) => item.href) : [],
       rich_text: this.__props['LoyverseID']?.rich_text,
     }
+  }
+
+  get archived() {
+    return this.__props['Archived']?.checkbox
+  }
+
+  get grandCategory() {
+    return this.__props['Grand Category']?.select
   }
 }

@@ -16,6 +16,7 @@ export interface MenuItem {
 	name: string;
 	slug: string;
 	section: string;
+	grandCategory: string;
 	category: string;
 	description: string;
 	price: number;
@@ -25,6 +26,7 @@ export interface MenuItem {
 	allergens: string[];
 	highlight: boolean;
 	isAvailable: boolean;
+	archived: boolean;
 	availabilityWindow?: MenuAvailability;
 	image?: string;
 	gallery?: string[];
@@ -45,7 +47,14 @@ export interface StructuredMenuSection extends MenuSection {
 	items: MenuItem[];
 }
 
+export interface MenuGrandCategory {
+	id: string;
+	name: string;
+	sections: StructuredMenuSection[];
+}
+
 export interface MenuSummary {
+	grandCategories: MenuGrandCategory[];
 	sections: StructuredMenuSection[];
 	highlights: MenuItem[];
 	tags: string[];

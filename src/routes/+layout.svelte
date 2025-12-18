@@ -8,6 +8,7 @@
 	let { children } = $props();
 
 	const isHomePage = $derived($page.url.pathname === '/');
+	const isMenuPrintPage = $derived($page.url.pathname.startsWith('/menu/print'));
 </script>
 
 <svelte:head>
@@ -15,13 +16,13 @@
 </svelte:head>
 
 <div class="flex flex-col min-h-screen">
-	{#if !isHomePage}
+	{#if !isHomePage && !isMenuPrintPage}
 		<Header />
 	{/if}
 	<main class="flex-1">
 		{@render children?.()}
 	</main>
-	{#if !isHomePage}
+	{#if !isHomePage && !isMenuPrintPage}
 		<Footer />
 	{/if}
 </div>

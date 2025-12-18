@@ -4,8 +4,8 @@
 	import SectionHero from '$lib/components/layout/SectionHero.svelte';
 	import MenuFilters from '$lib/components/menu/MenuFilters.svelte';
 	import MenuHighlights from '$lib/components/menu/MenuHighlights.svelte';
-	import MenuSection from '$lib/components/menu/MenuSection.svelte';
 	import MenuDietaryLegend from '$lib/components/menu/MenuDietaryLegend.svelte';
+	import MenuItemCard from '$lib/components/menu/MenuItemCard.svelte';
 
 	const SCROLL_OFFSET = 160;
 	const ACTIVE_OFFSET = 200;
@@ -13,8 +13,20 @@
 	let menu = $state(await getMenuSummary());
 	let activeSection = $state('All');
 
-	const allSections = $derived(menu.sections.map((section) => section.name));
-	const visibleSections = $derived(menu.sections);
+	const visibleGrandCategories = $derived(
+		menu.grandCategories
+			.map((grand) => ({
+				...grand,
+				sections: grand.sections
+					.map((section) => ({ ...section, items: section.items.filter((item) => !item.archived) }))
+					.filter((section) => section.items.length > 0)
+			}))
+			.filter((grand) => grand.sections.length > 0)
+	);
+
+	const visibleSections = $derived(visibleGrandCategories.flatMap((grand) => grand.sections));
+	const allSections = $derived(visibleSections.map((section) => section.name));
+	const highlights = $derived(menu.highlights.filter((item) => !item.archived));
 
 	function handleSection(sectionName: string) {
 		activeSection = sectionName;
@@ -83,13 +95,45 @@
 
 		<MenuFilters sections={['All', ...allSections]} activeSection={activeSection} onSectionChange={handleSection} />
 
-		<MenuHighlights items={menu.highlights} />
+		<MenuHighlights items={highlights} />
 
 		<div class="sections">
-			{#each visibleSections as section}
-				<div data-menu-section={section.name}>
-					<MenuSection section={section} />
-				</div>
+			{#each visibleGrandCategories as grand}
+				<section class="grand-page" aria-label={`${grand.name} menu`}>
+					<header class="grand-page__header">
+						<span class="grand-page__eyebrow">Grand category</span>
+						<h2 class="grand-page__title">{grand.name}</h2>
+					</header>
+
+					<div class="grand-page__sections">
+						{#each grand.sections as section, sectionIndex}
+							{@const accentFallback = ['#DFBC69', '#A8C3A0', '#E07A5F', '#8E8FB5', '#C7A4A1'][sectionIndex % 5]}
+							{@const accent = section.accentColor || accentFallback}
+							{@const visibleItems = section.items.filter((item) => item.isAvailable)}
+
+							<section class="grand-page__section" data-menu-section={section.name} style={`--accent:${accent};`}>
+								<header class="grand-page__section-header">
+									<h3 class="grand-page__section-title">{section.name}</h3>
+									{#if section.intro}
+										<p class="grand-page__section-intro">{section.intro}</p>
+									{/if}
+								</header>
+
+								{#if visibleItems.length === 0}
+									<div class="grand-page__empty">
+										<span>Currently resting. New dishes coming soon.</span>
+									</div>
+								{:else}
+									<div class="grand-page__grid">
+										{#each visibleItems as item, index}
+											<MenuItemCard {item} accentColor={accent} index={index} />
+										{/each}
+									</div>
+								{/if}
+							</section>
+						{/each}
+					</div>
+				</section>
 			{/each}
 		</div>
 	</div>
@@ -146,6 +190,118 @@
 	.sections {
 		display: grid;
 		gap: clamp(2rem, 5vw, 3.75rem);
+	}
+
+	.grand-page {
+		display: grid;
+		gap: 2.75rem;
+		padding: clamp(2.75rem, 5vw, 4rem) clamp(1.4rem, 4vw, 3.25rem);
+		border-radius: 56px;
+		background: rgba(255, 255, 255, 0.82);
+		backdrop-filter: blur(12px);
+		box-shadow: 0 60px 140px -100px rgba(51, 51, 51, 0.55);
+		border: 1px solid rgba(255, 255, 255, 0.65);
+		overflow: hidden;
+		position: relative;
+	}
+
+	.grand-page::before {
+		content: '';
+		position: absolute;
+		inset: -20% -20% auto -20%;
+		height: 55%;
+		background: radial-gradient(circle at top left, rgba(223, 188, 105, 0.18), transparent 60%);
+		z-index: 0;
+	}
+
+	.grand-page__header {
+		position: relative;
+		z-index: 1;
+		display: grid;
+		gap: 0.75rem;
+	}
+
+	.grand-page__eyebrow {
+		font-size: 0.8rem;
+		letter-spacing: 0.4em;
+		text-transform: uppercase;
+		color: rgba(51, 51, 51, 0.55);
+	}
+
+	.grand-page__title {
+		font-size: clamp(2.4rem, 6vw, 3.8rem);
+		font-weight: 250;
+		letter-spacing: -0.03em;
+		color: rgba(51, 51, 51, 0.9);
+	}
+
+	.grand-page__sections {
+		position: relative;
+		z-index: 1;
+		display: grid;
+		gap: clamp(2.25rem, 5vw, 4rem);
+	}
+
+	.grand-page__section {
+		position: relative;
+		display: grid;
+		gap: 2rem;
+		padding: clamp(2.2rem, 4vw, 3.1rem) clamp(1.1rem, 2.5vw, 2.2rem);
+		border-radius: 44px;
+		background: rgba(255, 255, 255, 0.75);
+		border: 1px solid rgba(255, 255, 255, 0.55);
+		box-shadow: 0 35px 80px -70px rgba(51, 51, 51, 0.5);
+		overflow: hidden;
+	}
+
+	.grand-page__section::before {
+		content: '';
+		position: absolute;
+		top: 10%;
+		right: -8%;
+		width: clamp(220px, 34vw, 380px);
+		height: clamp(220px, 34vw, 380px);
+		background: radial-gradient(circle at top right, color-mix(in srgb, var(--accent) 35%, transparent), transparent 72%);
+		z-index: 0;
+	}
+
+	.grand-page__section-header {
+		position: relative;
+		z-index: 1;
+		display: grid;
+		gap: 1rem;
+	}
+
+	.grand-page__section-title {
+		font-size: clamp(1.9rem, 5vw, 2.7rem);
+		font-weight: 300;
+		letter-spacing: -0.02em;
+		color: rgba(51, 51, 51, 0.9);
+	}
+
+	.grand-page__section-intro {
+		font-size: 1.05rem;
+		line-height: 1.85;
+		color: rgba(51, 51, 51, 0.68);
+		max-width: 60ch;
+	}
+
+	.grand-page__grid {
+		position: relative;
+		z-index: 1;
+		display: grid;
+		gap: 2rem;
+	}
+
+	.grand-page__empty {
+		position: relative;
+		z-index: 1;
+		padding: 2.25rem;
+		border-radius: 32px;
+		background: rgba(51, 51, 51, 0.04);
+		color: rgba(51, 51, 51, 0.6);
+		font-size: 1rem;
+		text-align: center;
 	}
 
 	@media (max-width: 768px) {

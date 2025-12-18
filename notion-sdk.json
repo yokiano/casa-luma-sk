@@ -288,6 +288,18 @@
           "_type": "rich_text",
           "varName": "loyverseId",
           "readOnly": false
+        },
+        "Tp%3AJ": {
+          "_name": "Archived",
+          "_type": "checkbox",
+          "varName": "archived",
+          "readOnly": false
+        },
+        "Bfwb": {
+          "_name": "Grand Category",
+          "_type": "select",
+          "varName": "grandCategory",
+          "readOnly": false
         }
       }
     },

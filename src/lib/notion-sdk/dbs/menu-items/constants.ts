@@ -49,6 +49,12 @@ export const MENU_ITEMS_PROP_VALUES = {
   "Kids Small Plates",
   "Kids Beverage"
 ] as const,
+"grandCategory": [
+  "Food",
+  "Drinks",
+  "Kids",
+  "Desserts"
+] as const,
 }
 
 export const MENU_ITEMS_PROPS_TO_IDS = {
@@ -61,7 +67,9 @@ export const MENU_ITEMS_PROPS_TO_IDS = {
   "image": "t%3DM%40",
   "category": "z%40vA",
   "name": "title",
-  "loyverseId": "%5B%3DN%3E"
+  "loyverseId": "%5B%3DN%3E",
+  "archived": "Tp%3AJ",
+  "grandCategory": "Bfwb"
 } as const
 export const MENU_ITEMS_IDS_TO_PROPS = {
   "%40w%3Bd": "description",
@@ -73,7 +81,9 @@ export const MENU_ITEMS_IDS_TO_PROPS = {
   "t%3DM%40": "image",
   "z%40vA": "category",
   "title": "name",
-  "%5B%3DN%3E": "loyverseId"
+  "%5B%3DN%3E": "loyverseId",
+  "Tp%3AJ": "archived",
+  "Bfwb": "grandCategory"
 } as const
 export const MENU_ITEMS_PROPS_TO_TYPES = {
   "description": "rich_text",
@@ -85,7 +95,9 @@ export const MENU_ITEMS_PROPS_TO_TYPES = {
   "image": "files",
   "category": "select",
   "name": "title",
-  "loyverseId": "rich_text"
+  "loyverseId": "rich_text",
+  "archived": "checkbox",
+  "grandCategory": "select"
 } as const
 
   export type MenuItemsDTOProperties = keyof typeof MENU_ITEMS_PROPS_TO_IDS

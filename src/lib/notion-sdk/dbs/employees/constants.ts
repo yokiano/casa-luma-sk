@@ -14,10 +14,10 @@ export const EMPLOYEES_PROP_VALUES = {
   "Freelance"
 ] as const,
 "department": [
+  "Maintenance",
   "Café",
   "Open Play",
   "Marketing",
-  "Maintenance",
   "Management"
 ] as const,
 "nationality": [

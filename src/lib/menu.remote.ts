@@ -10,7 +10,7 @@ import {
 	getTextContent,
 	getUrlValue
 } from '$lib/server/notion';
-import type { MenuItem, MenuSummary, StructuredMenuSection } from '$lib/types/menu';
+import type { MenuGrandCategory, MenuItem, MenuSummary, StructuredMenuSection } from '$lib/types/menu';
 import * as v from 'valibot';
 
 const MENU_PROPERTIES = {
@@ -18,6 +18,7 @@ const MENU_PROPERTIES = {
 	slug: 'Slug',
 	section: 'Section',
 	category: 'Category',
+	grandCategory: 'Grand Category',
 	description: 'Description',
 	price: 'Price',
 	secondaryPrice: 'Secondary Price',
@@ -26,6 +27,7 @@ const MENU_PROPERTIES = {
 	allergens: 'Allergens',
 	highlight: 'Highlight',
 	available: 'Available',
+	archived: 'Archived',
 	availabilityWindow: 'Availability',
 	image: 'Image',
 	gallery: 'Gallery',
@@ -64,6 +66,7 @@ const toMenuItem = (page: any): MenuItem => {
 	const gallery = getFilesUrls(props[MENU_PROPERTIES.gallery], page.id);
 	const sectionValue = getSelectValue(props[MENU_PROPERTIES.section]);
 	const categoryValue = getSelectValue(props[MENU_PROPERTIES.category]) || 'General';
+	const grandCategoryValue = getSelectValue(props[MENU_PROPERTIES.grandCategory]) || 'Menu';
 	const availabilityValue = getSelectValue(props[MENU_PROPERTIES.availabilityWindow]);
 
 	return {
@@ -71,17 +74,19 @@ const toMenuItem = (page: any): MenuItem => {
 		name: getTextContent(props[MENU_PROPERTIES.name]) || 'Untitled Item',
 		slug: slugCandidate || page.id,
 		section: sectionValue || categoryValue,
+		grandCategory: grandCategoryValue,
 		category: categoryValue,
 		description: getTextContent(props[MENU_PROPERTIES.description]),
 		price,
 		secondaryPrice: secondPrice > 0 ? secondPrice : undefined,
-	currency: getCurrency(price, getSelectValue(props[MENU_PROPERTIES.currency])),
+		currency: getCurrency(price, getSelectValue(props[MENU_PROPERTIES.currency])),
 		dietaryTags: getMultiSelectValues(props[MENU_PROPERTIES.dietary]) as MenuItem['dietaryTags'],
 		allergens: getMultiSelectValues(props[MENU_PROPERTIES.allergens]),
 		highlight: getCheckboxValue(props[MENU_PROPERTIES.highlight]),
 		isAvailable: props[MENU_PROPERTIES.available]
 			? getCheckboxValue(props[MENU_PROPERTIES.available])
 			: true,
+		archived: getCheckboxValue(props[MENU_PROPERTIES.archived]),
 		availabilityWindow: availabilityValue
 			? (availabilityValue as MenuItem['availabilityWindow'])
 			: undefined,
@@ -111,6 +116,18 @@ const sectionMetadata = (sections: Map<string, StructuredMenuSection>, item: Men
 	return sections.get(name)!;
 };
 
+const grandCategoryMetadata = (grandCategories: Map<string, MenuGrandCategory>, item: MenuItem) => {
+	const name = item.grandCategory || 'Menu';
+	if (!grandCategories.has(name)) {
+		grandCategories.set(name, {
+			id: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+			name,
+			sections: []
+		});
+	}
+	return grandCategories.get(name)!;
+};
+
 const sortItems = (items: MenuItem[]) =>
 	items
 		.slice()
@@ -127,8 +144,27 @@ const sortSections = (sections: StructuredMenuSection[]) =>
 			return a.name.localeCompare(b.name);
 		});
 
+const GRAND_CATEGORY_ORDER: Record<string, number> = {
+	Food: 10,
+	Drinks: 20,
+	Kids: 30,
+	Desserts: 40
+};
+
+const sortGrandCategories = (categories: MenuGrandCategory[]) =>
+	categories
+		.slice()
+		.sort((a, b) => {
+			const aOrder = GRAND_CATEGORY_ORDER[a.name] ?? 999;
+			const bOrder = GRAND_CATEGORY_ORDER[b.name] ?? 999;
+			if (aOrder !== bOrder) return aOrder - bOrder;
+			return a.name.localeCompare(b.name);
+		});
+
 const buildSummary = (pages: any[]): MenuSummary => {
 	const sections = new Map<string, StructuredMenuSection>();
+	const grandCategories = new Map<string, MenuGrandCategory>();
+	const sectionsByGrand = new Map<string, Map<string, StructuredMenuSection>>();
 	const highlights: MenuItem[] = [];
 	const tags = new Set<string>();
 	const dietary = new Set<string>();
@@ -136,8 +172,18 @@ const buildSummary = (pages: any[]): MenuSummary => {
 	for (const page of pages) {
 		const props = page.properties ?? {};
 		const item = toMenuItem(page);
-	const section = sectionMetadata(sections, item, props);
-	section.items.push(item);
+		if (item.archived) continue;
+		const section = sectionMetadata(sections, item, props);
+		section.items.push(item);
+
+		const grandCategory = grandCategoryMetadata(grandCategories, item);
+		if (!sectionsByGrand.has(grandCategory.name)) {
+			sectionsByGrand.set(grandCategory.name, new Map<string, StructuredMenuSection>());
+		}
+		const grandSections = sectionsByGrand.get(grandCategory.name)!;
+		const grandSection = sectionMetadata(grandSections, item, props);
+		grandSection.items.push(item);
+
 		if (item.highlight) {
 			highlights.push(item);
 		}
@@ -152,7 +198,24 @@ const buildSummary = (pages: any[]): MenuSummary => {
 		}))
 	);
 
+	const structuredGrandCategories = sortGrandCategories(
+		Array.from(grandCategories.values()).map((category) => {
+			const grandSections = sectionsByGrand.get(category.name) ?? new Map<string, StructuredMenuSection>();
+			const sections = sortSections(
+				Array.from(grandSections.values()).map((section) => ({
+					...section,
+					items: sortItems(section.items)
+				}))
+			);
+			return {
+				...category,
+				sections
+			};
+		})
+	);
+
 	return {
+		grandCategories: structuredGrandCategories,
 		sections: structuredSections,
 		highlights: sortItems(highlights),
 		tags: Array.from(tags).sort(),
@@ -164,6 +227,10 @@ const queryMenuPages = async () => {
 	ensureMenuConfigured();
 	const response = await notion.dataSources.query({
 		data_source_id: NOTION_DBS.MENU,
+		filter: {
+			property: MENU_PROPERTIES.archived,
+			checkbox: { equals: false }
+		},
 		sorts: [{ property: MENU_PROPERTIES.name, direction: 'ascending' }]
 	});
 	return response.results ?? [];
