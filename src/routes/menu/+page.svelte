@@ -59,7 +59,6 @@
 		content="Explore Casa Luma's seasonal menu of nourishing plates, family-friendly favorites, specialty drinks, and sweet treats crafted on Koh Phangan."
 	/>
 </svelte:head>
-
 <SectionHero
 	titleBlack="Café"
 	titleColor="Menu"

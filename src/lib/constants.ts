@@ -73,7 +73,7 @@ export const SERVICES: ServiceCategory[] = [
 export const NAV_LINKS = [
 	{ label: 'Home', href: '/' },
 	{ label: 'Open Play', href: '/open-play' },
-	{ label: 'Memberships', href: '/memberships' },
+	{ label: 'Pricing', href: '/pricing' },
 	{ label: 'Café', href: '/cafe' },
 	{ label: 'Shop', href: '/shop' },
 	{ label: 'Workshops', href: '/workshops3' },
@@ -91,7 +91,7 @@ export const SOCIAL_LINKS = {
 
 export const FOOTER_LINKS = [
 	{ label: 'Open Play', href: '/open-play' },
-	{ label: 'Memberships', href: '/memberships' },
+	{ label: 'Pricing', href: '/pricing' },
 	{ label: 'Workshops', href: '/workshops3' },
 	{ label: 'Careers', href: '/careers' },
 	{ label: 'About', href: '/about' },
@@ -99,109 +99,92 @@ export const FOOTER_LINKS = [
 ] as const;
 
 // Pricing & Memberships
-export interface Membership {
+export interface PricingOption {
 	id: string;
 	name: string;
 	price: string;
 	duration: string;
-	access: string;
-	workshops: string;
-	foodDiscount: string;
-	perks: string[];
-	icon: string; // emoji or icon identifier
+	description: string;
+	features: string[];
 	highlight?: boolean;
+	savings?: string;
+	icon?: string; // Adding icon back for compatibility if needed
 }
 
-export interface PayAsYouGo {
-	id: string;
-	name: string;
-	price: string;
-	duration: string;
-	includes: string[];
-	extras?: string;
-}
+// Dynamic Pricing Calculation
+const PRICING_BASE = 200; // Hourly rate
+const MULTIPLIERS = {
+	DAY: 1.8,
+	WEEK: 3.2,   // 3 days in a week
+	MONTH: 3   // 3 weeks in a month
+};
 
-export const MEMBERSHIPS: Membership[] = [
-	{
-		id: '10-day-pass',
-		name: '10-Day Pass',
-		price: '฿3,500',
-		duration: 'Valid for 60 days',
-		access: '10 full days of open play',
-		workshops: '2 included workshops',
-		foodDiscount: '10% off',
-		perks: [
-			'10 separate full days of play',
-			'Come & go on same day',
-			'2 included kids workshops',
-			'10% off food & drinks',
-			'Free adult/nanny entry'
-		],
-		icon: '🎟️'
-	},
-	{
-		id: 'monthly-pass',
-		name: 'Monthly Pass',
-		price: '฿3,000',
-		duration: 'Per month',
-		access: 'Unlimited open play',
-		workshops: 'Up to 8 workshops/month',
-		foodDiscount: '10% off',
-		perks: [
-			'Unlimited play for one child',
-			'Up to 8 included workshops/month',
-			'15% off food & drinks',
-			'50% off one birthday party/year',
-			'1 free guest pass/month',
-			'Free adult/nanny entry'
-		],
-		icon: '📅',
-		highlight: true
-	},
-	{
-		id: 'yearly-pass',
-		name: 'Yearly Pass',
-		price: '฿30,000',
-		duration: 'Per year',
-		access: 'Unlimited open play',
-		workshops: 'All included workshops',
-		foodDiscount: '15% off',
-		perks: [
-			'Unlimited play for 12 months',
-			'All included kids workshops',
-			'10% off food & drinks',
-			'50% off one birthday party/year',
-			'2 free guest passes/month',
-			'Priority event RSVP',
-			'Free adult/nanny entry'
-		],
-		icon: '🌳'
-	}
-];
+const OPEN_DAYS_PER_WEEK = 6;
+const WEEKS_PER_MONTH = 4;
 
-export const PAY_AS_YOU_GO: PayAsYouGo[] = [
+const PRICES = {
+	HOUR: PRICING_BASE,
+	DAY: Math.round(PRICING_BASE * MULTIPLIERS.DAY),
+	WEEK: Math.round(PRICING_BASE * MULTIPLIERS.DAY * MULTIPLIERS.WEEK),
+	MONTH: Math.round(PRICING_BASE * MULTIPLIERS.DAY * MULTIPLIERS.WEEK * MULTIPLIERS.MONTH)
+};
+
+// Calculate Savings
+const SAVINGS = {
+	WEEK: (PRICES.DAY * OPEN_DAYS_PER_WEEK) - PRICES.WEEK,
+	MONTH: (PRICES.DAY * OPEN_DAYS_PER_WEEK * WEEKS_PER_MONTH) - PRICES.MONTH
+};
+
+export const PRICING_OPTIONS: PricingOption[] = [
 	{
 		id: '1-hour',
-		name: '1-Hour Play',
-		price: '฿150',
+		name: '1 Hour',
+		price: `฿${PRICES.HOUR}`,
 		duration: 'Per child / hour',
-		includes: ['Open play access', 'Free adult/nanny entry'],
-		extras: 'Extra time: ฿80 per 30 min'
+		description: 'Perfect for a quick play session.',
+		features: ['Open play access', 'Free adult/nanny entry', 'Extra time charged per 30 mins'],
+		icon: '⏱️'
 	},
 	{
-		id: '3-hour',
-		name: '3-Hour Pass',
-		price: '฿400',
-		duration: 'Same day',
-		includes: ['Up to 3 consecutive hours', 'Free adult/nanny entry'],
-		extras: 'After 3 hours: ฿50 per 30 min'
+		id: '1-day',
+		name: '1 Day',
+		price: `฿${PRICES.DAY}`,
+		duration: 'Full day access',
+		description: 'Come and go as you please all day.',
+		features: ['All-day play with re-entry', 'Free adult/nanny entry'],
+		savings: `Stay with us as long as you want!`,
+		icon: '☀️'
 	},
 	{
-		id: 'full-day',
-		name: 'Full-Day Pass',
-		price: '฿500',
-		duration: 'Full day',
-		includes: ['All-day play with re-entry', 'Come & go as you please', 'Free adult/nanny entry']
+		id: '1-week',
+		name: '1 Week',
+		price: `฿${PRICES.WEEK.toLocaleString()}`,
+		duration: 'Valid for 7 days',
+		description: 'Unlimited play for a whole week.',
+		features: [
+			'Unlimited play for 7 days',
+			'Includes selected workshops',
+			'10% off food & drinks',
+			'Free adult/nanny entry'
+		],
+		savings: `Save up to ฿${SAVINGS.WEEK.toLocaleString()}`,
+		icon: '📅'
+	},
+	{
+		id: '1-month',
+		name: '1 Month',
+		price: `฿${PRICES.MONTH.toLocaleString()}`,
+		duration: 'Valid for 30 days',
+		description: 'Best value for residents & long stays.',
+		features: [
+			'Unlimited play for 30 days',
+			'Includes selected workshops',
+			'15% off food & drinks',
+			'Free adult/nanny entry'
+		],
+		highlight: true,
+		savings: `Save up to ฿${SAVINGS.MONTH.toLocaleString()}`,
+		icon: '🌟'
 	}
 ];
 
