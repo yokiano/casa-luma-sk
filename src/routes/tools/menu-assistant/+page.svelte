@@ -24,7 +24,7 @@
   let generateError = $state<string | null>(null);
   let successMessage = $state<string | null>(null);
   let systemPrompt = $state(
-    'Cozy cafe table food dish shot semi-professional neutral background of natural color wooden table. focus on dish. visually appealing food.'
+    'Cozy cafe table food dish shot semi-professional neutral background of natural color wooden table. focus on dish. visually appealing food. Soft morning sunlight, natural textures, artisanal styling, editorial food photography, 35mm film warmth'
   );
   let selectedModel = $state(MODELS[0].id);
 
@@ -93,13 +93,12 @@
 
   const buildPrompt = (item: MenuItem) => {
     const sections = [
-      systemPrompt,
-      `${item.name} plated for a Montessori-inspired beachfront cafe in Koh Phangan`,
-      item.description ? `Description: ${item.description}` : null,
-      item.tags?.length ? `Ingredients: ${item.tags.join(', ')}` : null,
-      item.category ? `Course: ${item.category}` : null,
-      item.section ? `Menu section: ${item.section}` : null,
-      'Soft morning sunlight, natural textures, artisanal styling, editorial food photography, 35mm film warmth'
+      `<settings & instructions>${systemPrompt}</settings & instructions>`,
+      `<food item>${item.name} plated for a Montessori-inspired beachfront cafe in Koh Phangan</food item>`,
+      item.description ? `<Additional description>${item.description}</Additional description>` : null,
+      item.tags?.length ? `<Ingredients>${item.tags.join(', ')}</Ingredients>` : null,
+      item.category ? `<Course>${item.category}</Course>` : null,
+      item.section ? `<Menu section>${item.section}</Menu section>` : null,
     ];
 
     return sections.filter(Boolean).join('. ');

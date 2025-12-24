@@ -1,14 +1,23 @@
 import { NOTION_API_KEY } from '$env/static/private';
 
 /**
- * Uploads a file from a URL to Notion's internal storage using external_url mode.
- * Notion will fetch the file from the provided URL and host it internally.
+ * Uploads a file from a URL to Notion's internal storage using single_part mode.
+ * We fetch the file ourselves and push it to Notion's signed upload URL.
  * @param url The URL of the file to upload (e.g. from Replicate)
  * @param filename The name to give the file in Notion
  * @returns The Notion file object to be used in properties
  */
 export async function uploadToNotion(url: string, filename: string) {
-	// 1. Initiate the file upload with Notion using external_url mode
+	// 1. Fetch the binary data from the source URL
+	const sourceResponse = await fetch(url);
+	if (!sourceResponse.ok) {
+		throw new Error(`Failed to fetch file from source: ${sourceResponse.statusText}`);
+	}
+	const blob = await sourceResponse.blob();
+	const contentType = blob.type || 'image/png';
+	const contentLength = blob.size;
+
+	// 2. Initiate the file upload with Notion using single_part mode
 	const notionResponse = await fetch('https://api.notion.com/v1/file_uploads', {
 		method: 'POST',
 		headers: {
@@ -17,9 +26,10 @@ export async function uploadToNotion(url: string, filename: string) {
 			'Notion-Version': '2022-06-28'
 		},
 		body: JSON.stringify({
-			mode: 'external_url',
+			mode: 'single_part',
 			filename: filename,
-			external_url: url
+			content_type: contentType,
+			content_length: contentLength
 		})
 	});
 
@@ -28,12 +38,25 @@ export async function uploadToNotion(url: string, filename: string) {
 		throw new Error(`Failed to initiate Notion file upload: ${errorText}`);
 	}
 
-	const { id: file_id } = await notionResponse.json();
+	const { id: file_id, upload_url } = await notionResponse.json();
 
-	// 2. Poll for the status to be 'uploaded'
-	// Notion needs time to fetch the file from the external URL
+	// 3. Upload the binary data to the signed URL provided by Notion
+	const uploadResult = await fetch(upload_url, {
+		method: 'PUT',
+		headers: {
+			'Content-Type': contentType
+		},
+		body: blob
+	});
+
+	if (!uploadResult.ok) {
+		const errorText = await uploadResult.text();
+		throw new Error(`Failed to upload file content to Notion storage: ${errorText}`);
+	}
+
+	// 4. Poll for the status to be 'uploaded' to ensure it's ready
 	let attempts = 0;
-	const maxAttempts = 15;
+	const maxAttempts = 10;
 	while (attempts < maxAttempts) {
 		const statusResponse = await fetch(`https://api.notion.com/v1/file_uploads/${file_id}`, {
 			headers: {
@@ -42,31 +65,17 @@ export async function uploadToNotion(url: string, filename: string) {
 			}
 		});
 
-		if (!statusResponse.ok) {
-			const errorText = await statusResponse.text();
-			throw new Error(`Failed to check Notion file upload status: ${errorText}`);
+		if (statusResponse.ok) {
+			const { status } = await statusResponse.json();
+			if (status === 'uploaded') break;
+			if (status === 'failed') throw new Error('Notion file processing failed');
 		}
 
-		const { status } = await statusResponse.json();
-
-		if (status === 'uploaded') {
-			break;
-		}
-
-		if (status === 'failed') {
-			throw new Error('Notion file import failed');
-		}
-
-		// Wait 1 second before next poll
-		await new Promise(r => setTimeout(r, 1000));
+		await new Promise(r => setTimeout(r, 500));
 		attempts++;
 	}
 
-	if (attempts === maxAttempts) {
-		throw new Error('Notion file upload timed out');
-	}
-
-	// 3. Return the file_upload object format expected by Notion properties
+	// 5. Return the file_upload object format expected by Notion properties
 	return {
 		type: 'file_upload',
 		file_upload: {
