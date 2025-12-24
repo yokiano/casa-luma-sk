@@ -7,6 +7,7 @@ import {
 	getMultiSelectValues,
 	getNumberValue,
 	getSelectValue,
+	getStatusValue,
 	getTextContent,
 	getUrlValue
 } from '$lib/server/notion';
@@ -27,7 +28,7 @@ const MENU_PROPERTIES = {
 	allergens: 'Allergens',
 	highlight: 'Highlight',
 	available: 'Available',
-	archived: 'Archived',
+	status: 'Status',
 	availabilityWindow: 'Availability',
 	image: 'Image',
 	gallery: 'Gallery',
@@ -53,6 +54,13 @@ const getCurrency = (price: number, currencyRaw: string) => {
 	return fallbackCurrency;
 };
 
+const normalizeStatus = (raw: string): MenuItem['status'] => {
+	const value = (raw ?? '').trim().toLowerCase();
+	if (value === 'archived') return 'Archived';
+	// missing/unknown -> treat as Archived (safer default)
+	return value === 'active' ? 'Active' : 'Archived';
+};
+
 const toMenuItem = (page: any): MenuItem => {
 	const props = page.properties ?? {};
 
@@ -68,6 +76,8 @@ const toMenuItem = (page: any): MenuItem => {
 	const categoryValue = getSelectValue(props[MENU_PROPERTIES.category]) || 'General';
 	const grandCategoryValue = getSelectValue(props[MENU_PROPERTIES.grandCategory]) || 'Menu';
 	const availabilityValue = getSelectValue(props[MENU_PROPERTIES.availabilityWindow]);
+	const statusRaw =
+		getStatusValue(props[MENU_PROPERTIES.status]) || getSelectValue(props[MENU_PROPERTIES.status]);
 
 	return {
 		id: page.id,
@@ -86,7 +96,7 @@ const toMenuItem = (page: any): MenuItem => {
 		isAvailable: props[MENU_PROPERTIES.available]
 			? getCheckboxValue(props[MENU_PROPERTIES.available])
 			: true,
-		archived: getCheckboxValue(props[MENU_PROPERTIES.archived]),
+		status: normalizeStatus(statusRaw),
 		availabilityWindow: availabilityValue
 			? (availabilityValue as MenuItem['availabilityWindow'])
 			: undefined,
@@ -172,7 +182,7 @@ const buildSummary = (pages: any[]): MenuSummary => {
 	for (const page of pages) {
 		const props = page.properties ?? {};
 		const item = toMenuItem(page);
-		if (item.archived) continue;
+		if (item.status !== 'Active') continue;
 		const section = sectionMetadata(sections, item, props);
 		section.items.push(item);
 
@@ -228,8 +238,8 @@ const queryMenuPages = async () => {
 	const response = await notion.dataSources.query({
 		data_source_id: NOTION_DBS.MENU,
 		filter: {
-			property: MENU_PROPERTIES.archived,
-			checkbox: { equals: false }
+			property: MENU_PROPERTIES.status,
+			status: { equals: 'Active' }
 		},
 		sorts: [{ property: MENU_PROPERTIES.name, direction: 'ascending' }]
 	});
@@ -243,7 +253,7 @@ export const getMenuSummary = query(async () => {
 
 export const getMenuItems = query(async () => {
 	const pages = await queryMenuPages();
-	return pages.map(toMenuItem);
+	return pages.map(toMenuItem).filter((item) => item.status === 'Active');
 });
 
 export const getMenuSection = query(

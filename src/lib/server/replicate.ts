@@ -49,7 +49,7 @@ async function createPrediction(options: GenerateImageOptions): Promise<CreatePr
 	const input: Record<string, any> = {
 		prompt: options.prompt,
 		aspect_ratio: options.aspectRatio ?? '16:9',
-		...(options.seed && { seed: options.seed })
+		...(options.seed !== undefined ? { seed: options.seed } : {})
 	};
 
 	// Add model-specific parameters

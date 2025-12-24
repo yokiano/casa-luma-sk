@@ -11,6 +11,8 @@ export type DietaryTag =
 
 export type MenuAvailability = 'all-day' | 'breakfast' | 'lunch' | 'dinner' | 'seasonal';
 
+export type MenuItemStatus = 'Active' | 'Archived';
+
 export interface MenuItem {
 	id: string;
 	name: string;
@@ -26,7 +28,7 @@ export interface MenuItem {
 	allergens: string[];
 	highlight: boolean;
 	isAvailable: boolean;
-	archived: boolean;
+	status: MenuItemStatus;
 	availabilityWindow?: MenuAvailability;
 	image?: string;
 	gallery?: string[];

@@ -16,8 +16,8 @@ export type MenuItemsPropertiesPatch = {
   category?: MenuItemsResponse['properties']['Category']['select']['name']
   name?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   loyverseId?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
-  archived?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'checkbox' }>['checkbox']
   grandCategory?: MenuItemsResponse['properties']['Grand Category']['select']['name']
+  status?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'status' }>['status']
 }
 
   
@@ -153,17 +153,17 @@ export class MenuItemsPatchDTO {
       }
     }
 
-    if (props?.archived !== undefined) {
-      this.__data.properties['Tp%3AJ'] = {
-        type: 'checkbox',
-        checkbox: props.archived,
-      }
-    }
-
     if (props?.grandCategory !== undefined) {
       this.__data.properties['Bfwb'] = {
         type: 'select',
         select: { name: props.grandCategory },
+      }
+    }
+
+    if (props?.status !== undefined) {
+      this.__data.properties['%5B%5Bjz'] = {
+        type: 'status',
+        status: props.status,
       }
     }
   }

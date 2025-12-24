@@ -289,16 +289,16 @@
           "varName": "loyverseId",
           "readOnly": false
         },
-        "Tp%3AJ": {
-          "_name": "Archived",
-          "_type": "checkbox",
-          "varName": "archived",
-          "readOnly": false
-        },
         "Bfwb": {
           "_name": "Grand Category",
           "_type": "select",
           "varName": "grandCategory",
+          "readOnly": false
+        },
+        "%5B%5Bjz": {
+          "_name": "Status",
+          "_type": "status",
+          "varName": "status",
           "readOnly": false
         }
       }
@@ -1030,8 +1030,8 @@
           "readOnly": false
         },
         "o%5DfK": {
-          "_name": "Position",
-          "_type": "multi_select",
+          "_name": "Role",
+          "_type": "relation",
           "varName": "position",
           "readOnly": false
         },
@@ -1075,6 +1075,147 @@
           "_name": "Nickname",
           "_type": "title",
           "varName": "nickname",
+          "readOnly": false
+        },
+        "%3FRoK": {
+          "_name": "Tax ID",
+          "_type": "rich_text",
+          "varName": "taxId",
+          "readOnly": false
+        },
+        "IaO%3B": {
+          "_name": "ID/Passport No.",
+          "_type": "rich_text",
+          "varName": "idPassportNo",
+          "readOnly": false
+        },
+        "WH%5Da": {
+          "_name": "Has Work Permit",
+          "_type": "checkbox",
+          "varName": "hasWorkPermit",
+          "readOnly": false
+        },
+        "h~_K": {
+          "_name": "Shifts",
+          "_type": "relation",
+          "varName": "shifts",
+          "readOnly": false
+        },
+        "rTu%5D": {
+          "_name": "Country",
+          "_type": "select",
+          "varName": "country",
+          "readOnly": false
+        },
+        "tIHh": {
+          "_name": "Date of Birth",
+          "_type": "date",
+          "varName": "dateOfBirth",
+          "readOnly": false
+        }
+      }
+    },
+    "02dd1568-1319-48aa-85d1-309d512ed988": {
+      "_name": "Shifts",
+      "varName": "shifts",
+      "pathName": "shifts",
+      "properties": {
+        "%40QLu": {
+          "_name": "Employee",
+          "_type": "relation",
+          "varName": "employee",
+          "readOnly": false
+        },
+        "L%60OW": {
+          "_name": "Type",
+          "_type": "select",
+          "varName": "type",
+          "readOnly": false
+        },
+        "VPhk": {
+          "_name": "Status",
+          "_type": "status",
+          "varName": "status",
+          "readOnly": false
+        },
+        "YKt%5C": {
+          "_name": "Shift Time",
+          "_type": "date",
+          "varName": "shiftTime",
+          "readOnly": false
+        },
+        "mbpd": {
+          "_name": "Role",
+          "_type": "relation",
+          "varName": "role",
+          "readOnly": false
+        },
+        "title": {
+          "_name": "Shift Note",
+          "_type": "title",
+          "varName": "shiftNote",
+          "readOnly": false
+        }
+      }
+    },
+    "8a6cc48c-180b-452e-ae4f-80fe64b749f7": {
+      "_name": "Roles",
+      "varName": "roles",
+      "pathName": "roles",
+      "properties": {
+        "HIEV": {
+          "_name": "Employees",
+          "_type": "relation",
+          "varName": "employees",
+          "readOnly": false
+        },
+        "YFml": {
+          "_name": "Active",
+          "_type": "checkbox",
+          "varName": "active",
+          "readOnly": false
+        },
+        "_YcL": {
+          "_name": "Required per Day",
+          "_type": "number",
+          "varName": "requiredPerDay",
+          "readOnly": false
+        },
+        "dgcQ": {
+          "_name": "Department",
+          "_type": "select",
+          "varName": "department",
+          "readOnly": false
+        },
+        "title": {
+          "_name": "Role",
+          "_type": "title",
+          "varName": "role",
+          "readOnly": false
+        }
+      }
+    },
+    "bfcd6bd8-b292-405e-8fde-6e099d0fd7af": {
+      "_name": "Team Calendar",
+      "varName": "teamCalendar",
+      "pathName": "team-calendar",
+      "properties": {
+        "%3Bxs%5D": {
+          "_name": "Date",
+          "_type": "date",
+          "varName": "date",
+          "readOnly": false
+        },
+        "MzYJ": {
+          "_name": "Description",
+          "_type": "rich_text",
+          "varName": "description",
+          "readOnly": false
+        },
+        "title": {
+          "_name": "Event Name",
+          "_type": "title",
+          "varName": "eventName",
           "readOnly": false
         }
       }

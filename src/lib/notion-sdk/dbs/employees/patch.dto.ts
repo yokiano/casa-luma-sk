@@ -27,7 +27,7 @@ export type EmployeesPropertiesPatch = {
   notes?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   bankAccountDetails?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   phone?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'phone_number' }>['phone_number']
-  position?: EmployeesResponse['properties']['Position']['multi_select'][number]['name'][]
+  position?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'relation' }>['relation']
   bio?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   hometown?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   emergencyPhone?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
@@ -35,6 +35,12 @@ export type EmployeesPropertiesPatch = {
   reportsTo?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'people' }>['people']
   startDate?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'date' }>['date']
   nickname?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
+  taxId?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
+  idPassportNo?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
+  hasWorkPermit?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'checkbox' }>['checkbox']
+  shifts?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'relation' }>['relation']
+  country?: EmployeesResponse['properties']['Country']['select']['name']
+  dateOfBirth?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'date' }>['date']
 }
 
   
@@ -324,8 +330,8 @@ export class EmployeesPatchDTO {
 
     if (props?.position !== undefined) {
       this.__data.properties['o%5DfK'] = {
-        type: 'multi_select',
-        multi_select: props.position?.map((item) => ({ name: item })),
+        type: 'relation',
+        relation: props.position,
       }
     }
 
@@ -435,6 +441,78 @@ export class EmployeesPatchDTO {
                     annotations: props.nickname.annotations
                   },
                 ]
+      }
+    }
+
+    if (props?.taxId !== undefined) {
+      this.__data.properties['%3FRoK'] = {
+        type: 'rich_text',
+        rich_text: typeof props.taxId === 'string' 
+          ? [{ type: 'text', text: { content: props.taxId } }]
+          : Array.isArray(props.taxId)
+            ? props.taxId
+            : props.taxId === null
+              ? []
+              : [
+                  {
+                    type: 'text',
+                    text: {
+                      content: props.taxId.text,
+                      link: props.taxId?.url ? { url: props.taxId.url } : undefined
+                    },
+                    annotations: props.taxId.annotations
+                  },
+                ]
+      }
+    }
+
+    if (props?.idPassportNo !== undefined) {
+      this.__data.properties['IaO%3B'] = {
+        type: 'rich_text',
+        rich_text: typeof props.idPassportNo === 'string' 
+          ? [{ type: 'text', text: { content: props.idPassportNo } }]
+          : Array.isArray(props.idPassportNo)
+            ? props.idPassportNo
+            : props.idPassportNo === null
+              ? []
+              : [
+                  {
+                    type: 'text',
+                    text: {
+                      content: props.idPassportNo.text,
+                      link: props.idPassportNo?.url ? { url: props.idPassportNo.url } : undefined
+                    },
+                    annotations: props.idPassportNo.annotations
+                  },
+                ]
+      }
+    }
+
+    if (props?.hasWorkPermit !== undefined) {
+      this.__data.properties['WH%5Da'] = {
+        type: 'checkbox',
+        checkbox: props.hasWorkPermit,
+      }
+    }
+
+    if (props?.shifts !== undefined) {
+      this.__data.properties['h~_K'] = {
+        type: 'relation',
+        relation: props.shifts,
+      }
+    }
+
+    if (props?.country !== undefined) {
+      this.__data.properties['rTu%5D'] = {
+        type: 'select',
+        select: { name: props.country },
+      }
+    }
+
+    if (props?.dateOfBirth !== undefined) {
+      this.__data.properties['tIHh'] = {
+        type: 'date',
+        date: props.dateOfBirth,
       }
     }
   }

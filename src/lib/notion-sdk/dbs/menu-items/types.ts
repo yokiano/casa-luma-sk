@@ -2,18 +2,17 @@ import { WithOptional, Join, PathsToStringProps } from '../../core/types/helper.
 import {
 DatabaseObjectResponse,
 StringRequest,
-CheckboxPropertyItemObjectResponse,
 FilesPropertyItemObjectResponse,
 MultiSelectPropertyItemObjectResponse,
 NumberPropertyItemObjectResponse,
 RichTextPropertyItemObjectResponse,
 SelectPropertyItemObjectResponse,
+StatusPropertyItemObjectResponse,
 TitlePropertyItemObjectResponse,
 ExistencePropertyFilter,
 QueryDatabaseBodyParameters,
 TimestampCreatedTimeFilter,
 TimestampLastEditedTimeFilter,
-CheckboxPropertyFilter,
 NumberPropertyFilter,
 TextPropertyFilter
 } from '../../core/types/notion-api.types'
@@ -31,8 +30,8 @@ export interface MenuItemsResponse extends WithOptional<Omit<DatabaseObjectRespo
     "Category": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'Coffee & More', color: 'brown' } | { id: StringRequest, name: 'Fresh Cold-Pressed Juices', color: 'green' } | { id: StringRequest, name: 'House Smoothies', color: 'pink' } | { id: StringRequest, name: 'Soft Drinks', color: 'blue' } | { id: StringRequest, name: 'Sandwiches & Toasties', color: 'orange' } | { id: StringRequest, name: 'Croissant Sandwich', color: 'yellow' } | { id: StringRequest, name: 'Open Toasts', color: 'yellow' } | { id: StringRequest, name: 'Personal Pizzas', color: 'red' } | { id: StringRequest, name: 'Salads', color: 'green' } | { id: StringRequest, name: 'Goodies Sets', color: 'purple' } | { id: StringRequest, name: 'Sweet Morning', color: 'orange' } | { id: StringRequest, name: 'Comfort Food', color: 'gray' } | { id: StringRequest, name: 'Desserts', color: 'pink' } | { id: StringRequest, name: 'Kids Pizza', color: 'red' } | { id: StringRequest, name: 'Kids Favorites', color: 'yellow' } | { id: StringRequest, name: 'Kids Small Plates', color: 'blue' } | { id: StringRequest, name: 'Kids Beverage', color: 'blue' }},
     "Name": TitlePropertyItemObjectResponse,
     "LoyverseID": RichTextPropertyItemObjectResponse,
-    "Archived": CheckboxPropertyItemObjectResponse,
-    "Grand Category": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'Food', color: 'yellow' } | { id: StringRequest, name: 'Drinks', color: 'green' } | { id: StringRequest, name: 'Kids', color: 'pink' } | { id: StringRequest, name: 'Desserts', color: 'default' }}
+    "Grand Category": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'Food', color: 'yellow' } | { id: StringRequest, name: 'Drinks', color: 'green' } | { id: StringRequest, name: 'Kids', color: 'pink' } | { id: StringRequest, name: 'Desserts', color: 'default' }},
+    "Status": Omit<StatusPropertyItemObjectResponse, 'status'> & { status: { id: StringRequest, name: 'Active', color: 'green' } | { id: StringRequest, name: 'Archived', color: 'gray' }}
   }
 }
 
@@ -93,7 +92,6 @@ type MenuItemsCategoryPropertyFilter =
 
 type MenuItemsNamePropertyFilter = TextPropertyFilter
 type MenuItemsLoyverseIdPropertyFilter = TextPropertyFilter
-type MenuItemsArchivedPropertyFilter = CheckboxPropertyFilter
 
 export type MenuItemsGrandCategoryPropertyType = MenuItemsResponse['properties']['Grand Category']['select']['name']
 
@@ -107,7 +105,19 @@ type MenuItemsGrandCategoryPropertyFilter =
   | ExistencePropertyFilter      
 
 
-export type MenuItemsPropertyFilter = { description: MenuItemsDescriptionPropertyFilter } | { dietaryOptions: MenuItemsDietaryOptionsPropertyFilter } | { cogs: MenuItemsCogsPropertyFilter } | { price: MenuItemsPricePropertyFilter } | { ingridients: MenuItemsIngridientsPropertyFilter } | { allergens: MenuItemsAllergensPropertyFilter } | { image: MenuItemsImagePropertyFilter } | { category: MenuItemsCategoryPropertyFilter } | { name: MenuItemsNamePropertyFilter } | { loyverseId: MenuItemsLoyverseIdPropertyFilter } | { archived: MenuItemsArchivedPropertyFilter } | { grandCategory: MenuItemsGrandCategoryPropertyFilter }
+export type MenuItemsStatusPropertyType = MenuItemsResponse['properties']['Status']['status']['name']
+
+type MenuItemsStatusPropertyFilter =
+  | {
+      equals: MenuItemsStatusPropertyType
+    }
+  | {
+      does_not_equal: MenuItemsStatusPropertyType
+    }
+  | ExistencePropertyFilter      
+
+
+export type MenuItemsPropertyFilter = { description: MenuItemsDescriptionPropertyFilter } | { dietaryOptions: MenuItemsDietaryOptionsPropertyFilter } | { cogs: MenuItemsCogsPropertyFilter } | { price: MenuItemsPricePropertyFilter } | { ingridients: MenuItemsIngridientsPropertyFilter } | { allergens: MenuItemsAllergensPropertyFilter } | { image: MenuItemsImagePropertyFilter } | { category: MenuItemsCategoryPropertyFilter } | { name: MenuItemsNamePropertyFilter } | { loyverseId: MenuItemsLoyverseIdPropertyFilter } | { grandCategory: MenuItemsGrandCategoryPropertyFilter } | { status: MenuItemsStatusPropertyFilter }
 
 export type MenuItemsQuery = Omit<QueryDatabaseBodyParameters, 'filter' | 'sorts'> & {
   sorts?: Array<

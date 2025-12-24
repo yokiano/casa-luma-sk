@@ -31,21 +31,18 @@ export const EMPLOYEES_PROP_VALUES = {
   "Daily",
   "Hourly"
 ] as const,
-"position": [
-  "Manager",
-  "Cook",
-  "Waiter",
-  "PS",
-  "Maintenance",
-  "Barista"
-] as const,
 "employmentStatus": [
   "Onboarding",
-  "Probation",
+  "Working",
   "Active",
   "Resigned",
   "Terminated",
   "Contract Ended"
+] as const,
+"country": [
+  "Thailand",
+  "Myanmar",
+  "Other"
 ] as const,
 }
 
@@ -78,7 +75,13 @@ export const EMPLOYEES_PROPS_TO_IDS = {
   "employmentStatus": "vCD%5E",
   "reportsTo": "wUr%5B",
   "startDate": "zLrJ",
-  "nickname": "title"
+  "nickname": "title",
+  "taxId": "%3FRoK",
+  "idPassportNo": "IaO%3B",
+  "hasWorkPermit": "WH%5Da",
+  "shifts": "h~_K",
+  "country": "rTu%5D",
+  "dateOfBirth": "tIHh"
 } as const
 export const EMPLOYEES_IDS_TO_PROPS = {
   "%3CK%5BF": "visaExpiry",
@@ -109,7 +112,13 @@ export const EMPLOYEES_IDS_TO_PROPS = {
   "vCD%5E": "employmentStatus",
   "wUr%5B": "reportsTo",
   "zLrJ": "startDate",
-  "title": "nickname"
+  "title": "nickname",
+  "%3FRoK": "taxId",
+  "IaO%3B": "idPassportNo",
+  "WH%5Da": "hasWorkPermit",
+  "h~_K": "shifts",
+  "rTu%5D": "country",
+  "tIHh": "dateOfBirth"
 } as const
 export const EMPLOYEES_PROPS_TO_TYPES = {
   "visaExpiry": "date",
@@ -133,14 +142,20 @@ export const EMPLOYEES_PROPS_TO_TYPES = {
   "notes": "rich_text",
   "bankAccountDetails": "rich_text",
   "phone": "phone_number",
-  "position": "multi_select",
+  "position": "relation",
   "bio": "rich_text",
   "hometown": "rich_text",
   "emergencyPhone": "rich_text",
   "employmentStatus": "status",
   "reportsTo": "people",
   "startDate": "date",
-  "nickname": "title"
+  "nickname": "title",
+  "taxId": "rich_text",
+  "idPassportNo": "rich_text",
+  "hasWorkPermit": "checkbox",
+  "shifts": "relation",
+  "country": "select",
+  "dateOfBirth": "date"
 } as const
 
   export type EmployeesDTOProperties = keyof typeof EMPLOYEES_PROPS_TO_IDS

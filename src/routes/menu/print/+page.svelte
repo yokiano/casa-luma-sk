@@ -12,14 +12,12 @@
 			.map((grand) => ({
 				...grand,
 				sections: grand.sections
-					.map((section) => ({ ...section, items: section.items.filter((item) => !item.archived) }))
 					.filter((section) => section.items.length > 0)
 			}))
 			.filter((grand) => grand.sections.length > 0),
 		sections: data.menu.sections
-			.map((section) => ({ ...section, items: section.items.filter((item) => !item.archived) }))
 			.filter((section) => section.items.length > 0),
-		highlights: data.menu.highlights.filter((item) => !item.archived)
+		highlights: data.menu.highlights
 	});
 
 	const activeVariant = $derived.by(() => {

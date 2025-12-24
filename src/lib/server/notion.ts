@@ -51,6 +51,10 @@ export const isSelect = (property: any): property is { select: { name: string } 
 	return property?.select !== undefined;
 };
 
+export const isStatus = (property: any): property is { status: { name: string } | null } => {
+	return property?.status !== undefined;
+};
+
 export const isMultiSelect = (property: any): property is { multi_select: Array<{ name: string }> } => {
 	return property?.multi_select !== undefined;
 };
@@ -113,6 +117,13 @@ export const getTextContent = (property: any): string => {
 export const getSelectValue = (property: any): string => {
 	if (isSelect(property) && property.select) {
 		return property.select.name;
+	}
+	return '';
+};
+
+export const getStatusValue = (property: any): string => {
+	if (isStatus(property) && property.status) {
+		return property.status.name;
 	}
 	return '';
 };

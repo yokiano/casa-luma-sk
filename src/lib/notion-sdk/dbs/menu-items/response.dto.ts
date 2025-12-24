@@ -71,8 +71,8 @@ export class MenuItemsPropertiesResponseDTO {
       category: this.__props['Category'],
       name: this.__props['Name'],
       loyverseId: this.__props['LoyverseID'],
-      archived: this.__props['Archived'],
       grandCategory: this.__props['Grand Category'],
+      status: this.__props['Status'],
     }
   }
 
@@ -140,11 +140,11 @@ export class MenuItemsPropertiesResponseDTO {
     }
   }
 
-  get archived() {
-    return this.__props['Archived']?.checkbox
-  }
-
   get grandCategory() {
     return this.__props['Grand Category']?.select
+  }
+
+  get status() {
+    return this.__props['Status']?.status
   }
 }

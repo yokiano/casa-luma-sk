@@ -18,7 +18,6 @@
 			.map((grand) => ({
 				...grand,
 				sections: grand.sections
-					.map((section) => ({ ...section, items: section.items.filter((item) => !item.archived) }))
 					.filter((section) => section.items.length > 0)
 			}))
 			.filter((grand) => grand.sections.length > 0)
@@ -26,7 +25,7 @@
 
 	const visibleSections = $derived(visibleGrandCategories.flatMap((grand) => grand.sections));
 	const allSections = $derived(visibleSections.map((section) => section.name));
-	const highlights = $derived(menu.highlights.filter((item) => !item.archived));
+	const highlights = $derived(menu.highlights);
 
 	function handleSection(sectionName: string) {
 		activeSection = sectionName;

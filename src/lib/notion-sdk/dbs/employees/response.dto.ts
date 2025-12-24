@@ -82,7 +82,7 @@ export class EmployeesPropertiesResponseDTO {
       notes: this.__props['Notes'],
       bankAccountDetails: this.__props['Bank Account Details'],
       phone: this.__props['Phone'],
-      position: this.__props['Position'],
+      position: this.__props['Role'],
       bio: this.__props['Bio'],
       hometown: this.__props['Hometown'],
       emergencyPhone: this.__props['Emergency Phone'],
@@ -90,6 +90,12 @@ export class EmployeesPropertiesResponseDTO {
       reportsTo: this.__props['Reports To'],
       startDate: this.__props['Start Date'],
       nickname: this.__props['Nickname'],
+      taxId: this.__props['Tax ID'],
+      idPassportNo: this.__props['ID/Passport No.'],
+      hasWorkPermit: this.__props['Has Work Permit'],
+      shifts: this.__props['Shifts'],
+      country: this.__props['Country'],
+      dateOfBirth: this.__props['Date of Birth'],
     }
   }
 
@@ -221,12 +227,11 @@ export class EmployeesPropertiesResponseDTO {
   get phone() {
     return this.__props['Phone']?.phone_number
   }
-  get position() {
-    return {
-      values: this.__props['Position']?.multi_select ? this.__props['Position'].multi_select.map((item) => item.name) : [],
-      multi_select: this.__props['Position']?.multi_select,
-    }
+
+  get positionIds() {
+    return (this.__props['Role']?.relation as unknown as Array<{ id: string }>).map((item) => item.id)  
   }
+
 
   get bio() {
     return {
@@ -270,5 +275,38 @@ export class EmployeesPropertiesResponseDTO {
       links: this.__props['Nickname']?.title ? this.__props['Nickname'].title.filter((item) => item.href?.length).map((item) => item.href) : [],
       title: this.__props['Nickname']?.title,
     }
+  }
+
+  get taxId() {
+    return {
+      text: this.__props['Tax ID']?.rich_text ? this.__props['Tax ID'].rich_text.reduce((acc, item) => acc + item.plain_text, '') : undefined,
+      links: this.__props['Tax ID']?.rich_text ? this.__props['Tax ID'].rich_text.filter((item) => item.href?.length).map((item) => item.href) : [],
+      rich_text: this.__props['Tax ID']?.rich_text,
+    }
+  }
+
+  get idPassportNo() {
+    return {
+      text: this.__props['ID/Passport No.']?.rich_text ? this.__props['ID/Passport No.'].rich_text.reduce((acc, item) => acc + item.plain_text, '') : undefined,
+      links: this.__props['ID/Passport No.']?.rich_text ? this.__props['ID/Passport No.'].rich_text.filter((item) => item.href?.length).map((item) => item.href) : [],
+      rich_text: this.__props['ID/Passport No.']?.rich_text,
+    }
+  }
+
+  get hasWorkPermit() {
+    return this.__props['Has Work Permit']?.checkbox
+  }
+
+  get shiftsIds() {
+    return (this.__props['Shifts']?.relation as unknown as Array<{ id: string }>).map((item) => item.id)  
+  }
+
+
+  get country() {
+    return this.__props['Country']?.select
+  }
+
+  get dateOfBirth() {
+    return this.__props['Date of Birth']?.date
   }
 }

@@ -8,7 +8,6 @@
             .map((grand) => ({
                 ...grand,
                 sections: grand.sections
-                    .map((section) => ({ ...section, items: section.items.filter((item) => !item.archived) }))
                     .filter((section) => section.items.length > 0)
             }))
             .filter((grand) => grand.sections.length > 0)
