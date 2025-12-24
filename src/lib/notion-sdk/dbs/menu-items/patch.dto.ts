@@ -18,6 +18,13 @@ export type MenuItemsPropertiesPatch = {
   loyverseId?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   grandCategory?: MenuItemsResponse['properties']['Grand Category']['select']['name']
   status?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'status' }>['status']
+  variantOption_1Name?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
+  variantsJson?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
+  loyverseHandle?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
+  hasVariants?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'checkbox' }>['checkbox']
+  variantOption_3Name?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
+  variantOption_2Name?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
+  modifiers?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'relation' }>['relation']
 }
 
   
@@ -164,6 +171,130 @@ export class MenuItemsPatchDTO {
       this.__data.properties['%5B%5Bjz'] = {
         type: 'status',
         status: props.status,
+      }
+    }
+
+    if (props?.variantOption_1Name !== undefined) {
+      this.__data.properties['Fak%7B'] = {
+        type: 'rich_text',
+        rich_text: typeof props.variantOption_1Name === 'string' 
+          ? [{ type: 'text', text: { content: props.variantOption_1Name } }]
+          : Array.isArray(props.variantOption_1Name)
+            ? props.variantOption_1Name
+            : props.variantOption_1Name === null
+              ? []
+              : [
+                  {
+                    type: 'text',
+                    text: {
+                      content: props.variantOption_1Name.text,
+                      link: props.variantOption_1Name?.url ? { url: props.variantOption_1Name.url } : undefined
+                    },
+                    annotations: props.variantOption_1Name.annotations
+                  },
+                ]
+      }
+    }
+
+    if (props?.variantsJson !== undefined) {
+      this.__data.properties['GBdq'] = {
+        type: 'rich_text',
+        rich_text: typeof props.variantsJson === 'string' 
+          ? [{ type: 'text', text: { content: props.variantsJson } }]
+          : Array.isArray(props.variantsJson)
+            ? props.variantsJson
+            : props.variantsJson === null
+              ? []
+              : [
+                  {
+                    type: 'text',
+                    text: {
+                      content: props.variantsJson.text,
+                      link: props.variantsJson?.url ? { url: props.variantsJson.url } : undefined
+                    },
+                    annotations: props.variantsJson.annotations
+                  },
+                ]
+      }
+    }
+
+    if (props?.loyverseHandle !== undefined) {
+      this.__data.properties['PdEI'] = {
+        type: 'rich_text',
+        rich_text: typeof props.loyverseHandle === 'string' 
+          ? [{ type: 'text', text: { content: props.loyverseHandle } }]
+          : Array.isArray(props.loyverseHandle)
+            ? props.loyverseHandle
+            : props.loyverseHandle === null
+              ? []
+              : [
+                  {
+                    type: 'text',
+                    text: {
+                      content: props.loyverseHandle.text,
+                      link: props.loyverseHandle?.url ? { url: props.loyverseHandle.url } : undefined
+                    },
+                    annotations: props.loyverseHandle.annotations
+                  },
+                ]
+      }
+    }
+
+    if (props?.hasVariants !== undefined) {
+      this.__data.properties['Y%5DwL'] = {
+        type: 'checkbox',
+        checkbox: props.hasVariants,
+      }
+    }
+
+    if (props?.variantOption_3Name !== undefined) {
+      this.__data.properties['a%3CZ%40'] = {
+        type: 'rich_text',
+        rich_text: typeof props.variantOption_3Name === 'string' 
+          ? [{ type: 'text', text: { content: props.variantOption_3Name } }]
+          : Array.isArray(props.variantOption_3Name)
+            ? props.variantOption_3Name
+            : props.variantOption_3Name === null
+              ? []
+              : [
+                  {
+                    type: 'text',
+                    text: {
+                      content: props.variantOption_3Name.text,
+                      link: props.variantOption_3Name?.url ? { url: props.variantOption_3Name.url } : undefined
+                    },
+                    annotations: props.variantOption_3Name.annotations
+                  },
+                ]
+      }
+    }
+
+    if (props?.variantOption_2Name !== undefined) {
+      this.__data.properties['wt%7Dr'] = {
+        type: 'rich_text',
+        rich_text: typeof props.variantOption_2Name === 'string' 
+          ? [{ type: 'text', text: { content: props.variantOption_2Name } }]
+          : Array.isArray(props.variantOption_2Name)
+            ? props.variantOption_2Name
+            : props.variantOption_2Name === null
+              ? []
+              : [
+                  {
+                    type: 'text',
+                    text: {
+                      content: props.variantOption_2Name.text,
+                      link: props.variantOption_2Name?.url ? { url: props.variantOption_2Name.url } : undefined
+                    },
+                    annotations: props.variantOption_2Name.annotations
+                  },
+                ]
+      }
+    }
+
+    if (props?.modifiers !== undefined) {
+      this.__data.properties['eqWu'] = {
+        type: 'relation',
+        relation: props.modifiers,
       }
     }
   }

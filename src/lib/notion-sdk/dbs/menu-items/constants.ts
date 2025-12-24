@@ -40,7 +40,6 @@ export const MENU_ITEMS_PROP_VALUES = {
   "Open Toasts",
   "Personal Pizzas",
   "Salads",
-  "Goodies Sets",
   "Sweet Morning",
   "Comfort Food",
   "Desserts",
@@ -73,7 +72,14 @@ export const MENU_ITEMS_PROPS_TO_IDS = {
   "name": "title",
   "loyverseId": "%5B%3DN%3E",
   "grandCategory": "Bfwb",
-  "status": "%5B%5Bjz"
+  "status": "%5B%5Bjz",
+  "variantOption_1Name": "Fak%7B",
+  "variantsJson": "GBdq",
+  "loyverseHandle": "PdEI",
+  "hasVariants": "Y%5DwL",
+  "variantOption_3Name": "a%3CZ%40",
+  "variantOption_2Name": "wt%7Dr",
+  "modifiers": "eqWu"
 } as const
 export const MENU_ITEMS_IDS_TO_PROPS = {
   "%40w%3Bd": "description",
@@ -87,7 +93,14 @@ export const MENU_ITEMS_IDS_TO_PROPS = {
   "title": "name",
   "%5B%3DN%3E": "loyverseId",
   "Bfwb": "grandCategory",
-  "%5B%5Bjz": "status"
+  "%5B%5Bjz": "status",
+  "Fak%7B": "variantOption_1Name",
+  "GBdq": "variantsJson",
+  "PdEI": "loyverseHandle",
+  "Y%5DwL": "hasVariants",
+  "a%3CZ%40": "variantOption_3Name",
+  "wt%7Dr": "variantOption_2Name",
+  "eqWu": "modifiers"
 } as const
 export const MENU_ITEMS_PROPS_TO_TYPES = {
   "description": "rich_text",
@@ -101,7 +114,14 @@ export const MENU_ITEMS_PROPS_TO_TYPES = {
   "name": "title",
   "loyverseId": "rich_text",
   "grandCategory": "select",
-  "status": "status"
+  "status": "status",
+  "variantOption_1Name": "rich_text",
+  "variantsJson": "rich_text",
+  "loyverseHandle": "rich_text",
+  "hasVariants": "checkbox",
+  "variantOption_3Name": "rich_text",
+  "variantOption_2Name": "rich_text",
+  "modifiers": "relation"
 } as const
 
   export type MenuItemsDTOProperties = keyof typeof MENU_ITEMS_PROPS_TO_IDS

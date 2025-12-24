@@ -78,6 +78,60 @@ export interface LoyverseCategory {
   deleted_at?: string;
 }
 
+export interface LoyverseDiscount {
+  id: string;
+  name: string;
+  type: 'FIXED_PERCENT' | 'FIXED_AMOUNT' | 'VARIABLE_PERCENT' | 'VARIABLE_AMOUNT' | 'DISCOUNT_BY_POINTS';
+  discount_amount?: number;
+  discount_percent?: number;
+  stores?: string[];
+  restricted_access?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  deleted_at?: string;
+}
+
+export interface CreateLoyverseDiscountPayload {
+  name: string;
+  type: 'FIXED_PERCENT' | 'FIXED_AMOUNT' | 'VARIABLE_PERCENT' | 'VARIABLE_AMOUNT' | 'DISCOUNT_BY_POINTS';
+  discount_amount?: number;
+  discount_percent?: number;
+  stores?: string[];
+  restricted_access?: boolean;
+}
+
+export interface LoyverseModifierOption {
+  option_id: string;
+  name: string;
+  price: number;
+  ordering: number;
+  created_at?: string;
+  updated_at?: string;
+  deleted_at?: string;
+}
+
+export interface LoyverseModifier {
+  id: string;
+  name: string;
+  position: number;
+  stores?: string[];
+  modifier_options: LoyverseModifierOption[];
+  created_at?: string;
+  updated_at?: string;
+  deleted_at?: string;
+}
+
+export interface CreateLoyverseModifierPayload {
+  name: string;
+  position: number;
+  stores?: string[];
+  modifier_options: {
+    name: string;
+    price: number;
+    ordering: number;
+  }[];
+}
+
 interface GetCategoriesResponse {
   categories: LoyverseCategory[];
   cursor?: string;
@@ -85,6 +139,16 @@ interface GetCategoriesResponse {
 
 interface GetItemsResponse {
   items: LoyverseItem[];
+  cursor?: string;
+}
+
+interface GetDiscountsResponse {
+  discounts: LoyverseDiscount[];
+  cursor?: string;
+}
+
+interface GetModifiersResponse {
+  modifiers: LoyverseModifier[];
   cursor?: string;
 }
 
@@ -225,6 +289,98 @@ class LoyverseClient {
       headers: {
         'Content-Type': contentType
       }
+    });
+  }
+
+  // --- Discounts ---
+
+  async getDiscounts(limit = 50, cursor?: string): Promise<GetDiscountsResponse> {
+    const params = new URLSearchParams();
+    params.append('limit', limit.toString());
+    if (cursor) {
+      params.append('cursor', cursor);
+    }
+    return this.request<GetDiscountsResponse>(`/discounts?${params.toString()}`);
+  }
+
+  async getAllDiscounts(): Promise<LoyverseDiscount[]> {
+    let allDiscounts: LoyverseDiscount[] = [];
+    let cursor: string | undefined;
+
+    do {
+      const response = await this.getDiscounts(250, cursor);
+      // Filter out deleted discounts
+      const activeDiscounts = response.discounts.filter(d => !d.deleted_at);
+      allDiscounts = allDiscounts.concat(activeDiscounts);
+      cursor = response.cursor;
+    } while (cursor);
+
+    return allDiscounts;
+  }
+
+  async createDiscount(discount: CreateLoyverseDiscountPayload): Promise<LoyverseDiscount> {
+    return this.request<LoyverseDiscount>('/discounts', {
+      method: 'POST',
+      body: JSON.stringify(discount),
+    });
+  }
+
+  async updateDiscount(id: string, discount: Partial<CreateLoyverseDiscountPayload>): Promise<LoyverseDiscount> {
+    return this.request<LoyverseDiscount>('/discounts', {
+      method: 'POST',
+      body: JSON.stringify({ ...discount, id }),
+    });
+  }
+
+  async deleteDiscount(id: string): Promise<void> {
+    await this.request<void>(`/discounts/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // --- Modifiers ---
+
+  async getModifiers(limit = 50, cursor?: string): Promise<GetModifiersResponse> {
+    const params = new URLSearchParams();
+    params.append('limit', limit.toString());
+    if (cursor) {
+      params.append('cursor', cursor);
+    }
+    return this.request<GetModifiersResponse>(`/modifiers?${params.toString()}`);
+  }
+
+  async getAllModifiers(): Promise<LoyverseModifier[]> {
+    let allModifiers: LoyverseModifier[] = [];
+    let cursor: string | undefined;
+
+    do {
+      const response = await this.getModifiers(250, cursor);
+      // Filter out deleted modifiers
+      const activeModifiers = response.modifiers.filter(m => !m.deleted_at);
+      allModifiers = allModifiers.concat(activeModifiers);
+      cursor = response.cursor;
+    } while (cursor);
+
+    return allModifiers;
+  }
+
+  async createModifier(modifier: CreateLoyverseModifierPayload): Promise<LoyverseModifier> {
+    return this.request<LoyverseModifier>('/modifiers', {
+      method: 'POST',
+      body: JSON.stringify(modifier),
+    });
+  }
+
+  async updateModifier(id: string, modifier: Partial<CreateLoyverseModifierPayload>): Promise<LoyverseModifier> {
+    return this.request<LoyverseModifier>('/modifiers', {
+      method: 'POST',
+      body: JSON.stringify({ ...modifier, id }),
+    });
+  }
+
+  async deleteModifier(id: string): Promise<void> {
+    await this.request<void>(`/modifiers/${id}`, {
+      method: 'DELETE',
     });
   }
 }

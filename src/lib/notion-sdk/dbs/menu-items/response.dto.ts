@@ -1,4 +1,4 @@
-import { MenuItemsResponse } from "./types"
+import type { MenuItemsResponse } from "./types"
 
 export class MenuItemsResponseDTO {
   __data: MenuItemsResponse
@@ -73,6 +73,13 @@ export class MenuItemsPropertiesResponseDTO {
       loyverseId: this.__props['LoyverseID'],
       grandCategory: this.__props['Grand Category'],
       status: this.__props['Status'],
+      variantOption_1Name: this.__props['Variant option 1 name'],
+      variantsJson: this.__props['Variants JSON'],
+      loyverseHandle: this.__props['Loyverse Handle'],
+      hasVariants: this.__props['Has variants'],
+      variantOption_3Name: this.__props['Variant option 3 name'],
+      variantOption_2Name: this.__props['Variant option 2 name'],
+      modifiers: this.__props['Modifiers'],
     }
   }
 
@@ -147,4 +154,53 @@ export class MenuItemsPropertiesResponseDTO {
   get status() {
     return this.__props['Status']?.status
   }
+
+  get variantOption_1Name() {
+    return {
+      text: this.__props['Variant option 1 name']?.rich_text ? this.__props['Variant option 1 name'].rich_text.reduce((acc, item) => acc + item.plain_text, '') : undefined,
+      links: this.__props['Variant option 1 name']?.rich_text ? this.__props['Variant option 1 name'].rich_text.filter((item) => item.href?.length).map((item) => item.href) : [],
+      rich_text: this.__props['Variant option 1 name']?.rich_text,
+    }
+  }
+
+  get variantsJson() {
+    return {
+      text: this.__props['Variants JSON']?.rich_text ? this.__props['Variants JSON'].rich_text.reduce((acc, item) => acc + item.plain_text, '') : undefined,
+      links: this.__props['Variants JSON']?.rich_text ? this.__props['Variants JSON'].rich_text.filter((item) => item.href?.length).map((item) => item.href) : [],
+      rich_text: this.__props['Variants JSON']?.rich_text,
+    }
+  }
+
+  get loyverseHandle() {
+    return {
+      text: this.__props['Loyverse Handle']?.rich_text ? this.__props['Loyverse Handle'].rich_text.reduce((acc, item) => acc + item.plain_text, '') : undefined,
+      links: this.__props['Loyverse Handle']?.rich_text ? this.__props['Loyverse Handle'].rich_text.filter((item) => item.href?.length).map((item) => item.href) : [],
+      rich_text: this.__props['Loyverse Handle']?.rich_text,
+    }
+  }
+
+  get hasVariants() {
+    return this.__props['Has variants']?.checkbox
+  }
+
+  get variantOption_3Name() {
+    return {
+      text: this.__props['Variant option 3 name']?.rich_text ? this.__props['Variant option 3 name'].rich_text.reduce((acc, item) => acc + item.plain_text, '') : undefined,
+      links: this.__props['Variant option 3 name']?.rich_text ? this.__props['Variant option 3 name'].rich_text.filter((item) => item.href?.length).map((item) => item.href) : [],
+      rich_text: this.__props['Variant option 3 name']?.rich_text,
+    }
+  }
+
+  get variantOption_2Name() {
+    return {
+      text: this.__props['Variant option 2 name']?.rich_text ? this.__props['Variant option 2 name'].rich_text.reduce((acc, item) => acc + item.plain_text, '') : undefined,
+      links: this.__props['Variant option 2 name']?.rich_text ? this.__props['Variant option 2 name'].rich_text.filter((item) => item.href?.length).map((item) => item.href) : [],
+      rich_text: this.__props['Variant option 2 name']?.rich_text,
+    }
+  }
+
+  get modifiersIds() {
+    return (this.__props['Modifiers']?.relation as unknown as Array<{ id: string }> || []).map((item) => item.id)  
+  }
+
 }

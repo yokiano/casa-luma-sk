@@ -1,14 +1,14 @@
 <script lang="ts">
-  import { MenuSyncState } from '../pos-sync.svelte';
+  import { ModifierSyncState } from '../pos-sync-modifiers.svelte';
   
-  const state = new MenuSyncState();
+  const state = new ModifierSyncState();
 </script>
 
 <div>
   <div class="flex justify-between items-center mb-6">
     <div>
-      <h2 class="text-xl font-bold">Menu Items</h2>
-      <p class="text-gray-500 text-sm">Sync Notion Menu Items to Loyverse</p>
+      <h2 class="text-xl font-bold">Modifiers</h2>
+      <p class="text-gray-500 text-sm">Sync Notion Modifiers to Loyverse</p>
     </div>
     <div class="flex items-center gap-4">
       <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none">
@@ -70,14 +70,14 @@
   <div class="bg-white rounded-lg border shadow-sm overflow-hidden">
     {#if state.loading}
       <div class="p-8 text-center text-gray-500">
-        Loading items...
+        Loading modifiers...
       </div>
     {:else}
       <table class="w-full text-left text-sm">
         <thead class="bg-gray-50 border-b">
           <tr>
-            <th class="p-4 font-medium text-gray-500">Item Name</th>
-            <th class="p-4 font-medium text-gray-500">Category</th>
+            <th class="p-4 font-medium text-gray-500">Name</th>
+            <th class="p-4 font-medium text-gray-500">Options</th>
             <th class="p-4 font-medium text-gray-500">Status</th>
             <th class="p-4 font-medium text-gray-500">Details</th>
             <th class="p-4 font-medium text-gray-500 text-right">Actions</th>
@@ -87,19 +87,15 @@
           {#each state.items as item}
             <tr class="hover:bg-gray-50 transition-colors">
               <td class="p-4 font-medium">
-                <div class="flex items-center gap-3">
-                  {#if item.imageUrl}
-                    <img src={item.imageUrl} alt={item.name} class="w-10 h-10 rounded object-cover border" />
-                  {:else}
-                    <div class="w-10 h-10 rounded bg-gray-100 flex items-center justify-center text-gray-400">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
-                    </div>
-                  {/if}
-                  <span>{item.name}</span>
-                </div>
+                {item.name}
               </td>
               <td class="p-4 text-gray-600">
-                {item.category}
+                 {item.options.length} options
+                 {#if item.options.length > 0}
+                  <div class="text-xs text-gray-400 mt-1">
+                    {item.options.map(o => o.name).slice(0, 3).join(', ')}{item.options.length > 3 ? '...' : ''}
+                  </div>
+                 {/if}
               </td>
               <td class="p-4">
                 {#if item.status === 'SYNCED'}
@@ -117,11 +113,6 @@
                 {/if}
               </td>
               <td class="p-4 text-gray-500">
-                {#if item.modifiersCount && item.modifiersCount > 0}
-                   <div class="text-xs font-medium text-purple-600 mb-1">
-                     {item.modifiersCount} Modifier{item.modifiersCount > 1 ? 's' : ''}
-                   </div>
-                {/if}
                 {#if item.diffs && item.diffs.length > 0}
                   <ul class="list-disc list-inside text-xs text-red-500">
                     {#each item.diffs as diff}

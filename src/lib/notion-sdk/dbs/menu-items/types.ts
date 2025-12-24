@@ -2,9 +2,11 @@ import { WithOptional, Join, PathsToStringProps } from '../../core/types/helper.
 import {
 DatabaseObjectResponse,
 StringRequest,
+CheckboxPropertyItemObjectResponse,
 FilesPropertyItemObjectResponse,
 MultiSelectPropertyItemObjectResponse,
 NumberPropertyItemObjectResponse,
+RelationPropertyItemObjectResponse,
 RichTextPropertyItemObjectResponse,
 SelectPropertyItemObjectResponse,
 StatusPropertyItemObjectResponse,
@@ -13,7 +15,9 @@ ExistencePropertyFilter,
 QueryDatabaseBodyParameters,
 TimestampCreatedTimeFilter,
 TimestampLastEditedTimeFilter,
+CheckboxPropertyFilter,
 NumberPropertyFilter,
+RelationPropertyFilter,
 TextPropertyFilter
 } from '../../core/types/notion-api.types'
 import { MENU_ITEMS_PROPS_TO_IDS } from './constants'
@@ -27,11 +31,18 @@ export interface MenuItemsResponse extends WithOptional<Omit<DatabaseObjectRespo
     "Ingridients": Omit<MultiSelectPropertyItemObjectResponse, 'multi_select'> & { multi_select: [{ id: StringRequest, name: 'Cucumber', color: 'green' } | { id: StringRequest, name: 'Pineapple', color: 'yellow' } | { id: StringRequest, name: 'Celery', color: 'green' } | { id: StringRequest, name: 'Lime', color: 'green' } | { id: StringRequest, name: 'Beetroot', color: 'pink' } | { id: StringRequest, name: 'Apple', color: 'red' } | { id: StringRequest, name: 'Ginger', color: 'brown' }]},
     "Allergens": Omit<MultiSelectPropertyItemObjectResponse, 'multi_select'> & { multi_select: [{ id: StringRequest, name: 'Dairy', color: 'blue' } | { id: StringRequest, name: 'Eggs', color: 'yellow' } | { id: StringRequest, name: 'Gluten', color: 'brown' } | { id: StringRequest, name: 'Wheat', color: 'orange' } | { id: StringRequest, name: 'Nuts', color: 'brown' } | { id: StringRequest, name: 'Peanuts', color: 'red' } | { id: StringRequest, name: 'Soy', color: 'green' } | { id: StringRequest, name: 'Fish', color: 'blue' } | { id: StringRequest, name: 'Shellfish', color: 'pink' } | { id: StringRequest, name: 'Sesame', color: 'yellow' }]},
     "Image": FilesPropertyItemObjectResponse,
-    "Category": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'Coffee & More', color: 'brown' } | { id: StringRequest, name: 'Fresh Cold-Pressed Juices', color: 'green' } | { id: StringRequest, name: 'House Smoothies', color: 'pink' } | { id: StringRequest, name: 'Soft Drinks', color: 'blue' } | { id: StringRequest, name: 'Sandwiches & Toasties', color: 'orange' } | { id: StringRequest, name: 'Croissant Sandwich', color: 'yellow' } | { id: StringRequest, name: 'Open Toasts', color: 'yellow' } | { id: StringRequest, name: 'Personal Pizzas', color: 'red' } | { id: StringRequest, name: 'Salads', color: 'green' } | { id: StringRequest, name: 'Goodies Sets', color: 'purple' } | { id: StringRequest, name: 'Sweet Morning', color: 'orange' } | { id: StringRequest, name: 'Comfort Food', color: 'gray' } | { id: StringRequest, name: 'Desserts', color: 'pink' } | { id: StringRequest, name: 'Kids Pizza', color: 'red' } | { id: StringRequest, name: 'Kids Favorites', color: 'yellow' } | { id: StringRequest, name: 'Kids Small Plates', color: 'blue' } | { id: StringRequest, name: 'Kids Beverage', color: 'blue' }},
+    "Category": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'Coffee & More', color: 'brown' } | { id: StringRequest, name: 'Fresh Cold-Pressed Juices', color: 'green' } | { id: StringRequest, name: 'House Smoothies', color: 'pink' } | { id: StringRequest, name: 'Soft Drinks', color: 'blue' } | { id: StringRequest, name: 'Sandwiches & Toasties', color: 'orange' } | { id: StringRequest, name: 'Croissant Sandwich', color: 'yellow' } | { id: StringRequest, name: 'Open Toasts', color: 'yellow' } | { id: StringRequest, name: 'Personal Pizzas', color: 'red' } | { id: StringRequest, name: 'Salads', color: 'green' } | { id: StringRequest, name: 'Sweet Morning', color: 'orange' } | { id: StringRequest, name: 'Comfort Food', color: 'gray' } | { id: StringRequest, name: 'Desserts', color: 'pink' } | { id: StringRequest, name: 'Kids Pizza', color: 'red' } | { id: StringRequest, name: 'Kids Favorites', color: 'yellow' } | { id: StringRequest, name: 'Kids Small Plates', color: 'blue' } | { id: StringRequest, name: 'Kids Beverage', color: 'blue' }},
     "Name": TitlePropertyItemObjectResponse,
     "LoyverseID": RichTextPropertyItemObjectResponse,
     "Grand Category": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'Food', color: 'yellow' } | { id: StringRequest, name: 'Drinks', color: 'green' } | { id: StringRequest, name: 'Kids', color: 'pink' } | { id: StringRequest, name: 'Desserts', color: 'default' }},
-    "Status": Omit<StatusPropertyItemObjectResponse, 'status'> & { status: { id: StringRequest, name: 'Active', color: 'green' } | { id: StringRequest, name: 'Archived', color: 'gray' }}
+    "Status": Omit<StatusPropertyItemObjectResponse, 'status'> & { status: { id: StringRequest, name: 'Active', color: 'green' } | { id: StringRequest, name: 'Archived', color: 'gray' }},
+    "Variant option 1 name": RichTextPropertyItemObjectResponse,
+    "Variants JSON": RichTextPropertyItemObjectResponse,
+    "Loyverse Handle": RichTextPropertyItemObjectResponse,
+    "Has variants": CheckboxPropertyItemObjectResponse,
+    "Variant option 3 name": RichTextPropertyItemObjectResponse,
+    "Variant option 2 name": RichTextPropertyItemObjectResponse,
+    "Modifiers": RelationPropertyItemObjectResponse
   }
 }
 
@@ -116,8 +127,15 @@ type MenuItemsStatusPropertyFilter =
     }
   | ExistencePropertyFilter      
 
+type MenuItemsVariantOption_1NamePropertyFilter = TextPropertyFilter
+type MenuItemsVariantsJsonPropertyFilter = TextPropertyFilter
+type MenuItemsLoyverseHandlePropertyFilter = TextPropertyFilter
+type MenuItemsHasVariantsPropertyFilter = CheckboxPropertyFilter
+type MenuItemsVariantOption_3NamePropertyFilter = TextPropertyFilter
+type MenuItemsVariantOption_2NamePropertyFilter = TextPropertyFilter
+type MenuItemsModifiersPropertyFilter = RelationPropertyFilter
 
-export type MenuItemsPropertyFilter = { description: MenuItemsDescriptionPropertyFilter } | { dietaryOptions: MenuItemsDietaryOptionsPropertyFilter } | { cogs: MenuItemsCogsPropertyFilter } | { price: MenuItemsPricePropertyFilter } | { ingridients: MenuItemsIngridientsPropertyFilter } | { allergens: MenuItemsAllergensPropertyFilter } | { image: MenuItemsImagePropertyFilter } | { category: MenuItemsCategoryPropertyFilter } | { name: MenuItemsNamePropertyFilter } | { loyverseId: MenuItemsLoyverseIdPropertyFilter } | { grandCategory: MenuItemsGrandCategoryPropertyFilter } | { status: MenuItemsStatusPropertyFilter }
+export type MenuItemsPropertyFilter = { description: MenuItemsDescriptionPropertyFilter } | { dietaryOptions: MenuItemsDietaryOptionsPropertyFilter } | { cogs: MenuItemsCogsPropertyFilter } | { price: MenuItemsPricePropertyFilter } | { ingridients: MenuItemsIngridientsPropertyFilter } | { allergens: MenuItemsAllergensPropertyFilter } | { image: MenuItemsImagePropertyFilter } | { category: MenuItemsCategoryPropertyFilter } | { name: MenuItemsNamePropertyFilter } | { loyverseId: MenuItemsLoyverseIdPropertyFilter } | { grandCategory: MenuItemsGrandCategoryPropertyFilter } | { status: MenuItemsStatusPropertyFilter } | { variantOption_1Name: MenuItemsVariantOption_1NamePropertyFilter } | { variantsJson: MenuItemsVariantsJsonPropertyFilter } | { loyverseHandle: MenuItemsLoyverseHandlePropertyFilter } | { hasVariants: MenuItemsHasVariantsPropertyFilter } | { variantOption_3Name: MenuItemsVariantOption_3NamePropertyFilter } | { variantOption_2Name: MenuItemsVariantOption_2NamePropertyFilter } | { modifiers: MenuItemsModifiersPropertyFilter }
 
 export type MenuItemsQuery = Omit<QueryDatabaseBodyParameters, 'filter' | 'sorts'> & {
   sorts?: Array<

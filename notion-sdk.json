@@ -300,6 +300,48 @@
           "_type": "status",
           "varName": "status",
           "readOnly": false
+        },
+        "Fak%7B": {
+          "_name": "Variant option 1 name",
+          "_type": "rich_text",
+          "varName": "variantOption_1Name",
+          "readOnly": false
+        },
+        "GBdq": {
+          "_name": "Variants JSON",
+          "_type": "rich_text",
+          "varName": "variantsJson",
+          "readOnly": false
+        },
+        "PdEI": {
+          "_name": "Loyverse Handle",
+          "_type": "rich_text",
+          "varName": "loyverseHandle",
+          "readOnly": false
+        },
+        "Y%5DwL": {
+          "_name": "Has variants",
+          "_type": "checkbox",
+          "varName": "hasVariants",
+          "readOnly": false
+        },
+        "a%3CZ%40": {
+          "_name": "Variant option 3 name",
+          "_type": "rich_text",
+          "varName": "variantOption_3Name",
+          "readOnly": false
+        },
+        "wt%7Dr": {
+          "_name": "Variant option 2 name",
+          "_type": "rich_text",
+          "varName": "variantOption_2Name",
+          "readOnly": false
+        },
+        "eqWu": {
+          "_name": "Modifiers",
+          "_type": "relation",
+          "varName": "modifiers",
+          "readOnly": false
         }
       }
     },
@@ -1216,6 +1258,98 @@
           "_name": "Event Name",
           "_type": "title",
           "varName": "eventName",
+          "readOnly": false
+        }
+      }
+    },
+    "ad6d2ea9-e12c-4665-87d9-f3cd2e1d3479": {
+      "_name": "POS Modifiers",
+      "varName": "posModifiers",
+      "pathName": "pos-modifiers",
+      "properties": {
+        "%3BZd%5E": {
+          "_name": "Notes",
+          "_type": "rich_text",
+          "varName": "notes",
+          "readOnly": false
+        },
+        "%40bAp": {
+          "_name": "Options JSON",
+          "_type": "rich_text",
+          "varName": "optionsJson",
+          "readOnly": false
+        },
+        "C%7BUZ": {
+          "_name": "LoyverseID",
+          "_type": "rich_text",
+          "varName": "loyverseId",
+          "readOnly": false
+        },
+        "Ph%3EC": {
+          "_name": "Position",
+          "_type": "number",
+          "varName": "position",
+          "readOnly": false
+        },
+        "teX~": {
+          "_name": "Active",
+          "_type": "checkbox",
+          "varName": "active",
+          "readOnly": false
+        },
+        "title": {
+          "_name": "Name",
+          "_type": "title",
+          "varName": "name",
+          "readOnly": false
+        }
+      }
+    },
+    "90a654cd-5b63-4906-8ad8-98ae7b643607": {
+      "_name": "POS Discounts",
+      "varName": "posDiscounts",
+      "pathName": "pos-discounts",
+      "properties": {
+        "%3Aqj_": {
+          "_name": "Value",
+          "_type": "number",
+          "varName": "value",
+          "readOnly": false
+        },
+        "B%5D%3A%3C": {
+          "_name": "Active",
+          "_type": "checkbox",
+          "varName": "active",
+          "readOnly": false
+        },
+        "GeG%3C": {
+          "_name": "Restricted access",
+          "_type": "checkbox",
+          "varName": "restrictedAccess",
+          "readOnly": false
+        },
+        "npz%7D": {
+          "_name": "Type",
+          "_type": "select",
+          "varName": "type",
+          "readOnly": false
+        },
+        "wqUi": {
+          "_name": "LoyverseID",
+          "_type": "rich_text",
+          "varName": "loyverseId",
+          "readOnly": false
+        },
+        "%7B_%60%5C": {
+          "_name": "Applies to",
+          "_type": "select",
+          "varName": "appliesTo",
+          "readOnly": false
+        },
+        "title": {
+          "_name": "Name",
+          "_type": "title",
+          "varName": "name",
           "readOnly": false
         }
       }

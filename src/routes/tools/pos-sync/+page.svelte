@@ -1,8 +1,12 @@
 <script lang="ts">
   import MenuSyncTab from './tabs/MenuSyncTab.svelte';
+  import DiscountSyncTab from './tabs/DiscountSyncTab.svelte';
+  import ModifierSyncTab from './tabs/ModifierSyncTab.svelte';
 
   const tabs = [
     { id: 'menu', label: 'Menu Items', component: MenuSyncTab },
+    { id: 'modifiers', label: 'Modifiers', component: ModifierSyncTab },
+    { id: 'discounts', label: 'Discounts', component: DiscountSyncTab },
     { id: 'open-play', label: 'Open Play / Memberships', component: null },
     { id: 'pay-for-play', label: 'Pay for Play', component: null },
     { id: 'store-items', label: 'Store Items', component: null }
@@ -20,10 +24,10 @@
   </div>
 
   <!-- Tabs Navigation -->
-  <div class="flex border-b border-gray-200 mb-8">
+  <div class="flex border-b border-gray-200 mb-8 overflow-x-auto">
     {#each tabs as tab}
       <button
-        class={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+        class={`px-6 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
           activeTabId === tab.id
             ? 'border-black text-black'
             : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'

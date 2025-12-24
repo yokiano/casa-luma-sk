@@ -1,6 +1,7 @@
 import { query, command } from '$app/server';
 import { NOTION_API_KEY } from '$env/static/private';
 import { MenuItemsDatabase, MenuItemsResponseDTO, MenuItemsPatchDTO } from '$lib/notion-sdk/dbs/menu-items';
+import { PosModifiersDatabase, PosModifiersResponseDTO } from '$lib/notion-sdk/dbs/pos-modifiers';
 import { loyverse } from '$lib/server/loyverse';
 import * as v from 'valibot';
 
@@ -16,6 +17,8 @@ export interface MenuItemSyncState {
   notionLoyverseIdProp?: string; // The value in the Notion "LoyverseID" property
   status: SyncStatus;
   diffs?: string[]; // Description of differences if MODIFIED
+  hasVariants?: boolean;
+  modifiersCount?: number;
 }
 
 export interface SyncReport {
@@ -29,21 +32,102 @@ export interface SyncReport {
 // Helper to normalize strings for comparison
 const normalize = (str?: string | null) => str?.trim() || '';
 
+interface ParsedVariant {
+  option1_value?: string;
+  option2_value?: string;
+  option3_value?: string;
+  price?: number;
+  sku?: string;
+  barcode?: string;
+}
+
+function parseVariants(jsonString?: string): ParsedVariant[] {
+  if (!jsonString) return [];
+  try {
+    const parsed = JSON.parse(jsonString);
+    if (Array.isArray(parsed)) {
+      return parsed.map((v: any) => ({
+        option1_value: v.option1_value || v.name || v.option1 || undefined,
+        option2_value: v.option2_value || v.option2 || undefined,
+        option3_value: v.option3_value || v.option3 || undefined,
+        price: Number(v.price ?? v.default_price ?? 0),
+        sku: v.sku,
+        barcode: v.barcode
+      }));
+    }
+    return [];
+  } catch (e) {
+    console.error('Failed to parse variants JSON:', e);
+    return [];
+  }
+}
+
 // Helper to compare Notion and Loyverse items
-function compareItems(notionItem: MenuItemsResponseDTO, loyverseItem: any, loyverseCategories: Map<string, any>): string[] {
+function compareItems(
+  notionItem: MenuItemsResponseDTO, 
+  loyverseItem: any, 
+  loyverseCategories: Map<string, any>,
+  notionModifiersMap: Map<string, string> // Notion Page ID -> Loyverse Modifier ID
+): string[] {
   const diffs: string[] = [];
   
   if (normalize(notionItem.properties.name.text) !== normalize(loyverseItem.item_name)) {
     diffs.push(`Name mismatch: "${notionItem.properties.name.text}" vs "${loyverseItem.item_name}"`);
   }
   
-  // Compare Price (Notion is number, Loyverse has variants)
-  const notionPrice = notionItem.properties.price ?? 0;
-  // Assuming simple item with one variant or taking the first variant's price
-  const loyversePrice = loyverseItem.variants[0]?.default_price ?? 0;
-  
-  if (notionPrice !== loyversePrice) {
-    diffs.push(`Price mismatch: ${notionPrice} vs ${loyversePrice}`);
+  const hasVariants = notionItem.properties.hasVariants ?? false;
+
+  if (hasVariants) {
+     // Compare Variants
+     const notionVariants = parseVariants(notionItem.properties.variantsJson.text);
+     const loyverseVariants = loyverseItem.variants || [];
+
+     // Compare Option Names
+     const nOp1 = normalize(notionItem.properties.variantOption_1Name.text);
+     const lOp1 = normalize(loyverseItem.option1_name);
+     if (nOp1 !== lOp1) diffs.push(`Option 1 Name mismatch: "${nOp1}" vs "${lOp1}"`);
+
+     const nOp2 = normalize(notionItem.properties.variantOption_2Name.text);
+     const lOp2 = normalize(loyverseItem.option2_name);
+     if (nOp2 !== lOp2 && (nOp2 || lOp2)) diffs.push(`Option 2 Name mismatch: "${nOp2}" vs "${lOp2}"`);
+     
+     const nOp3 = normalize(notionItem.properties.variantOption_3Name.text);
+     const lOp3 = normalize(loyverseItem.option3_name);
+     if (nOp3 !== lOp3 && (nOp3 || lOp3)) diffs.push(`Option 3 Name mismatch: "${nOp3}" vs "${lOp3}"`);
+
+     // Compare Variant Count
+     if (notionVariants.length !== loyverseVariants.length) {
+        diffs.push(`Variant count mismatch: ${notionVariants.length} vs ${loyverseVariants.length}`);
+     } else {
+        // Compare values loosely
+        for (const nVar of notionVariants) {
+           // Find matching variant in Loyverse by options
+           const lVar = loyverseVariants.find((lv: any) => 
+              normalize(lv.option1_value) === normalize(nVar.option1_value) &&
+              normalize(lv.option2_value) === normalize(nVar.option2_value) &&
+              normalize(lv.option3_value) === normalize(nVar.option3_value)
+           );
+           
+           if (!lVar) {
+              diffs.push(`Variant ${nVar.option1_value}/${nVar.option2_value} missing in Loyverse`);
+           } else {
+              if (nVar.price !== lVar.default_price) {
+                 diffs.push(`Price mismatch for ${nVar.option1_value}: ${nVar.price} vs ${lVar.default_price}`);
+              }
+           }
+        }
+     }
+
+  } else {
+    // Simple Item Comparison
+    // Compare Price (Notion is number, Loyverse has variants)
+    const notionPrice = notionItem.properties.price ?? 0;
+    // Assuming simple item with one variant or taking the first variant's price
+    const loyversePrice = loyverseItem.variants[0]?.default_price ?? 0;
+    
+    if (notionPrice !== loyversePrice) {
+      diffs.push(`Price mismatch: ${notionPrice} vs ${loyversePrice}`);
+    }
   }
 
   // Compare Description
@@ -63,17 +147,45 @@ function compareItems(notionItem: MenuItemsResponseDTO, loyverseItem: any, loyve
     diffs.push(`Category mismatch: "${notionCategory}" vs "${loyverseCategory || 'Uncategorized'}"`);
   }
 
+  // Compare Modifiers
+  const notionModifierPageIds = notionItem.properties.modifiersIds || [];
+  // Map Notion IDs to expected Loyverse IDs
+  const expectedLoyverseModifierIds = new Set(
+    notionModifierPageIds
+      .map(id => notionModifiersMap.get(id))
+      .filter(id => id !== undefined) as string[]
+  );
+  
+  const actualLoyverseModifierIds = new Set((loyverseItem.modifiers_ids || []) as string[]);
+
+  if (expectedLoyverseModifierIds.size !== actualLoyverseModifierIds.size) {
+     diffs.push(`Modifiers count mismatch: ${expectedLoyverseModifierIds.size} vs ${actualLoyverseModifierIds.size}`);
+  } else {
+     for (const id of expectedLoyverseModifierIds) {
+        if (!actualLoyverseModifierIds.has(id)) {
+           diffs.push(`Modifier mismatch: One or more modifiers missing/different`);
+           break;
+        }
+     }
+  }
+
   return diffs;
 }
 
 export const getMenuSyncStatus = query(async () => {
   const notionDb = new MenuItemsDatabase({ notionSecret: NOTION_API_KEY });
+  const modifiersDb = new PosModifiersDatabase({ notionSecret: NOTION_API_KEY });
   
-  // Parallel fetch - Only sync Active items from Notion
-  const [notionResult, loyverseItems, loyverseCategoriesList] = await Promise.all([
+  // Parallel fetch
+  const [notionResult, notionModifiersResult, loyverseItems, loyverseCategoriesList] = await Promise.all([
     notionDb.query({
       filter: {
         status: { equals: 'Active' }
+      }
+    }),
+    modifiersDb.query({
+      filter: {
+        active: { equals: true }
       }
     }),
     loyverse.getAllItems(),
@@ -81,6 +193,17 @@ export const getMenuSyncStatus = query(async () => {
   ]);
 
   const notionItems = notionResult.results.map(r => new MenuItemsResponseDTO(r));
+  const notionModifiers = notionModifiersResult.results.map(r => new PosModifiersResponseDTO(r));
+  
+  // Build map of Notion Page ID -> Loyverse ID for modifiers
+  const notionModifiersMap = new Map<string, string>();
+  for (const mod of notionModifiers) {
+     const lid = mod.properties.loyverseId.rich_text?.[0]?.plain_text;
+     if (lid) {
+        notionModifiersMap.set(mod.id, lid);
+     }
+  }
+
   const syncStates: MenuItemSyncState[] = [];
   
   // Create a map of Loyverse items for easy lookup
@@ -97,6 +220,8 @@ export const getMenuSyncStatus = query(async () => {
     const name = nItem.properties.name.text || 'Untitled';
     const category = nItem.properties.category?.name || 'Uncategorized';
     const imageUrl = nItem.properties.image?.urls?.[0]; // Get first image URL if available
+    const hasVariants = nItem.properties.hasVariants ?? false;
+    const modifiersCount = nItem.properties.modifiersIds?.length || 0;
     
     let status: SyncStatus = 'NOT_IN_LOYVERSE';
     let loyverseId: string | undefined = undefined;
@@ -108,7 +233,7 @@ export const getMenuSyncStatus = query(async () => {
       loyverseId = lItem.id;
       matchedLoyverseIds.add(lItem.id);
       
-      diffs = compareItems(nItem, lItem, loyverseCategories);
+      diffs = compareItems(nItem, lItem, loyverseCategories, notionModifiersMap);
       status = diffs.length > 0 ? 'MODIFIED' : 'SYNCED';
     } else if (loyverseByName.has(normalize(name).toLowerCase())) {
       // Found by name but not linked via ID property
@@ -117,7 +242,7 @@ export const getMenuSyncStatus = query(async () => {
       matchedLoyverseIds.add(lItem.id);
 
       status = 'LINKED_ONLY'; // Needs to update Notion with ID
-      diffs = compareItems(nItem, lItem, loyverseCategories);
+      diffs = compareItems(nItem, lItem, loyverseCategories, notionModifiersMap);
     }
 
     syncStates.push({
@@ -128,7 +253,9 @@ export const getMenuSyncStatus = query(async () => {
       imageUrl,
       notionLoyverseIdProp: notionLoyverseId,
       status,
-      diffs
+      diffs,
+      hasVariants,
+      modifiersCount
     });
   }
 
@@ -156,14 +283,20 @@ export const syncMenuItems = command(
   }),
   async ({ itemIds, deleteOrphans }) => {
     const notionDb = new MenuItemsDatabase({ notionSecret: NOTION_API_KEY });
+    const modifiersDb = new PosModifiersDatabase({ notionSecret: NOTION_API_KEY });
     const report: SyncReport = { created: 0, updated: 0, linked: 0, deleted: 0, errors: [] };
 
     try {
       // Fetch data - Only sync Active items from Notion
-      const [notionResult, loyverseItems, loyverseCategoriesList] = await Promise.all([
+      const [notionResult, notionModifiersResult, loyverseItems, loyverseCategoriesList] = await Promise.all([
         notionDb.query({
           filter: {
             status: { equals: 'Active' }
+          }
+        }),
+        modifiersDb.query({
+          filter: {
+            active: { equals: true }
           }
         }),
         loyverse.getAllItems(),
@@ -171,6 +304,16 @@ export const syncMenuItems = command(
       ]);
 
       const allNotionItems = notionResult.results.map(r => new MenuItemsResponseDTO(r));
+      const notionModifiers = notionModifiersResult.results.map(r => new PosModifiersResponseDTO(r));
+      
+      // Build map of Notion Page ID -> Loyverse ID for modifiers
+      const notionModifiersMap = new Map<string, string>();
+      for (const mod of notionModifiers) {
+         const lid = mod.properties.loyverseId.rich_text?.[0]?.plain_text;
+         if (lid) {
+            notionModifiersMap.set(mod.id, lid);
+         }
+      }
       
       // Filter items to sync (Create/Update)
       const notionItemsToSync = allNotionItems
@@ -202,7 +345,7 @@ export const syncMenuItems = command(
       for (const nItem of allNotionItems) {
          const notionLoyverseId = nItem.properties.loyverseId?.rich_text?.[0]?.plain_text;
          const name = nItem.properties.name.text || 'Untitled';
-
+         
          if (notionLoyverseId && loyverseById.has(notionLoyverseId)) {
             matchedLoyverseIds.add(notionLoyverseId);
          } else if (loyverseByName.has(normalize(name).toLowerCase())) {
@@ -217,11 +360,18 @@ export const syncMenuItems = command(
           const notionLoyverseId = nItem.properties.loyverseId?.rich_text?.[0]?.plain_text;
           const name = nItem.properties.name.text || 'Untitled';
           const description = nItem.properties.description.text || '';
-          const price = nItem.properties.price ?? 0;
           const categoryName = nItem.properties.category?.name || 'Uncategorized';
           const imageUrl = nItem.properties.image?.urls?.[0];
-
+          
+          const hasVariants = nItem.properties.hasVariants ?? false;
+          
           const categoryId = await resolveCategoryId(categoryName);
+
+          // Resolve Modifiers
+          const notionModifierIds = nItem.properties.modifiersIds || [];
+          const modifiersIds = notionModifierIds
+             .map(id => notionModifiersMap.get(id))
+             .filter(id => id !== undefined) as string[];
 
           let targetLoyverseItem: any;
           let isNew = false;
@@ -242,18 +392,74 @@ export const syncMenuItems = command(
             isNew = true;
           }
 
+          // Construct Payload
+          const payload: any = {
+             item_name: name,
+             description,
+             category_id: categoryId,
+             modifiers_ids: modifiersIds, // Add modifiers
+             option1_name: undefined,
+             option2_name: undefined,
+             option3_name: undefined,
+             variants: []
+          };
+
+          if (hasVariants) {
+             const notionVariants = parseVariants(nItem.properties.variantsJson.text);
+             payload.option1_name = nItem.properties.variantOption_1Name.text || null;
+             payload.option2_name = nItem.properties.variantOption_2Name.text || null;
+             payload.option3_name = nItem.properties.variantOption_3Name.text || null;
+             
+             if (notionVariants.length > 0) {
+                 // Map Notion variants to Loyverse structure
+                 payload.variants = notionVariants.map(nv => ({
+                    option1_value: nv.option1_value,
+                    option2_value: nv.option2_value,
+                    option3_value: nv.option3_value,
+                    default_price: nv.price,
+                    sku: nv.sku,
+                    barcode: nv.barcode,
+                    default_pricing_type: 'FIXED'
+                 }));
+             } 
+
+             if (!isNew && targetLoyverseItem) {
+                 const existingVariants = targetLoyverseItem.variants || [];
+                 payload.variants = payload.variants.map((pv: any) => {
+                     // Try to find matching existing variant
+                     const existing = existingVariants.find((ev: any) => 
+                        normalize(ev.option1_value) === normalize(pv.option1_value) &&
+                        normalize(ev.option2_value) === normalize(pv.option2_value) &&
+                        normalize(ev.option3_value) === normalize(pv.option3_value)
+                     );
+                     
+                     if (existing) {
+                         return { ...pv, variant_id: existing.variant_id };
+                     }
+                     return pv;
+                 });
+             }
+
+          } else {
+             // Simple Item
+             const price = nItem.properties.price ?? 0;
+             const variant: any = {
+                default_price: price,
+                default_pricing_type: 'FIXED'
+             };
+             
+             // If updating, preserve the main variant ID
+             if (!isNew && targetLoyverseItem && targetLoyverseItem.variants && targetLoyverseItem.variants.length > 0) {
+                 variant.variant_id = targetLoyverseItem.variants[0].variant_id;
+             }
+             
+             payload.variants = [variant];
+          }
+
           // 2. Perform Action
           if (isNew) {
             // Create in Loyverse
-            const newItem = await loyverse.createItem({
-              item_name: name,
-              description: description,
-              category_id: categoryId,
-              variants: [{
-                default_price: price,
-                default_pricing_type: 'FIXED'
-              }]
-            });
+            const newItem = await loyverse.createItem(payload);
 
             // Upload Image if exists
             if (imageUrl) {
@@ -274,38 +480,7 @@ export const syncMenuItems = command(
             report.created++;
           } else {
             // Update in Loyverse
-            
-            const variants = targetLoyverseItem.variants.map((v: any, index: number) => {
-               const variantUpdate: any = {
-                 variant_id: v.variant_id,
-                 sku: v.sku,
-                 option1_value: v.option1_value,
-                 option2_value: v.option2_value,
-                 option3_value: v.option3_value,
-                 barcode: v.barcode,
-                 cost: v.cost,
-                 purchase_cost: v.purchase_cost,
-                 default_pricing_type: v.default_pricing_type,
-                 default_price: v.default_price,
-               };
-
-               // Update the first variant with price
-               if (index === 0) {
-                 variantUpdate.default_price = price;
-                 variantUpdate.default_pricing_type = 'FIXED';
-               }
-               return variantUpdate;
-            });
-
-            await loyverse.updateItem(targetLoyverseItem.id, {
-              item_name: name,
-              description: description,
-              category_id: categoryId,
-              track_stock: targetLoyverseItem.track_stock,
-              sold_by_weight: targetLoyverseItem.sold_by_weight,
-              is_composite: targetLoyverseItem.is_composite,
-              variants: variants
-            });
+            await loyverse.updateItem(targetLoyverseItem.id, payload);
 
             // Upload Image if exists
             if (imageUrl) {
