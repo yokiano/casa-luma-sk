@@ -1,7 +1,12 @@
-import { getMenuSyncStatus, syncMenuItems, type MenuItemSyncState, type SyncReport } from '$lib/menu-sync.remote';
+import { getMenuSyncStatus, syncMenuItems, type MenuItemSyncState, type SyncReport, type ItemSyncResult } from '$lib/menu-sync.remote';
+
+export interface MenuItemExtended extends MenuItemSyncState {
+  isSyncing?: boolean;
+  syncResult?: ItemSyncResult;
+}
 
 export class MenuSyncState {
-  items = $state<MenuItemSyncState[]>([]);
+  items = $state<MenuItemExtended[]>([]);
   loading = $state(false);
   syncing = $state(false);
   lastReport = $state<SyncReport | null>(null);
@@ -9,6 +14,13 @@ export class MenuSyncState {
   
   // Options
   deleteOrphans = $state(false);
+  hideSynced = $state(false);
+
+  // Computed: Filtered items
+  filteredItems = $derived(this.items.filter(i => {
+    if (this.hideSynced && i.status === 'SYNCED') return false;
+    return true;
+  }));
 
   // Computed: Items that need attention
   itemsToSync = $derived(this.items.filter(i => 
@@ -26,7 +38,18 @@ export class MenuSyncState {
     this.loading = true;
     this.error = null;
     try {
-      this.items = await getMenuSyncStatus();
+      const results = await getMenuSyncStatus();
+      // Preserving sync results if we are refreshing after a sync
+      this.items = results.map(newItem => {
+        const existing = this.items.find(i => 
+          (i.notionId && i.notionId === newItem.notionId) || 
+          (i.loyverseId && i.loyverseId === newItem.loyverseId)
+        );
+        return {
+          ...newItem,
+          syncResult: existing?.syncResult
+        };
+      });
     } catch (e: any) {
       this.error = e.message || 'Failed to fetch status';
       console.error(e);
@@ -39,11 +62,21 @@ export class MenuSyncState {
     this.syncing = true;
     this.lastReport = null;
     this.error = null;
+    
+    // Mark items as syncing
+    const idsToSync = this.itemsToSync.map(i => i.notionId || i.loyverseId).filter(Boolean) as string[];
+    this.items.forEach(i => {
+      if ((i.notionId && idsToSync.includes(i.notionId)) || (i.loyverseId && idsToSync.includes(i.loyverseId))) {
+        i.isSyncing = true;
+        i.syncResult = undefined;
+      }
+    });
+
     try {
-      // Sync everything
-      this.lastReport = await syncMenuItems({ 
+      const report = await syncMenuItems({ 
         deleteOrphans: this.deleteOrphans 
       });
+      this.applyReport(report);
       // Refresh status after sync
       await this.fetchStatus();
     } catch (e: any) {
@@ -51,6 +84,7 @@ export class MenuSyncState {
       console.error(e);
     } finally {
       this.syncing = false;
+      this.items.forEach(i => i.isSyncing = false);
     }
   }
 
@@ -58,20 +92,38 @@ export class MenuSyncState {
     this.syncing = true;
     this.lastReport = null;
     this.error = null;
+
+    // Mark selected items as syncing
+    this.items.forEach(i => {
+      if (i.notionId && itemIds.includes(i.notionId)) {
+        i.isSyncing = true;
+        i.syncResult = undefined;
+      }
+    });
+
     try {
-      // Note: We intentionally don't pass deleteOrphans here as this is a partial sync
-      // unless we want to support deleting specific orphaned items which would require passing their IDs somehow?
-      // But itemIds are Notion IDs. Orphans don't have Notion IDs.
-      // So syncSelected can't really target orphans with the current API design unless we change input to accept Loyverse IDs too.
-      // For now, syncSelected only updates Notion -> Loyverse.
-      
-      this.lastReport = await syncMenuItems({ itemIds });
+      const report = await syncMenuItems({ itemIds });
+      this.applyReport(report);
       await this.fetchStatus();
     } catch (e: any) {
       this.error = e.message || 'Failed to sync items';
       console.error(e);
     } finally {
       this.syncing = false;
+      this.items.forEach(i => i.isSyncing = false);
     }
+  }
+
+  private applyReport(report: SyncReport) {
+    this.lastReport = report;
+    report.itemResults.forEach(res => {
+      const item = this.items.find(i => 
+        (res.notionId && i.notionId === res.notionId) || 
+        (res.loyverseId && i.loyverseId === res.loyverseId)
+      );
+      if (item) {
+        item.syncResult = res;
+      }
+    });
   }
 }

@@ -21,12 +21,22 @@ export interface MenuItemSyncState {
   modifiersCount?: number;
 }
 
+export interface ItemSyncResult {
+  notionId?: string;
+  loyverseId?: string;
+  name: string;
+  action: 'CREATE' | 'UPDATE' | 'LINK' | 'DELETE' | 'SKIP';
+  status: 'SUCCESS' | 'ERROR';
+  message?: string;
+}
+
 export interface SyncReport {
   created: number;
   updated: number;
   linked: number;
   deleted: number;
   errors: string[];
+  itemResults: ItemSyncResult[];
 }
 
 // Helper to normalize strings for comparison
@@ -156,7 +166,7 @@ function compareItems(
       .filter(id => id !== undefined) as string[]
   );
   
-  const actualLoyverseModifierIds = new Set((loyverseItem.modifiers_ids || []) as string[]);
+  const actualLoyverseModifierIds = new Set((loyverseItem.modifier_ids || []) as string[]);
 
   if (expectedLoyverseModifierIds.size !== actualLoyverseModifierIds.size) {
      diffs.push(`Modifiers count mismatch: ${expectedLoyverseModifierIds.size} vs ${actualLoyverseModifierIds.size}`);
@@ -177,7 +187,7 @@ export const getMenuSyncStatus = query(async () => {
   const modifiersDb = new PosModifiersDatabase({ notionSecret: NOTION_API_KEY });
   
   // Parallel fetch
-  const [notionResult, notionModifiersResult, loyverseItems, loyverseCategoriesList] = await Promise.all([
+  const [notionResult, notionModifiersResult, loyverseItems, loyverseCategoriesList, loyverseModifiers] = await Promise.all([
     notionDb.query({
       filter: {
         status: { equals: 'Active' }
@@ -189,7 +199,8 @@ export const getMenuSyncStatus = query(async () => {
       }
     }),
     loyverse.getAllItems(),
-    loyverse.getAllCategories()
+    loyverse.getAllCategories(),
+    loyverse.getAllModifiers()
   ]);
 
   const notionItems = notionResult.results.map(r => new MenuItemsResponseDTO(r));
@@ -198,7 +209,7 @@ export const getMenuSyncStatus = query(async () => {
   // Build map of Notion Page ID -> Loyverse ID for modifiers
   const notionModifiersMap = new Map<string, string>();
   for (const mod of notionModifiers) {
-     const lid = mod.properties.loyverseId.rich_text?.[0]?.plain_text;
+     const lid = mod.properties.loyverseId.text;
      if (lid) {
         notionModifiersMap.set(mod.id, lid);
      }
@@ -284,11 +295,11 @@ export const syncMenuItems = command(
   async ({ itemIds, deleteOrphans }) => {
     const notionDb = new MenuItemsDatabase({ notionSecret: NOTION_API_KEY });
     const modifiersDb = new PosModifiersDatabase({ notionSecret: NOTION_API_KEY });
-    const report: SyncReport = { created: 0, updated: 0, linked: 0, deleted: 0, errors: [] };
+    const report: SyncReport = { created: 0, updated: 0, linked: 0, deleted: 0, errors: [], itemResults: [] };
 
     try {
       // Fetch data - Only sync Active items from Notion
-      const [notionResult, notionModifiersResult, loyverseItems, loyverseCategoriesList] = await Promise.all([
+      const [notionResult, notionModifiersResult, loyverseItems, loyverseCategoriesList, loyverseModifiers] = await Promise.all([
         notionDb.query({
           filter: {
             status: { equals: 'Active' }
@@ -300,16 +311,17 @@ export const syncMenuItems = command(
           }
         }),
         loyverse.getAllItems(),
-        loyverse.getAllCategories()
-      ]);
+        loyverse.getAllCategories(),
+      loyverse.getAllModifiers()
+    ]);
 
-      const allNotionItems = notionResult.results.map(r => new MenuItemsResponseDTO(r));
+    const allNotionItems = notionResult.results.map(r => new MenuItemsResponseDTO(r));
       const notionModifiers = notionModifiersResult.results.map(r => new PosModifiersResponseDTO(r));
       
       // Build map of Notion Page ID -> Loyverse ID for modifiers
       const notionModifiersMap = new Map<string, string>();
       for (const mod of notionModifiers) {
-         const lid = mod.properties.loyverseId.rich_text?.[0]?.plain_text;
+         const lid = mod.properties.loyverseId.text;
          if (lid) {
             notionModifiersMap.set(mod.id, lid);
          }
@@ -340,6 +352,7 @@ export const syncMenuItems = command(
 
       // Track matched Loyverse IDs for orphan detection (using ALL Notion items)
       const matchedLoyverseIds = new Set<string>();
+      const loyverseCategories = new Map(loyverseCategoriesList.map(c => [c.id, c]));
 
       // First pass: Match all Notion items to identify orphans
       for (const nItem of allNotionItems) {
@@ -356,6 +369,7 @@ export const syncMenuItems = command(
 
       // Sync Loop (Create/Update/Link)
       for (const nItem of notionItemsToSync) {
+        let currentAction: 'CREATE' | 'UPDATE' | 'LINK' | 'DELETE' | 'SKIP' = 'UPDATE';
         try {
           const notionLoyverseId = nItem.properties.loyverseId?.rich_text?.[0]?.plain_text;
           const name = nItem.properties.name.text || 'Untitled';
@@ -379,6 +393,7 @@ export const syncMenuItems = command(
           // 1. Resolve Target
           if (notionLoyverseId && loyverseById.has(notionLoyverseId)) {
             targetLoyverseItem = loyverseById.get(notionLoyverseId);
+            currentAction = 'UPDATE';
           } else if (loyverseByName.has(normalize(name).toLowerCase())) {
             targetLoyverseItem = loyverseByName.get(normalize(name).toLowerCase());
             // Need to link in Notion
@@ -388,8 +403,26 @@ export const syncMenuItems = command(
               }
             }));
             report.linked++;
+            currentAction = 'LINK';
           } else {
             isNew = true;
+            currentAction = 'CREATE';
+          }
+
+          // Optimization: Skip if already synced
+          if (!isNew && targetLoyverseItem) {
+            const diffs = compareItems(nItem, targetLoyverseItem, loyverseCategories, notionModifiersMap);
+            if (diffs.length === 0) {
+              report.itemResults.push({
+                notionId: nItem.id,
+                loyverseId: targetLoyverseItem.id,
+                name,
+                action: 'SKIP',
+                status: 'SUCCESS',
+                message: currentAction === 'LINK' ? 'Linked in Notion, Loyverse matches' : 'Already in sync'
+              });
+              continue;
+            }
           }
 
           // Construct Payload
@@ -397,7 +430,7 @@ export const syncMenuItems = command(
              item_name: name,
              description,
              category_id: categoryId,
-             modifiers_ids: modifiersIds, // Add modifiers
+             modifier_ids: modifiersIds, 
              option1_name: undefined,
              option2_name: undefined,
              option3_name: undefined,
@@ -465,9 +498,9 @@ export const syncMenuItems = command(
             if (imageUrl) {
               try {
                 await loyverse.uploadImage(newItem.id, imageUrl);
-              } catch (imgErr) {
-                console.warn(`Failed to upload image for new item ${name}:`, imgErr);
-                report.errors.push(`Image upload failed for "${name}"`);
+              } catch (imgErr: any) {
+                console.warn(`[Image Sync] Warning: Could not upload image for new item "${name}": ${imgErr.message}`);
+                report.errors.push(`Image upload failed for "${name}" (Item created/updated anyway)`);
               }
             }
             
@@ -478,35 +511,102 @@ export const syncMenuItems = command(
               }
             }));
             report.created++;
+            report.itemResults.push({
+              notionId: nItem.id,
+              loyverseId: newItem.id,
+              name,
+              action: 'CREATE',
+              status: 'SUCCESS'
+            });
           } else {
             // Update in Loyverse
-            await loyverse.updateItem(targetLoyverseItem.id, payload);
+            let finalLid = targetLoyverseItem.id;
+            try {
+              await loyverse.updateItem(targetLoyverseItem.id, payload);
+            } catch (err: any) {
+              // Handle "You cannot add or delete options" error by recreating the item
+              if (err.message && err.message.includes('You cannot add or delete options')) {
+                console.warn(`Recreating item "${name}" because option structure changed.`);
+                
+                // 1. Delete existing
+                await loyverse.deleteItem(targetLoyverseItem.id);
+                
+                // 2. Create new
+                const newItem = await loyverse.createItem(payload);
+                finalLid = newItem.id;
+                
+                // 3. Upload image if needed
+                if (imageUrl) {
+                  try {
+                    await loyverse.uploadImage(newItem.id, imageUrl);
+                  } catch (imgErr) {
+                    console.warn(`Failed to upload image for recreated item ${name}:`, imgErr);
+                  }
+                }
+
+                // 4. Update Notion with new ID
+                await notionDb.updatePage(nItem.id, new MenuItemsPatchDTO({
+                  properties: {
+                    loyverseId: newItem.id
+                  }
+                }));
+                
+                report.updated++; // Count as update since it was an existing sync
+                report.linked++;  // Relinked
+                report.itemResults.push({
+                  notionId: nItem.id,
+                  loyverseId: newItem.id,
+                  name,
+                  action: 'UPDATE',
+                  status: 'SUCCESS',
+                  message: 'Recreated due to option changes'
+                });
+                continue; // Skip the rest of the loop for this item
+              } else {
+                throw err; // Re-throw other errors
+              }
+            }
 
             // Upload Image if exists
             if (imageUrl) {
               try {
-                await loyverse.uploadImage(targetLoyverseItem.id, imageUrl);
-              } catch (imgErr) {
-                 console.warn(`Failed to upload image for item ${name}:`, imgErr);
+                await loyverse.uploadImage(finalLid, imageUrl);
+              } catch (imgErr: any) {
+                 console.warn(`[Image Sync] Warning: Could not upload image for item "${name}": ${imgErr.message}`);
               }
             }
             
             // Ensure Notion has the ID
-            if (notionLoyverseId !== targetLoyverseItem.id) {
+            if (notionLoyverseId !== finalLid) {
                await notionDb.updatePage(nItem.id, new MenuItemsPatchDTO({
                 properties: {
-                  loyverseId: targetLoyverseItem.id
+                  loyverseId: finalLid
                 }
               }));
               report.linked++;
             }
             
             report.updated++;
+            report.itemResults.push({
+              notionId: nItem.id,
+              loyverseId: finalLid,
+              name,
+              action: currentAction === 'LINK' ? 'LINK' : 'UPDATE',
+              status: 'SUCCESS'
+            });
           }
 
         } catch (err: any) {
           console.error(`Error syncing item ${nItem.properties.name.text}:`, err);
-          report.errors.push(`Failed to sync "${nItem.properties.name.text}": ${err.message}`);
+          const msg = `Failed to sync "${nItem.properties.name.text}": ${err.message}`;
+          report.errors.push(msg);
+          report.itemResults.push({
+            notionId: nItem.id,
+            name: nItem.properties.name.text || 'Untitled',
+            action: currentAction,
+            status: 'ERROR',
+            message: err.message
+          });
         }
       }
 
@@ -517,9 +617,22 @@ export const syncMenuItems = command(
              try {
                await loyverse.deleteItem(lItem.id);
                report.deleted++;
+               report.itemResults.push({
+                 loyverseId: lItem.id,
+                 name: lItem.item_name,
+                 action: 'DELETE',
+                 status: 'SUCCESS'
+               });
              } catch (err: any) {
                console.error(`Error deleting item ${lItem.item_name}:`, err);
                report.errors.push(`Failed to delete "${lItem.item_name}": ${err.message}`);
+               report.itemResults.push({
+                 loyverseId: lItem.id,
+                 name: lItem.item_name,
+                 action: 'DELETE',
+                 status: 'ERROR',
+                 message: err.message
+               });
              }
           }
         }

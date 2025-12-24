@@ -14,6 +14,17 @@
       <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none">
         <input 
           type="checkbox" 
+          bind:checked={state.hideSynced} 
+          class="rounded border-gray-300 text-black focus:ring-black"
+        />
+        Hide Synced
+      </label>
+
+      <div class="h-6 w-px bg-gray-300"></div>
+
+      <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none">
+        <input 
+          type="checkbox" 
           bind:checked={state.deleteOrphans} 
           class="rounded border-gray-300 text-black focus:ring-black"
         />
@@ -84,8 +95,8 @@
           </tr>
         </thead>
         <tbody class="divide-y">
-          {#each state.items as item}
-            <tr class="hover:bg-gray-50 transition-colors">
+          {#each state.filteredItems as item}
+            <tr class="hover:bg-gray-50 transition-all border-l-4 {item.isSyncing ? 'border-l-blue-500 bg-blue-50/30 animate-pulse' : item.syncResult?.status === 'SUCCESS' ? 'border-l-green-500 bg-green-50/10' : item.syncResult?.status === 'ERROR' ? 'border-l-red-500 bg-red-50/10' : 'border-l-transparent'}">
               <td class="p-4 font-medium">
                 <div class="flex items-center gap-3">
                   {#if item.imageUrl}
@@ -95,7 +106,12 @@
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
                     </div>
                   {/if}
-                  <span>{item.name}</span>
+                  <div class="flex flex-col">
+                    <span>{item.name}</span>
+                    {#if item.isSyncing}
+                      <span class="text-[10px] text-blue-500 font-bold uppercase tracking-wider animate-bounce mt-0.5">Syncing...</span>
+                    {/if}
+                  </div>
                 </div>
               </td>
               <td class="p-4 text-gray-600">
@@ -117,37 +133,58 @@
                 {/if}
               </td>
               <td class="p-4 text-gray-500">
-                {#if item.modifiersCount && item.modifiersCount > 0}
-                   <div class="text-xs font-medium text-purple-600 mb-1">
-                     {item.modifiersCount} Modifier{item.modifiersCount > 1 ? 's' : ''}
-                   </div>
-                {/if}
-                {#if item.diffs && item.diffs.length > 0}
-                  <ul class="list-disc list-inside text-xs text-red-500">
-                    {#each item.diffs as diff}
-                      <li>{diff}</li>
-                    {/each}
-                  </ul>
-                {:else if item.status === 'NOT_IN_LOYVERSE'}
-                  <span class="text-xs">Will be created in Loyverse</span>
-                {:else if item.status === 'NOT_IN_NOTION'}
-                  {#if state.deleteOrphans}
-                    <span class="text-xs text-red-600 font-medium">Will be deleted</span>
-                  {:else}
-                     <span class="text-xs">Enable delete option to remove</span>
+                <div class="space-y-1">
+                  {#if item.modifiersCount && item.modifiersCount > 0}
+                    <div class="text-xs font-medium text-purple-600">
+                      {item.modifiersCount} Modifier{item.modifiersCount > 1 ? 's' : ''}
+                    </div>
                   {/if}
-                {/if}
+
+                  {#if item.syncResult}
+                    <div class="text-[11px] {item.syncResult.status === 'SUCCESS' ? 'text-green-600' : 'text-red-600'} font-medium">
+                      {item.syncResult.action}: {item.syncResult.status}
+                      {#if item.syncResult.message}
+                        <p class="text-[10px] italic opacity-80">{item.syncResult.message}</p>
+                      {/if}
+                    </div>
+                  {/if}
+
+                  {#if item.diffs && item.diffs.length > 0}
+                    <ul class="list-disc list-inside text-xs text-red-500">
+                      {#each item.diffs as diff}
+                        <li>{diff}</li>
+                      {/each}
+                    </ul>
+                  {:else if item.status === 'NOT_IN_LOYVERSE'}
+                    <span class="text-xs">Will be created in Loyverse</span>
+                  {:else if item.status === 'NOT_IN_NOTION'}
+                    {#if state.deleteOrphans}
+                      <span class="text-xs text-red-600 font-medium">Will be deleted</span>
+                    {:else}
+                      <span class="text-xs">Enable delete option to remove</span>
+                    {/if}
+                  {/if}
+                </div>
               </td>
               <td class="p-4 text-right">
                 {#if item.status !== 'SYNCED' && item.status !== 'NOT_IN_NOTION'}
                   <button 
-                    class="text-blue-600 hover:text-blue-800 text-xs font-medium"
+                    class="text-blue-600 hover:text-blue-800 text-xs font-medium disabled:opacity-50"
                     onclick={() => item.notionId && state.syncSelected([item.notionId])}
-                    disabled={state.syncing}
+                    disabled={state.syncing || item.isSyncing}
                   >
                     Sync
                   </button>
                 {/if}
+              </td>
+            </tr>
+          {:else}
+            <tr>
+              <td colspan="5" class="p-12 text-center text-gray-400">
+                <div class="flex flex-col items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-20"><path d="M3 7V5c0-1.1.9-2 2-2h2"/><path d="M17 3h2c1.1 0 2 .9 2 2v2"/><path d="M21 17v2c0 1.1-.9 2-2 2h-2"/><path d="M7 21H5c-1.1 0-2-.9-2-2v-2"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><path d="M9 9h.01"/><path d="M15 9h.01"/></svg>
+                  <p>No menu items found matching filters.</p>
+                </div>
               </td>
             </tr>
           {/each}

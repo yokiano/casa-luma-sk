@@ -16,7 +16,7 @@ export interface LoyverseItem {
   components?: Array<{ variant_id: string; quantity: number }>;
   primary_supplier_id?: string;
   tax_ids?: string[];
-  modifiers_ids?: string[];
+  modifier_ids?: string[];
   form?: 'SQUARE' | 'CIRCLE' | 'SUN' | 'OCTAGON';
   color?: 'GREY' | 'RED' | 'PINK' | 'ORANGE' | 'YELLOW' | 'GREEN' | 'BLUE' | 'PURPLE';
   image_url?: string;
@@ -56,7 +56,9 @@ export interface CreateLoyverseItemPayload {
   sold_by_weight?: boolean;
   is_composite?: boolean;
   image_url?: string;
+  modifier_ids?: string[];
   variants: Array<{
+    variant_id?: string;
     sku?: string;
     option1_value?: string;
     option2_value?: string;
@@ -272,17 +274,20 @@ class LoyverseClient {
 
   async uploadImage(itemId: string, imageUrl: string): Promise<void> {
     // 1. Fetch the image from the source URL
-    const imageResponse = await fetch(imageUrl);
+    let imageResponse;
+    try {
+      imageResponse = await fetch(imageUrl);
+    } catch (e: any) {
+      throw new Error(`Failed to fetch image from URL: ${e.message}`);
+    }
+
     if (!imageResponse.ok) {
-      throw new Error(`Failed to download image from source: ${imageResponse.statusText}`);
+      throw new Error(`Source image returned status ${imageResponse.status}: ${imageResponse.statusText}`);
     }
     const imageBuffer = await imageResponse.arrayBuffer();
     const contentType = imageResponse.headers.get('content-type') || 'image/png';
 
     // 2. Upload to Loyverse
-    // The request method returns parsed JSON, but image upload might return empty body or plain text
-    // The error "Unexpected end of JSON input" happened here because request() tries to parse response.
-    // We updated request() to handle empty bodies.
     await this.request<void>(`/items/${itemId}/image`, {
       method: 'POST',
       body: imageBuffer,

@@ -1,4 +1,4 @@
-import type { MenuItemsResponse } from "./types"
+import { MenuItemsResponse } from "./types"
 
 export class MenuItemsResponseDTO {
   __data: MenuItemsResponse
@@ -200,7 +200,7 @@ export class MenuItemsPropertiesResponseDTO {
   }
 
   get modifiersIds() {
-    return (this.__props['Modifiers']?.relation as unknown as Array<{ id: string }> || []).map((item) => item.id)  
+    return (this.__props['Modifiers']?.relation as unknown as Array<{ id: string }>).map((item) => item.id)  
   }
 
 }
