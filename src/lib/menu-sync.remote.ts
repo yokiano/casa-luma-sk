@@ -69,9 +69,13 @@ function compareItems(notionItem: MenuItemsResponseDTO, loyverseItem: any, loyve
 export const getMenuSyncStatus = query(async () => {
   const notionDb = new MenuItemsDatabase({ notionSecret: NOTION_API_KEY });
   
-  // Parallel fetch
+  // Parallel fetch - Only sync Active items from Notion
   const [notionResult, loyverseItems, loyverseCategoriesList] = await Promise.all([
-    notionDb.query({}),
+    notionDb.query({
+      filter: {
+        status: { equals: 'Active' }
+      }
+    }),
     loyverse.getAllItems(),
     loyverse.getAllCategories()
   ]);
@@ -155,9 +159,13 @@ export const syncMenuItems = command(
     const report: SyncReport = { created: 0, updated: 0, linked: 0, deleted: 0, errors: [] };
 
     try {
-      // Fetch data
+      // Fetch data - Only sync Active items from Notion
       const [notionResult, loyverseItems, loyverseCategoriesList] = await Promise.all([
-        notionDb.query({}),
+        notionDb.query({
+          filter: {
+            status: { equals: 'Active' }
+          }
+        }),
         loyverse.getAllItems(),
         loyverse.getAllCategories()
       ]);

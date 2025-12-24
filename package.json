@@ -33,6 +33,7 @@
 		"clsx": "^2.1.1",
 		"cross-env": "^10.1.0",
 		"dotenv-cli": "^11.0.0",
+		"lucide-svelte": "^0.562.0",
 		"mode-watcher": "^1.1.0",
 		"notion-ts-client": "^0.2.18",
 		"playwright": "^1.56.0",

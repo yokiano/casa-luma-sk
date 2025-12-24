@@ -144,7 +144,9 @@ class LoyverseClient {
 
     do {
       const response = await this.getItems(250, cursor);
-      allItems = allItems.concat(response.items);
+      // Filter out deleted items
+      const activeItems = response.items.filter(item => !item.deleted_at);
+      allItems = allItems.concat(activeItems);
       cursor = response.cursor;
     } while (cursor);
 
@@ -166,7 +168,9 @@ class LoyverseClient {
 
     do {
       const response = await this.getCategories(250, cursor);
-      allCategories = allCategories.concat(response.categories);
+      // Filter out deleted categories
+      const activeCategories = response.categories.filter(cat => !cat.deleted_at);
+      allCategories = allCategories.concat(activeCategories);
       cursor = response.cursor;
     } while (cursor);
 
