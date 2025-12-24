@@ -33,20 +33,22 @@
         </p>
       </div>
     </div>
-    <nav class="mx-auto flex max-w-6xl gap-2 px-6 pb-4">
-      {#each tabs as tab}
-        <a
-          href={tab.href}
-          class={`group rounded-full px-4 py-2 text-sm font-medium transition-colors duration-150 ${
-            isActive(tab.href)
-              ? 'bg-[#7a6550] text-white shadow'
-              : 'text-[#7a6550]/65 hover:bg-white hover:text-[#7a6550]'
-          }`}
-        >
-          {tab.label}
-        </a>
-      {/each}
-    </nav>
+    {#if currentPath !== '/tools/login'}
+      <nav class="mx-auto flex max-w-6xl gap-2 px-6 pb-4">
+        {#each tabs as tab}
+          <a
+            href={tab.href}
+            class={`group rounded-full px-4 py-2 text-sm font-medium transition-colors duration-150 ${
+              isActive(tab.href)
+                ? 'bg-[#7a6550] text-white shadow'
+                : 'text-[#7a6550]/65 hover:bg-white hover:text-[#7a6550]'
+            }`}
+          >
+            {tab.label}
+          </a>
+        {/each}
+      </nav>
+    {/if}
   </header>
 
   <main class="mx-auto max-w-6xl px-6 py-10">
