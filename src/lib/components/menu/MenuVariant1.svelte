@@ -1,7 +1,13 @@
 <script lang="ts">
-    import type { MenuSummary } from '$lib/types/menu';
+    import type { MenuSummary, MenuModifierOption } from '$lib/types/menu';
     
-    let { menu }: { menu: MenuSummary } = $props();
+    let { 
+        menu, 
+        getVisibleModifiers 
+    }: { 
+        menu: MenuSummary;
+        getVisibleModifiers?: (itemId: string) => MenuModifierOption[];
+    } = $props();
 
     const grandCategories = $derived(
         menu.grandCategories
@@ -59,6 +65,18 @@
                                             <p class="text-stone-500 text-sm leading-relaxed">
                                                 {item.description}
                                             </p>
+                                        {/if}
+                                        {#if getVisibleModifiers}
+                                            {@const visibleOptions = getVisibleModifiers(item.id)}
+                                            {#if visibleOptions.length > 0}
+                                                <div class="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-sm text-stone-500 italic leading-relaxed">
+                                                    {#each visibleOptions as option}
+                                                        <span class="whitespace-nowrap after:content-['•'] after:ml-3 after:text-stone-300 last:after:hidden">
+                                                            + {option.name}{option.price > 0 ? ` (+${option.price})` : ''}
+                                                        </span>
+                                                    {/each}
+                                                </div>
+                                            {/if}
                                         {/if}
                                         {#if item.dietaryTags.length > 0}
                                             <div class="text-xs text-stone-400 mt-0.5 lowercase italic">

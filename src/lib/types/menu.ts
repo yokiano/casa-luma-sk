@@ -13,6 +13,17 @@ export type MenuAvailability = 'all-day' | 'breakfast' | 'lunch' | 'dinner' | 's
 
 export type MenuItemStatus = 'Active' | 'Archived';
 
+export interface MenuModifierOption {
+	name: string;
+	price: number;
+}
+
+export interface MenuModifier {
+	id: string;
+	name: string;
+	options: MenuModifierOption[];
+}
+
 export interface MenuItem {
 	id: string;
 	name: string;
@@ -34,6 +45,7 @@ export interface MenuItem {
 	gallery?: string[];
 	tags: string[];
 	order: number;
+	modifiers?: MenuModifier[];
 }
 
 export interface MenuSection {
@@ -62,4 +74,3 @@ export interface MenuSummary {
 	tags: string[];
 	dietaryTags: DietaryTag[];
 }
-

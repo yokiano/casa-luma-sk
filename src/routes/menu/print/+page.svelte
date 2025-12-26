@@ -3,8 +3,13 @@
 	import { page } from '$app/state';
 	import MenuVariant1 from '$lib/components/menu/MenuVariant1.svelte';
 	import MenuVariant2 from '$lib/components/menu/MenuVariant2.svelte';
+	import { MenuPrintState } from './menu-print.state.svelte';
+	import MenuPrintController from '$lib/components/menu/MenuPrintController.svelte';
 
 	let { data }: { data: PageData } = $props();
+
+	// Initialize state
+	const state = new MenuPrintState(data.menu);
 
 	const menu = $derived({
 		...data.menu,
@@ -25,6 +30,8 @@
 		return raw === '2' ? '2' : '1';
 	});
 </script>
+
+<MenuPrintController printState={state} />
 
 <div class="bg-neutral-100 p-8 print:bg-white print:p-0">
 	<div class="mx-auto w-full max-w-[21cm]">
@@ -52,9 +59,9 @@
 
 		<section class="bg-white p-12 shadow-xl w-full min-h-[29.7cm] print:shadow-none print:min-h-0">
 			{#if activeVariant === '1'}
-				<MenuVariant1 menu={menu} />
+				<MenuVariant1 menu={menu} getVisibleModifiers={(id) => state.getFlatVisibleOptions(id)} />
 			{:else}
-				<MenuVariant2 menu={menu} />
+				<MenuVariant2 menu={menu} getVisibleModifiers={(id) => state.getFlatVisibleOptions(id)} />
 			{/if}
 		</section>
 	</div>

@@ -1,7 +1,13 @@
 <script lang="ts">
-    import type { MenuSummary } from '$lib/types/menu';
+    import type { MenuSummary, MenuModifierOption } from '$lib/types/menu';
     
-    let { menu }: { menu: MenuSummary } = $props();
+    let { 
+        menu, 
+        getVisibleModifiers 
+    }: { 
+        menu: MenuSummary;
+        getVisibleModifiers?: (itemId: string) => MenuModifierOption[];
+    } = $props();
 
     const grandCategories = $derived(
         menu.grandCategories
@@ -37,11 +43,11 @@
                                 <p class="text-slate-500 mb-6 italic print:mb-4 print:text-[12px] leading-relaxed">{section.intro}</p>
                             {/if}
 
-                            <div class="space-y-8 print:space-y-6">
+                            <div class="space-y-4">
                                 {#each section.items as item}
                                     <div class="break-inside-avoid">
-                                        <div class="flex justify-between items-start mb-1">
-                                            <h5 class="text-xl font-normal uppercase text-slate-900 leading-tight tracking-tight print:text-[15px]">{item.name}</h5>
+                                        <div class="flex justify-between items-start mb-0.5">
+                                            <h5 class="text-lg font-normal uppercase text-slate-900 leading-tight tracking-tight">{item.name}</h5>
                                             <div class="font-bold text-xl text-slate-900 print:text-[15px]">
                                                 {item.price.toLocaleString()}
                                             </div>
@@ -51,13 +57,25 @@
                                                 {item.description}
                                             </p>
                                         {/if}
-                                         {#if item.dietaryTags.length > 0}
+                                        {#if getVisibleModifiers}
+                                            {@const visibleOptions = getVisibleModifiers(item.id)}
+                                            {#if visibleOptions.length > 0}
+                                                <div class="mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5 text-xs text-slate-600 italic leading-snug ">
+                                                    {#each visibleOptions as option}
+                                                        <span class=" after:content-['•'] after:ml-2 after:text-slate-600 last:after:hidden">
+                                                        {option.name}{option.price > 0 ? ` (+${option.price})` : ''}
+                                                        </span>
+                                                    {/each}
+                                                </div>
+                                            {/if}
+                                        {/if}
+                                         <!-- {#if item.dietaryTags.length > 0}
                                             <div class="flex gap-2 mt-1">
                                                 {#each item.dietaryTags as tag}
                                                     <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider border border-slate-200 px-1 rounded-sm print:text-[8px] print:px-1">{tag}</span>
                                                 {/each}
                                             </div>
-                                        {/if}
+                                        {/if} -->
                                     </div>
                                 {/each}
                             </div>

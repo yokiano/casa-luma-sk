@@ -9,10 +9,12 @@ import {
 	getSelectValue,
 	getStatusValue,
 	getTextContent,
-	getUrlValue
+	getUrlValue,
+	getRelationIds
 } from '$lib/server/notion';
-import type { MenuGrandCategory, MenuItem, MenuSummary, StructuredMenuSection } from '$lib/types/menu';
+import type { MenuGrandCategory, MenuItem, MenuSummary, StructuredMenuSection, MenuModifier } from '$lib/types/menu';
 import * as v from 'valibot';
+import { getActiveModifiers } from './modifiers.remote';
 
 const MENU_PROPERTIES = {
 	name: 'Name',
@@ -36,7 +38,8 @@ const MENU_PROPERTIES = {
 	order: 'Order',
 	sectionIntro: 'Section Intro',
 	sectionAccent: 'Section Accent Color',
-	sectionBackground: 'Section Background'
+	sectionBackground: 'Section Background',
+	modifiers: 'Modifiers'
 } as const;
 
 const ensureMenuConfigured = () => {
@@ -61,7 +64,8 @@ const normalizeStatus = (raw: string): MenuItem['status'] => {
 	return value === 'active' ? 'Active' : 'Archived';
 };
 
-const toMenuItem = (page: any): MenuItem => {
+// Returns MenuItem with partial modifier data (ids only) or full objects if provided
+const toMenuItem = (page: any, modifiersMap?: Map<string, MenuModifier>): MenuItem => {
 	const props = page.properties ?? {};
 
 	const price = getNumberValue(props[MENU_PROPERTIES.price]);
@@ -78,6 +82,17 @@ const toMenuItem = (page: any): MenuItem => {
 	const availabilityValue = getSelectValue(props[MENU_PROPERTIES.availabilityWindow]);
 	const statusRaw =
 		getStatusValue(props[MENU_PROPERTIES.status]) || getSelectValue(props[MENU_PROPERTIES.status]);
+
+	// Extract modifier IDs
+	const modifierIds = getRelationIds(props[MENU_PROPERTIES.modifiers]);
+	
+	// If we have a modifiers map, resolve the full modifier objects
+	let resolvedModifiers: MenuModifier[] | undefined = undefined;
+	if (modifiersMap && modifierIds.length > 0) {
+		resolvedModifiers = modifierIds
+			.map((id: string) => modifiersMap.get(id))
+			.filter((m: any): m is MenuModifier => m !== undefined);
+	}
 
 	return {
 		id: page.id,
@@ -103,7 +118,8 @@ const toMenuItem = (page: any): MenuItem => {
 		image: getFilesUrls(props[MENU_PROPERTIES.image], page.id)[0],
 		gallery: gallery.length > 0 ? gallery : undefined,
 		tags: getMultiSelectValues(props[MENU_PROPERTIES.tags]),
-		order: getNumberValue(props[MENU_PROPERTIES.order]) || 0
+		order: getNumberValue(props[MENU_PROPERTIES.order]) || 0,
+		modifiers: resolvedModifiers
 	};
 };
 
@@ -173,7 +189,7 @@ const sortGrandCategories = (categories: MenuGrandCategory[]) =>
 			return a.name.localeCompare(b.name);
 		});
 
-const buildSummary = (pages: any[], categoryOrder: Map<string, number>): MenuSummary => {
+const buildSummary = (pages: any[], categoryOrder: Map<string, number>, modifiersMap?: Map<string, MenuModifier>): MenuSummary => {
 	const sections = new Map<string, StructuredMenuSection>();
 	const grandCategories = new Map<string, MenuGrandCategory>();
 	const sectionsByGrand = new Map<string, Map<string, StructuredMenuSection>>();
@@ -183,7 +199,7 @@ const buildSummary = (pages: any[], categoryOrder: Map<string, number>): MenuSum
 
 	for (const page of pages) {
 		const props = page.properties ?? {};
-		const item = toMenuItem(page);
+		const item = toMenuItem(page, modifiersMap);
 		if (item.status !== 'Active') continue;
 		const section = sectionMetadata(sections, item, props);
 		section.items.push(item);
@@ -280,9 +296,18 @@ export const getMenuSummary = query(async () => {
 	return buildSummary(pages, categoryOrder);
 });
 
+export const getMenuSummaryWithModifiers = query(async () => {
+	const [pages, categoryOrder, modifiersMap] = await Promise.all([
+		queryMenuPages(),
+		getCategoryOrderMap(),
+		getActiveModifiers()
+	]);
+	return buildSummary(pages, categoryOrder, modifiersMap);
+});
+
 export const getMenuItems = query(async () => {
 	const pages = await queryMenuPages();
-	return pages.map(toMenuItem).filter((item) => item.status === 'Active');
+	return pages.map((page: any) => toMenuItem(page)).filter((item: MenuItem) => item.status === 'Active');
 });
 
 export const getMenuSection = query(
@@ -296,4 +321,3 @@ export const getMenuSection = query(
 		return summary.sections.find((section) => section.name === sectionName);
 	}
 );
-
