@@ -39,7 +39,8 @@ const MENU_PROPERTIES = {
 	sectionIntro: 'Section Intro',
 	sectionAccent: 'Section Accent Color',
 	sectionBackground: 'Section Background',
-	modifiers: 'Modifiers'
+	modifiers: 'Modifiers',
+	sectionModifiers: 'Section Modifiers'
 } as const;
 
 const ensureMenuConfigured = () => {
@@ -123,23 +124,44 @@ const toMenuItem = (page: any, modifiersMap?: Map<string, MenuModifier>): MenuIt
 	};
 };
 
-const sectionMetadata = (sections: Map<string, StructuredMenuSection>, item: MenuItem, props: any) => {
+const sectionMetadata = (sections: Map<string, StructuredMenuSection>, item: MenuItem, props: any, modifiersMap?: Map<string, MenuModifier>) => {
 	const name = item.section;
 	if (!sections.has(name)) {
 		sections.set(name, {
 			id: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
 			name,
-		intro: getTextContent(props[MENU_PROPERTIES.sectionIntro]),
-		accentColor: getTextContent(props[MENU_PROPERTIES.sectionAccent]) || undefined,
-		backgroundImage:
-			getFilesUrls(props[MENU_PROPERTIES.sectionBackground])[0] ||
-			getUrlValue(props[MENU_PROPERTIES.sectionBackground]) ||
-			undefined,
+			intro: getTextContent(props[MENU_PROPERTIES.sectionIntro]),
+			accentColor: getTextContent(props[MENU_PROPERTIES.sectionAccent]) || undefined,
+			backgroundImage:
+				getFilesUrls(props[MENU_PROPERTIES.sectionBackground])[0] ||
+				getUrlValue(props[MENU_PROPERTIES.sectionBackground]) ||
+				undefined,
 			order: getNumberValue(props[MENU_PROPERTIES.order]) || 0,
-			items: []
+			items: [],
+			modifiers: []
 		});
 	}
-	return sections.get(name)!;
+	
+	const section = sections.get(name)!;
+
+	// Merge section modifiers from this item if available
+	// This ensures we catch modifiers even if they're not on the first item processed
+	const modifierIds = getRelationIds(props[MENU_PROPERTIES.sectionModifiers]);
+	if (modifiersMap && modifierIds.length > 0) {
+		const newModifiers = modifierIds
+			.map((id: string) => modifiersMap.get(id))
+			.filter((m: any): m is MenuModifier => m !== undefined);
+			
+		// Add unique modifiers
+		const existingIds = new Set(section.modifiers?.map(m => m.id) || []);
+		const uniqueNew = newModifiers.filter(m => !existingIds.has(m.id));
+		
+		if (uniqueNew.length > 0) {
+			section.modifiers = [...(section.modifiers || []), ...uniqueNew];
+		}
+	}
+
+	return section;
 };
 
 const grandCategoryMetadata = (grandCategories: Map<string, MenuGrandCategory>, item: MenuItem) => {
@@ -201,7 +223,7 @@ const buildSummary = (pages: any[], categoryOrder: Map<string, number>, modifier
 		const props = page.properties ?? {};
 		const item = toMenuItem(page, modifiersMap);
 		if (item.status !== 'Active') continue;
-		const section = sectionMetadata(sections, item, props);
+		const section = sectionMetadata(sections, item, props, modifiersMap);
 		section.items.push(item);
 
 		const grandCategory = grandCategoryMetadata(grandCategories, item);
@@ -209,7 +231,7 @@ const buildSummary = (pages: any[], categoryOrder: Map<string, number>, modifier
 			sectionsByGrand.set(grandCategory.name, new Map<string, StructuredMenuSection>());
 		}
 		const grandSections = sectionsByGrand.get(grandCategory.name)!;
-		const grandSection = sectionMetadata(grandSections, item, props);
+		const grandSection = sectionMetadata(grandSections, item, props, modifiersMap);
 		grandSection.items.push(item);
 
 		if (item.highlight) {
@@ -249,7 +271,8 @@ const buildSummary = (pages: any[], categoryOrder: Map<string, number>, modifier
 		sections: structuredSections,
 		highlights: sortItems(highlights),
 		tags: Array.from(tags).sort(),
-		dietaryTags: Array.from(dietary).sort() as MenuSummary['dietaryTags']
+		dietaryTags: Array.from(dietary).sort() as MenuSummary['dietaryTags'],
+		allModifiers: modifiersMap ? Array.from(modifiersMap.values()) : []
 	};
 };
 

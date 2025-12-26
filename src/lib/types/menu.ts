@@ -55,6 +55,7 @@ export interface MenuSection {
 	accentColor?: string;
 	backgroundImage?: string;
 	order: number;
+	modifiers?: MenuModifier[];
 }
 
 export interface StructuredMenuSection extends MenuSection {
@@ -73,4 +74,5 @@ export interface MenuSummary {
 	highlights: MenuItem[];
 	tags: string[];
 	dietaryTags: DietaryTag[];
+	allModifiers: MenuModifier[];
 }

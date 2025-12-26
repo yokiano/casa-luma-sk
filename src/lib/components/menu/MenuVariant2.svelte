@@ -1,5 +1,6 @@
 <script lang="ts">
     import type { MenuSummary, MenuModifierOption } from '$lib/types/menu';
+    import MenuModifiersList from './MenuModifiersList.svelte';
     
     let { 
         menu, 
@@ -43,6 +44,15 @@
                                 <p class="text-slate-500 mb-6 italic print:mb-4 print:text-[12px] leading-relaxed">{section.intro}</p>
                             {/if}
 
+                            {#if getVisibleModifiers}
+                                <div class="mb-6">
+                                    <MenuModifiersList 
+                                        options={getVisibleModifiers(section.id)} 
+                                        className="text-slate-600 print:text-[12px]" 
+                                    />
+                                </div>
+                            {/if}
+
                             <div class="space-y-4">
                                 {#each section.items as item}
                                     <div class="break-inside-avoid">
@@ -58,16 +68,12 @@
                                             </p>
                                         {/if}
                                         {#if getVisibleModifiers}
-                                            {@const visibleOptions = getVisibleModifiers(item.id)}
-                                            {#if visibleOptions.length > 0}
-                                                <div class="mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5 text-xs text-slate-600 italic leading-snug ">
-                                                    {#each visibleOptions as option}
-                                                        <span class=" after:content-['•'] after:ml-2 after:text-slate-600 last:after:hidden">
-                                                        {option.name}{option.price > 0 ? ` (+${option.price})` : ''}
-                                                        </span>
-                                                    {/each}
-                                                </div>
-                                            {/if}
+                                            <div class="mt-0.5">
+                                                <MenuModifiersList 
+                                                    options={getVisibleModifiers(item.id)} 
+                                                    className="text-slate-600 print:text-[11px] print:leading-normal" 
+                                                />
+                                            </div>
                                         {/if}
                                          <!-- {#if item.dietaryTags.length > 0}
                                             <div class="flex gap-2 mt-1">

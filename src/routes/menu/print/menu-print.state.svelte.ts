@@ -1,12 +1,15 @@
-import type { MenuSummary, MenuModifierOption } from '$lib/types/menu';
+import type { MenuSummary, MenuModifierOption, StructuredMenuSection, MenuModifier } from '$lib/types/menu';
 
 export class MenuPrintState {
 	menu: MenuSummary;
-	// itemId -> Set of modifierIds that are COMPLETELY hidden
+	// itemId/sectionId -> Set of modifierIds that are COMPLETELY hidden
 	hiddenModifiers = $state<Map<string, Set<string>>>(new Map());
 	
-	// itemId -> Set of "modifierId::optionName" that are hidden
+	// itemId/sectionId -> Set of "modifierId::optionName" that are hidden
 	hiddenOptions = $state<Map<string, Set<string>>>(new Map());
+
+	// sectionId -> Set of manually attached modifier IDs
+	manualSectionModifiers = $state<Map<string, Set<string>>>(new Map());
 
 	constructor(menu: MenuSummary) {
 		this.menu = menu;
@@ -39,6 +42,18 @@ export class MenuPrintState {
 					])
 				);
 			}
+
+			// Load manual section modifiers
+			const storedManual = localStorage.getItem('menu-print-manual-section-modifiers');
+			if (storedManual) {
+				const parsed = JSON.parse(storedManual);
+				this.manualSectionModifiers = new Map(
+					parsed.map(([sectionId, modifierIds]: [string, string[]]) => [
+						sectionId,
+						new Set(modifierIds)
+					])
+				);
+			}
 		} catch (e) {
 			console.error('Failed to load menu print state:', e);
 		}
@@ -58,62 +73,87 @@ export class MenuPrintState {
 				([itemId, optionKeys]) => [itemId, Array.from(optionKeys)]
 			);
 			localStorage.setItem('menu-print-hidden-options', JSON.stringify(serializedOptions));
+
+			// Save manual section modifiers
+			const serializedManual = Array.from(this.manualSectionModifiers.entries()).map(
+				([sectionId, modifierIds]) => [sectionId, Array.from(modifierIds)]
+			);
+			localStorage.setItem('menu-print-manual-section-modifiers', JSON.stringify(serializedManual));
 		} catch (e) {
 			console.error('Failed to save menu print state:', e);
 		}
 	}
 
-	toggleModifier(itemId: string, modifierId: string) {
-		const currentSet = this.hiddenModifiers.get(itemId) || new Set();
+	toggleManualModifier(sectionId: string, modifierId: string) {
+		const currentSet = this.manualSectionModifiers.get(sectionId) || new Set();
 		if (currentSet.has(modifierId)) {
 			currentSet.delete(modifierId);
 			if (currentSet.size === 0) {
-				this.hiddenModifiers.delete(itemId);
+				this.manualSectionModifiers.delete(sectionId);
 			} else {
-				this.hiddenModifiers.set(itemId, currentSet);
+				this.manualSectionModifiers.set(sectionId, currentSet);
+			}
+			// When removing a manual modifier, also cleanup its visibility state
+			this.toggleModifier(sectionId, modifierId); // Ensure it's not "hidden" anymore (reset state)
+		} else {
+			currentSet.add(modifierId);
+			this.manualSectionModifiers.set(sectionId, currentSet);
+		}
+		
+		this.manualSectionModifiers = new Map(this.manualSectionModifiers);
+		this.saveState();
+	}
+
+	toggleModifier(targetId: string, modifierId: string) {
+		const currentSet = this.hiddenModifiers.get(targetId) || new Set();
+		if (currentSet.has(modifierId)) {
+			currentSet.delete(modifierId);
+			if (currentSet.size === 0) {
+				this.hiddenModifiers.delete(targetId);
+			} else {
+				this.hiddenModifiers.set(targetId, currentSet);
 			}
 		} else {
 			currentSet.add(modifierId);
-			this.hiddenModifiers.set(itemId, currentSet);
+			this.hiddenModifiers.set(targetId, currentSet);
 		}
 		
 		this.hiddenModifiers = new Map(this.hiddenModifiers);
 		this.saveState();
 	}
 
-	toggleOption(itemId: string, modifierId: string, optionName: string) {
+	toggleOption(targetId: string, modifierId: string, optionName: string) {
 		const key = `${modifierId}::${optionName}`;
-		const currentSet = this.hiddenOptions.get(itemId) || new Set();
+		const currentSet = this.hiddenOptions.get(targetId) || new Set();
 		
 		if (currentSet.has(key)) {
 			currentSet.delete(key);
 			if (currentSet.size === 0) {
-				this.hiddenOptions.delete(itemId);
+				this.hiddenOptions.delete(targetId);
 			} else {
-				this.hiddenOptions.set(itemId, currentSet);
+				this.hiddenOptions.set(targetId, currentSet);
 			}
 		} else {
 			currentSet.add(key);
-			this.hiddenOptions.set(itemId, currentSet);
+			this.hiddenOptions.set(targetId, currentSet);
 		}
 		
 		this.hiddenOptions = new Map(this.hiddenOptions);
 		this.saveState();
 	}
 
-	hideAllForItem(itemId: string) {
-		const item = this.findItem(itemId);
-		if (!item?.modifiers) return;
+	hideAllForTarget(targetId: string, modifiers: any[]) {
+		if (!modifiers) return;
 
-		const set = new Set(item.modifiers.map((m) => m.id));
-		this.hiddenModifiers.set(itemId, set);
+		const set = new Set(modifiers.map((m) => m.id));
+		this.hiddenModifiers.set(targetId, set);
 		this.hiddenModifiers = new Map(this.hiddenModifiers);
 		this.saveState();
 	}
 
-	showAllForItem(itemId: string) {
-		this.hiddenModifiers.delete(itemId);
-		this.hiddenOptions.delete(itemId); // Also clear hidden options
+	showAllForTarget(targetId: string) {
+		this.hiddenModifiers.delete(targetId);
+		this.hiddenOptions.delete(targetId); // Also clear hidden options
 		
 		this.hiddenModifiers = new Map(this.hiddenModifiers);
 		this.hiddenOptions = new Map(this.hiddenOptions);
@@ -130,40 +170,72 @@ export class MenuPrintState {
 		return null;
 	}
 
-	isModifierVisible(itemId: string, modifierId: string) {
-		return !this.hiddenModifiers.get(itemId)?.has(modifierId);
+	findSection(sectionId: string) {
+		for (const grand of this.menu.grandCategories) {
+			const found = grand.sections.find((s) => s.id === sectionId);
+			if (found) return found;
+		}
+		return null;
 	}
 
-	isOptionVisible(itemId: string, modifierId: string, optionName: string) {
+	getSectionModifiers(sectionId: string): MenuModifier[] {
+		const section = this.findSection(sectionId);
+		if (!section) return [];
+
+		// Start with modifiers from Notion
+		const modifiers = [...(section.modifiers || [])];
+
+		// Add manually attached modifiers
+		const manualIds = this.manualSectionModifiers.get(sectionId);
+		if (manualIds) {
+			const allModifiers = this.menu.allModifiers || [];
+			for (const id of manualIds) {
+				// Avoid duplicates if Notion already has it
+				if (!modifiers.find(m => m.id === id)) {
+					const found = allModifiers.find(m => m.id === id);
+					if (found) modifiers.push(found);
+				}
+			}
+		}
+		return modifiers;
+	}
+
+	isModifierVisible(targetId: string, modifierId: string) {
+		return !this.hiddenModifiers.get(targetId)?.has(modifierId);
+	}
+
+	isOptionVisible(targetId: string, modifierId: string, optionName: string) {
 		// If the whole modifier is hidden, the option is effectively hidden
-		if (this.hiddenModifiers.get(itemId)?.has(modifierId)) return false;
+		if (this.hiddenModifiers.get(targetId)?.has(modifierId)) return false;
 		
 		const key = `${modifierId}::${optionName}`;
-		return !this.hiddenOptions.get(itemId)?.has(key);
+		return !this.hiddenOptions.get(targetId)?.has(key);
 	}
 
-	getVisibleModifiers(itemId: string) {
-		const item = this.findItem(itemId);
-		if (!item?.modifiers) return [];
-		return item.modifiers.filter((m) => !this.hiddenModifiers.get(itemId)?.has(m.id));
-	}
+	// Returns a flat list of visible options for an item or section
+	getFlatVisibleOptions(targetId: string): MenuModifierOption[] {
+		let modifiers: MenuModifier[] = [];
+		
+		const item = this.findItem(targetId);
+		if (item) {
+			modifiers = item.modifiers || [];
+		} else {
+			// For sections, use our helper that combines Notion + Manual
+			modifiers = this.getSectionModifiers(targetId);
+		}
 
-	// Returns a flat list of visible options for an item
-	// Used for the final print view which ignores modifier grouping/names
-	getFlatVisibleOptions(itemId: string): MenuModifierOption[] {
-		const item = this.findItem(itemId);
-		if (!item?.modifiers) return [];
+		if (modifiers.length === 0) return [];
 
 		const options: MenuModifierOption[] = [];
-		const itemHiddenModifiers = this.hiddenModifiers.get(itemId);
-		const itemHiddenOptions = this.hiddenOptions.get(itemId);
+		const targetHiddenModifiers = this.hiddenModifiers.get(targetId);
+		const targetHiddenOptions = this.hiddenOptions.get(targetId);
 
-		for (const modifier of item.modifiers) {
-			if (itemHiddenModifiers?.has(modifier.id)) continue;
+		for (const modifier of modifiers) {
+			if (targetHiddenModifiers?.has(modifier.id)) continue;
 
 			for (const option of modifier.options) {
 				const key = `${modifier.id}::${option.name}`;
-				if (!itemHiddenOptions?.has(key)) {
+				if (!targetHiddenOptions?.has(key)) {
 					options.push(option);
 				}
 			}
@@ -183,5 +255,22 @@ export class MenuPrintState {
 			}
 		}
 		return items;
+	});
+
+	// Return ALL sections, as any section can have manual modifiers
+	allSections = $derived.by(() => {
+		const sections = [];
+		for (const grand of this.menu.grandCategories) {
+			for (const section of grand.sections) {
+				// Create a unique key by combining grand category name and section name
+				// This handles cases where "Comfort Food" appears in multiple grand categories
+				const uniqueId = `${grand.id}-${section.id}`;
+				// We attach the uniqueKey to the section object we're returning
+				// Note: StructuredMenuSection doesn't have uniqueKey, so we might need to cast or just use it in the loop
+				// Since we are iterating, we can just return an object that wraps the section and the unique key
+				sections.push({ section, uniqueKey: uniqueId });
+			}
+		}
+		return sections;
 	});
 }
