@@ -1,10 +1,12 @@
 <script lang="ts">
   import MenuSyncTab from './tabs/MenuSyncTab.svelte';
+  import CategorySyncTab from './tabs/CategorySyncTab.svelte';
   import DiscountSyncTab from './tabs/DiscountSyncTab.svelte';
   import ModifierSyncTab from './tabs/ModifierSyncTab.svelte';
 
   const tabs = [
     { id: 'menu', label: 'Menu Items', component: MenuSyncTab },
+    { id: 'categories', label: 'Categories', component: CategorySyncTab },
     { id: 'modifiers', label: 'Modifiers', component: ModifierSyncTab },
     { id: 'discounts', label: 'Discounts', component: DiscountSyncTab },
     { id: 'open-play', label: 'Open Play / Memberships', component: null },

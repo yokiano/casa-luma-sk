@@ -31,22 +31,23 @@ export const MENU_ITEMS_PROP_VALUES = {
   "Sesame"
 ] as const,
 "category": [
-  "Coffee & More",
-  "Fresh Cold-Pressed Juices",
   "House Smoothies",
+  "Coffee & Friends",
+  "Fresh Cold-Pressed Juices",
   "Soft Drinks",
-  "Sandwiches & Toasties",
-  "Croissant Sandwich",
+  "Proper Sandwiches",
+  "Crafted Croissants",
   "Open Toasts",
   "Personal Pizzas",
-  "Salads",
-  "Sweet Morning",
-  "Comfort Food",
+  "Fresh But Not Boring",
+  "Healthy Treats",
   "Desserts",
   "Kids Pizza",
   "Kids Favorites",
   "Kids Small Plates",
-  "Kids Beverage"
+  "Kids Beverage",
+  "Build Your Breakfast",
+  "Comfort Food"
 ] as const,
 "grandCategory": [
   "Food",

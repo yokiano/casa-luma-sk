@@ -146,11 +146,13 @@ const sortItems = (items: MenuItem[]) =>
 			return a.name.localeCompare(b.name);
 		});
 
-const sortSections = (sections: StructuredMenuSection[]) =>
+const sortSections = (sections: StructuredMenuSection[], categoryOrder: Map<string, number>) =>
 	sections
 		.slice()
 		.sort((a, b) => {
-			if (a.order !== b.order) return a.order - b.order;
+			const aOrder = categoryOrder.get(a.name) ?? a.order ?? 999;
+			const bOrder = categoryOrder.get(b.name) ?? b.order ?? 999;
+			if (aOrder !== bOrder) return aOrder - bOrder;
 			return a.name.localeCompare(b.name);
 		});
 
@@ -171,7 +173,7 @@ const sortGrandCategories = (categories: MenuGrandCategory[]) =>
 			return a.name.localeCompare(b.name);
 		});
 
-const buildSummary = (pages: any[]): MenuSummary => {
+const buildSummary = (pages: any[], categoryOrder: Map<string, number>): MenuSummary => {
 	const sections = new Map<string, StructuredMenuSection>();
 	const grandCategories = new Map<string, MenuGrandCategory>();
 	const sectionsByGrand = new Map<string, Map<string, StructuredMenuSection>>();
@@ -205,7 +207,8 @@ const buildSummary = (pages: any[]): MenuSummary => {
 		Array.from(sections.values()).map((section) => ({
 			...section,
 			items: sortItems(section.items)
-		}))
+		})),
+		categoryOrder
 	);
 
 	const structuredGrandCategories = sortGrandCategories(
@@ -215,7 +218,8 @@ const buildSummary = (pages: any[]): MenuSummary => {
 				Array.from(grandSections.values()).map((section) => ({
 					...section,
 					items: sortItems(section.items)
-				}))
+				})),
+				categoryOrder
 			);
 			return {
 				...category,
@@ -235,7 +239,7 @@ const buildSummary = (pages: any[]): MenuSummary => {
 
 const queryMenuPages = async () => {
 	ensureMenuConfigured();
-	const response = await notion.dataSources.query({
+	const response = await (notion as any).dataSources.query({
 		data_source_id: NOTION_DBS.MENU,
 		filter: {
 			property: MENU_PROPERTIES.status,
@@ -246,9 +250,34 @@ const queryMenuPages = async () => {
 	return response.results ?? [];
 };
 
+const getCategoryOrderMap = async (): Promise<Map<string, number>> => {
+	try {
+		// Use dataSources.retrieve since NOTION_DBS.MENU is a Data Source ID
+		const ds = await (notion as any).dataSources.retrieve({ data_source_id: NOTION_DBS.MENU });
+		const props = ds.properties;
+		
+		// The property is named 'Category' in this Data Source
+		const categoryProp = props[MENU_PROPERTIES.section] || props[MENU_PROPERTIES.category];
+		
+		if (categoryProp && categoryProp.type === 'select' && categoryProp.select?.options) {
+			const orderMap = new Map<string, number>();
+			categoryProp.select.options.forEach((opt: any, index: number) => {
+				orderMap.set(opt.name, index);
+			});
+			return orderMap;
+		}
+	} catch (e) {
+		console.error('Failed to fetch category order from Notion:', e);
+	}
+	return new Map();
+};
+
 export const getMenuSummary = query(async () => {
-	const pages = await queryMenuPages();
-	return buildSummary(pages);
+	const [pages, categoryOrder] = await Promise.all([
+		queryMenuPages(),
+		getCategoryOrderMap()
+	]);
+	return buildSummary(pages, categoryOrder);
 });
 
 export const getMenuItems = query(async () => {
@@ -259,8 +288,11 @@ export const getMenuItems = query(async () => {
 export const getMenuSection = query(
 	v.pipe(v.string(), v.minLength(1)),
 	async (sectionName) => {
-		const pages = await queryMenuPages();
-		const summary = buildSummary(pages);
+		const [pages, categoryOrder] = await Promise.all([
+			queryMenuPages(),
+			getCategoryOrderMap()
+		]);
+		const summary = buildSummary(pages, categoryOrder);
 		return summary.sections.find((section) => section.name === sectionName);
 	}
 );

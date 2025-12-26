@@ -243,10 +243,9 @@ class LoyverseClient {
     return allCategories;
   }
 
-  async createCategory(name: string): Promise<LoyverseCategory> {
-    return this.request<LoyverseCategory>('/categories', {
-      method: 'POST',
-      body: JSON.stringify({ name }),
+  async deleteCategory(id: string): Promise<void> {
+    await this.request<void>(`/categories/${id}`, {
+      method: 'DELETE',
     });
   }
 

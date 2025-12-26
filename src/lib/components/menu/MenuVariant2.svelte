@@ -40,8 +40,8 @@
                             {#each section.items as item}
                                 <div class="break-inside-avoid">
                                     <div class="flex justify-between items-start mb-1">
-                                        <h5 class="text-lg font-bold text-slate-800 uppercase tracking-wide leading-none">{item.name}</h5>
-                                        <div class="font-bold text-lg text-slate-900">
+                                        <h5 class="text-xl font-normal uppercase text-slate-900 leading-tight tracking-tight">{item.name}</h5>
+                                        <div class="font-bold text-xl text-slate-900">
                                             {item.price.toLocaleString()}
                                         </div>
                                     </div>
