@@ -1,4 +1,4 @@
-import { LOYVERSE_ACCESS_TOKEN } from '$env/static/private';
+import { LOYVERSE_ACCESS_TOKEN, LOYVERSE_STORE_ID } from '$env/static/private';
 
 const BASE_URL = 'https://api.loyverse.com/v1.0';
 

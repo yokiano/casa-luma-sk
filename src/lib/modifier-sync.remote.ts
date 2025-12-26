@@ -1,5 +1,5 @@
 import { query, command } from '$app/server';
-import { NOTION_API_KEY } from '$env/static/private';
+import { NOTION_API_KEY, LOYVERSE_STORE_ID } from '$env/static/private';
 import { PosModifiersDatabase, PosModifiersResponseDTO, PosModifiersPatchDTO } from '$lib/notion-sdk/dbs/pos-modifiers';
 import { loyverse, type LoyverseModifierOption } from '$lib/server/loyverse';
 import * as v from 'valibot';
@@ -248,7 +248,7 @@ export const syncModifiers = command(
              name,
              position,
              modifier_options: modifierOptionsPayload,
-             // stores: default to all
+             stores: [LOYVERSE_STORE_ID],
           };
 
           if (isNew) {
