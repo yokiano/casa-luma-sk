@@ -50,7 +50,7 @@
 			<div class="text-neutral-400">Soft opening menu</div>
 		</nav>
 
-		<section class="bg-white p-12 shadow-xl w-full min-h-[29.7cm] print:shadow-none print:p-0 print:min-h-0">
+		<section class="bg-white p-12 shadow-xl w-full min-h-[29.7cm] print:shadow-none print:min-h-0">
 			{#if activeVariant === '1'}
 				<MenuVariant1 menu={menu} />
 			{:else}
