@@ -11,6 +11,12 @@ export class MenuPrintState {
 	// sectionId -> Set of manually attached modifier IDs
 	manualSectionModifiers = $state<Map<string, Set<string>>>(new Map());
 
+	// sectionId/grandCategoryId -> custom description
+	customDescriptions = $state<Map<string, string>>(new Map());
+
+	// modifierId -> custom description
+	modifierDescriptions = $state<Map<string, string>>(new Map());
+
 	constructor(menu: MenuSummary) {
 		this.menu = menu;
 		this.loadState();
@@ -54,6 +60,20 @@ export class MenuPrintState {
 					])
 				);
 			}
+
+			// Load custom descriptions
+			const storedDescriptions = localStorage.getItem('menu-print-custom-descriptions');
+			if (storedDescriptions) {
+				const parsed = JSON.parse(storedDescriptions);
+				this.customDescriptions = new Map(parsed);
+			}
+
+			// Load modifier descriptions
+			const storedModifierDescriptions = localStorage.getItem('menu-print-modifier-descriptions');
+			if (storedModifierDescriptions) {
+				const parsed = JSON.parse(storedModifierDescriptions);
+				this.modifierDescriptions = new Map(parsed);
+			}
 		} catch (e) {
 			console.error('Failed to load menu print state:', e);
 		}
@@ -79,6 +99,14 @@ export class MenuPrintState {
 				([sectionId, modifierIds]) => [sectionId, Array.from(modifierIds)]
 			);
 			localStorage.setItem('menu-print-manual-section-modifiers', JSON.stringify(serializedManual));
+
+			// Save custom descriptions
+			const serializedDescriptions = Array.from(this.customDescriptions.entries());
+			localStorage.setItem('menu-print-custom-descriptions', JSON.stringify(serializedDescriptions));
+
+			// Save modifier descriptions
+			const serializedModifierDescriptions = Array.from(this.modifierDescriptions.entries());
+			localStorage.setItem('menu-print-modifier-descriptions', JSON.stringify(serializedModifierDescriptions));
 		} catch (e) {
 			console.error('Failed to save menu print state:', e);
 		}
@@ -273,4 +301,76 @@ export class MenuPrintState {
 		}
 		return sections;
 	});
+
+	// Get custom description for a section or grand category
+	getCustomDescription(id: string): string {
+		return this.customDescriptions.get(id) || '';
+	}
+
+	// Set custom description for a section or grand category
+	setCustomDescription(id: string, description: string) {
+		if (description.trim()) {
+			this.customDescriptions.set(id, description.trim());
+		} else {
+			this.customDescriptions.delete(id);
+		}
+		this.customDescriptions = new Map(this.customDescriptions);
+		this.saveState();
+	}
+
+	// Get all grand categories for description editing
+	allGrandCategories = $derived.by(() => {
+		return this.menu.grandCategories;
+	});
+
+	// Get modifier description
+	getModifierDescription(modifierId: string): string {
+		return this.modifierDescriptions.get(modifierId) || '';
+	}
+
+	// Set modifier description
+	setModifierDescription(modifierId: string, description: string) {
+		if (description.trim()) {
+			this.modifierDescriptions.set(modifierId, description.trim());
+		} else {
+			this.modifierDescriptions.delete(modifierId);
+		}
+		this.modifierDescriptions = new Map(this.modifierDescriptions);
+		this.saveState();
+	}
+
+	// Returns modifiers with their visible options grouped (for display with descriptions)
+	getGroupedVisibleModifiers(targetId: string): Array<{ modifier: MenuModifier; options: MenuModifierOption[] }> {
+		let modifiers: MenuModifier[] = [];
+		
+		const item = this.findItem(targetId);
+		if (item) {
+			modifiers = item.modifiers || [];
+		} else {
+			modifiers = this.getSectionModifiers(targetId);
+		}
+
+		if (modifiers.length === 0) return [];
+
+		const result: Array<{ modifier: MenuModifier; options: MenuModifierOption[] }> = [];
+		const targetHiddenModifiers = this.hiddenModifiers.get(targetId);
+		const targetHiddenOptions = this.hiddenOptions.get(targetId);
+
+		for (const modifier of modifiers) {
+			if (targetHiddenModifiers?.has(modifier.id)) continue;
+
+			const visibleOptions: MenuModifierOption[] = [];
+			for (const option of modifier.options) {
+				const key = `${modifier.id}::${option.name}`;
+				if (!targetHiddenOptions?.has(key)) {
+					visibleOptions.push(option);
+				}
+			}
+
+			if (visibleOptions.length > 0) {
+				result.push({ modifier, options: visibleOptions });
+			}
+		}
+		return result;
+	}
 }

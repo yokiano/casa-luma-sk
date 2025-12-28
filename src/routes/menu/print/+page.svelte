@@ -61,7 +61,13 @@
 			{#if activeVariant === '1'}
 				<MenuVariant1 menu={menu} getVisibleModifiers={(id) => state.getFlatVisibleOptions(id)} />
 			{:else}
-				<MenuVariant2 menu={menu} getVisibleModifiers={(id) => state.getFlatVisibleOptions(id)} />
+				<MenuVariant2 
+					menu={menu} 
+					getVisibleModifiers={(id) => state.getFlatVisibleOptions(id)}
+					getCustomDescription={(id) => state.getCustomDescription(id)}
+					getGroupedModifiers={(id) => state.getGroupedVisibleModifiers(id)}
+					getModifierDescription={(id) => state.getModifierDescription(id)}
+				/>
 			{/if}
 		</section>
 	</div>

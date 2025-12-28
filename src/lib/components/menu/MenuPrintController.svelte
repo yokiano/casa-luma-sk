@@ -1,18 +1,23 @@
 <script lang="ts">
-	import type { MenuPrintState } from '$routes/menu/print/menu-print.state.svelte';
+	import { MenuPrintState } from '../../../routes/menu/print/menu-print.state.svelte';
+	import type { MenuModifier } from '$lib/types/menu';
 	import { ChevronDown, ChevronUp, Eye, EyeOff, Plus, X } from 'lucide-svelte';
 
 	let { printState }: { printState: MenuPrintState } = $props();
 
-	let isExpanded = $state(true);
+	let isExpanded = $state(false);
 	let addingModifierToSection = $state<string | null>(null); // sectionId
+	let editingDescription = $state<string | null>(null); // sectionId or grandCategoryId
+	let descriptionText = $state('');
+	let editingModifierDescription = $state<string | null>(null); // modifierId
+	let modifierDescriptionText = $state('');
 </script>
 
 <div class="sticky top-0 z-50 mb-8 w-full border-b border-neutral-200 bg-white/95 px-4 py-4 shadow-sm backdrop-blur print:hidden">
 	<div class="mx-auto max-w-4xl">
 		<div class="flex items-center justify-between">
 			<h2 class="text-sm font-semibold uppercase tracking-wider text-neutral-900">
-				Modifier Visibility
+				Menu Customization
 			</h2>
 			<button
 				type="button"
@@ -31,13 +36,92 @@
 
 		{#if isExpanded}
 			<div class="mt-4 flex flex-col gap-2 max-h-[40vh] overflow-y-auto pr-2">
-				<div class="text-xs font-semibold uppercase tracking-wider text-neutral-500 mt-2 mb-1">Sections</div>
+				<div class="text-xs font-semibold uppercase tracking-wider text-neutral-500 mt-2 mb-1">Grand Categories</div>
+				{#each printState.allGrandCategories as grand (grand.id)}
+					<div class="rounded-lg border border-neutral-100 bg-neutral-50 px-3 py-2">
+						<div class="mb-1 flex items-center justify-between gap-2">
+							<span class="text-xs font-bold text-neutral-800">{grand.name}</span>
+							<button
+								type="button"
+								title="Edit Description"
+								onclick={() => {
+									editingDescription = grand.id;
+									descriptionText = printState.getCustomDescription(grand.id);
+								}}
+								class="rounded px-2 py-1 text-[10px] font-medium text-neutral-500 hover:bg-white hover:text-neutral-900 hover:shadow-sm"
+							>
+								{printState.getCustomDescription(grand.id) ? 'Edit' : 'Add'} Description
+							</button>
+						</div>
+						{#if editingDescription === grand.id}
+							<div class="mt-2 rounded border border-blue-100 bg-blue-50 p-2">
+								<textarea
+									bind:value={descriptionText}
+									placeholder="Enter description for {grand.name}..."
+									class="w-full rounded border border-blue-200 bg-white px-2 py-1.5 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-blue-300 focus:outline-none focus:ring-1 focus:ring-blue-300"
+									rows="2"
+								></textarea>
+								<div class="mt-1.5 flex gap-1.5">
+									<button
+										type="button"
+										onclick={() => {
+											printState.setCustomDescription(grand.id, descriptionText);
+											editingDescription = null;
+											descriptionText = '';
+										}}
+										class="rounded bg-blue-600 px-2 py-1 text-[10px] font-medium text-white hover:bg-blue-700"
+									>
+										Save
+									</button>
+									<button
+										type="button"
+										onclick={() => {
+											editingDescription = null;
+											descriptionText = '';
+										}}
+										class="rounded border border-blue-200 bg-white px-2 py-1 text-[10px] font-medium text-blue-600 hover:bg-blue-50"
+									>
+										Cancel
+									</button>
+									{#if printState.getCustomDescription(grand.id)}
+										<button
+											type="button"
+											onclick={() => {
+												printState.setCustomDescription(grand.id, '');
+												editingDescription = null;
+												descriptionText = '';
+											}}
+											class="ml-auto rounded border border-red-200 bg-white px-2 py-1 text-[10px] font-medium text-red-600 hover:bg-red-50"
+										>
+											Remove
+										</button>
+									{/if}
+								</div>
+							</div>
+						{:else if printState.getCustomDescription(grand.id)}
+							<p class="mt-1 text-[11px] italic text-neutral-600">{printState.getCustomDescription(grand.id)}</p>
+						{/if}
+					</div>
+				{/each}
+
+				<div class="text-xs font-semibold uppercase tracking-wider text-neutral-500 mt-4 mb-1">Sections</div>
 				{#each printState.allSections as { section, uniqueKey } (uniqueKey)}
 					{@const sectionModifiers = printState.getSectionModifiers(section.id)}
 					<div class="rounded-lg border border-neutral-100 bg-neutral-50 px-3 py-2">
 						<div class="mb-1 flex items-center justify-between gap-2">
 							<span class="text-xs font-bold text-neutral-800">{section.name}</span>
 							<div class="flex gap-1">
+								<button
+									type="button"
+									title="Edit Description"
+									onclick={() => {
+										editingDescription = section.id;
+										descriptionText = printState.getCustomDescription(section.id);
+									}}
+									class="rounded px-2 py-1 text-[10px] font-medium text-neutral-500 hover:bg-white hover:text-neutral-900 hover:shadow-sm"
+								>
+									{printState.getCustomDescription(section.id) ? 'Edit' : 'Add'} Description
+								</button>
 								{#if sectionModifiers.length > 0}
 									<button
 										type="button"
@@ -79,7 +163,7 @@
 								</div>
 								<div class="flex flex-wrap gap-1">
 									{#each printState.menu.allModifiers || [] as mod}
-										{@const isAttached = sectionModifiers.some(m => m.id === mod.id)}
+										{@const isAttached = sectionModifiers.some((m: MenuModifier) => m.id === mod.id)}
 										<button
 											type="button"
 											class="rounded border px-2 py-1 text-[10px] transition-colors
@@ -93,6 +177,55 @@
 									{/each}
 								</div>
 							</div>
+						{/if}
+
+						{#if editingDescription === section.id}
+							<div class="mt-2 rounded border border-blue-100 bg-blue-50 p-2">
+								<textarea
+									bind:value={descriptionText}
+									placeholder="Enter description for {section.name}..."
+									class="w-full rounded border border-blue-200 bg-white px-2 py-1.5 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-blue-300 focus:outline-none focus:ring-1 focus:ring-blue-300"
+									rows="2"
+								></textarea>
+								<div class="mt-1.5 flex gap-1.5">
+									<button
+										type="button"
+										onclick={() => {
+											printState.setCustomDescription(section.id, descriptionText);
+											editingDescription = null;
+											descriptionText = '';
+										}}
+										class="rounded bg-blue-600 px-2 py-1 text-[10px] font-medium text-white hover:bg-blue-700"
+									>
+										Save
+									</button>
+									<button
+										type="button"
+										onclick={() => {
+											editingDescription = null;
+											descriptionText = '';
+										}}
+										class="rounded border border-blue-200 bg-white px-2 py-1 text-[10px] font-medium text-blue-600 hover:bg-blue-50"
+									>
+										Cancel
+									</button>
+									{#if printState.getCustomDescription(section.id)}
+										<button
+											type="button"
+											onclick={() => {
+												printState.setCustomDescription(section.id, '');
+												editingDescription = null;
+												descriptionText = '';
+											}}
+											class="ml-auto rounded border border-red-200 bg-white px-2 py-1 text-[10px] font-medium text-red-600 hover:bg-red-50"
+										>
+											Remove
+										</button>
+									{/if}
+								</div>
+							</div>
+						{:else if printState.getCustomDescription(section.id)}
+							<p class="mt-1 text-[11px] italic text-neutral-600">{printState.getCustomDescription(section.id)}</p>
 						{/if}
 
 						{#if sectionModifiers.length > 0}
@@ -110,6 +243,18 @@
 												{modifier.name}:
 											</span>
 										</label>
+
+										<button
+											type="button"
+											title="Edit Modifier Description"
+											onclick={() => {
+												editingModifierDescription = modifier.id;
+												modifierDescriptionText = printState.getModifierDescription(modifier.id);
+											}}
+											class="rounded px-1.5 py-0.5 text-[9px] font-medium text-neutral-400 hover:bg-white hover:text-neutral-700 hover:shadow-sm"
+										>
+											{printState.getModifierDescription(modifier.id) ? 'Edit' : 'Add'} Desc
+										</button>
 
 										<div class="flex flex-wrap gap-x-3 gap-y-1">
 											{#each modifier.options as option}
@@ -130,6 +275,52 @@
 												</label>
 											{/each}
 										</div>
+										{#if editingModifierDescription === modifier.id}
+											<div class="mt-1.5 rounded border border-blue-100 bg-blue-50 p-2">
+												<textarea
+													bind:value={modifierDescriptionText}
+													placeholder="Enter description for {modifier.name}..."
+													class="w-full rounded border border-blue-200 bg-white px-2 py-1 text-[10px] text-neutral-900 placeholder:text-neutral-400 focus:border-blue-300 focus:outline-none focus:ring-1 focus:ring-blue-300"
+													rows="1"
+												></textarea>
+												<div class="mt-1 flex gap-1">
+													<button
+														type="button"
+														onclick={() => {
+															printState.setModifierDescription(modifier.id, modifierDescriptionText);
+															editingModifierDescription = null;
+															modifierDescriptionText = '';
+														}}
+														class="rounded bg-blue-600 px-1.5 py-0.5 text-[9px] font-medium text-white hover:bg-blue-700"
+													>
+														Save
+													</button>
+													<button
+														type="button"
+														onclick={() => {
+															editingModifierDescription = null;
+															modifierDescriptionText = '';
+														}}
+														class="rounded border border-blue-200 bg-white px-1.5 py-0.5 text-[9px] font-medium text-blue-600 hover:bg-blue-50"
+													>
+														Cancel
+													</button>
+													{#if printState.getModifierDescription(modifier.id)}
+														<button
+															type="button"
+															onclick={() => {
+																printState.setModifierDescription(modifier.id, '');
+																editingModifierDescription = null;
+																modifierDescriptionText = '';
+															}}
+															class="ml-auto rounded border border-red-200 bg-white px-1.5 py-0.5 text-[9px] font-medium text-red-600 hover:bg-red-50"
+														>
+															Remove
+														</button>
+													{/if}
+												</div>
+											</div>
+										{/if}
 									</div>
 								{/each}
 							</div>
@@ -180,6 +371,18 @@
 											</span>
 										</label>
 
+										<button
+											type="button"
+											title="Edit Modifier Description"
+											onclick={() => {
+												editingModifierDescription = modifier.id;
+												modifierDescriptionText = printState.getModifierDescription(modifier.id);
+											}}
+											class="rounded px-1.5 py-0.5 text-[9px] font-medium text-neutral-400 hover:bg-white hover:text-neutral-700 hover:shadow-sm"
+										>
+											{printState.getModifierDescription(modifier.id) ? 'Edit' : 'Add'} Desc
+										</button>
+
 										<div class="flex flex-wrap gap-x-3 gap-y-1">
 											{#each modifier.options as option}
 												<label class="flex cursor-pointer items-center gap-1.5 rounded py-0.5 hover:bg-white/50">
@@ -199,6 +402,52 @@
 												</label>
 											{/each}
 										</div>
+										{#if editingModifierDescription === modifier.id}
+											<div class="mt-1.5 rounded border border-blue-100 bg-blue-50 p-2">
+												<textarea
+													bind:value={modifierDescriptionText}
+													placeholder="Enter description for {modifier.name}..."
+													class="w-full rounded border border-blue-200 bg-white px-2 py-1 text-[10px] text-neutral-900 placeholder:text-neutral-400 focus:border-blue-300 focus:outline-none focus:ring-1 focus:ring-blue-300"
+													rows="1"
+												></textarea>
+												<div class="mt-1 flex gap-1">
+													<button
+														type="button"
+														onclick={() => {
+															printState.setModifierDescription(modifier.id, modifierDescriptionText);
+															editingModifierDescription = null;
+															modifierDescriptionText = '';
+														}}
+														class="rounded bg-blue-600 px-1.5 py-0.5 text-[9px] font-medium text-white hover:bg-blue-700"
+													>
+														Save
+													</button>
+													<button
+														type="button"
+														onclick={() => {
+															editingModifierDescription = null;
+															modifierDescriptionText = '';
+														}}
+														class="rounded border border-blue-200 bg-white px-1.5 py-0.5 text-[9px] font-medium text-blue-600 hover:bg-blue-50"
+													>
+														Cancel
+													</button>
+													{#if printState.getModifierDescription(modifier.id)}
+														<button
+															type="button"
+															onclick={() => {
+																printState.setModifierDescription(modifier.id, '');
+																editingModifierDescription = null;
+																modifierDescriptionText = '';
+															}}
+															class="ml-auto rounded border border-red-200 bg-white px-1.5 py-0.5 text-[9px] font-medium text-red-600 hover:bg-red-50"
+														>
+															Remove
+														</button>
+													{/if}
+												</div>
+											</div>
+										{/if}
 									</div>
 								{/each}
 							</div>

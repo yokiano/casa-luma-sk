@@ -2,12 +2,20 @@
     import type { MenuSummary, MenuModifierOption } from '$lib/types/menu';
     import MenuModifiersList from './MenuModifiersList.svelte';
     
+    import type { MenuModifier } from '$lib/types/menu';
+    
     let { 
         menu, 
-        getVisibleModifiers 
+        getVisibleModifiers,
+        getCustomDescription,
+        getGroupedModifiers,
+        getModifierDescription
     }: { 
         menu: MenuSummary;
         getVisibleModifiers?: (itemId: string) => MenuModifierOption[];
+        getCustomDescription?: (id: string) => string;
+        getGroupedModifiers?: (itemId: string) => Array<{ modifier: MenuModifier; options: MenuModifierOption[] }>;
+        getModifierDescription?: (modifierId: string) => string;
     } = $props();
 
     const grandCategories = $derived(
@@ -31,6 +39,12 @@
             <section class={grandIndex === 0 ? '' : 'print:break-inside-avoid-page'}>
                 <header class="mb-10 mt-0 print:mb-8">
                     <h3 class="text-4xl font-black text-slate-900 uppercase tracking-tight print:text-3xl">{grand.name}</h3>
+                    {#if getCustomDescription}
+                        {@const customDesc = getCustomDescription(grand.id)}
+                        {#if customDesc}
+                            <p class="mt-3 text-xs text-slate-500 italic print:mt-2 print:text-[10px] leading-relaxed">{customDesc}</p>
+                        {/if}
+                    {/if}
                     <div class="mt-3 border-b-[3px] border-slate-900 w-full print:mt-2"></div>
                     <div class="mt-2 border-b border-slate-200 w-full print:mt-1"></div>
                 </header>
@@ -40,11 +54,29 @@
                         <div class="mb-12 print:mb-10 {grandIndex === 0 ? '' : 'break-inside-avoid'}">
                             <h4 class="text-2xl font-bold mb-6 text-slate-900 uppercase border-b border-slate-200 pb-2 print:text-xl print:mb-4 print:pb-1">{section.name}</h4>
                             
-                            {#if section.intro}
-                                <p class="text-slate-500 mb-6 italic print:mb-4 print:text-[12px] leading-relaxed">{section.intro}</p>
+                            {#if getCustomDescription}
+                                {@const customDesc = getCustomDescription(section.id)}
+                                {#if customDesc}
+                                    <p class="text-xs text-slate-500 mb-6 italic print:mb-4 print:text-[10px] leading-relaxed">{customDesc}</p>
+                                {:else if section.intro}
+                                    <p class="text-xs text-slate-500 mb-6 italic print:mb-4 print:text-[10px] leading-relaxed">{section.intro}</p>
+                                {/if}
+                            {:else if section.intro}
+                                <p class="text-xs text-slate-500 mb-6 italic print:mb-4 print:text-[10px] leading-relaxed">{section.intro}</p>
                             {/if}
 
-                            {#if getVisibleModifiers}
+                            {#if getGroupedModifiers}
+                                {@const grouped = getGroupedModifiers(section.id)}
+                                {#if grouped.length > 0}
+                                    <div class="mb-6">
+                                        <MenuModifiersList 
+                                            groupedModifiers={grouped}
+                                            getModifierDescription={getModifierDescription}
+                                            className="text-slate-600 print:text-[12px]" 
+                                        />
+                                    </div>
+                                {/if}
+                            {:else if getVisibleModifiers}
                                 <div class="mb-6">
                                     <MenuModifiersList 
                                         options={getVisibleModifiers(section.id)} 
@@ -57,8 +89,8 @@
                                 {#each section.items as item}
                                     <div class="break-inside-avoid">
                                         <div class="flex justify-between items-start mb-0.5">
-                                            <h5 class="text-lg font-normal uppercase text-slate-900 leading-tight tracking-tight">{item.name}</h5>
-                                            <div class="font-bold text-xl text-slate-900 print:text-[15px]">
+                                            <h5 class="text-base font-normal uppercase text-slate-900 leading-tight tracking-tight">{item.name}</h5>
+                                            <div class="font-bold text-sm text-slate-900 print:text-[15px]">
                                                 {item.price.toLocaleString()}
                                             </div>
                                         </div>
@@ -67,7 +99,18 @@
                                                 {item.description}
                                             </p>
                                         {/if}
-                                        {#if getVisibleModifiers}
+                                        {#if getGroupedModifiers}
+                                            {@const grouped = getGroupedModifiers(item.id)}
+                                            {#if grouped.length > 0}
+                                                <div class="mt-0.5">
+                                                    <MenuModifiersList 
+                                                        groupedModifiers={grouped}
+                                                        getModifierDescription={getModifierDescription}
+                                                        className="text-slate-600 print:text-[11px] print:leading-normal" 
+                                                    />
+                                                </div>
+                                            {/if}
+                                        {:else if getVisibleModifiers}
                                             <div class="mt-0.5">
                                                 <MenuModifiersList 
                                                     options={getVisibleModifiers(item.id)} 
