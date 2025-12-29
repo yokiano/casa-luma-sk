@@ -40,18 +40,32 @@
 				{#each printState.allGrandCategories as grand (grand.id)}
 					<div class="rounded-lg border border-neutral-100 bg-neutral-50 px-3 py-2">
 						<div class="mb-1 flex items-center justify-between gap-2">
-							<span class="text-xs font-bold text-neutral-800">{grand.name}</span>
-							<button
-								type="button"
-								title="Edit Description"
-								onclick={() => {
-									editingDescription = grand.id;
-									descriptionText = printState.getCustomDescription(grand.id);
-								}}
-								class="rounded px-2 py-1 text-[10px] font-medium text-neutral-500 hover:bg-white hover:text-neutral-900 hover:shadow-sm"
-							>
-								{printState.getCustomDescription(grand.id) ? 'Edit' : 'Add'} Description
-							</button>
+							<span class="text-xs font-bold text-neutral-800" class:opacity-50={!printState.isGrandCategoryTitleVisible(grand.id)}>{grand.name}</span>
+							<div class="flex gap-1">
+								<button
+									type="button"
+									title="Edit Description"
+									onclick={() => {
+										editingDescription = grand.id;
+										descriptionText = printState.getCustomDescription(grand.id);
+									}}
+									class="rounded px-2 py-1 text-[10px] font-medium text-neutral-500 hover:bg-white hover:text-neutral-900 hover:shadow-sm"
+								>
+									{printState.getCustomDescription(grand.id) ? 'Edit' : 'Add'} Description
+								</button>
+								<button
+									type="button"
+									title={printState.isGrandCategoryTitleVisible(grand.id) ? 'Hide Title' : 'Show Title'}
+									onclick={() => printState.toggleGrandCategoryTitle(grand.id)}
+									class="rounded p-1 text-neutral-400 hover:bg-white hover:text-neutral-900 hover:shadow-sm"
+								>
+									{#if printState.isGrandCategoryTitleVisible(grand.id)}
+										<Eye class="h-3.5 w-3.5" />
+									{:else}
+										<EyeOff class="h-3.5 w-3.5" />
+									{/if}
+								</button>
+							</div>
 						</div>
 						{#if editingDescription === grand.id}
 							<div class="mt-2 rounded border border-blue-100 bg-blue-50 p-2">
@@ -109,7 +123,7 @@
 					{@const sectionModifiers = printState.getSectionModifiers(section.id)}
 					<div class="rounded-lg border border-neutral-100 bg-neutral-50 px-3 py-2">
 						<div class="mb-1 flex items-center justify-between gap-2">
-							<span class="text-xs font-bold text-neutral-800">{section.name}</span>
+							<span class="text-xs font-bold text-neutral-800" class:opacity-50={!printState.isSectionTitleVisible(section.id)}>{section.name}</span>
 							<div class="flex gap-1">
 								<button
 									type="button"
@@ -121,6 +135,18 @@
 									class="rounded px-2 py-1 text-[10px] font-medium text-neutral-500 hover:bg-white hover:text-neutral-900 hover:shadow-sm"
 								>
 									{printState.getCustomDescription(section.id) ? 'Edit' : 'Add'} Description
+								</button>
+								<button
+									type="button"
+									title={printState.isSectionTitleVisible(section.id) ? 'Hide Title' : 'Show Title'}
+									onclick={() => printState.toggleSectionTitle(section.id)}
+									class="rounded p-1 text-neutral-400 hover:bg-white hover:text-neutral-900 hover:shadow-sm"
+								>
+									{#if printState.isSectionTitleVisible(section.id)}
+										<Eye class="h-3.5 w-3.5" />
+									{:else}
+										<EyeOff class="h-3.5 w-3.5" />
+									{/if}
 								</button>
 								{#if sectionModifiers.length > 0}
 									<button
@@ -324,8 +350,6 @@
 									</div>
 								{/each}
 							</div>
-						{:else}
-							<div class="text-[10px] text-neutral-400 italic">No modifiers attached</div>
 						{/if}
 					</div>
 				{/each}

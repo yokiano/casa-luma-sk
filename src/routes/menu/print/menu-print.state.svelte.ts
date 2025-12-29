@@ -17,6 +17,12 @@ export class MenuPrintState {
 	// modifierId -> custom description
 	modifierDescriptions = $state<Map<string, string>>(new Map());
 
+	// Set of grand category IDs whose titles/headers are hidden
+	hiddenGrandCategoryTitles = $state<Set<string>>(new Set());
+
+	// Set of section IDs whose titles/headers are hidden
+	hiddenSectionTitles = $state<Set<string>>(new Set());
+
 	constructor(menu: MenuSummary) {
 		this.menu = menu;
 		this.loadState();
@@ -74,6 +80,20 @@ export class MenuPrintState {
 				const parsed = JSON.parse(storedModifierDescriptions);
 				this.modifierDescriptions = new Map(parsed);
 			}
+
+			// Load hidden grand category titles
+			const storedHiddenGrand = localStorage.getItem('menu-print-hidden-grand-categories');
+			if (storedHiddenGrand) {
+				const parsed = JSON.parse(storedHiddenGrand);
+				this.hiddenGrandCategoryTitles = new Set(parsed);
+			}
+
+			// Load hidden section titles
+			const storedHiddenSections = localStorage.getItem('menu-print-hidden-section-titles');
+			if (storedHiddenSections) {
+				const parsed = JSON.parse(storedHiddenSections);
+				this.hiddenSectionTitles = new Set(parsed);
+			}
 		} catch (e) {
 			console.error('Failed to load menu print state:', e);
 		}
@@ -107,6 +127,14 @@ export class MenuPrintState {
 			// Save modifier descriptions
 			const serializedModifierDescriptions = Array.from(this.modifierDescriptions.entries());
 			localStorage.setItem('menu-print-modifier-descriptions', JSON.stringify(serializedModifierDescriptions));
+
+			// Save hidden grand category titles
+			const serializedHiddenGrand = Array.from(this.hiddenGrandCategoryTitles);
+			localStorage.setItem('menu-print-hidden-grand-categories', JSON.stringify(serializedHiddenGrand));
+
+			// Save hidden section titles
+			const serializedHiddenSections = Array.from(this.hiddenSectionTitles);
+			localStorage.setItem('menu-print-hidden-section-titles', JSON.stringify(serializedHiddenSections));
 		} catch (e) {
 			console.error('Failed to save menu print state:', e);
 		}
@@ -372,5 +400,33 @@ export class MenuPrintState {
 			}
 		}
 		return result;
+	}
+
+	toggleGrandCategoryTitle(id: string) {
+		if (this.hiddenGrandCategoryTitles.has(id)) {
+			this.hiddenGrandCategoryTitles.delete(id);
+		} else {
+			this.hiddenGrandCategoryTitles.add(id);
+		}
+		this.hiddenGrandCategoryTitles = new Set(this.hiddenGrandCategoryTitles);
+		this.saveState();
+	}
+
+	isGrandCategoryTitleVisible(id: string) {
+		return !this.hiddenGrandCategoryTitles.has(id);
+	}
+
+	toggleSectionTitle(id: string) {
+		if (this.hiddenSectionTitles.has(id)) {
+			this.hiddenSectionTitles.delete(id);
+		} else {
+			this.hiddenSectionTitles.add(id);
+		}
+		this.hiddenSectionTitles = new Set(this.hiddenSectionTitles);
+		this.saveState();
+	}
+
+	isSectionTitleVisible(id: string) {
+		return !this.hiddenSectionTitles.has(id);
 	}
 }

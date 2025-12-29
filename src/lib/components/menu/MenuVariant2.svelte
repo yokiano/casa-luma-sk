@@ -9,13 +9,17 @@
         getVisibleModifiers,
         getCustomDescription,
         getGroupedModifiers,
-        getModifierDescription
+        getModifierDescription,
+        isGrandCategoryTitleVisible,
+        isSectionTitleVisible
     }: { 
         menu: MenuSummary;
         getVisibleModifiers?: (itemId: string) => MenuModifierOption[];
         getCustomDescription?: (id: string) => string;
         getGroupedModifiers?: (itemId: string) => Array<{ modifier: MenuModifier; options: MenuModifierOption[] }>;
         getModifierDescription?: (modifierId: string) => string;
+        isGrandCategoryTitleVisible?: (id: string) => boolean;
+        isSectionTitleVisible?: (id: string) => boolean;
     } = $props();
 
     const grandCategories = $derived(
@@ -38,21 +42,29 @@
         {#each grandCategories as grand, grandIndex}
             <section class={grandIndex === 0 ? '' : 'print:break-inside-avoid-page'}>
                 <header class="mb-10 mt-0 print:mb-8">
-                    <h3 class="text-4xl font-black text-slate-900 uppercase tracking-tight print:text-3xl">{grand.name}</h3>
+                    {#if !isGrandCategoryTitleVisible || isGrandCategoryTitleVisible(grand.id)}
+                        <h3 class="text-4xl font-black text-slate-900 uppercase tracking-tight print:text-3xl">{grand.name}</h3>
+                    {/if}
+                    
                     {#if getCustomDescription}
                         {@const customDesc = getCustomDescription(grand.id)}
                         {#if customDesc}
                             <p class="mt-3 text-xs text-slate-500 italic print:mt-2 print:text-[10px] leading-relaxed">{customDesc}</p>
                         {/if}
                     {/if}
-                    <div class="mt-3 border-b-[3px] border-slate-900 w-full print:mt-2"></div>
-                    <div class="mt-2 border-b border-slate-200 w-full print:mt-1"></div>
+                    
+                    {#if !isGrandCategoryTitleVisible || isGrandCategoryTitleVisible(grand.id)}
+                        <div class="mt-3 border-b-[3px] border-slate-900 w-full print:mt-2"></div>
+                        <div class="mt-2 border-b border-slate-200 w-full print:mt-1"></div>
+                    {/if}
                 </header>
 
                 <div class="columns-1 md:columns-2 gap-12 print:columns-2 print:gap-12">
                     {#each grand.sections as section, sectionIndex}
                         <div class="mb-12 print:mb-10 {grandIndex === 0 ? '' : 'break-inside-avoid'}">
-                            <h4 class="text-2xl font-bold mb-6 text-slate-900 uppercase border-b border-slate-200 pb-2 print:text-xl print:mb-4 print:pb-1">{section.name}</h4>
+                            {#if !isSectionTitleVisible || isSectionTitleVisible(section.id)}
+                                <h4 class="text-2xl font-bold mb-6 text-slate-900 uppercase border-b border-slate-200 pb-2 print:text-xl print:mb-4 print:pb-1">{section.name}</h4>
+                            {/if}
                             
                             {#if getCustomDescription}
                                 {@const customDesc = getCustomDescription(section.id)}
@@ -63,26 +75,6 @@
                                 {/if}
                             {:else if section.intro}
                                 <p class="text-xs text-slate-500 mb-6 italic print:mb-4 print:text-[10px] leading-relaxed">{section.intro}</p>
-                            {/if}
-
-                            {#if getGroupedModifiers}
-                                {@const grouped = getGroupedModifiers(section.id)}
-                                {#if grouped.length > 0}
-                                    <div class="mb-6">
-                                        <MenuModifiersList 
-                                            groupedModifiers={grouped}
-                                            getModifierDescription={getModifierDescription}
-                                            className="text-slate-600 print:text-[12px]" 
-                                        />
-                                    </div>
-                                {/if}
-                            {:else if getVisibleModifiers}
-                                <div class="mb-6">
-                                    <MenuModifiersList 
-                                        options={getVisibleModifiers(section.id)} 
-                                        className="text-slate-600 print:text-[12px]" 
-                                    />
-                                </div>
                             {/if}
 
                             <div class="space-y-4">
@@ -128,6 +120,26 @@
                                     </div>
                                 {/each}
                             </div>
+
+                            {#if getGroupedModifiers}
+                                {@const grouped = getGroupedModifiers(section.id)}
+                                {#if grouped.length > 0}
+                                    <div class="mt-6">
+                                        <MenuModifiersList 
+                                            groupedModifiers={grouped}
+                                            getModifierDescription={getModifierDescription}
+                                            className="text-slate-600 print:text-[12px]" 
+                                        />
+                                    </div>
+                                {/if}
+                            {:else if getVisibleModifiers}
+                                <div class="mt-6">
+                                    <MenuModifiersList 
+                                        options={getVisibleModifiers(section.id)} 
+                                        className="text-slate-600 print:text-[12px]" 
+                                    />
+                                </div>
+                            {/if}
                         </div>
                     {/each}
                 </div>

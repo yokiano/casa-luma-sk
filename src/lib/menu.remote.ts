@@ -195,10 +195,10 @@ const sortSections = (sections: StructuredMenuSection[], categoryOrder: Map<stri
 		});
 
 const GRAND_CATEGORY_ORDER: Record<string, number> = {
-	Drinks: 10,
+	Kids: 10,
 	Food: 20,
 	Desserts:30,
-	Kids: 40,
+	Drinks: 40,
 };
 
 const sortGrandCategories = (categories: MenuGrandCategory[]) =>

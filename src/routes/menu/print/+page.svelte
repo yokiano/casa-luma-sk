@@ -67,6 +67,8 @@
 					getCustomDescription={(id) => state.getCustomDescription(id)}
 					getGroupedModifiers={(id) => state.getGroupedVisibleModifiers(id)}
 					getModifierDescription={(id) => state.getModifierDescription(id)}
+					isGrandCategoryTitleVisible={(id) => state.isGrandCategoryTitleVisible(id)}
+					isSectionTitleVisible={(id) => state.isSectionTitleVisible(id)}
 				/>
 			{/if}
 		</section>
