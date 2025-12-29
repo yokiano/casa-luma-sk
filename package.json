@@ -59,6 +59,7 @@
 		"@notionhq/client": "^5.1.0",
 		"dotenv": "^16.4.5",
 		"modern-screenshot": "^4.6.6",
+		"sharp": "^0.34.5",
 		"valibot": "^1.1.0"
 	}
 }

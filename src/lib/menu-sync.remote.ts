@@ -157,6 +157,12 @@ function compareItems(
     diffs.push(`Category mismatch: "${notionCategory}" vs "${loyverseCategory || 'Uncategorized'}"`);
   }
 
+  // Compare Image Presence
+  const notionImage = notionItem.properties.image?.urls?.[0];
+  if (notionImage && !loyverseItem.image_url) {
+    diffs.push('Image missing in Loyverse');
+  }
+
   // Compare Modifiers
   const notionModifierPageIds = notionItem.properties.modifiersIds || [];
   // Map Notion IDs to expected Loyverse IDs
@@ -290,9 +296,10 @@ export const getMenuSyncStatus = query(async () => {
 export const syncMenuItems = command(
   v.object({
     itemIds: v.optional(v.array(v.string())), // Optional list of Notion IDs to sync.
-    deleteOrphans: v.optional(v.boolean()) // If true, delete Loyverse items not in Notion
+    deleteOrphans: v.optional(v.boolean()), // If true, delete Loyverse items not in Notion
+    forceImageSync: v.optional(v.boolean()) // If true, re-upload images even if item is synced
   }),
-  async ({ itemIds, deleteOrphans }) => {
+  async ({ itemIds, deleteOrphans, forceImageSync }) => {
     const notionDb = new MenuItemsDatabase({ notionSecret: NOTION_API_KEY });
     const modifiersDb = new PosModifiersDatabase({ notionSecret: NOTION_API_KEY });
     const report: SyncReport = { created: 0, updated: 0, linked: 0, deleted: 0, errors: [], itemResults: [] };
@@ -412,7 +419,7 @@ export const syncMenuItems = command(
           // Optimization: Skip if already synced
           if (!isNew && targetLoyverseItem) {
             const diffs = compareItems(nItem, targetLoyverseItem, loyverseCategories, notionModifiersMap);
-            if (diffs.length === 0) {
+            if (diffs.length === 0 && (!forceImageSync || !imageUrl)) {
               report.itemResults.push({
                 notionId: nItem.id,
                 loyverseId: targetLoyverseItem.id,

@@ -1,4 +1,6 @@
 import { LOYVERSE_ACCESS_TOKEN, LOYVERSE_STORE_ID } from '$env/static/private';
+import { Buffer } from 'node:buffer';
+import sharp from 'sharp';
 
 const BASE_URL = 'https://api.loyverse.com/v1.0';
 
@@ -243,6 +245,13 @@ class LoyverseClient {
     return allCategories;
   }
 
+  async createCategory(name: string, color?: string): Promise<LoyverseCategory> {
+    return this.request<LoyverseCategory>('/categories', {
+      method: 'POST',
+      body: JSON.stringify({ name, color }),
+    });
+  }
+
   async deleteCategory(id: string): Promise<void> {
     await this.request<void>(`/categories/${id}`, {
       method: 'DELETE',
@@ -272,28 +281,66 @@ class LoyverseClient {
   }
 
   async uploadImage(itemId: string, imageUrl: string): Promise<void> {
+    console.log(`[Loyverse] Starting image upload for item ${itemId}. URL: ${imageUrl}`);
+
     // 1. Fetch the image from the source URL
     let imageResponse;
     try {
       imageResponse = await fetch(imageUrl);
     } catch (e: any) {
+      console.error(`[Loyverse] Failed to fetch source image: ${e.message}`);
       throw new Error(`Failed to fetch image from URL: ${e.message}`);
     }
 
     if (!imageResponse.ok) {
+      console.error(`[Loyverse] Source image returned ${imageResponse.status}: ${imageResponse.statusText}`);
       throw new Error(`Source image returned status ${imageResponse.status}: ${imageResponse.statusText}`);
     }
     const imageBuffer = await imageResponse.arrayBuffer();
-    const contentType = imageResponse.headers.get('content-type') || 'image/png';
+    let buffer = Buffer.from(imageBuffer);
+    let contentType = imageResponse.headers.get('content-type') || 'image/png';
+
+    console.log(`[Loyverse] Image fetched. Size: ${buffer.length} bytes. Type: ${contentType}`);
+
+    // Loyverse often fails with WebP or other formats. Convert to PNG if needed.
+    // Also, if it's too large, resize/compress it.
+    if (contentType === 'image/webp' || contentType === 'image/avif' || buffer.length > 2 * 1024 * 1024) {
+      console.log(`[Loyverse] Converting/Resizing image... (Original type: ${contentType}, Size: ${buffer.length})`);
+      try {
+        const converted = await sharp(buffer)
+          .resize({ width: 1024, height: 1024, fit: 'inside' }) // Reasonable max size
+          .png() // Convert to PNG
+          .toBuffer();
+        
+        // Update buffer and content type
+        buffer = Buffer.from(converted);
+        contentType = 'image/png';
+        console.log(`[Loyverse] Image converted to PNG. New Size: ${buffer.length} bytes.`);
+      } catch (sharpError: any) {
+        console.error(`[Loyverse] Sharp conversion failed: ${sharpError.message}`);
+        // Fallback to original buffer if conversion fails, though it might still fail upload
+      }
+    }
+
+    if (buffer.length > 5 * 1024 * 1024) {
+      console.warn(`[Loyverse] Warning: Image size (${buffer.length} bytes) exceeds 5MB recommendation.`);
+    }
 
     // 2. Upload to Loyverse
-    await this.request<void>(`/items/${itemId}/image`, {
-      method: 'POST',
-      body: imageBuffer,
-      headers: {
-        'Content-Type': contentType
-      }
-    });
+    try {
+      await this.request<void>(`/items/${itemId}/image`, {
+        method: 'POST',
+        body: buffer as unknown as BodyInit,
+        headers: {
+          'Content-Type': contentType,
+          'Content-Length': buffer.length.toString()
+        }
+      });
+      console.log(`[Loyverse] Image uploaded successfully for item ${itemId}`);
+    } catch (e: any) {
+      console.error(`[Loyverse] Upload failed for item ${itemId}: ${e.message}`);
+      throw e;
+    }
   }
 
   // --- Discounts ---

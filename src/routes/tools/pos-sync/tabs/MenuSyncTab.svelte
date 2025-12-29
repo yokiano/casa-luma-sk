@@ -33,6 +33,17 @@
       
       <div class="h-6 w-px bg-gray-300"></div>
 
+      <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none">
+        <input 
+          type="checkbox" 
+          bind:checked={state.forceImageSync} 
+          class="rounded border-gray-300 text-black focus:ring-black"
+        />
+        Force Image Sync
+      </label>
+      
+      <div class="h-6 w-px bg-gray-300"></div>
+
       <button 
         class="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded text-sm font-medium transition-colors"
         onclick={() => state.fetchStatus()}

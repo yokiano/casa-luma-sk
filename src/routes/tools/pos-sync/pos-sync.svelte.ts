@@ -15,6 +15,7 @@ export class MenuSyncState {
   // Options
   deleteOrphans = $state(false);
   hideSynced = $state(false);
+  forceImageSync = $state(false);
 
   // Computed: Filtered items
   filteredItems = $derived(this.items.filter(i => {
@@ -74,7 +75,8 @@ export class MenuSyncState {
 
     try {
       const report = await syncMenuItems({ 
-        deleteOrphans: this.deleteOrphans 
+        deleteOrphans: this.deleteOrphans,
+        forceImageSync: this.forceImageSync
       });
       this.applyReport(report);
       // Refresh status after sync
@@ -102,7 +104,10 @@ export class MenuSyncState {
     });
 
     try {
-      const report = await syncMenuItems({ itemIds });
+      const report = await syncMenuItems({ 
+        itemIds,
+        forceImageSync: this.forceImageSync 
+      });
       this.applyReport(report);
       await this.fetchStatus();
     } catch (e: any) {
