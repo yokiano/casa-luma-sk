@@ -30,7 +30,8 @@ export interface OpenPlayPosItemsResponse extends WithOptional<Omit<DatabaseObje
     "Access": RichTextPropertyItemObjectResponse,
     "Price (Baht)": NumberPropertyItemObjectResponse,
     "Name": TitlePropertyItemObjectResponse,
-    "Category": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'Membership', color: 'orange' } | { id: StringRequest, name: 'Entry', color: 'purple' }}
+    "Category": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'Membership', color: 'orange' } | { id: StringRequest, name: 'Entry', color: 'purple' }},
+    "LoyverseID": RichTextPropertyItemObjectResponse
   }
 }
 
@@ -70,8 +71,9 @@ type OpenPlayPosItemsCategoryPropertyFilter =
     }
   | ExistencePropertyFilter      
 
+type OpenPlayPosItemsLoyverseIdPropertyFilter = TextPropertyFilter
 
-export type OpenPlayPosItemsPropertyFilter = { highlight: OpenPlayPosItemsHighlightPropertyFilter } | { iconChar: OpenPlayPosItemsIconCharPropertyFilter } | { foodDiscount: OpenPlayPosItemsFoodDiscountPropertyFilter } | { id: OpenPlayPosItemsIdPropertyFilter } | { workshopsIncluded: OpenPlayPosItemsWorkshopsIncludedPropertyFilter } | { duration: OpenPlayPosItemsDurationPropertyFilter } | { perks: OpenPlayPosItemsPerksPropertyFilter } | { access: OpenPlayPosItemsAccessPropertyFilter } | { priceBaht: OpenPlayPosItemsPriceBahtPropertyFilter } | { name: OpenPlayPosItemsNamePropertyFilter } | { category: OpenPlayPosItemsCategoryPropertyFilter }
+export type OpenPlayPosItemsPropertyFilter = { highlight: OpenPlayPosItemsHighlightPropertyFilter } | { iconChar: OpenPlayPosItemsIconCharPropertyFilter } | { foodDiscount: OpenPlayPosItemsFoodDiscountPropertyFilter } | { id: OpenPlayPosItemsIdPropertyFilter } | { workshopsIncluded: OpenPlayPosItemsWorkshopsIncludedPropertyFilter } | { duration: OpenPlayPosItemsDurationPropertyFilter } | { perks: OpenPlayPosItemsPerksPropertyFilter } | { access: OpenPlayPosItemsAccessPropertyFilter } | { priceBaht: OpenPlayPosItemsPriceBahtPropertyFilter } | { name: OpenPlayPosItemsNamePropertyFilter } | { category: OpenPlayPosItemsCategoryPropertyFilter } | { loyverseId: OpenPlayPosItemsLoyverseIdPropertyFilter }
 
 export type OpenPlayPosItemsQuery = Omit<QueryDatabaseBodyParameters, 'filter' | 'sorts'> & {
   sorts?: Array<

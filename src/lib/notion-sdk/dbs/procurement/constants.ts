@@ -11,7 +11,8 @@ export const PROCUREMENT_PROP_VALUES = {
   "General",
   "Kitchen",
   "Office",
-  "Cashier"
+  "Cashier",
+  "Birthdays"
 ] as const,
 "tags": [
   "Pay To Play",
@@ -88,6 +89,8 @@ export const PROCUREMENT_PROPS_TO_IDS = {
   "objectCategory": "wI%60N",
   "status": "~NX%5B",
   "item": "title",
+  "payForPlayItems": "fhUB",
+  "storeItems": "nzee",
   "createdBy": "%3DKtU",
   "lastEditedBy": "%40rim",
   "createdTime": "%5DhP%3F",
@@ -112,6 +115,8 @@ export const PROCUREMENT_IDS_TO_PROPS = {
   "wI%60N": "objectCategory",
   "~NX%5B": "status",
   "title": "item",
+  "fhUB": "payForPlayItems",
+  "nzee": "storeItems",
   "%3DKtU": "createdBy",
   "%40rim": "lastEditedBy",
   "%5DhP%3F": "createdTime",
@@ -136,6 +141,8 @@ export const PROCUREMENT_PROPS_TO_TYPES = {
   "objectCategory": "multi_select",
   "status": "status",
   "item": "title",
+  "payForPlayItems": "relation",
+  "storeItems": "relation",
   "createdBy": "created_by",
   "lastEditedBy": "last_edited_by",
   "createdTime": "created_time",

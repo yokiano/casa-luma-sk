@@ -38,8 +38,6 @@ export type EmployeesPropertiesPatch = {
   taxId?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   idPassportNo?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   hasWorkPermit?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'checkbox' }>['checkbox']
-  shifts?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'relation' }>['relation']
-  country?: EmployeesResponse['properties']['Country']['select']['name']
   dateOfBirth?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'date' }>['date']
 }
 
@@ -492,20 +490,6 @@ export class EmployeesPatchDTO {
       this.__data.properties['WH%5Da'] = {
         type: 'checkbox',
         checkbox: props.hasWorkPermit,
-      }
-    }
-
-    if (props?.shifts !== undefined) {
-      this.__data.properties['h~_K'] = {
-        type: 'relation',
-        relation: props.shifts,
-      }
-    }
-
-    if (props?.country !== undefined) {
-      this.__data.properties['rTu%5D'] = {
-        type: 'select',
-        select: { name: props.country },
       }
     }
 

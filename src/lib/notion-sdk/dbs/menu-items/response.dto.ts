@@ -80,6 +80,7 @@ export class MenuItemsPropertiesResponseDTO {
       variantOption_3Name: this.__props['Variant option 3 name'],
       variantOption_2Name: this.__props['Variant option 2 name'],
       modifiers: this.__props['Modifiers'],
+      order: this.__props['Order'],
     }
   }
 
@@ -203,4 +204,8 @@ export class MenuItemsPropertiesResponseDTO {
     return (this.__props['Modifiers']?.relation as unknown as Array<{ id: string }>).map((item) => item.id)  
   }
 
+
+  get order() {
+    return this.__props['Order']?.number
+  }
 }

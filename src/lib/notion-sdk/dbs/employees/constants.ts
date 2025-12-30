@@ -39,11 +39,6 @@ export const EMPLOYEES_PROP_VALUES = {
   "Terminated",
   "Contract Ended"
 ] as const,
-"country": [
-  "Thailand",
-  "Myanmar",
-  "Other"
-] as const,
 }
 
 export const EMPLOYEES_PROPS_TO_IDS = {
@@ -79,8 +74,6 @@ export const EMPLOYEES_PROPS_TO_IDS = {
   "taxId": "%3FRoK",
   "idPassportNo": "IaO%3B",
   "hasWorkPermit": "WH%5Da",
-  "shifts": "h~_K",
-  "country": "rTu%5D",
   "dateOfBirth": "tIHh"
 } as const
 export const EMPLOYEES_IDS_TO_PROPS = {
@@ -116,8 +109,6 @@ export const EMPLOYEES_IDS_TO_PROPS = {
   "%3FRoK": "taxId",
   "IaO%3B": "idPassportNo",
   "WH%5Da": "hasWorkPermit",
-  "h~_K": "shifts",
-  "rTu%5D": "country",
   "tIHh": "dateOfBirth"
 } as const
 export const EMPLOYEES_PROPS_TO_TYPES = {
@@ -153,8 +144,6 @@ export const EMPLOYEES_PROPS_TO_TYPES = {
   "taxId": "rich_text",
   "idPassportNo": "rich_text",
   "hasWorkPermit": "checkbox",
-  "shifts": "relation",
-  "country": "select",
   "dateOfBirth": "date"
 } as const
 

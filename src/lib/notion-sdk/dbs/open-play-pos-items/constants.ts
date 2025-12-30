@@ -32,7 +32,8 @@ export const OPEN_PLAY_POS_ITEMS_PROPS_TO_IDS = {
   "access": "xUkM",
   "priceBaht": "%7B%5BoE",
   "name": "title",
-  "category": "O%3D%5Dz"
+  "category": "O%3D%5Dz",
+  "loyverseId": "CN~l"
 } as const
 export const OPEN_PLAY_POS_ITEMS_IDS_TO_PROPS = {
   "%3BTO~": "highlight",
@@ -45,7 +46,8 @@ export const OPEN_PLAY_POS_ITEMS_IDS_TO_PROPS = {
   "xUkM": "access",
   "%7B%5BoE": "priceBaht",
   "title": "name",
-  "O%3D%5Dz": "category"
+  "O%3D%5Dz": "category",
+  "CN~l": "loyverseId"
 } as const
 export const OPEN_PLAY_POS_ITEMS_PROPS_TO_TYPES = {
   "highlight": "checkbox",
@@ -58,7 +60,8 @@ export const OPEN_PLAY_POS_ITEMS_PROPS_TO_TYPES = {
   "access": "rich_text",
   "priceBaht": "number",
   "name": "title",
-  "category": "select"
+  "category": "select",
+  "loyverseId": "rich_text"
 } as const
 
   export type OpenPlayPosItemsDTOProperties = keyof typeof OPEN_PLAY_POS_ITEMS_PROPS_TO_IDS

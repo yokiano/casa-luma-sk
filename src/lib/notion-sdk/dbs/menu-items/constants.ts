@@ -31,23 +31,26 @@ export const MENU_ITEMS_PROP_VALUES = {
   "Sesame"
 ] as const,
 "category": [
-  "House Smoothies",
   "Coffee & Friends",
+  "Premium Tea",
+  "House Smoothies",
   "Fresh Cold-Pressed Juices",
   "Soft Drinks",
-  "Proper Sandwiches",
+  "Healthy Treats",
+  "Salads",
+  "Pastries",
   "Crafted Croissants",
   "Open Toasts",
+  "Breakfast Sets",
+  "Proper Sandwiches",
+  "Comfort Food",
   "Personal Pizzas",
-  "Fresh But Not Boring",
-  "Healthy Treats",
   "Desserts",
   "Kids Pizza",
+  "Light & Fresh",
   "Kids Favorites",
-  "Kids Small Plates",
-  "Kids Beverage",
-  "Build Your Breakfast",
-  "Comfort Food"
+  "Cute Sandwich",
+  "Kid Sized Drinks"
 ] as const,
 "grandCategory": [
   "Food",
@@ -80,7 +83,8 @@ export const MENU_ITEMS_PROPS_TO_IDS = {
   "hasVariants": "Y%5DwL",
   "variantOption_3Name": "a%3CZ%40",
   "variantOption_2Name": "wt%7Dr",
-  "modifiers": "eqWu"
+  "modifiers": "eqWu",
+  "order": "TAGg"
 } as const
 export const MENU_ITEMS_IDS_TO_PROPS = {
   "%40w%3Bd": "description",
@@ -101,7 +105,8 @@ export const MENU_ITEMS_IDS_TO_PROPS = {
   "Y%5DwL": "hasVariants",
   "a%3CZ%40": "variantOption_3Name",
   "wt%7Dr": "variantOption_2Name",
-  "eqWu": "modifiers"
+  "eqWu": "modifiers",
+  "TAGg": "order"
 } as const
 export const MENU_ITEMS_PROPS_TO_TYPES = {
   "description": "rich_text",
@@ -122,7 +127,8 @@ export const MENU_ITEMS_PROPS_TO_TYPES = {
   "hasVariants": "checkbox",
   "variantOption_3Name": "rich_text",
   "variantOption_2Name": "rich_text",
-  "modifiers": "relation"
+  "modifiers": "relation",
+  "order": "number"
 } as const
 
   export type MenuItemsDTOProperties = keyof typeof MENU_ITEMS_PROPS_TO_IDS

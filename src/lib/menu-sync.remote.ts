@@ -279,14 +279,30 @@ export const getMenuSyncStatus = query(async () => {
   // Find orphaned Loyverse items
   for (const lItem of loyverseItems) {
     if (!matchedLoyverseIds.has(lItem.id)) {
-      syncStates.push({
-        notionId: undefined,
-        loyverseId: lItem.id,
-        name: lItem.item_name,
-        category: lItem.category_id ? (loyverseCategories.get(lItem.category_id)?.name || 'Uncategorized') : 'Uncategorized',
-        status: 'NOT_IN_NOTION',
-        imageUrl: lItem.image_url
-      });
+      const catName = lItem.category_id ? (loyverseCategories.get(lItem.category_id)?.name || 'Uncategorized') : 'Uncategorized';
+      const lowerCat = catName.toLowerCase();
+
+      // Exclude items that belong to other specialized sync tabs (Open Play, Pay for Play, Store)
+      const isOtherTab = 
+        lowerCat.includes('open play') || 
+        lowerCat.includes('pass') || 
+        lowerCat.includes('pay for play') || 
+        lowerCat.includes('toy') ||
+        lowerCat.includes('store') || 
+        lowerCat.includes('merch') || 
+        lowerCat.includes('retail') || 
+        lowerCat.includes('shop');
+
+      if (!isOtherTab) {
+        syncStates.push({
+          notionId: undefined,
+          loyverseId: lItem.id,
+          name: lItem.item_name,
+          category: catName,
+          status: 'NOT_IN_NOTION',
+          imageUrl: lItem.image_url
+        });
+      }
     }
   }
 
@@ -621,25 +637,41 @@ export const syncMenuItems = command(
       if (deleteOrphans) {
         for (const lItem of loyverseItems) {
           if (!matchedLoyverseIds.has(lItem.id)) {
-             try {
-               await loyverse.deleteItem(lItem.id);
-               report.deleted++;
-               report.itemResults.push({
-                 loyverseId: lItem.id,
-                 name: lItem.item_name,
-                 action: 'DELETE',
-                 status: 'SUCCESS'
-               });
-             } catch (err: any) {
-               console.error(`Error deleting item ${lItem.item_name}:`, err);
-               report.errors.push(`Failed to delete "${lItem.item_name}": ${err.message}`);
-               report.itemResults.push({
-                 loyverseId: lItem.id,
-                 name: lItem.item_name,
-                 action: 'DELETE',
-                 status: 'ERROR',
-                 message: err.message
-               });
+             const catName = lItem.category_id ? (loyverseCategories.get(lItem.category_id)?.name || 'Uncategorized') : 'Uncategorized';
+             const lowerCat = catName.toLowerCase();
+
+             // Only delete if it's NOT part of another specialized tab
+             const isOtherTab = 
+               lowerCat.includes('open play') || 
+               lowerCat.includes('pass') || 
+               lowerCat.includes('pay for play') || 
+               lowerCat.includes('toy') ||
+               lowerCat.includes('store') || 
+               lowerCat.includes('merch') || 
+               lowerCat.includes('retail') || 
+               lowerCat.includes('shop');
+
+             if (!isOtherTab) {
+               try {
+                 await loyverse.deleteItem(lItem.id);
+                 report.deleted++;
+                 report.itemResults.push({
+                   loyverseId: lItem.id,
+                   name: lItem.item_name,
+                   action: 'DELETE',
+                   status: 'SUCCESS'
+                 });
+               } catch (err: any) {
+                 console.error(`Error deleting item ${lItem.item_name}:`, err);
+                 report.errors.push(`Failed to delete "${lItem.item_name}": ${err.message}`);
+                 report.itemResults.push({
+                   loyverseId: lItem.id,
+                   name: lItem.item_name,
+                   action: 'DELETE',
+                   status: 'ERROR',
+                   message: err.message
+                 });
+               }
              }
           }
         }

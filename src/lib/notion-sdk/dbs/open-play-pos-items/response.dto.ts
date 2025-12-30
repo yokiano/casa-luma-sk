@@ -72,6 +72,7 @@ export class OpenPlayPosItemsPropertiesResponseDTO {
       priceBaht: this.__props['Price (Baht)'],
       name: this.__props['Name'],
       category: this.__props['Category'],
+      loyverseId: this.__props['LoyverseID'],
     }
   }
 
@@ -148,5 +149,13 @@ export class OpenPlayPosItemsPropertiesResponseDTO {
 
   get category() {
     return this.__props['Category']?.select
+  }
+
+  get loyverseId() {
+    return {
+      text: this.__props['LoyverseID']?.rich_text ? this.__props['LoyverseID'].rich_text.reduce((acc, item) => acc + item.plain_text, '') : undefined,
+      links: this.__props['LoyverseID']?.rich_text ? this.__props['LoyverseID'].rich_text.filter((item) => item.href?.length).map((item) => item.href) : [],
+      rich_text: this.__props['LoyverseID']?.rich_text,
+    }
   }
 }

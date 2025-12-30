@@ -1,7 +1,8 @@
 export const PAY_FOR_PLAY_ITEMS_PROP_VALUES = {
 "category": [
   "Toys",
-  "Merchandise"
+  "Merchandise",
+  "(p4p) Lego Figurine"
 ] as const,
 }
 
@@ -14,6 +15,8 @@ export const PAY_FOR_PLAY_ITEMS_PROPS_TO_IDS = {
   "supplier": "m%3CbL",
   "image": "yBrb",
   "name": "title",
+  "loyverseId": "%3ByPL",
+  "procurementItem": "K%3DPZ",
   "createdTime": "LK%3EH",
   "lastEditedTime": "bH%3E~",
   "lastEditedBy": "gZPb",
@@ -28,6 +31,8 @@ export const PAY_FOR_PLAY_ITEMS_IDS_TO_PROPS = {
   "m%3CbL": "supplier",
   "yBrb": "image",
   "title": "name",
+  "%3ByPL": "loyverseId",
+  "K%3DPZ": "procurementItem",
   "LK%3EH": "createdTime",
   "bH%3E~": "lastEditedTime",
   "gZPb": "lastEditedBy",
@@ -42,6 +47,8 @@ export const PAY_FOR_PLAY_ITEMS_PROPS_TO_TYPES = {
   "supplier": "relation",
   "image": "files",
   "name": "title",
+  "loyverseId": "rich_text",
+  "procurementItem": "relation",
   "createdTime": "created_time",
   "lastEditedTime": "last_edited_time",
   "lastEditedBy": "last_edited_by",

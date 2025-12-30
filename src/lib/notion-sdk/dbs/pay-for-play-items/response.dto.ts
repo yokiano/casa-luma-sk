@@ -69,6 +69,8 @@ export class PayForPlayItemsPropertiesResponseDTO {
       supplier: this.__props['Supplier'],
       image: this.__props['Image'],
       name: this.__props['Name'],
+      loyverseId: this.__props['LoyverseID'],
+      procurementItem: this.__props['Procurement Item'],
       createdTime: this.__props['Created time'],
       lastEditedTime: this.__props['Last edited time'],
       lastEditedBy: this.__props['Last edited by'],
@@ -122,6 +124,19 @@ export class PayForPlayItemsPropertiesResponseDTO {
       title: this.__props['Name']?.title,
     }
   }
+
+  get loyverseId() {
+    return {
+      text: this.__props['LoyverseID']?.rich_text ? this.__props['LoyverseID'].rich_text.reduce((acc, item) => acc + item.plain_text, '') : undefined,
+      links: this.__props['LoyverseID']?.rich_text ? this.__props['LoyverseID'].rich_text.filter((item) => item.href?.length).map((item) => item.href) : [],
+      rich_text: this.__props['LoyverseID']?.rich_text,
+    }
+  }
+
+  get procurementItemIds() {
+    return (this.__props['Procurement Item']?.relation as unknown as Array<{ id: string }>).map((item) => item.id)  
+  }
+
 
   get createdTime() {
     return this.__props['Created time']?.created_time

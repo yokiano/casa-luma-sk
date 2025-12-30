@@ -1,29 +1,30 @@
-import { PayForPlayItemsResponse } from "./types"
+import { StoreItemsResponse } from "./types"
 import { UpdatePageBodyParameters,
 RichTextItemRequest
 } from '../../core/types/notion-api.types'
 
 type TypeFromRecord<Obj, Type> = Obj extends Record<string, infer T> ? Extract<T, Type> : never
 
-export type PayForPlayItemsPropertiesPatch = {
-  stock?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'number' }>['number']
-  price?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'number' }>['number']
-  category?: PayForPlayItemsResponse['properties']['Category']['select']['name']
-  cogs?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'number' }>['number']
-  description?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
-  supplier?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'relation' }>['relation']
-  image?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'files' }>['files']
-  name?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
-  loyverseId?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
+export type StoreItemsPropertiesPatch = {
   procurementItem?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'relation' }>['relation']
+  category?: StoreItemsResponse['properties']['Category']['select']['name']
+  supplier?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'relation' }>['relation']
+  price?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'number' }>['number']
+  loyverseId?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
+  stock?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'number' }>['number']
+  expiryDate?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'date' }>['date']
+  cogs?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'number' }>['number']
+  image?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'files' }>['files']
+  description?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
+  name?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
 }
 
   
-export class PayForPlayItemsPatchDTO {
+export class StoreItemsPatchDTO {
   __data: UpdatePageBodyParameters
 
   constructor(opts: {
-    properties?: PayForPlayItemsPropertiesPatch
+    properties?: StoreItemsPropertiesPatch
     coverUrl?: string
     icon?: UpdatePageBodyParameters['icon']
     archived?: UpdatePageBodyParameters['archived']
@@ -36,36 +37,86 @@ export class PayForPlayItemsPatchDTO {
     this.__data.icon = icon
     this.__data.archived = archived
     
-    if (props?.stock !== undefined) {
-      this.__data.properties['%3Bh~%60'] = {
-        type: 'number',
-        number: props.stock,
-      }
-    }
-
-    if (props?.price !== undefined) {
-      this.__data.properties['KX%5CR'] = {
-        type: 'number',
-        number: props.price,
+    if (props?.procurementItem !== undefined) {
+      this.__data.properties['CLP%7D'] = {
+        type: 'relation',
+        relation: props.procurementItem,
       }
     }
 
     if (props?.category !== undefined) {
-      this.__data.properties['%5EF%60d'] = {
+      this.__data.properties['MS%5D%40'] = {
         type: 'select',
         select: { name: props.category },
       }
     }
 
+    if (props?.supplier !== undefined) {
+      this.__data.properties['YmWi'] = {
+        type: 'relation',
+        relation: props.supplier,
+      }
+    }
+
+    if (props?.price !== undefined) {
+      this.__data.properties['ZSf%3A'] = {
+        type: 'number',
+        number: props.price,
+      }
+    }
+
+    if (props?.loyverseId !== undefined) {
+      this.__data.properties['%5CBvy'] = {
+        type: 'rich_text',
+        rich_text: typeof props.loyverseId === 'string' 
+          ? [{ type: 'text', text: { content: props.loyverseId } }]
+          : Array.isArray(props.loyverseId)
+            ? props.loyverseId
+            : props.loyverseId === null
+              ? []
+              : [
+                  {
+                    type: 'text',
+                    text: {
+                      content: props.loyverseId.text,
+                      link: props.loyverseId?.url ? { url: props.loyverseId.url } : undefined
+                    },
+                    annotations: props.loyverseId.annotations
+                  },
+                ]
+      }
+    }
+
+    if (props?.stock !== undefined) {
+      this.__data.properties['aG%5CY'] = {
+        type: 'number',
+        number: props.stock,
+      }
+    }
+
+    if (props?.expiryDate !== undefined) {
+      this.__data.properties['cZg%5C'] = {
+        type: 'date',
+        date: props.expiryDate,
+      }
+    }
+
     if (props?.cogs !== undefined) {
-      this.__data.properties['bZUB'] = {
+      this.__data.properties['e%3C%3F%60'] = {
         type: 'number',
         number: props.cogs,
       }
     }
 
+    if (props?.image !== undefined) {
+      this.__data.properties['eGda'] = {
+        type: 'files',
+        files: props.image,
+      }
+    }
+
     if (props?.description !== undefined) {
-      this.__data.properties['dN%3DU'] = {
+      this.__data.properties['ia%7B%3D'] = {
         type: 'rich_text',
         rich_text: typeof props.description === 'string' 
           ? [{ type: 'text', text: { content: props.description } }]
@@ -83,20 +134,6 @@ export class PayForPlayItemsPatchDTO {
                     annotations: props.description.annotations
                   },
                 ]
-      }
-    }
-
-    if (props?.supplier !== undefined) {
-      this.__data.properties['m%3CbL'] = {
-        type: 'relation',
-        relation: props.supplier,
-      }
-    }
-
-    if (props?.image !== undefined) {
-      this.__data.properties['yBrb'] = {
-        type: 'files',
-        files: props.image,
       }
     }
 
@@ -119,35 +156,6 @@ export class PayForPlayItemsPatchDTO {
                     annotations: props.name.annotations
                   },
                 ]
-      }
-    }
-
-    if (props?.loyverseId !== undefined) {
-      this.__data.properties['%3ByPL'] = {
-        type: 'rich_text',
-        rich_text: typeof props.loyverseId === 'string' 
-          ? [{ type: 'text', text: { content: props.loyverseId } }]
-          : Array.isArray(props.loyverseId)
-            ? props.loyverseId
-            : props.loyverseId === null
-              ? []
-              : [
-                  {
-                    type: 'text',
-                    text: {
-                      content: props.loyverseId.text,
-                      link: props.loyverseId?.url ? { url: props.loyverseId.url } : undefined
-                    },
-                    annotations: props.loyverseId.annotations
-                  },
-                ]
-      }
-    }
-
-    if (props?.procurementItem !== undefined) {
-      this.__data.properties['K%3DPZ'] = {
-        type: 'relation',
-        relation: props.procurementItem,
       }
     }
   }

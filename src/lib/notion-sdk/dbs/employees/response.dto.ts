@@ -93,8 +93,6 @@ export class EmployeesPropertiesResponseDTO {
       taxId: this.__props['Tax ID'],
       idPassportNo: this.__props['ID/Passport No.'],
       hasWorkPermit: this.__props['Has Work Permit'],
-      shifts: this.__props['Shifts'],
-      country: this.__props['Country'],
       dateOfBirth: this.__props['Date of Birth'],
     }
   }
@@ -295,15 +293,6 @@ export class EmployeesPropertiesResponseDTO {
 
   get hasWorkPermit() {
     return this.__props['Has Work Permit']?.checkbox
-  }
-
-  get shiftsIds() {
-    return (this.__props['Shifts']?.relation as unknown as Array<{ id: string }>).map((item) => item.id)  
-  }
-
-
-  get country() {
-    return this.__props['Country']?.select
   }
 
   get dateOfBirth() {

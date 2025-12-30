@@ -24,6 +24,8 @@ export type ProcurementPropertiesPatch = {
   objectCategory?: ProcurementResponse['properties']['Object Category']['multi_select'][number]['name'][]
   status?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'status' }>['status']
   item?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
+  payForPlayItems?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'relation' }>['relation']
+  storeItems?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'relation' }>['relation']
 }
 
   
@@ -227,6 +229,20 @@ export class ProcurementPatchDTO {
                     annotations: props.item.annotations
                   },
                 ]
+      }
+    }
+
+    if (props?.payForPlayItems !== undefined) {
+      this.__data.properties['fhUB'] = {
+        type: 'relation',
+        relation: props.payForPlayItems,
+      }
+    }
+
+    if (props?.storeItems !== undefined) {
+      this.__data.properties['nzee'] = {
+        type: 'relation',
+        relation: props.storeItems,
       }
     }
   }

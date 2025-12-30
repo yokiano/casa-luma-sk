@@ -62,8 +62,6 @@ export interface EmployeesResponse extends WithOptional<Omit<DatabaseObjectRespo
     "Tax ID": RichTextPropertyItemObjectResponse,
     "ID/Passport No.": RichTextPropertyItemObjectResponse,
     "Has Work Permit": CheckboxPropertyItemObjectResponse,
-    "Shifts": RelationPropertyItemObjectResponse,
-    "Country": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'Thailand', color: 'green' } | { id: StringRequest, name: 'Myanmar', color: 'orange' } | { id: StringRequest, name: 'Other', color: 'gray' }},
     "Date of Birth": DatePropertyItemObjectResponse
   }
 }
@@ -169,22 +167,9 @@ type EmployeesNicknamePropertyFilter = TextPropertyFilter
 type EmployeesTaxIdPropertyFilter = TextPropertyFilter
 type EmployeesIdPassportNoPropertyFilter = TextPropertyFilter
 type EmployeesHasWorkPermitPropertyFilter = CheckboxPropertyFilter
-type EmployeesShiftsPropertyFilter = RelationPropertyFilter
-
-export type EmployeesCountryPropertyType = EmployeesResponse['properties']['Country']['select']['name']
-
-type EmployeesCountryPropertyFilter =
-  | {
-      equals: EmployeesCountryPropertyType
-    }
-  | {
-      does_not_equal: EmployeesCountryPropertyType
-    }
-  | ExistencePropertyFilter      
-
 type EmployeesDateOfBirthPropertyFilter = DatePropertyFilter
 
-export type EmployeesPropertyFilter = { visaExpiry: EmployeesVisaExpiryPropertyFilter } | { workPermitExpiry: EmployeesWorkPermitExpiryPropertyFilter } | { photo: EmployeesPhotoPropertyFilter } | { salaryThb: EmployeesSalaryThbPropertyFilter } | { languages: EmployeesLanguagesPropertyFilter } | { employmentType: EmployeesEmploymentTypePropertyFilter } | { emergencyContact: EmployeesEmergencyContactPropertyFilter } | { department: EmployeesDepartmentPropertyFilter } | { endDate: EmployeesEndDatePropertyFilter } | { nationality: EmployeesNationalityPropertyFilter } | { whatsAppLine: EmployeesWhatsAppLinePropertyFilter } | { workPermitNumber: EmployeesWorkPermitNumberPropertyFilter } | { email: EmployeesEmailPropertyFilter } | { paymentFrequency: EmployeesPaymentFrequencyPropertyFilter } | { skills: EmployeesSkillsPropertyFilter } | { fullName: EmployeesFullNamePropertyFilter } | { documents: EmployeesDocumentsPropertyFilter } | { address: EmployeesAddressPropertyFilter } | { notes: EmployeesNotesPropertyFilter } | { bankAccountDetails: EmployeesBankAccountDetailsPropertyFilter } | { phone: EmployeesPhonePropertyFilter } | { position: EmployeesPositionPropertyFilter } | { bio: EmployeesBioPropertyFilter } | { hometown: EmployeesHometownPropertyFilter } | { emergencyPhone: EmployeesEmergencyPhonePropertyFilter } | { employmentStatus: EmployeesEmploymentStatusPropertyFilter } | { reportsTo: EmployeesReportsToPropertyFilter } | { startDate: EmployeesStartDatePropertyFilter } | { nickname: EmployeesNicknamePropertyFilter } | { taxId: EmployeesTaxIdPropertyFilter } | { idPassportNo: EmployeesIdPassportNoPropertyFilter } | { hasWorkPermit: EmployeesHasWorkPermitPropertyFilter } | { shifts: EmployeesShiftsPropertyFilter } | { country: EmployeesCountryPropertyFilter } | { dateOfBirth: EmployeesDateOfBirthPropertyFilter }
+export type EmployeesPropertyFilter = { visaExpiry: EmployeesVisaExpiryPropertyFilter } | { workPermitExpiry: EmployeesWorkPermitExpiryPropertyFilter } | { photo: EmployeesPhotoPropertyFilter } | { salaryThb: EmployeesSalaryThbPropertyFilter } | { languages: EmployeesLanguagesPropertyFilter } | { employmentType: EmployeesEmploymentTypePropertyFilter } | { emergencyContact: EmployeesEmergencyContactPropertyFilter } | { department: EmployeesDepartmentPropertyFilter } | { endDate: EmployeesEndDatePropertyFilter } | { nationality: EmployeesNationalityPropertyFilter } | { whatsAppLine: EmployeesWhatsAppLinePropertyFilter } | { workPermitNumber: EmployeesWorkPermitNumberPropertyFilter } | { email: EmployeesEmailPropertyFilter } | { paymentFrequency: EmployeesPaymentFrequencyPropertyFilter } | { skills: EmployeesSkillsPropertyFilter } | { fullName: EmployeesFullNamePropertyFilter } | { documents: EmployeesDocumentsPropertyFilter } | { address: EmployeesAddressPropertyFilter } | { notes: EmployeesNotesPropertyFilter } | { bankAccountDetails: EmployeesBankAccountDetailsPropertyFilter } | { phone: EmployeesPhonePropertyFilter } | { position: EmployeesPositionPropertyFilter } | { bio: EmployeesBioPropertyFilter } | { hometown: EmployeesHometownPropertyFilter } | { emergencyPhone: EmployeesEmergencyPhonePropertyFilter } | { employmentStatus: EmployeesEmploymentStatusPropertyFilter } | { reportsTo: EmployeesReportsToPropertyFilter } | { startDate: EmployeesStartDatePropertyFilter } | { nickname: EmployeesNicknamePropertyFilter } | { taxId: EmployeesTaxIdPropertyFilter } | { idPassportNo: EmployeesIdPassportNoPropertyFilter } | { hasWorkPermit: EmployeesHasWorkPermitPropertyFilter } | { dateOfBirth: EmployeesDateOfBirthPropertyFilter }
 
 export type EmployeesQuery = Omit<QueryDatabaseBodyParameters, 'filter' | 'sorts'> & {
   sorts?: Array<

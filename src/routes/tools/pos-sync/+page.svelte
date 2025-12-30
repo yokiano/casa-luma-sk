@@ -1,22 +1,33 @@
 <script lang="ts">
+  import { page } from '$app/state';
+  import { goto } from '$app/navigation';
   import MenuSyncTab from './tabs/MenuSyncTab.svelte';
   import CategorySyncTab from './tabs/CategorySyncTab.svelte';
   import DiscountSyncTab from './tabs/DiscountSyncTab.svelte';
   import ModifierSyncTab from './tabs/ModifierSyncTab.svelte';
+  import OpenPlaySyncTab from './tabs/OpenPlaySyncTab.svelte';
+  import PayForPlaySyncTab from './tabs/PayForPlaySyncTab.svelte';
+  import StoreSyncTab from './tabs/StoreSyncTab.svelte';
 
   const tabs = [
     { id: 'menu', label: 'Menu Items', component: MenuSyncTab },
     { id: 'categories', label: 'Categories', component: CategorySyncTab },
     { id: 'modifiers', label: 'Modifiers', component: ModifierSyncTab },
     { id: 'discounts', label: 'Discounts', component: DiscountSyncTab },
-    { id: 'open-play', label: 'Open Play / Memberships', component: null },
-    { id: 'pay-for-play', label: 'Pay for Play', component: null },
-    { id: 'store-items', label: 'Store Items', component: null }
+    { id: 'open-play', label: 'Open Play / Memberships', component: OpenPlaySyncTab },
+    { id: 'pay-for-play', label: 'Pay for Play', component: PayForPlaySyncTab },
+    { id: 'store-items', label: 'Store Items', component: StoreSyncTab }
   ];
 
-  let activeTabId = $state('menu');
+  let activeTabId = $derived(page.url.searchParams.get('tab') || 'menu');
 
   const activeTab = $derived(tabs.find(t => t.id === activeTabId));
+
+  function handleTabClick(id: string) {
+    const url = new URL(page.url);
+    url.searchParams.set('tab', id);
+    goto(url, { replaceState: true, keepFocus: true, noScroll: true });
+  }
 </script>
 
 <div class="container mx-auto py-8">
@@ -34,7 +45,7 @@
             ? 'border-black text-black'
             : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
         }`}
-        onclick={() => (activeTabId = tab.id)}
+        onclick={() => handleTabClick(tab.id)}
       >
         {tab.label}
       </button>

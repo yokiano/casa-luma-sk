@@ -25,6 +25,7 @@ export type MenuItemsPropertiesPatch = {
   variantOption_3Name?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   variantOption_2Name?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   modifiers?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'relation' }>['relation']
+  order?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'number' }>['number']
 }
 
   
@@ -295,6 +296,13 @@ export class MenuItemsPatchDTO {
       this.__data.properties['eqWu'] = {
         type: 'relation',
         relation: props.modifiers,
+      }
+    }
+
+    if (props?.order !== undefined) {
+      this.__data.properties['TAGg'] = {
+        type: 'number',
+        number: props.order,
       }
     }
   }

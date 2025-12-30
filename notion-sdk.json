@@ -131,6 +131,18 @@
           "varName": "item",
           "readOnly": false
         },
+        "fhUB": {
+          "_name": "Pay-for-Play Items",
+          "_type": "relation",
+          "varName": "payForPlayItems",
+          "readOnly": false
+        },
+        "nzee": {
+          "_name": "Store Items",
+          "_type": "relation",
+          "varName": "storeItems",
+          "readOnly": false
+        },
         "%3DKtU": {
           "_name": "Created by",
           "_type": "created_by",
@@ -341,6 +353,12 @@
           "_name": "Modifiers",
           "_type": "relation",
           "varName": "modifiers",
+          "readOnly": false
+        },
+        "TAGg": {
+          "_name": "Order",
+          "_type": "number",
+          "varName": "order",
           "readOnly": false
         }
       }
@@ -841,6 +859,18 @@
           "varName": "name",
           "readOnly": false
         },
+        "%3ByPL": {
+          "_name": "LoyverseID",
+          "_type": "rich_text",
+          "varName": "loyverseId",
+          "readOnly": false
+        },
+        "K%3DPZ": {
+          "_name": "Procurement Item",
+          "_type": "relation",
+          "varName": "procurementItem",
+          "readOnly": false
+        },
         "LK%3EH": {
           "_name": "Created time",
           "_type": "created_time",
@@ -936,6 +966,12 @@
           "_name": "Category",
           "_type": "select",
           "varName": "category",
+          "readOnly": false
+        },
+        "CN~l": {
+          "_name": "LoyverseID",
+          "_type": "rich_text",
+          "varName": "loyverseId",
           "readOnly": false
         }
       }
@@ -1135,18 +1171,6 @@
           "_name": "Has Work Permit",
           "_type": "checkbox",
           "varName": "hasWorkPermit",
-          "readOnly": false
-        },
-        "h~_K": {
-          "_name": "Shifts",
-          "_type": "relation",
-          "varName": "shifts",
-          "readOnly": false
-        },
-        "rTu%5D": {
-          "_name": "Country",
-          "_type": "select",
-          "varName": "country",
           "readOnly": false
         },
         "tIHh": {
@@ -1351,6 +1375,103 @@
           "_type": "title",
           "varName": "name",
           "readOnly": false
+        }
+      }
+    },
+    "6f658076-2645-4e13-9b76-47db5ca4412d": {
+      "_name": "Store Items",
+      "varName": "storeItems",
+      "pathName": "store-items",
+      "properties": {
+        "CLP%7D": {
+          "_name": "Procurement Item",
+          "_type": "relation",
+          "varName": "procurementItem",
+          "readOnly": false
+        },
+        "MS%5D%40": {
+          "_name": "Category",
+          "_type": "select",
+          "varName": "category",
+          "readOnly": false
+        },
+        "YmWi": {
+          "_name": "Supplier",
+          "_type": "relation",
+          "varName": "supplier",
+          "readOnly": false
+        },
+        "ZSf%3A": {
+          "_name": "Price",
+          "_type": "number",
+          "varName": "price",
+          "readOnly": false
+        },
+        "%5CBvy": {
+          "_name": "LoyverseID",
+          "_type": "rich_text",
+          "varName": "loyverseId",
+          "readOnly": false
+        },
+        "aG%5CY": {
+          "_name": "Stock",
+          "_type": "number",
+          "varName": "stock",
+          "readOnly": false
+        },
+        "cZg%5C": {
+          "_name": "Expiry Date",
+          "_type": "date",
+          "varName": "expiryDate",
+          "readOnly": false
+        },
+        "e%3C%3F%60": {
+          "_name": "COGS",
+          "_type": "number",
+          "varName": "cogs",
+          "readOnly": false
+        },
+        "eGda": {
+          "_name": "Image",
+          "_type": "files",
+          "varName": "image",
+          "readOnly": false
+        },
+        "ia%7B%3D": {
+          "_name": "Description",
+          "_type": "rich_text",
+          "varName": "description",
+          "readOnly": false
+        },
+        "title": {
+          "_name": "Name",
+          "_type": "title",
+          "varName": "name",
+          "readOnly": false
+        },
+        "%3CHjX": {
+          "_name": "Created time",
+          "_type": "created_time",
+          "varName": "createdTime",
+          "readOnly": true
+        },
+        "rkXV": {
+          "_name": "Last edited by",
+          "_type": "last_edited_by",
+          "varName": "lastEditedBy",
+          "readOnly": true
+        },
+        "s%3DfK": {
+          "_name": "Created by",
+          "_type": "created_by",
+          "varName": "createdBy",
+          "readOnly": true
+        },
+        "tT%60E": {
+          "_name": "Last edited time",
+          "_type": "last_edited_time",
+          "varName": "lastEditedTime",
+          "readOnly": true
         }
       }
     }

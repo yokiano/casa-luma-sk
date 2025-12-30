@@ -79,6 +79,8 @@ export class ProcurementPropertiesResponseDTO {
       objectCategory: this.__props['Object Category'],
       status: this.__props['Status'],
       item: this.__props['Item'],
+      payForPlayItems: this.__props['Pay-for-Play Items'],
+      storeItems: this.__props['Store Items'],
       createdBy: this.__props['Created by'],
       lastEditedBy: this.__props['Last edited by'],
       createdTime: this.__props['Created time'],
@@ -193,6 +195,16 @@ export class ProcurementPropertiesResponseDTO {
       title: this.__props['Item']?.title,
     }
   }
+
+  get payForPlayItemsIds() {
+    return (this.__props['Pay-for-Play Items']?.relation as unknown as Array<{ id: string }>).map((item) => item.id)  
+  }
+
+
+  get storeItemsIds() {
+    return (this.__props['Store Items']?.relation as unknown as Array<{ id: string }>).map((item) => item.id)  
+  }
+
 
   get createdBy() {
     return this.__props['Created by']?.created_by

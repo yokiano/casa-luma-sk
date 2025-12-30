@@ -17,6 +17,7 @@ export type OpenPlayPosItemsPropertiesPatch = {
   priceBaht?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'number' }>['number']
   name?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   category?: OpenPlayPosItemsResponse['properties']['Category']['select']['name']
+  loyverseId?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
 }
 
   
@@ -216,6 +217,28 @@ export class OpenPlayPosItemsPatchDTO {
       this.__data.properties['O%3D%5Dz'] = {
         type: 'select',
         select: { name: props.category },
+      }
+    }
+
+    if (props?.loyverseId !== undefined) {
+      this.__data.properties['CN~l'] = {
+        type: 'rich_text',
+        rich_text: typeof props.loyverseId === 'string' 
+          ? [{ type: 'text', text: { content: props.loyverseId } }]
+          : Array.isArray(props.loyverseId)
+            ? props.loyverseId
+            : props.loyverseId === null
+              ? []
+              : [
+                  {
+                    type: 'text',
+                    text: {
+                      content: props.loyverseId.text,
+                      link: props.loyverseId?.url ? { url: props.loyverseId.url } : undefined
+                    },
+                    annotations: props.loyverseId.annotations
+                  },
+                ]
       }
     }
   }
