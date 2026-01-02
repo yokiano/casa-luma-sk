@@ -69,15 +69,15 @@
                             {#if getCustomDescription}
                                 {@const customDesc = getCustomDescription(section.id)}
                                 {#if customDesc}
-                                    <p class="text-xs text-slate-500 mb-6 italic print:mb-4 print:text-[10px] leading-relaxed">{customDesc}</p>
+                                    <p class="text-sm text-slate-500 mb-6 italic print:mb-4 print:text-[10px] leading-relaxed">{customDesc}</p>
                                 {:else if section.intro}
-                                    <p class="text-xs text-slate-500 mb-6 italic print:mb-4 print:text-[10px] leading-relaxed">{section.intro}</p>
+                                    <p class="text-sm text-slate-500 mb-6 italic print:mb-4 print:text-[10px] leading-relaxed">{section.intro}</p>
                                 {/if}
                             {:else if section.intro}
-                                <p class="text-xs text-slate-500 mb-6 italic print:mb-4 print:text-[10px] leading-relaxed">{section.intro}</p>
+                                <p class="text-sm text-slate-500 mb-6 italic print:mb-4 print:text-[10px] leading-relaxed">{section.intro}</p>
                             {/if}
 
-                            <div class="space-y-4">
+                            <div class="space-y-2">
                                 {#each section.items as item}
                                     <div class="break-inside-avoid">
                                         <div class="flex justify-between items-start mb-0.5">
