@@ -1,6 +1,7 @@
 <script lang="ts">
     import type { MenuSummary, MenuModifierOption } from '$lib/types/menu';
     import MenuModifiersList from './MenuModifiersList.svelte';
+    import { cleanName } from '$lib/utils';
     
     import type { MenuModifier } from '$lib/types/menu';
     
@@ -43,7 +44,7 @@
             <section class={grandIndex === 0 ? '' : 'print:break-inside-avoid-page'}>
                 <header class="mb-10 mt-0 print:mb-8">
                     {#if !isGrandCategoryTitleVisible || isGrandCategoryTitleVisible(grand.id)}
-                        <h3 class="text-4xl font-black text-slate-900 uppercase tracking-tight print:text-3xl">{grand.name}</h3>
+                        <h3 class="text-4xl font-black text-slate-900 uppercase tracking-tight print:text-3xl">{cleanName(grand.name)}</h3>
                     {/if}
                     
                     {#if getCustomDescription}
@@ -63,32 +64,32 @@
                     {#each grand.sections as section, sectionIndex}
                         <div class="mb-12 print:mb-10 {grandIndex === 0 ? '' : 'break-inside-avoid'}">
                             {#if !isSectionTitleVisible || isSectionTitleVisible(section.id)}
-                                <h4 class="text-2xl font-bold mb-6 text-slate-900 uppercase border-b border-slate-200 pb-2 print:text-xl print:mb-4 print:pb-1">{section.name}</h4>
+                                <h4 class="text-2xl font-bold mb-6 text-slate-900 uppercase border-b border-slate-200 pb-2 print:text-xl print:mb-4 print:pb-1">{cleanName(section.name)}</h4>
                             {/if}
                             
                             {#if getCustomDescription}
                                 {@const customDesc = getCustomDescription(section.id)}
                                 {#if customDesc}
-                                    <p class="text-sm text-slate-500 mb-6 italic print:mb-4 print:text-[10px] leading-relaxed">{customDesc}</p>
+                                    <p class="text-sm text-slate-500 mb-6 italic print:mb-4 print:text-[10px] leading-relaxed">{cleanName(customDesc)}</p>
                                 {:else if section.intro}
-                                    <p class="text-sm text-slate-500 mb-6 italic print:mb-4 print:text-[10px] leading-relaxed">{section.intro}</p>
+                                    <p class="text-sm text-slate-500 mb-6 italic print:mb-4 print:text-[10px] leading-relaxed">{cleanName(section.intro)}</p>
                                 {/if}
                             {:else if section.intro}
-                                <p class="text-sm text-slate-500 mb-6 italic print:mb-4 print:text-[10px] leading-relaxed">{section.intro}</p>
+                                <p class="text-sm text-slate-500 mb-6 italic print:mb-4 print:text-[10px] leading-relaxed">{cleanName(section.intro)}</p>
                             {/if}
 
                             <div class="space-y-2">
                                 {#each section.items as item}
                                     <div class="break-inside-avoid">
                                         <div class="flex justify-between items-start mb-0.5">
-                                            <h5 class="text-base font-normal uppercase text-slate-900 leading-tight tracking-tight">{item.name}</h5>
+                                            <h5 class="text-base font-normal uppercase text-slate-900 leading-tight tracking-tight">{cleanName(item.name)}</h5>
                                             <div class="font-bold text-sm text-slate-900 print:text-[15px]">
                                                 {item.price.toLocaleString()}
                                             </div>
                                         </div>
                                         {#if item.description}
                                             <p class="text-slate-600 text-sm leading-snug mb-1 print:text-[11px] print:leading-normal">
-                                                {item.description}
+                                                {cleanName(item.description)}
                                             </p>
                                         {/if}
                                         {#if getGroupedModifiers}

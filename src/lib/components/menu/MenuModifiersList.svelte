@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { MenuModifierOption, MenuModifier } from '$lib/types/menu';
+	import { cleanName } from '$lib/utils';
 
 	let { 
 		options, 
@@ -21,13 +22,13 @@
 				{#if getModifierDescription}
 					{@const desc = getModifierDescription(modifier.id)}
 					{#if desc}
-						<div class="text-sm font-bold text-slate-900 mb-1 {className}">{desc}</div>
+						<div class="text-sm font-bold text-slate-900 mb-1 {className}">{cleanName(desc)}</div>
 					{/if}
 				{/if}
 				<div class="flex flex-wrap gap-x-3 gap-y-0.5 text-sm italic leading-relaxed {className}">
 					{#each modifierOptions as option}
 						<span class="whitespace-nowrap after:ml-3 after:content-['•'] after:opacity-50 last:after:hidden">
-							+ {option.name}{option.price > 0 ? ` (+${option.price})` : ''}
+							+ {cleanName(option.name)}{option.price > 0 ? ` (+${option.price})` : ''}
 						</span>
 					{/each}
 				</div>
@@ -38,7 +39,7 @@
 	<div class="flex flex-wrap gap-x-3 gap-y-0.5 text-sm italic leading-relaxed {className}">
 		{#each options as option}
 			<span class="whitespace-nowrap after:ml-3 after:content-['•'] after:opacity-50 last:after:hidden">
-				+ {option.name}{option.price > 0 ? ` (+${option.price})` : ''}
+				+ {cleanName(option.name)}{option.price > 0 ? ` (+${option.price})` : ''}
 			</span>
 		{/each}
 	</div>

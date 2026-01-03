@@ -1,4 +1,5 @@
 import type { MenuSummary, MenuModifierOption, StructuredMenuSection, MenuModifier } from '$lib/types/menu';
+import { cleanName } from '$lib/utils';
 
 export class MenuPrintState {
 	menu: MenuSummary;
@@ -332,7 +333,8 @@ export class MenuPrintState {
 
 	// Get custom description for a section or grand category
 	getCustomDescription(id: string): string {
-		return this.customDescriptions.get(id) || '';
+		const desc = this.customDescriptions.get(id) || '';
+		return cleanName(desc);
 	}
 
 	// Set custom description for a section or grand category
@@ -353,7 +355,8 @@ export class MenuPrintState {
 
 	// Get modifier description
 	getModifierDescription(modifierId: string): string {
-		return this.modifierDescriptions.get(modifierId) || '';
+		const desc = this.modifierDescriptions.get(modifierId) || '';
+		return cleanName(desc);
 	}
 
 	// Set modifier description
