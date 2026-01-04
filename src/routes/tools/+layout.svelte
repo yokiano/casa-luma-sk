@@ -7,6 +7,7 @@
     { href: '/tools/procurement-import', label: 'Procurement Import' },
     { href: '/tools/menu-assistant', label: 'Menu Assistant' },
     { href: '/tools/pos-sync', label: 'POS Sync' },
+    { href: '/tools/checklist', label: 'Checklist' },
     { href: '/tools/graphics', label: 'Graphics' }
   ];
 

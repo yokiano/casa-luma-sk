@@ -77,6 +77,13 @@ export const getOpenPlaySyncStatus = query(async () => {
   const loyverseByName = new Map(loyverseItems.map(i => [normalize(i.item_name).toLowerCase(), i]));
   const loyverseCategories = new Map(loyverseCategoriesList.map(c => [c.id, c]));
 
+  // Collect all unique categories used by Open Play Items in Notion (normalized for comparison)
+  const notionOpenPlayCategories = new Set<string>();
+  for (const nItem of notionItems) {
+    const cat = nItem.properties.category?.name;
+    if (cat) notionOpenPlayCategories.add(normalize(cat).toLowerCase());
+  }
+
   const matchedLoyverseIds = new Set<string>();
 
   for (const nItem of notionItems) {
@@ -123,23 +130,21 @@ export const getOpenPlaySyncStatus = query(async () => {
     });
   }
 
-  // Find orphaned Loyverse items (those that look like open play but aren't in Notion)
-  // For open play we might want to be careful not to include regular menu items as orphans
-  // Maybe check if category is "Open Play" or similar?
-  // Actually the user probably wants to see ALL Loyverse items not in Notion in this tab too, 
-  // or maybe filter by some criteria. 
-  // For now, I'll only show orphans if they are in an "Open Play" category.
+  // Find orphaned Loyverse items - only consider items whose category is used by Open Play Items
   for (const lItem of loyverseItems) {
     if (!matchedLoyverseIds.has(lItem.id)) {
       const catName = lItem.category_id ? (loyverseCategories.get(lItem.category_id)?.name || '') : '';
-      if (catName.toLowerCase().includes('open play') || catName.toLowerCase().includes('pass')) {
-          syncStates.push({
-            notionId: undefined,
-            loyverseId: lItem.id,
-            name: lItem.item_name,
-            category: catName || 'Uncategorized',
-            status: 'NOT_IN_NOTION'
-          });
+      const normalizedCat = normalize(catName).toLowerCase();
+
+      // Only show as orphan if category is one used by Open Play Items in Notion
+      if (notionOpenPlayCategories.has(normalizedCat)) {
+        syncStates.push({
+          notionId: undefined,
+          loyverseId: lItem.id,
+          name: lItem.item_name,
+          category: catName || 'Uncategorized',
+          status: 'NOT_IN_NOTION'
+        });
       }
     }
   }
@@ -179,6 +184,13 @@ export const syncOpenPlayItems = command(
         categoryCache.set(normalizedName, newCat.id);
         return newCat.id;
       };
+
+      // Collect all unique categories used by Open Play Items in Notion (normalized for comparison)
+      const notionOpenPlayCategories = new Set<string>();
+      for (const nItem of allNotionItems) {
+        const cat = nItem.properties.category?.name;
+        if (cat) notionOpenPlayCategories.add(normalize(cat).toLowerCase());
+      }
 
       const matchedLoyverseIds = new Set<string>();
       for (const nItem of allNotionItems) {
@@ -299,11 +311,15 @@ export const syncOpenPlayItems = command(
         }
       }
 
+      // Handle Orphans (Delete) - only delete items whose category is used by Open Play Items
       if (deleteOrphans) {
         for (const lItem of loyverseItems) {
           if (!matchedLoyverseIds.has(lItem.id)) {
              const catName = lItem.category_id ? (loyverseCategories.get(lItem.category_id)?.name || '') : '';
-             if (catName.toLowerCase().includes('open play') || catName.toLowerCase().includes('pass')) {
+             const normalizedCat = normalize(catName).toLowerCase();
+
+             // Only delete if category is one used by Open Play Items in Notion
+             if (notionOpenPlayCategories.has(normalizedCat)) {
                try {
                  await loyverse.deleteItem(lItem.id);
                  report.deleted++;

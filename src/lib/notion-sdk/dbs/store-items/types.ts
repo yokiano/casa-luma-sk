@@ -28,7 +28,7 @@ import { STORE_ITEMS_PROPS_TO_IDS } from './constants'
 export interface StoreItemsResponse extends WithOptional<Omit<DatabaseObjectResponse, 'properties'>, 'title'| 'description'| 'is_inline'| 'url'| 'public_url'> {
   properties: {
     "Procurement Item": RelationPropertyItemObjectResponse,
-    "Category": SelectPropertyItemObjectResponse,
+    "Category": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: '(store) All', color: 'red' }},
     "Supplier": RelationPropertyItemObjectResponse,
     "Price": NumberPropertyItemObjectResponse,
     "LoyverseID": RichTextPropertyItemObjectResponse,

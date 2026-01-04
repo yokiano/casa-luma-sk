@@ -1474,6 +1474,49 @@
           "readOnly": true
         }
       }
+    },
+    "ebb7a436-a2bd-402d-88cb-59d095a57609": {
+      "_name": "SOP Catalog",
+      "varName": "sopCatalog",
+      "pathName": "sop-catalog",
+      "properties": {
+        "%40pJj": {
+          "_name": "Role",
+          "_type": "relation",
+          "varName": "role",
+          "readOnly": false
+        },
+        "JsMl": {
+          "_name": "When",
+          "_type": "select",
+          "varName": "when",
+          "readOnly": false
+        },
+        "%5D%40Pq": {
+          "_name": "Status",
+          "_type": "status",
+          "varName": "status",
+          "readOnly": false
+        },
+        "pf%60b": {
+          "_name": "SOP Type",
+          "_type": "select",
+          "varName": "sopType",
+          "readOnly": false
+        },
+        "ybjG": {
+          "_name": "Department",
+          "_type": "select",
+          "varName": "department",
+          "readOnly": false
+        },
+        "title": {
+          "_name": "Name",
+          "_type": "title",
+          "varName": "name",
+          "readOnly": false
+        }
+      }
     }
   }
 }

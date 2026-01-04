@@ -71,6 +71,13 @@ export const getStoreSyncStatus = query(async () => {
   const loyverseByName = new Map(loyverseItems.map(i => [normalize(i.item_name).toLowerCase(), i]));
   const loyverseCategories = new Map(loyverseCategoriesList.map(c => [c.id, c]));
 
+  // Collect all unique categories used by Store Items in Notion (normalized for comparison)
+  const notionStoreCategories = new Set<string>();
+  for (const nItem of notionItems) {
+    const cat = nItem.properties.category?.name;
+    if (cat) notionStoreCategories.add(normalize(cat).toLowerCase());
+  }
+
   const matchedLoyverseIds = new Set<string>();
 
   for (const nItem of notionItems) {
@@ -111,14 +118,14 @@ export const getStoreSyncStatus = query(async () => {
     });
   }
 
-  // Orphans
+  // Find orphaned Loyverse items - only consider items whose category is used by Store Items
   for (const lItem of loyverseItems) {
     if (!matchedLoyverseIds.has(lItem.id)) {
       const catName = lItem.category_id ? (loyverseCategories.get(lItem.category_id)?.name || '') : '';
-      const lowerCat = catName.toLowerCase();
+      const normalizedCat = normalize(catName).toLowerCase();
       
-      // Filter orphans to only show items that likely belong to the Store
-      if (lowerCat.includes('store') || lowerCat.includes('merch') || lowerCat.includes('retail') || lowerCat.includes('shop')) {
+      // Only show as orphan if category is one used by Store Items in Notion
+      if (notionStoreCategories.has(normalizedCat)) {
         syncStates.push({
           notionId: undefined,
           loyverseId: lItem.id,
@@ -166,6 +173,13 @@ export const syncStoreItems = command(
         categoryCache.set(normalizedName, newCat.id);
         return newCat.id;
       };
+
+      // Collect all unique categories used by Store Items in Notion (normalized for comparison)
+      const notionStoreCategories = new Set<string>();
+      for (const nItem of allNotionItems) {
+        const cat = nItem.properties.category?.name;
+        if (cat) notionStoreCategories.add(normalize(cat).toLowerCase());
+      }
 
       const matchedLoyverseIds = new Set<string>();
       for (const nItem of allNotionItems) {
@@ -286,14 +300,15 @@ export const syncStoreItems = command(
         }
       }
 
+      // Handle Orphans (Delete) - only delete items whose category is used by Store Items
       if (deleteOrphans) {
         for (const lItem of loyverseItems) {
           if (!matchedLoyverseIds.has(lItem.id)) {
              const catName = lItem.category_id ? (loyverseCategories.get(lItem.category_id)?.name || '') : '';
-             const lowerCat = catName.toLowerCase();
+             const normalizedCat = normalize(catName).toLowerCase();
              
-             // Only delete if it belongs to a Store-related category
-             if (lowerCat.includes('store') || lowerCat.includes('merch') || lowerCat.includes('retail') || lowerCat.includes('shop')) {
+             // Only delete if category is one used by Store Items in Notion
+             if (notionStoreCategories.has(normalizedCat)) {
                try {
                  await loyverse.deleteItem(lItem.id);
                  report.deleted++;

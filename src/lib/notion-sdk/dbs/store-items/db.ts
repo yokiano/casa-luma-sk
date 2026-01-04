@@ -1,4 +1,3 @@
-import { NOTION_STORE_ITEMS_DB_ID } from '$env/static/private'
 import { StoreItemsResponse, StoreItemsQuery, StoreItemsQueryResponse } from './types'
 import { StoreItemsPatchDTO } from './patch.dto'
 import { GenericDatabaseClass, DatabaseOptions } from '../../core/src/generic-db'
@@ -16,7 +15,7 @@ export class StoreItemsDatabase extends GenericDatabaseClass<
   constructor(options: DatabaseOptions) {
     super(options)
 
-    this.notionDatabaseId = NOTION_STORE_ITEMS_DB_ID || '6f65807626454e139b7647db5ca4412d'
+    this.notionDatabaseId = '6f65807626454e139b7647db5ca4412d'
   }
 
   protected queryRemapFilter(filter?: Record<string, unknown>) {

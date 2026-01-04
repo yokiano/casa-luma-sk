@@ -1,5 +1,7 @@
 export const STORE_ITEMS_PROP_VALUES = {
-"category": [] as const,
+"category": [
+  "(store) All"
+] as const,
 }
 
 export const STORE_ITEMS_PROPS_TO_IDS = {

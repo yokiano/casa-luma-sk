@@ -229,6 +229,13 @@ export const getMenuSyncStatus = query(async () => {
   const loyverseByName = new Map(loyverseItems.map(i => [normalize(i.item_name).toLowerCase(), i]));
   const loyverseCategories = new Map(loyverseCategoriesList.map(c => [c.id, c]));
 
+  // Collect all unique categories used by Menu Items in Notion (normalized for comparison)
+  const notionMenuCategories = new Set<string>();
+  for (const nItem of notionItems) {
+    const cat = nItem.properties.category?.name;
+    if (cat) notionMenuCategories.add(normalize(cat).toLowerCase());
+  }
+
   // Track which Loyverse items are matched
   const matchedLoyverseIds = new Set<string>();
 
@@ -276,24 +283,14 @@ export const getMenuSyncStatus = query(async () => {
     });
   }
 
-  // Find orphaned Loyverse items
+  // Find orphaned Loyverse items - only consider items whose category is used by Menu Items
   for (const lItem of loyverseItems) {
     if (!matchedLoyverseIds.has(lItem.id)) {
       const catName = lItem.category_id ? (loyverseCategories.get(lItem.category_id)?.name || 'Uncategorized') : 'Uncategorized';
-      const lowerCat = catName.toLowerCase();
+      const normalizedCat = normalize(catName).toLowerCase();
 
-      // Exclude items that belong to other specialized sync tabs (Open Play, Pay for Play, Store)
-      const isOtherTab = 
-        lowerCat.includes('open play') || 
-        lowerCat.includes('pass') || 
-        lowerCat.includes('pay for play') || 
-        lowerCat.includes('toy') ||
-        lowerCat.includes('store') || 
-        lowerCat.includes('merch') || 
-        lowerCat.includes('retail') || 
-        lowerCat.includes('shop');
-
-      if (!isOtherTab) {
+      // Only show as orphan if category is one used by Menu Items in Notion
+      if (notionMenuCategories.has(normalizedCat)) {
         syncStates.push({
           notionId: undefined,
           loyverseId: lItem.id,
@@ -376,6 +373,13 @@ export const syncMenuItems = command(
       // Track matched Loyverse IDs for orphan detection (using ALL Notion items)
       const matchedLoyverseIds = new Set<string>();
       const loyverseCategories = new Map(loyverseCategoriesList.map(c => [c.id, c]));
+
+      // Collect all unique categories used by Menu Items in Notion (normalized for comparison)
+      const notionMenuCategories = new Set<string>();
+      for (const nItem of allNotionItems) {
+        const cat = nItem.properties.category?.name;
+        if (cat) notionMenuCategories.add(normalize(cat).toLowerCase());
+      }
 
       // First pass: Match all Notion items to identify orphans
       for (const nItem of allNotionItems) {
@@ -633,25 +637,15 @@ export const syncMenuItems = command(
         }
       }
 
-      // Handle Orphans (Delete)
+      // Handle Orphans (Delete) - only delete items whose category is used by Menu Items
       if (deleteOrphans) {
         for (const lItem of loyverseItems) {
           if (!matchedLoyverseIds.has(lItem.id)) {
              const catName = lItem.category_id ? (loyverseCategories.get(lItem.category_id)?.name || 'Uncategorized') : 'Uncategorized';
-             const lowerCat = catName.toLowerCase();
+             const normalizedCat = normalize(catName).toLowerCase();
 
-             // Only delete if it's NOT part of another specialized tab
-             const isOtherTab = 
-               lowerCat.includes('open play') || 
-               lowerCat.includes('pass') || 
-               lowerCat.includes('pay for play') || 
-               lowerCat.includes('toy') ||
-               lowerCat.includes('store') || 
-               lowerCat.includes('merch') || 
-               lowerCat.includes('retail') || 
-               lowerCat.includes('shop');
-
-             if (!isOtherTab) {
+             // Only delete if category is one used by Menu Items in Notion
+             if (notionMenuCategories.has(normalizedCat)) {
                try {
                  await loyverse.deleteItem(lItem.id);
                  report.deleted++;

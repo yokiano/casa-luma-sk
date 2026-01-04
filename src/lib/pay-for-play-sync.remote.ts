@@ -71,6 +71,13 @@ export const getPayForPlaySyncStatus = query(async () => {
   const loyverseByName = new Map(loyverseItems.map(i => [normalize(i.item_name).toLowerCase(), i]));
   const loyverseCategories = new Map(loyverseCategoriesList.map(c => [c.id, c]));
 
+  // Collect all unique categories used by Pay for Play Items in Notion (normalized for comparison)
+  const notionP4PCategories = new Set<string>();
+  for (const nItem of notionItems) {
+    const cat = nItem.properties.category?.name;
+    if (cat) notionP4PCategories.add(normalize(cat).toLowerCase());
+  }
+
   const matchedLoyverseIds = new Set<string>();
 
   for (const nItem of notionItems) {
@@ -105,19 +112,22 @@ export const getPayForPlaySyncStatus = query(async () => {
     });
   }
 
-  // Orphans
+  // Find orphaned Loyverse items - only consider items whose category is used by Pay for Play Items
   for (const lItem of loyverseItems) {
     if (!matchedLoyverseIds.has(lItem.id)) {
       const catName = lItem.category_id ? (loyverseCategories.get(lItem.category_id)?.name || '') : '';
-      if (catName.toLowerCase().includes('pay for play') || catName.toLowerCase().includes('toy')) {
-          syncStates.push({
-            notionId: undefined,
-            loyverseId: lItem.id,
-            name: lItem.item_name,
-            category: catName || 'Uncategorized',
-            status: 'NOT_IN_NOTION',
-            imageUrl: lItem.image_url
-          });
+      const normalizedCat = normalize(catName).toLowerCase();
+
+      // Only show as orphan if category is one used by Pay for Play Items in Notion
+      if (notionP4PCategories.has(normalizedCat)) {
+        syncStates.push({
+          notionId: undefined,
+          loyverseId: lItem.id,
+          name: lItem.item_name,
+          category: catName || 'Uncategorized',
+          status: 'NOT_IN_NOTION',
+          imageUrl: lItem.image_url
+        });
       }
     }
   }
@@ -156,6 +166,13 @@ export const syncPayForPlayItems = command(
         categoryCache.set(normalizedName, newCat.id);
         return newCat.id;
       };
+
+      // Collect all unique categories used by Pay for Play Items in Notion (normalized for comparison)
+      const notionP4PCategories = new Set<string>();
+      for (const nItem of allNotionItems) {
+        const cat = nItem.properties.category?.name;
+        if (cat) notionP4PCategories.add(normalize(cat).toLowerCase());
+      }
 
       const matchedLoyverseIds = new Set<string>();
       for (const nItem of allNotionItems) {
@@ -256,11 +273,15 @@ export const syncPayForPlayItems = command(
         }
       }
 
+      // Handle Orphans (Delete) - only delete items whose category is used by Pay for Play Items
       if (deleteOrphans) {
         for (const lItem of loyverseItems) {
           if (!matchedLoyverseIds.has(lItem.id)) {
              const catName = lItem.category_id ? (loyverseCategories.get(lItem.category_id)?.name || '') : '';
-             if (catName.toLowerCase().includes('pay for play') || catName.toLowerCase().includes('toy')) {
+             const normalizedCat = normalize(catName).toLowerCase();
+
+             // Only delete if category is one used by Pay for Play Items in Notion
+             if (notionP4PCategories.has(normalizedCat)) {
                try {
                  await loyverse.deleteItem(lItem.id);
                  report.deleted++;
