@@ -23,9 +23,9 @@ export const getEmployees = query(async () => {
 	const response = await db.query({
 		filter: {
 			or: [
+				{ employmentStatus: { equals: 'Working' } },
 				{ employmentStatus: { equals: 'Active' } },
-				{ employmentStatus: { equals: 'Onboarding' } },
-				{ employmentStatus: { equals: 'Probation' } }
+				{ employmentStatus: { equals: 'Onboarding' } }
 			]
 		},
 		sorts: [
@@ -62,9 +62,9 @@ export const getManagers = query(async () => {
 	const response = await db.query({
 		filter: {
 			or: [
+				{ employmentStatus: { equals: 'Working' } },
 				{ employmentStatus: { equals: 'Active' } },
-				{ employmentStatus: { equals: 'Onboarding' } },
-				{ employmentStatus: { equals: 'Probation' } }
+				{ employmentStatus: { equals: 'Onboarding' } }
 			]
 		},
 		sorts: [
@@ -78,10 +78,18 @@ export const getManagers = query(async () => {
 			const positionIds = dto.properties.positionIds;
 			return positionIds?.some(id => managerRoleIds.has(id));
 		})
-		.map(dto => ({
-			id: dto.id,
-			name: dto.properties.nickname.text || dto.properties.fullName.text || 'Unknown'
-		}));
+		.map(dto => {
+			// Try to find a person ID in Reports To or similar property if available
+			// For now, we'll return the page ID as 'id' and the person ID as 'personId' if found
+			const reportsTo = dto.properties.reportsTo;
+			const personId = reportsTo && reportsTo.length > 0 ? reportsTo[0].id : undefined;
+			
+			return {
+				id: dto.id,
+				personId,
+				name: dto.properties.nickname.text || dto.properties.fullName.text || 'Unknown'
+			};
+		});
 });
 
 function transformEmployee(dto: EmployeesResponseDTO): PublicEmployee {

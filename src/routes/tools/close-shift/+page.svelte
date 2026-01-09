@@ -74,12 +74,19 @@
               <label for="closerName" class="text-sm font-medium">Closer Name</label>
               <select
                 id="closerName"
-                bind:value={shiftState.closerName}
+                bind:value={shiftState.closerId}
+                onchange={(e) => {
+                  const manager = data.managers.find(m => m.id === e.currentTarget.value);
+                  if (manager) {
+                    shiftState.closerName = manager.name;
+                    shiftState.closerPersonId = (manager as any).personId;
+                  }
+                }}
                 class="w-full rounded-xl border border-input bg-background px-3 py-3 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
                 <option value="" disabled selected>Select closer...</option>
                 {#each data.managers as manager}
-                  <option value={manager.name}>{manager.name}</option>
+                  <option value={manager.id}>{manager.name}</option>
                 {/each}
               </select>
             </div>
@@ -249,13 +256,13 @@
           <div class="pt-4">
             <button 
               onclick={handleSubmit}
-              disabled={shiftState.isSubmitting || !shiftState.closerName}
+              disabled={shiftState.isSubmitting || !shiftState.closerId}
               class="w-full bg-[#5c4a3d] text-white font-bold py-3 px-4 rounded-xl shadow-md hover:bg-[#4a3b30] hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
             >
               {shiftState.isSubmitting ? 'Submitting...' : 'Submit Report'}
             </button>
-            {#if !shiftState.closerName}
-              <p class="text-xs text-red-500 text-center mt-2">Please enter closer name</p>
+            {#if !shiftState.closerId}
+              <p class="text-xs text-red-500 text-center mt-2">Please select closer name</p>
             {/if}
             {#if shiftState.error}
               <p class="text-sm text-red-500 text-center mt-2 bg-red-50 p-2 rounded-lg border border-red-100">

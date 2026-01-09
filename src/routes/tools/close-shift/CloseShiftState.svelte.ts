@@ -18,6 +18,8 @@ export class CloseShiftState {
     scan: 0,
     card: 0
   });
+  closerId = $state('');
+  closerPersonId = $state<string | undefined>(undefined);
   closerName = $state('');
   notes = $state('');
   
@@ -66,14 +68,16 @@ export class CloseShiftState {
     this.error = null;
     
     try {
-      if (!this.closerName) {
-        throw new Error('Please enter your name');
+      if (!this.closerId) {
+        throw new Error('Please select a manager');
       }
 
       const result = await submitCloseShift({
         expectedCash: this.expectedCash,
         billCounts: this.billCounts,
         paymentMethods: this.paymentMethods,
+        closerId: this.closerId,
+        closerPersonId: this.closerPersonId,
         closerName: this.closerName,
         notes: this.notes,
         shiftDate: new Date().toISOString()
@@ -106,6 +110,8 @@ export class CloseShiftState {
       scan: 0,
       card: 0
     };
+    this.closerId = '';
+    this.closerPersonId = undefined;
     this.closerName = '';
     this.notes = '';
     this.error = null;
