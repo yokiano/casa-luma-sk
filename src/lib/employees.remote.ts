@@ -1,6 +1,7 @@
 import { query } from '$app/server';
 import { NOTION_API_KEY } from '$env/static/private';
 import { EmployeesDatabase, EmployeesResponseDTO } from '$lib/notion-sdk/dbs/employees';
+import { RolesDatabase } from '$lib/notion-sdk/dbs/roles';
 
 export interface PublicEmployee {
 	id: string;
@@ -40,12 +41,55 @@ export const getEmployees = query(async () => {
 	return results;
 });
 
+export const getManagers = query(async () => {
+	const rolesDb = new RolesDatabase({ notionSecret: NOTION_API_KEY });
+	const rolesRes = await rolesDb.query({});
+	
+	// Find all roles that contain "Manager" in the title
+	const managerRoleIds = new Set(
+		rolesRes.results
+			.filter(r => {
+				const title = r.properties.Role.title.map((t: any) => t.plain_text).join('');
+				return title.toLowerCase().includes('manager');
+			})
+			.map(r => r.id)
+	);
+
+	const db = new EmployeesDatabase({
+		notionSecret: NOTION_API_KEY
+	});
+
+	const response = await db.query({
+		filter: {
+			or: [
+				{ employmentStatus: { equals: 'Active' } },
+				{ employmentStatus: { equals: 'Onboarding' } },
+				{ employmentStatus: { equals: 'Probation' } }
+			]
+		},
+		sorts: [
+			{ property: 'nickname', direction: 'ascending' }
+		]
+	});
+
+	return response.results
+		.map(r => new EmployeesResponseDTO(r))
+		.filter(dto => {
+			const positionIds = dto.properties.positionIds;
+			return positionIds?.some(id => managerRoleIds.has(id));
+		})
+		.map(dto => ({
+			id: dto.id,
+			name: dto.properties.nickname.text || dto.properties.fullName.text || 'Unknown'
+		}));
+});
+
 function transformEmployee(dto: EmployeesResponseDTO): PublicEmployee {
 	return {
 		id: dto.id,
 		name: dto.properties.nickname.text || dto.properties.fullName.text || 'Unknown',
 		fullName: dto.properties.fullName.text || '',
-		roles: dto.properties.position.values,
+		roles: [], // dto.properties.position?.values || [], // Relation to Roles DB, names not available in Employee DTO
 		department: dto.properties.department?.name,
 		bio: dto.properties.bio.text || '',
 		photo: dto.properties.photo.urls[0],

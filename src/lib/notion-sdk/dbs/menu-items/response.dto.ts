@@ -81,6 +81,7 @@ export class MenuItemsPropertiesResponseDTO {
       variantOption_2Name: this.__props['Variant option 2 name'],
       modifiers: this.__props['Modifiers'],
       order: this.__props['Order'],
+      thaiName: this.__props['Thai Name'],
     }
   }
 
@@ -207,5 +208,13 @@ export class MenuItemsPropertiesResponseDTO {
 
   get order() {
     return this.__props['Order']?.number
+  }
+
+  get thaiName() {
+    return {
+      text: this.__props['Thai Name']?.rich_text ? this.__props['Thai Name'].rich_text.reduce((acc, item) => acc + item.plain_text, '') : undefined,
+      links: this.__props['Thai Name']?.rich_text ? this.__props['Thai Name'].rich_text.filter((item) => item.href?.length).map((item) => item.href) : [],
+      rich_text: this.__props['Thai Name']?.rich_text,
+    }
   }
 }

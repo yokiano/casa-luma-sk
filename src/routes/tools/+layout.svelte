@@ -8,6 +8,7 @@
     { href: '/tools/menu-assistant', label: 'Menu Assistant' },
     { href: '/tools/pos-sync', label: 'POS Sync' },
     { href: '/tools/checklist', label: 'Checklist' },
+    { href: '/tools/close-shift', label: 'Close Shift' },
     { href: '/tools/graphics', label: 'Graphics' }
   ];
 

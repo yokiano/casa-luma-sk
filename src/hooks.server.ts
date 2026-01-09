@@ -18,7 +18,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 		}
 
 		const authCookie = event.cookies.get('casa_luma_tools_auth');
-		
+
 		// If no cookie, redirect to login
 		if (!authCookie) {
 			throw redirect(303, '/tools/login');
@@ -26,6 +26,6 @@ export const handle: Handle = async ({ event, resolve }) => {
 	}
 
 	const response = await resolve(event);
+
 	return response;
 };
-

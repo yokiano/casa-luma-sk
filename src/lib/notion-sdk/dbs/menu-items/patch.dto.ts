@@ -26,6 +26,7 @@ export type MenuItemsPropertiesPatch = {
   variantOption_2Name?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   modifiers?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'relation' }>['relation']
   order?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'number' }>['number']
+  thaiName?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
 }
 
   
@@ -303,6 +304,28 @@ export class MenuItemsPatchDTO {
       this.__data.properties['TAGg'] = {
         type: 'number',
         number: props.order,
+      }
+    }
+
+    if (props?.thaiName !== undefined) {
+      this.__data.properties['K%7DaB'] = {
+        type: 'rich_text',
+        rich_text: typeof props.thaiName === 'string' 
+          ? [{ type: 'text', text: { content: props.thaiName } }]
+          : Array.isArray(props.thaiName)
+            ? props.thaiName
+            : props.thaiName === null
+              ? []
+              : [
+                  {
+                    type: 'text',
+                    text: {
+                      content: props.thaiName.text,
+                      link: props.thaiName?.url ? { url: props.thaiName.url } : undefined
+                    },
+                    annotations: props.thaiName.annotations
+                  },
+                ]
       }
     }
   }

@@ -15,6 +15,26 @@
     {
       "name": "Suppliers",
       "id": "839a6083-9aaa-4cf7-add0-a8397534726a"
+    },
+    {
+      "name": "Recipes",
+      "id": "b7fc72df-194c-4be8-9f64-99e86f97f5ac"
+    },
+    {
+      "name": "Recipe Lines",
+      "id": "9c809c61-fee0-4b7c-b167-d04863218e2a"
+    },
+    {
+      "name": "Recipes",
+      "id": "af9f8711-f515-4714-8774-2378990a7889"
+    },
+    {
+      "name": "Ingredients",
+      "id": "57c02c7c-fa7c-4ea8-919d-c9db03b545c3"
+    },
+    {
+      "name": "Ingredients",
+      "id": "ba611e70-d6c2-469b-917f-01e7af21b180"
     }
   ],
   "databases": {
@@ -359,6 +379,12 @@
           "_name": "Order",
           "_type": "number",
           "varName": "order",
+          "readOnly": false
+        },
+        "K%7DaB": {
+          "_name": "Thai Name",
+          "_type": "rich_text",
+          "varName": "thaiName",
           "readOnly": false
         }
       }
@@ -764,7 +790,7 @@
       }
     },
     "2139dd55-8a06-46d3-9346-472f77c0e89a": {
-      "_name": "Signage",
+      "_name": "Signage & Print",
       "varName": "signage",
       "pathName": "signage",
       "properties": {
@@ -1514,6 +1540,127 @@
           "_name": "Name",
           "_type": "title",
           "varName": "name",
+          "readOnly": false
+        }
+      }
+    },
+    "344408c3-1b29-4510-a726-0d09a25ba7c4": {
+      "_name": "End of Shift Reports",
+      "varName": "endOfShiftReports",
+      "pathName": "end-of-shift-reports",
+      "properties": {
+        "%3ESv%3C": {
+          "_name": "Card Payments",
+          "_type": "number",
+          "varName": "cardPayments",
+          "readOnly": false
+        },
+        "%3Fe%7BI": {
+          "_name": "Notes",
+          "_type": "rich_text",
+          "varName": "notes",
+          "readOnly": false
+        },
+        "R%5C%40S": {
+          "_name": "Expected Cash",
+          "_type": "number",
+          "varName": "expectedCash",
+          "readOnly": false
+        },
+        "a_n%5C": {
+          "_name": "Closed By",
+          "_type": "people",
+          "varName": "closedBy",
+          "readOnly": false
+        },
+        "cI%5BI": {
+          "_name": "POS Summary",
+          "_type": "files",
+          "varName": "posSummary",
+          "readOnly": false
+        },
+        "p%5D%3FJ": {
+          "_name": "Scan Payments",
+          "_type": "number",
+          "varName": "scanPayments",
+          "readOnly": false
+        },
+        "yO%5Dn": {
+          "_name": "Date",
+          "_type": "date",
+          "varName": "date",
+          "readOnly": false
+        },
+        "title": {
+          "_name": "Shift Date",
+          "_type": "title",
+          "varName": "shiftDate",
+          "readOnly": false
+        },
+        "%3FaIt": {
+          "_name": "Actual Cash 1",
+          "_type": "formula",
+          "varName": "actualCash_1",
+          "readOnly": false
+        },
+        "BQkU": {
+          "_name": "Cash Difference 1",
+          "_type": "formula",
+          "varName": "cashDifference_1",
+          "readOnly": false
+        },
+        "BVMr": {
+          "_name": "Bill 1000 Baht 1",
+          "_type": "number",
+          "varName": "bill_1000Baht_1",
+          "readOnly": false
+        },
+        "Ot%3B%60": {
+          "_name": "Coin 1 Baht 1",
+          "_type": "number",
+          "varName": "coin_1Baht_1",
+          "readOnly": false
+        },
+        "SplK": {
+          "_name": "Bill 500 Baht 1",
+          "_type": "number",
+          "varName": "bill_500Baht_1",
+          "readOnly": false
+        },
+        "UTe%5C": {
+          "_name": "Bill 20 Baht 1",
+          "_type": "number",
+          "varName": "bill_20Baht_1",
+          "readOnly": false
+        },
+        "X%7Dqu": {
+          "_name": "Bill 50 Baht 1",
+          "_type": "number",
+          "varName": "bill_50Baht_1",
+          "readOnly": false
+        },
+        "_DQQ": {
+          "_name": "Coin 10 Baht 1",
+          "_type": "number",
+          "varName": "coin_10Baht_1",
+          "readOnly": false
+        },
+        "bsSd": {
+          "_name": "Coin 5 Baht 1",
+          "_type": "number",
+          "varName": "coin_5Baht_1",
+          "readOnly": false
+        },
+        "fUnb": {
+          "_name": "Bill 100 Baht 1",
+          "_type": "number",
+          "varName": "bill_100Baht_1",
+          "readOnly": false
+        },
+        "smDb": {
+          "_name": "Coin 2 Baht 1",
+          "_type": "number",
+          "varName": "coin_2Baht_1",
           "readOnly": false
         }
       }

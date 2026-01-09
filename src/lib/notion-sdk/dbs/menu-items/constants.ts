@@ -50,7 +50,8 @@ export const MENU_ITEMS_PROP_VALUES = {
   "Light & Fresh",
   "Kids Favorites",
   "Cute Sandwich",
-  "Kid Sized Drinks"
+  "Kid Sized Drinks",
+  "Kitchen Extras"
 ] as const,
 "grandCategory": [
   "Food",
@@ -84,7 +85,8 @@ export const MENU_ITEMS_PROPS_TO_IDS = {
   "variantOption_3Name": "a%3CZ%40",
   "variantOption_2Name": "wt%7Dr",
   "modifiers": "eqWu",
-  "order": "TAGg"
+  "order": "TAGg",
+  "thaiName": "K%7DaB"
 } as const
 export const MENU_ITEMS_IDS_TO_PROPS = {
   "%40w%3Bd": "description",
@@ -106,7 +108,8 @@ export const MENU_ITEMS_IDS_TO_PROPS = {
   "a%3CZ%40": "variantOption_3Name",
   "wt%7Dr": "variantOption_2Name",
   "eqWu": "modifiers",
-  "TAGg": "order"
+  "TAGg": "order",
+  "K%7DaB": "thaiName"
 } as const
 export const MENU_ITEMS_PROPS_TO_TYPES = {
   "description": "rich_text",
@@ -128,7 +131,8 @@ export const MENU_ITEMS_PROPS_TO_TYPES = {
   "variantOption_3Name": "rich_text",
   "variantOption_2Name": "rich_text",
   "modifiers": "relation",
-  "order": "number"
+  "order": "number",
+  "thaiName": "rich_text"
 } as const
 
   export type MenuItemsDTOProperties = keyof typeof MENU_ITEMS_PROPS_TO_IDS
