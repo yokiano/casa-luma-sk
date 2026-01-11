@@ -48,7 +48,6 @@ export const EMPLOYEES_PROPS_TO_IDS = {
   "salaryThb": "%3FdnC",
   "languages": "B%5C%7BK",
   "employmentType": "Bop%3E",
-  "emergencyContact": "EIXp",
   "department": "HpjN",
   "endDate": "KpQj",
   "nationality": "MUL%3E",
@@ -56,7 +55,6 @@ export const EMPLOYEES_PROPS_TO_IDS = {
   "workPermitNumber": "QVjs",
   "email": "Xtg%3C",
   "paymentFrequency": "Z%60%60%5E",
-  "skills": "crRF",
   "fullName": "dNc~",
   "documents": "deEH",
   "address": "dw%7Bq",
@@ -64,17 +62,16 @@ export const EMPLOYEES_PROPS_TO_IDS = {
   "bankAccountDetails": "jNcC",
   "phone": "lJ%7CL",
   "position": "o%5DfK",
-  "bio": "owDI",
   "hometown": "pi%5Dw",
-  "emergencyPhone": "r%7BrR",
   "employmentStatus": "vCD%5E",
   "reportsTo": "wUr%5B",
   "startDate": "zLrJ",
   "nickname": "title",
   "taxId": "%3FRoK",
   "idPassportNo": "IaO%3B",
-  "hasWorkPermit": "WH%5Da",
-  "dateOfBirth": "tIHh"
+  "dateOfBirth": "tIHh",
+  "workPermitScan": "Z%5ECt",
+  "scanQr": "y%5EAY"
 } as const
 export const EMPLOYEES_IDS_TO_PROPS = {
   "%3CK%5BF": "visaExpiry",
@@ -83,7 +80,6 @@ export const EMPLOYEES_IDS_TO_PROPS = {
   "%3FdnC": "salaryThb",
   "B%5C%7BK": "languages",
   "Bop%3E": "employmentType",
-  "EIXp": "emergencyContact",
   "HpjN": "department",
   "KpQj": "endDate",
   "MUL%3E": "nationality",
@@ -91,7 +87,6 @@ export const EMPLOYEES_IDS_TO_PROPS = {
   "QVjs": "workPermitNumber",
   "Xtg%3C": "email",
   "Z%60%60%5E": "paymentFrequency",
-  "crRF": "skills",
   "dNc~": "fullName",
   "deEH": "documents",
   "dw%7Bq": "address",
@@ -99,17 +94,16 @@ export const EMPLOYEES_IDS_TO_PROPS = {
   "jNcC": "bankAccountDetails",
   "lJ%7CL": "phone",
   "o%5DfK": "position",
-  "owDI": "bio",
   "pi%5Dw": "hometown",
-  "r%7BrR": "emergencyPhone",
   "vCD%5E": "employmentStatus",
   "wUr%5B": "reportsTo",
   "zLrJ": "startDate",
   "title": "nickname",
   "%3FRoK": "taxId",
   "IaO%3B": "idPassportNo",
-  "WH%5Da": "hasWorkPermit",
-  "tIHh": "dateOfBirth"
+  "tIHh": "dateOfBirth",
+  "Z%5ECt": "workPermitScan",
+  "y%5EAY": "scanQr"
 } as const
 export const EMPLOYEES_PROPS_TO_TYPES = {
   "visaExpiry": "date",
@@ -118,7 +112,6 @@ export const EMPLOYEES_PROPS_TO_TYPES = {
   "salaryThb": "number",
   "languages": "multi_select",
   "employmentType": "select",
-  "emergencyContact": "rich_text",
   "department": "select",
   "endDate": "date",
   "nationality": "select",
@@ -126,7 +119,6 @@ export const EMPLOYEES_PROPS_TO_TYPES = {
   "workPermitNumber": "rich_text",
   "email": "email",
   "paymentFrequency": "select",
-  "skills": "rich_text",
   "fullName": "rich_text",
   "documents": "files",
   "address": "rich_text",
@@ -134,17 +126,16 @@ export const EMPLOYEES_PROPS_TO_TYPES = {
   "bankAccountDetails": "rich_text",
   "phone": "phone_number",
   "position": "relation",
-  "bio": "rich_text",
   "hometown": "rich_text",
-  "emergencyPhone": "rich_text",
   "employmentStatus": "status",
   "reportsTo": "people",
   "startDate": "date",
   "nickname": "title",
   "taxId": "rich_text",
   "idPassportNo": "rich_text",
-  "hasWorkPermit": "checkbox",
-  "dateOfBirth": "date"
+  "dateOfBirth": "date",
+  "workPermitScan": "files",
+  "scanQr": "files"
 } as const
 
   export type EmployeesDTOProperties = keyof typeof EMPLOYEES_PROPS_TO_IDS

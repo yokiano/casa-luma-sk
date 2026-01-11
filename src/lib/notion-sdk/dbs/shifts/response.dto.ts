@@ -67,6 +67,8 @@ export class ShiftsPropertiesResponseDTO {
       shiftTime: this.__props['Shift Time'],
       role: this.__props['Role'],
       shiftNote: this.__props['Shift Note'],
+      otApprover: this.__props['OT Approver'],
+      ot: this.__props['OT'],
     }
   }
 
@@ -99,5 +101,15 @@ export class ShiftsPropertiesResponseDTO {
       links: this.__props['Shift Note']?.title ? this.__props['Shift Note'].title.filter((item) => item.href?.length).map((item) => item.href) : [],
       title: this.__props['Shift Note']?.title,
     }
+  }
+  get otApprover() {
+    return {
+      values: this.__props['OT Approver']?.multi_select ? this.__props['OT Approver'].multi_select.map((item) => item.name) : [],
+      multi_select: this.__props['OT Approver']?.multi_select,
+    }
+  }
+
+  get ot() {
+    return this.__props['OT']?.number
   }
 }

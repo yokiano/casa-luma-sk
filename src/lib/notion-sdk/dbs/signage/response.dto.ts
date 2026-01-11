@@ -67,6 +67,7 @@ export class SignagePropertiesResponseDTO {
       signId: this.__props['Sign ID'],
       status: this.__props['Status'],
       name: this.__props['Name'],
+      linkToFile: this.__props['Link to file'],
     }
   }
 
@@ -104,6 +105,14 @@ export class SignagePropertiesResponseDTO {
       text: this.__props['Name']?.title ? this.__props['Name'].title.reduce((acc, item) => acc + item.plain_text, '') : undefined,
       links: this.__props['Name']?.title ? this.__props['Name'].title.filter((item) => item.href?.length).map((item) => item.href) : [],
       title: this.__props['Name']?.title,
+    }
+  }
+
+  get linkToFile() {
+    return {
+      text: this.__props['Link to file']?.rich_text ? this.__props['Link to file'].rich_text.reduce((acc, item) => acc + item.plain_text, '') : undefined,
+      links: this.__props['Link to file']?.rich_text ? this.__props['Link to file'].rich_text.filter((item) => item.href?.length).map((item) => item.href) : [],
+      rich_text: this.__props['Link to file']?.rich_text,
     }
   }
 }

@@ -1,8 +1,7 @@
 export const SHIFTS_PROP_VALUES = {
 "type": [
-  "Opening (08:00 - 16:00)",
-  "Closing (11:00 - 19:00)",
-  "Mid-Day",
+  "Opening (08:30 - 17:00)",
+  "Closing (10:30 - 19:00)",
   "Custom"
 ] as const,
 "status": [
@@ -10,6 +9,12 @@ export const SHIFTS_PROP_VALUES = {
   "Confirmed",
   "Completed",
   "Cancelled"
+] as const,
+"otApprover": [
+  "Roza",
+  "Karni",
+  "Ohad",
+  "Yarden"
 ] as const,
 }
 
@@ -19,7 +24,9 @@ export const SHIFTS_PROPS_TO_IDS = {
   "status": "VPhk",
   "shiftTime": "YKt%5C",
   "role": "mbpd",
-  "shiftNote": "title"
+  "shiftNote": "title",
+  "otApprover": "X%3FPo",
+  "ot": "aT%5Bq"
 } as const
 export const SHIFTS_IDS_TO_PROPS = {
   "%40QLu": "employee",
@@ -27,7 +34,9 @@ export const SHIFTS_IDS_TO_PROPS = {
   "VPhk": "status",
   "YKt%5C": "shiftTime",
   "mbpd": "role",
-  "title": "shiftNote"
+  "title": "shiftNote",
+  "X%3FPo": "otApprover",
+  "aT%5Bq": "ot"
 } as const
 export const SHIFTS_PROPS_TO_TYPES = {
   "employee": "relation",
@@ -35,7 +44,9 @@ export const SHIFTS_PROPS_TO_TYPES = {
   "status": "status",
   "shiftTime": "date",
   "role": "relation",
-  "shiftNote": "title"
+  "shiftNote": "title",
+  "otApprover": "multi_select",
+  "ot": "number"
 } as const
 
   export type ShiftsDTOProperties = keyof typeof SHIFTS_PROPS_TO_IDS

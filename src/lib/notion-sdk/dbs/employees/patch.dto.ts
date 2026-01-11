@@ -12,7 +12,6 @@ export type EmployeesPropertiesPatch = {
   salaryThb?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'number' }>['number']
   languages?: EmployeesResponse['properties']['Languages']['multi_select'][number]['name'][]
   employmentType?: EmployeesResponse['properties']['Employment Type']['select']['name']
-  emergencyContact?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   department?: EmployeesResponse['properties']['Department']['select']['name']
   endDate?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'date' }>['date']
   nationality?: EmployeesResponse['properties']['Nationality']['select']['name']
@@ -20,7 +19,6 @@ export type EmployeesPropertiesPatch = {
   workPermitNumber?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   email?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'email' }>['email']
   paymentFrequency?: EmployeesResponse['properties']['Payment Frequency']['select']['name']
-  skills?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   fullName?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   documents?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'files' }>['files']
   address?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
@@ -28,17 +26,16 @@ export type EmployeesPropertiesPatch = {
   bankAccountDetails?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   phone?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'phone_number' }>['phone_number']
   position?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'relation' }>['relation']
-  bio?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   hometown?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
-  emergencyPhone?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   employmentStatus?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'status' }>['status']
   reportsTo?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'people' }>['people']
   startDate?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'date' }>['date']
   nickname?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   taxId?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   idPassportNo?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
-  hasWorkPermit?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'checkbox' }>['checkbox']
   dateOfBirth?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'date' }>['date']
+  workPermitScan?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'files' }>['files']
+  scanQr?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'files' }>['files']
 }
 
   
@@ -98,28 +95,6 @@ export class EmployeesPatchDTO {
       this.__data.properties['Bop%3E'] = {
         type: 'select',
         select: { name: props.employmentType },
-      }
-    }
-
-    if (props?.emergencyContact !== undefined) {
-      this.__data.properties['EIXp'] = {
-        type: 'rich_text',
-        rich_text: typeof props.emergencyContact === 'string' 
-          ? [{ type: 'text', text: { content: props.emergencyContact } }]
-          : Array.isArray(props.emergencyContact)
-            ? props.emergencyContact
-            : props.emergencyContact === null
-              ? []
-              : [
-                  {
-                    type: 'text',
-                    text: {
-                      content: props.emergencyContact.text,
-                      link: props.emergencyContact?.url ? { url: props.emergencyContact.url } : undefined
-                    },
-                    annotations: props.emergencyContact.annotations
-                  },
-                ]
       }
     }
 
@@ -199,28 +174,6 @@ export class EmployeesPatchDTO {
       this.__data.properties['Z%60%60%5E'] = {
         type: 'select',
         select: { name: props.paymentFrequency },
-      }
-    }
-
-    if (props?.skills !== undefined) {
-      this.__data.properties['crRF'] = {
-        type: 'rich_text',
-        rich_text: typeof props.skills === 'string' 
-          ? [{ type: 'text', text: { content: props.skills } }]
-          : Array.isArray(props.skills)
-            ? props.skills
-            : props.skills === null
-              ? []
-              : [
-                  {
-                    type: 'text',
-                    text: {
-                      content: props.skills.text,
-                      link: props.skills?.url ? { url: props.skills.url } : undefined
-                    },
-                    annotations: props.skills.annotations
-                  },
-                ]
       }
     }
 
@@ -333,28 +286,6 @@ export class EmployeesPatchDTO {
       }
     }
 
-    if (props?.bio !== undefined) {
-      this.__data.properties['owDI'] = {
-        type: 'rich_text',
-        rich_text: typeof props.bio === 'string' 
-          ? [{ type: 'text', text: { content: props.bio } }]
-          : Array.isArray(props.bio)
-            ? props.bio
-            : props.bio === null
-              ? []
-              : [
-                  {
-                    type: 'text',
-                    text: {
-                      content: props.bio.text,
-                      link: props.bio?.url ? { url: props.bio.url } : undefined
-                    },
-                    annotations: props.bio.annotations
-                  },
-                ]
-      }
-    }
-
     if (props?.hometown !== undefined) {
       this.__data.properties['pi%5Dw'] = {
         type: 'rich_text',
@@ -372,28 +303,6 @@ export class EmployeesPatchDTO {
                       link: props.hometown?.url ? { url: props.hometown.url } : undefined
                     },
                     annotations: props.hometown.annotations
-                  },
-                ]
-      }
-    }
-
-    if (props?.emergencyPhone !== undefined) {
-      this.__data.properties['r%7BrR'] = {
-        type: 'rich_text',
-        rich_text: typeof props.emergencyPhone === 'string' 
-          ? [{ type: 'text', text: { content: props.emergencyPhone } }]
-          : Array.isArray(props.emergencyPhone)
-            ? props.emergencyPhone
-            : props.emergencyPhone === null
-              ? []
-              : [
-                  {
-                    type: 'text',
-                    text: {
-                      content: props.emergencyPhone.text,
-                      link: props.emergencyPhone?.url ? { url: props.emergencyPhone.url } : undefined
-                    },
-                    annotations: props.emergencyPhone.annotations
                   },
                 ]
       }
@@ -486,17 +395,24 @@ export class EmployeesPatchDTO {
       }
     }
 
-    if (props?.hasWorkPermit !== undefined) {
-      this.__data.properties['WH%5Da'] = {
-        type: 'checkbox',
-        checkbox: props.hasWorkPermit,
-      }
-    }
-
     if (props?.dateOfBirth !== undefined) {
       this.__data.properties['tIHh'] = {
         type: 'date',
         date: props.dateOfBirth,
+      }
+    }
+
+    if (props?.workPermitScan !== undefined) {
+      this.__data.properties['Z%5ECt'] = {
+        type: 'files',
+        files: props.workPermitScan,
+      }
+    }
+
+    if (props?.scanQr !== undefined) {
+      this.__data.properties['y%5EAY'] = {
+        type: 'files',
+        files: props.scanQr,
       }
     }
   }

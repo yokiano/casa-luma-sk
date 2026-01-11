@@ -16,12 +16,13 @@ import { SIGNAGE_PROPS_TO_IDS } from './constants'
 
 export interface SignageResponse extends WithOptional<Omit<DatabaseObjectResponse, 'properties'>, 'title'| 'description'| 'is_inline'| 'url'| 'public_url'> {
   properties: {
-    "Location": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'Toilet', color: 'yellow' } | { id: StringRequest, name: 'Entrance', color: 'blue' } | { id: StringRequest, name: 'Parking', color: 'gray' } | { id: StringRequest, name: 'Cafe', color: 'brown' } | { id: StringRequest, name: 'Play Area', color: 'orange' }},
-    "Type": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'Instruction', color: 'green' } | { id: StringRequest, name: 'Warning', color: 'purple' } | { id: StringRequest, name: 'Information', color: 'yellow' } | { id: StringRequest, name: 'Schedule', color: 'pink' }},
+    "Location": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'Toilet', color: 'yellow' } | { id: StringRequest, name: 'Entrance', color: 'blue' } | { id: StringRequest, name: 'Parking', color: 'gray' } | { id: StringRequest, name: 'Cafe', color: 'brown' } | { id: StringRequest, name: 'Play Area', color: 'orange' } | { id: StringRequest, name: 'Notice Board', color: 'red' }},
+    "Type": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'Instruction', color: 'green' } | { id: StringRequest, name: 'Warning', color: 'purple' } | { id: StringRequest, name: 'Information', color: 'yellow' } | { id: StringRequest, name: 'Schedule', color: 'pink' } | { id: StringRequest, name: 'Marking', color: 'blue' } | { id: StringRequest, name: 'Functional', color: 'orange' }},
     "Copy": RichTextPropertyItemObjectResponse,
     "Sign ID": RichTextPropertyItemObjectResponse,
-    "Status": Omit<StatusPropertyItemObjectResponse, 'status'> & { status: { id: StringRequest, name: 'Idea', color: 'gray' } | { id: StringRequest, name: 'Printed', color: 'green' } | { id: StringRequest, name: 'Installed', color: 'blue' } | { id: StringRequest, name: 'Draft', color: 'blue' } | { id: StringRequest, name: 'Ready to Print', color: 'yellow' }},
-    "Name": TitlePropertyItemObjectResponse
+    "Status": Omit<StatusPropertyItemObjectResponse, 'status'> & { status: { id: StringRequest, name: 'Idea', color: 'gray' } | { id: StringRequest, name: 'Printed', color: 'green' } | { id: StringRequest, name: 'Installed', color: 'purple' } | { id: StringRequest, name: 'Draft', color: 'blue' } | { id: StringRequest, name: 'Ready to Print', color: 'yellow' }},
+    "Name": TitlePropertyItemObjectResponse,
+    "Link to file": RichTextPropertyItemObjectResponse
   }
 }
 
@@ -67,8 +68,9 @@ type SignageStatusPropertyFilter =
   | ExistencePropertyFilter      
 
 type SignageNamePropertyFilter = TextPropertyFilter
+type SignageLinkToFilePropertyFilter = TextPropertyFilter
 
-export type SignagePropertyFilter = { location: SignageLocationPropertyFilter } | { type: SignageTypePropertyFilter } | { copy: SignageCopyPropertyFilter } | { signId: SignageSignIdPropertyFilter } | { status: SignageStatusPropertyFilter } | { name: SignageNamePropertyFilter }
+export type SignagePropertyFilter = { location: SignageLocationPropertyFilter } | { type: SignageTypePropertyFilter } | { copy: SignageCopyPropertyFilter } | { signId: SignageSignIdPropertyFilter } | { status: SignageStatusPropertyFilter } | { name: SignageNamePropertyFilter } | { linkToFile: SignageLinkToFilePropertyFilter }
 
 export type SignageQuery = Omit<QueryDatabaseBodyParameters, 'filter' | 'sorts'> & {
   sorts?: Array<

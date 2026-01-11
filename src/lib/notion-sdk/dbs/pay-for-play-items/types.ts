@@ -28,7 +28,7 @@ export interface PayForPlayItemsResponse extends WithOptional<Omit<DatabaseObjec
   properties: {
     "Stock": NumberPropertyItemObjectResponse,
     "Price": NumberPropertyItemObjectResponse,
-    "Category": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'Toys', color: 'blue' } | { id: StringRequest, name: 'Merchandise', color: 'purple' } | { id: StringRequest, name: '(p4p) Lego Figurine', color: 'pink' }},
+    "Category": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'Toys', color: 'blue' } | { id: StringRequest, name: 'Merchandise', color: 'purple' } | { id: StringRequest, name: '(p4p) Lego Figurine', color: 'pink' } | { id: StringRequest, name: '(p4p) Art Equipment', color: 'red' }},
     "COGS": NumberPropertyItemObjectResponse,
     "Description": RichTextPropertyItemObjectResponse,
     "Supplier": RelationPropertyItemObjectResponse,

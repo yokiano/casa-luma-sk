@@ -2,7 +2,8 @@ export const PAY_FOR_PLAY_ITEMS_PROP_VALUES = {
 "category": [
   "Toys",
   "Merchandise",
-  "(p4p) Lego Figurine"
+  "(p4p) Lego Figurine",
+  "(p4p) Art Equipment"
 ] as const,
 }
 

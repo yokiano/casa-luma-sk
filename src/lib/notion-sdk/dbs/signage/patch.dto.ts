@@ -12,6 +12,7 @@ export type SignagePropertiesPatch = {
   signId?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   status?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'status' }>['status']
   name?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
+  linkToFile?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
 }
 
   
@@ -114,6 +115,28 @@ export class SignagePatchDTO {
                       link: props.name?.url ? { url: props.name.url } : undefined
                     },
                     annotations: props.name.annotations
+                  },
+                ]
+      }
+    }
+
+    if (props?.linkToFile !== undefined) {
+      this.__data.properties['vWoE'] = {
+        type: 'rich_text',
+        rich_text: typeof props.linkToFile === 'string' 
+          ? [{ type: 'text', text: { content: props.linkToFile } }]
+          : Array.isArray(props.linkToFile)
+            ? props.linkToFile
+            : props.linkToFile === null
+              ? []
+              : [
+                  {
+                    type: 'text',
+                    text: {
+                      content: props.linkToFile.text,
+                      link: props.linkToFile?.url ? { url: props.linkToFile.url } : undefined
+                    },
+                    annotations: props.linkToFile.annotations
                   },
                 ]
       }

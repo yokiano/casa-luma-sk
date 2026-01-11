@@ -4,13 +4,16 @@ export const SIGNAGE_PROP_VALUES = {
   "Entrance",
   "Parking",
   "Cafe",
-  "Play Area"
+  "Play Area",
+  "Notice Board"
 ] as const,
 "type": [
   "Instruction",
   "Warning",
   "Information",
-  "Schedule"
+  "Schedule",
+  "Marking",
+  "Functional"
 ] as const,
 "status": [
   "Idea",
@@ -27,7 +30,8 @@ export const SIGNAGE_PROPS_TO_IDS = {
   "copy": "CsT%5C",
   "signId": "Q%3FI%5D",
   "status": "U%3A%3F%3A",
-  "name": "title"
+  "name": "title",
+  "linkToFile": "vWoE"
 } as const
 export const SIGNAGE_IDS_TO_PROPS = {
   "%40Gj%7C": "location",
@@ -35,7 +39,8 @@ export const SIGNAGE_IDS_TO_PROPS = {
   "CsT%5C": "copy",
   "Q%3FI%5D": "signId",
   "U%3A%3F%3A": "status",
-  "title": "name"
+  "title": "name",
+  "vWoE": "linkToFile"
 } as const
 export const SIGNAGE_PROPS_TO_TYPES = {
   "location": "select",
@@ -43,7 +48,8 @@ export const SIGNAGE_PROPS_TO_TYPES = {
   "copy": "rich_text",
   "signId": "rich_text",
   "status": "status",
-  "name": "title"
+  "name": "title",
+  "linkToFile": "rich_text"
 } as const
 
   export type SignageDTOProperties = keyof typeof SIGNAGE_PROPS_TO_IDS

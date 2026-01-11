@@ -2,7 +2,6 @@ import { WithOptional, Join, PathsToStringProps } from '../../core/types/helper.
 import {
 DatabaseObjectResponse,
 StringRequest,
-CheckboxPropertyItemObjectResponse,
 DatePropertyItemObjectResponse,
 EmailPropertyItemObjectResponse,
 FilesPropertyItemObjectResponse,
@@ -19,7 +18,6 @@ ExistencePropertyFilter,
 QueryDatabaseBodyParameters,
 TimestampCreatedTimeFilter,
 TimestampLastEditedTimeFilter,
-CheckboxPropertyFilter,
 DatePropertyFilter,
 NumberPropertyFilter,
 PeoplePropertyFilter,
@@ -36,15 +34,13 @@ export interface EmployeesResponse extends WithOptional<Omit<DatabaseObjectRespo
     "Salary (THB)": NumberPropertyItemObjectResponse,
     "Languages": Omit<MultiSelectPropertyItemObjectResponse, 'multi_select'> & { multi_select: [{ id: StringRequest, name: 'English', color: 'brown' } | { id: StringRequest, name: 'Myanmar', color: 'orange' } | { id: StringRequest, name: 'Thai', color: 'yellow' } | { id: StringRequest, name: 'English Little Bit', color: 'gray' }]},
     "Employment Type": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'Full-time', color: 'red' } | { id: StringRequest, name: 'Part-time', color: 'green' } | { id: StringRequest, name: 'Contract', color: 'default' } | { id: StringRequest, name: 'Temporary', color: 'brown' } | { id: StringRequest, name: 'Seasonal', color: 'pink' } | { id: StringRequest, name: 'Freelance', color: 'orange' }},
-    "Emergency Contact": RichTextPropertyItemObjectResponse,
     "Department": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'Maintenance', color: 'pink' } | { id: StringRequest, name: 'Café', color: 'purple' } | { id: StringRequest, name: 'Open Play', color: 'brown' } | { id: StringRequest, name: 'Marketing', color: 'green' } | { id: StringRequest, name: 'Management', color: 'gray' }},
     "End Date": DatePropertyItemObjectResponse,
     "Nationality": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'Burmese', color: 'brown' } | { id: StringRequest, name: 'Thai', color: 'green' }},
-    "WhatsApp/LINE": RichTextPropertyItemObjectResponse,
+    "LINE": RichTextPropertyItemObjectResponse,
     "Work Permit Number": RichTextPropertyItemObjectResponse,
     "Email": EmailPropertyItemObjectResponse,
     "Payment Frequency": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'Monthly', color: 'gray' } | { id: StringRequest, name: 'Bi-weekly', color: 'default' } | { id: StringRequest, name: 'Weekly', color: 'pink' } | { id: StringRequest, name: 'Daily', color: 'brown' } | { id: StringRequest, name: 'Hourly', color: 'orange' }},
-    "Skills": RichTextPropertyItemObjectResponse,
     "Full Name": RichTextPropertyItemObjectResponse,
     "Documents": FilesPropertyItemObjectResponse,
     "Address": RichTextPropertyItemObjectResponse,
@@ -52,17 +48,16 @@ export interface EmployeesResponse extends WithOptional<Omit<DatabaseObjectRespo
     "Bank Account Details": RichTextPropertyItemObjectResponse,
     "Phone": PhoneNumberPropertyItemObjectResponse,
     "Role": RelationPropertyItemObjectResponse,
-    "Bio": RichTextPropertyItemObjectResponse,
     "Hometown": RichTextPropertyItemObjectResponse,
-    "Emergency Phone": RichTextPropertyItemObjectResponse,
     "Employment Status": Omit<StatusPropertyItemObjectResponse, 'status'> & { status: { id: StringRequest, name: 'Onboarding', color: 'default' } | { id: StringRequest, name: 'Working', color: 'default' } | { id: StringRequest, name: 'Active', color: 'default' } | { id: StringRequest, name: 'Resigned', color: 'default' } | { id: StringRequest, name: 'Terminated', color: 'default' } | { id: StringRequest, name: 'Contract Ended', color: 'default' }},
     "Reports To": PeoplePropertyItemObjectResponse,
     "Start Date": DatePropertyItemObjectResponse,
     "Nickname": TitlePropertyItemObjectResponse,
     "Tax ID": RichTextPropertyItemObjectResponse,
     "ID/Passport No.": RichTextPropertyItemObjectResponse,
-    "Has Work Permit": CheckboxPropertyItemObjectResponse,
-    "Date of Birth": DatePropertyItemObjectResponse
+    "Date of Birth": DatePropertyItemObjectResponse,
+    "Work Permit Scan": FilesPropertyItemObjectResponse,
+    "Scan QR": FilesPropertyItemObjectResponse
   }
 }
 
@@ -97,7 +92,6 @@ type EmployeesEmploymentTypePropertyFilter =
     }
   | ExistencePropertyFilter      
 
-type EmployeesEmergencyContactPropertyFilter = TextPropertyFilter
 
 export type EmployeesDepartmentPropertyType = EmployeesResponse['properties']['Department']['select']['name']
 
@@ -138,7 +132,6 @@ type EmployeesPaymentFrequencyPropertyFilter =
     }
   | ExistencePropertyFilter      
 
-type EmployeesSkillsPropertyFilter = TextPropertyFilter
 type EmployeesFullNamePropertyFilter = TextPropertyFilter
 type EmployeesDocumentsPropertyFilter = ExistencePropertyFilter
 type EmployeesAddressPropertyFilter = TextPropertyFilter
@@ -146,9 +139,7 @@ type EmployeesNotesPropertyFilter = TextPropertyFilter
 type EmployeesBankAccountDetailsPropertyFilter = TextPropertyFilter
 type EmployeesPhonePropertyFilter = TextPropertyFilter
 type EmployeesPositionPropertyFilter = RelationPropertyFilter
-type EmployeesBioPropertyFilter = TextPropertyFilter
 type EmployeesHometownPropertyFilter = TextPropertyFilter
-type EmployeesEmergencyPhonePropertyFilter = TextPropertyFilter
 
 export type EmployeesEmploymentStatusPropertyType = EmployeesResponse['properties']['Employment Status']['status']['name']
 
@@ -166,10 +157,11 @@ type EmployeesStartDatePropertyFilter = DatePropertyFilter
 type EmployeesNicknamePropertyFilter = TextPropertyFilter
 type EmployeesTaxIdPropertyFilter = TextPropertyFilter
 type EmployeesIdPassportNoPropertyFilter = TextPropertyFilter
-type EmployeesHasWorkPermitPropertyFilter = CheckboxPropertyFilter
 type EmployeesDateOfBirthPropertyFilter = DatePropertyFilter
+type EmployeesWorkPermitScanPropertyFilter = ExistencePropertyFilter
+type EmployeesScanQrPropertyFilter = ExistencePropertyFilter
 
-export type EmployeesPropertyFilter = { visaExpiry: EmployeesVisaExpiryPropertyFilter } | { workPermitExpiry: EmployeesWorkPermitExpiryPropertyFilter } | { photo: EmployeesPhotoPropertyFilter } | { salaryThb: EmployeesSalaryThbPropertyFilter } | { languages: EmployeesLanguagesPropertyFilter } | { employmentType: EmployeesEmploymentTypePropertyFilter } | { emergencyContact: EmployeesEmergencyContactPropertyFilter } | { department: EmployeesDepartmentPropertyFilter } | { endDate: EmployeesEndDatePropertyFilter } | { nationality: EmployeesNationalityPropertyFilter } | { whatsAppLine: EmployeesWhatsAppLinePropertyFilter } | { workPermitNumber: EmployeesWorkPermitNumberPropertyFilter } | { email: EmployeesEmailPropertyFilter } | { paymentFrequency: EmployeesPaymentFrequencyPropertyFilter } | { skills: EmployeesSkillsPropertyFilter } | { fullName: EmployeesFullNamePropertyFilter } | { documents: EmployeesDocumentsPropertyFilter } | { address: EmployeesAddressPropertyFilter } | { notes: EmployeesNotesPropertyFilter } | { bankAccountDetails: EmployeesBankAccountDetailsPropertyFilter } | { phone: EmployeesPhonePropertyFilter } | { position: EmployeesPositionPropertyFilter } | { bio: EmployeesBioPropertyFilter } | { hometown: EmployeesHometownPropertyFilter } | { emergencyPhone: EmployeesEmergencyPhonePropertyFilter } | { employmentStatus: EmployeesEmploymentStatusPropertyFilter } | { reportsTo: EmployeesReportsToPropertyFilter } | { startDate: EmployeesStartDatePropertyFilter } | { nickname: EmployeesNicknamePropertyFilter } | { taxId: EmployeesTaxIdPropertyFilter } | { idPassportNo: EmployeesIdPassportNoPropertyFilter } | { hasWorkPermit: EmployeesHasWorkPermitPropertyFilter } | { dateOfBirth: EmployeesDateOfBirthPropertyFilter }
+export type EmployeesPropertyFilter = { visaExpiry: EmployeesVisaExpiryPropertyFilter } | { workPermitExpiry: EmployeesWorkPermitExpiryPropertyFilter } | { photo: EmployeesPhotoPropertyFilter } | { salaryThb: EmployeesSalaryThbPropertyFilter } | { languages: EmployeesLanguagesPropertyFilter } | { employmentType: EmployeesEmploymentTypePropertyFilter } | { department: EmployeesDepartmentPropertyFilter } | { endDate: EmployeesEndDatePropertyFilter } | { nationality: EmployeesNationalityPropertyFilter } | { whatsAppLine: EmployeesWhatsAppLinePropertyFilter } | { workPermitNumber: EmployeesWorkPermitNumberPropertyFilter } | { email: EmployeesEmailPropertyFilter } | { paymentFrequency: EmployeesPaymentFrequencyPropertyFilter } | { fullName: EmployeesFullNamePropertyFilter } | { documents: EmployeesDocumentsPropertyFilter } | { address: EmployeesAddressPropertyFilter } | { notes: EmployeesNotesPropertyFilter } | { bankAccountDetails: EmployeesBankAccountDetailsPropertyFilter } | { phone: EmployeesPhonePropertyFilter } | { position: EmployeesPositionPropertyFilter } | { hometown: EmployeesHometownPropertyFilter } | { employmentStatus: EmployeesEmploymentStatusPropertyFilter } | { reportsTo: EmployeesReportsToPropertyFilter } | { startDate: EmployeesStartDatePropertyFilter } | { nickname: EmployeesNicknamePropertyFilter } | { taxId: EmployeesTaxIdPropertyFilter } | { idPassportNo: EmployeesIdPassportNoPropertyFilter } | { dateOfBirth: EmployeesDateOfBirthPropertyFilter } | { workPermitScan: EmployeesWorkPermitScanPropertyFilter } | { scanQr: EmployeesScanQrPropertyFilter }
 
 export type EmployeesQuery = Omit<QueryDatabaseBodyParameters, 'filter' | 'sorts'> & {
   sorts?: Array<

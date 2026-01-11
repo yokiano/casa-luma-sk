@@ -81,27 +81,45 @@ export const getManagers = query(async () => {
 		.map(dto => {
 			// Try to find a person ID in Reports To or similar property if available
 			// For now, we'll return the page ID as 'id' and the person ID as 'personId' if found
-			const reportsTo = dto.properties.reportsTo;
-			const personId = reportsTo && reportsTo.length > 0 ? reportsTo[0].id : undefined;
+			const reportsTo = dto.properties.reportsTo as unknown;
+			const personId =
+				Array.isArray(reportsTo) && reportsTo[0] && typeof reportsTo[0] === 'object'
+					? (reportsTo[0] as any).id
+					: undefined;
+			const nickname = dto.properties.nickname?.text;
+			const fullName = dto.properties.fullName?.text;
 			
 			return {
 				id: dto.id,
 				personId,
-				name: dto.properties.nickname.text || dto.properties.fullName.text || 'Unknown'
+				name: nickname || fullName || 'Unknown'
 			};
 		});
 });
 
+function safe<T>(fn: () => T, fallback: T): T {
+	try {
+		return fn();
+	} catch {
+		return fallback;
+	}
+}
+
 function transformEmployee(dto: EmployeesResponseDTO): PublicEmployee {
+	const nickname = dto.properties.nickname?.text;
+	const fullName = dto.properties.fullName?.text;
+
 	return {
 		id: dto.id,
-		name: dto.properties.nickname.text || dto.properties.fullName.text || 'Unknown',
-		fullName: dto.properties.fullName.text || '',
+		name: nickname || fullName || 'Unknown',
+		fullName: fullName || '',
 		roles: [], // dto.properties.position?.values || [], // Relation to Roles DB, names not available in Employee DTO
 		department: dto.properties.department?.name,
-		bio: dto.properties.bio.text || '',
-		photo: dto.properties.photo.urls[0],
-		languages: dto.properties.languages.values,
-		hometown: dto.properties.hometown.text || ''
+		// The Employees SDK schema currently doesn't expose a dedicated "Bio" field.
+		// Keep this stable for callers without leaking internal notes.
+		bio: '',
+		photo: safe(() => dto.properties.photo.urls[0], undefined),
+		languages: dto.properties.languages?.values || [],
+		hometown: dto.properties.hometown?.text || ''
 	};
 }

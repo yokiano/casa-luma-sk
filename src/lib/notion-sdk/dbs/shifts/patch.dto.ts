@@ -12,6 +12,8 @@ export type ShiftsPropertiesPatch = {
   shiftTime?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'date' }>['date']
   role?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'relation' }>['relation']
   shiftNote?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
+  otApprover?: ShiftsResponse['properties']['OT Approver']['multi_select'][number]['name'][]
+  ot?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'number' }>['number']
 }
 
   
@@ -86,6 +88,20 @@ export class ShiftsPatchDTO {
                     annotations: props.shiftNote.annotations
                   },
                 ]
+      }
+    }
+
+    if (props?.otApprover !== undefined) {
+      this.__data.properties['X%3FPo'] = {
+        type: 'multi_select',
+        multi_select: props.otApprover?.map((item) => ({ name: item })),
+      }
+    }
+
+    if (props?.ot !== undefined) {
+      this.__data.properties['aT%5Bq'] = {
+        type: 'number',
+        number: props.ot,
       }
     }
   }

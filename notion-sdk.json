@@ -829,6 +829,12 @@
           "_type": "title",
           "varName": "name",
           "readOnly": false
+        },
+        "vWoE": {
+          "_name": "Link to file",
+          "_type": "rich_text",
+          "varName": "linkToFile",
+          "readOnly": false
         }
       }
     },
@@ -1043,12 +1049,6 @@
           "varName": "employmentType",
           "readOnly": false
         },
-        "EIXp": {
-          "_name": "Emergency Contact",
-          "_type": "rich_text",
-          "varName": "emergencyContact",
-          "readOnly": false
-        },
         "HpjN": {
           "_name": "Department",
           "_type": "select",
@@ -1068,7 +1068,7 @@
           "readOnly": false
         },
         "PPRm": {
-          "_name": "WhatsApp/LINE",
+          "_name": "LINE",
           "_type": "rich_text",
           "varName": "whatsAppLine",
           "readOnly": false
@@ -1089,12 +1089,6 @@
           "_name": "Payment Frequency",
           "_type": "select",
           "varName": "paymentFrequency",
-          "readOnly": false
-        },
-        "crRF": {
-          "_name": "Skills",
-          "_type": "rich_text",
-          "varName": "skills",
           "readOnly": false
         },
         "dNc~": {
@@ -1139,22 +1133,10 @@
           "varName": "position",
           "readOnly": false
         },
-        "owDI": {
-          "_name": "Bio",
-          "_type": "rich_text",
-          "varName": "bio",
-          "readOnly": false
-        },
         "pi%5Dw": {
           "_name": "Hometown",
           "_type": "rich_text",
           "varName": "hometown",
-          "readOnly": false
-        },
-        "r%7BrR": {
-          "_name": "Emergency Phone",
-          "_type": "rich_text",
-          "varName": "emergencyPhone",
           "readOnly": false
         },
         "vCD%5E": {
@@ -1193,16 +1175,22 @@
           "varName": "idPassportNo",
           "readOnly": false
         },
-        "WH%5Da": {
-          "_name": "Has Work Permit",
-          "_type": "checkbox",
-          "varName": "hasWorkPermit",
-          "readOnly": false
-        },
         "tIHh": {
           "_name": "Date of Birth",
           "_type": "date",
           "varName": "dateOfBirth",
+          "readOnly": false
+        },
+        "Z%5ECt": {
+          "_name": "Work Permit Scan",
+          "_type": "files",
+          "varName": "workPermitScan",
+          "readOnly": false
+        },
+        "y%5EAY": {
+          "_name": "Scan QR",
+          "_type": "files",
+          "varName": "scanQr",
           "readOnly": false
         }
       }
@@ -1246,6 +1234,18 @@
           "_name": "Shift Note",
           "_type": "title",
           "varName": "shiftNote",
+          "readOnly": false
+        },
+        "X%3FPo": {
+          "_name": "OT Approver",
+          "_type": "multi_select",
+          "varName": "otApprover",
+          "readOnly": false
+        },
+        "aT%5Bq": {
+          "_name": "OT",
+          "_type": "number",
+          "varName": "ot",
           "readOnly": false
         }
       }
