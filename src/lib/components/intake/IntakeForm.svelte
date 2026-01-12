@@ -1,15 +1,16 @@
 <script lang="ts">
   import { enhance } from "$app/forms";
-  import type { IntakeFormData, Kid, Guardian } from "$lib/types/intake";
+  import type { IntakeFormData } from "$lib/types/intake";
   import PersonListEditor from "./PersonListEditor.svelte";
   import KidCard from "./KidCard.svelte";
   import GuardianCard from "./GuardianCard.svelte";
 
   let formData = $state<IntakeFormData>({
     familyName: "",
+    mainPhone: "",
     email: "",
     kids: [],
-    guardians: [],
+    caregivers: [],
     livesInPhangan: null,
     nationality: "",
     dietaryPreference: "None",
@@ -22,7 +23,7 @@
   function addKid() {
     formData.kids = [
       ...formData.kids,
-      { id: crypto.randomUUID(), name: "", gender: "boy", age: 3 },
+      { id: crypto.randomUUID(), name: "", gender: "Boy", dob: "" },
     ];
   }
 
@@ -30,15 +31,21 @@
     formData.kids = formData.kids.filter((k) => k.id !== id);
   }
 
-  function addGuardian() {
-    formData.guardians = [
-      ...formData.guardians,
-      { id: crypto.randomUUID(), name: "", contactType: "whatsapp", phone: "" },
+  function addCaregiver() {
+    formData.caregivers = [
+      ...formData.caregivers,
+      {
+        id: crypto.randomUUID(),
+        name: "",
+        caregiverRole: "Parent",
+        contactMethod: "WhatsApp",
+        phone: "",
+      },
     ];
   }
 
-  function removeGuardian(id: string) {
-    formData.guardians = formData.guardians.filter((g) => g.id !== id);
+  function removeCaregiver(id: string) {
+    formData.caregivers = formData.caregivers.filter((g) => g.id !== id);
   }
 </script>
 
@@ -97,6 +104,23 @@
       </div>
 
       <div class="space-y-3 bg-card/30 p-5 rounded-2xl border border-border/30">
+        <label for="mainPhone" class="text-lg font-semibold block"
+          >Main Phone <span class="text-destructive">*</span></label
+        >
+        <input
+          id="mainPhone"
+          type="tel"
+          bind:value={formData.mainPhone}
+          class="w-full bg-background border border-input rounded-xl px-4 py-3 text-lg focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+          placeholder="+66 81 234 5678"
+          required
+        />
+        <p class="text-xs text-muted-foreground px-1 italic">
+          This is our primary way to reach you about your child.
+        </p>
+      </div>
+
+      <div class="space-y-3 bg-card/30 p-5 rounded-2xl border border-border/30">
         <div class="flex justify-between items-center">
           <label for="email" class="text-lg font-semibold block"
             >Main Email</label
@@ -135,15 +159,15 @@
 
     <div class="space-y-4">
       <PersonListEditor
-        title="Parents / Guardians"
-        items={formData.guardians}
-        addButtonText="Add Parent/Guardian"
-        onAdd={addGuardian}
-        onRemove={removeGuardian}
-        emptyText="No guardians added yet"
+        title="Parents / Caregivers"
+        items={formData.caregivers}
+        addButtonText="Add Caregiver"
+        onAdd={addCaregiver}
+        onRemove={removeCaregiver}
+        emptyText="No caregivers added yet"
       >
-        {#snippet itemRenderer(guardian, onRemove)}
-          <GuardianCard {guardian} {onRemove} />
+        {#snippet itemRenderer(caregiver, onRemove)}
+          <GuardianCard guardian={caregiver} {onRemove} />
         {/snippet}
       </PersonListEditor>
       <div class="bg-card/30 p-4 rounded-xl border border-border/30">
@@ -152,9 +176,9 @@
           nannies or other regular caregivers. This is a safety measure.
         </p>
       </div>
-      {#if formData.guardians.length === 0}
+      {#if formData.caregivers.length === 0}
         <p class="text-sm text-destructive font-medium px-1">
-          At least one parent or guardian is required.
+          At least one caregiver is required.
         </p>
       {/if}
     </div>
@@ -304,7 +328,7 @@
     <div class="pt-4 pb-12">
       <button
         type="submit"
-        disabled={submitting || formData.guardians.length === 0}
+        disabled={submitting || formData.caregivers.length === 0}
         class="w-full bg-primary text-primary-foreground font-bold text-xl py-4 rounded-xl shadow-lg hover:bg-primary/90 hover:shadow-xl hover:-translate-y-0.5 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
       >
         {submitting ? "Submitting..." : "Complete Registration"}

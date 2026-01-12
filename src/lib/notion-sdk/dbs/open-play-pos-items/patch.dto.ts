@@ -7,7 +7,6 @@ type TypeFromRecord<Obj, Type> = Obj extends Record<string, infer T> ? Extract<T
 
 export type OpenPlayPosItemsPropertiesPatch = {
   highlight?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'checkbox' }>['checkbox']
-  iconChar?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   foodDiscount?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   id?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   workshopsIncluded?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
@@ -42,28 +41,6 @@ export class OpenPlayPosItemsPatchDTO {
       this.__data.properties['%3BTO~'] = {
         type: 'checkbox',
         checkbox: props.highlight,
-      }
-    }
-
-    if (props?.iconChar !== undefined) {
-      this.__data.properties['%3C%5DT%3A'] = {
-        type: 'rich_text',
-        rich_text: typeof props.iconChar === 'string' 
-          ? [{ type: 'text', text: { content: props.iconChar } }]
-          : Array.isArray(props.iconChar)
-            ? props.iconChar
-            : props.iconChar === null
-              ? []
-              : [
-                  {
-                    type: 'text',
-                    text: {
-                      content: props.iconChar.text,
-                      link: props.iconChar?.url ? { url: props.iconChar.url } : undefined
-                    },
-                    annotations: props.iconChar.annotations
-                  },
-                ]
       }
     }
 

@@ -62,7 +62,6 @@ export class OpenPlayPosItemsPropertiesResponseDTO {
     this.__props = props
     this.__data = {
       highlight: this.__props['Highlight'],
-      iconChar: this.__props['Icon Char'],
       foodDiscount: this.__props['Food Discount'],
       id: this.__props['ID'],
       workshopsIncluded: this.__props['Workshops Included'],
@@ -79,14 +78,6 @@ export class OpenPlayPosItemsPropertiesResponseDTO {
 
   get highlight() {
     return this.__props['Highlight']?.checkbox
-  }
-
-  get iconChar() {
-    return {
-      text: this.__props['Icon Char']?.rich_text ? this.__props['Icon Char'].rich_text.reduce((acc, item) => acc + item.plain_text, '') : undefined,
-      links: this.__props['Icon Char']?.rich_text ? this.__props['Icon Char'].rich_text.filter((item) => item.href?.length).map((item) => item.href) : [],
-      rich_text: this.__props['Icon Char']?.rich_text,
-    }
   }
 
   get foodDiscount() {

@@ -39,6 +39,10 @@ export const EMPLOYEES_PROP_VALUES = {
   "Terminated",
   "Contract Ended"
 ] as const,
+"salaryCalculation": [
+  "Monthly",
+  "Daily"
+] as const,
 }
 
 export const EMPLOYEES_PROPS_TO_IDS = {
@@ -71,7 +75,8 @@ export const EMPLOYEES_PROPS_TO_IDS = {
   "idPassportNo": "IaO%3B",
   "dateOfBirth": "tIHh",
   "workPermitScan": "Z%5ECt",
-  "scanQr": "y%5EAY"
+  "scanQr": "y%5EAY",
+  "salaryCalculation": "UqIQ"
 } as const
 export const EMPLOYEES_IDS_TO_PROPS = {
   "%3CK%5BF": "visaExpiry",
@@ -103,7 +108,8 @@ export const EMPLOYEES_IDS_TO_PROPS = {
   "IaO%3B": "idPassportNo",
   "tIHh": "dateOfBirth",
   "Z%5ECt": "workPermitScan",
-  "y%5EAY": "scanQr"
+  "y%5EAY": "scanQr",
+  "UqIQ": "salaryCalculation"
 } as const
 export const EMPLOYEES_PROPS_TO_TYPES = {
   "visaExpiry": "date",
@@ -135,7 +141,8 @@ export const EMPLOYEES_PROPS_TO_TYPES = {
   "idPassportNo": "rich_text",
   "dateOfBirth": "date",
   "workPermitScan": "files",
-  "scanQr": "files"
+  "scanQr": "files",
+  "salaryCalculation": "select"
 } as const
 
   export type EmployeesDTOProperties = keyof typeof EMPLOYEES_PROPS_TO_IDS

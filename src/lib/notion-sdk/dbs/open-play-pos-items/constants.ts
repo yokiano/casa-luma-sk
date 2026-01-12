@@ -23,7 +23,6 @@ export const OPEN_PLAY_POS_ITEMS_PROP_VALUES = {
 
 export const OPEN_PLAY_POS_ITEMS_PROPS_TO_IDS = {
   "highlight": "%3BTO~",
-  "iconChar": "%3C%5DT%3A",
   "foodDiscount": "RWeU",
   "id": "Y%3E%7Cv",
   "workshopsIncluded": "sQCI",
@@ -37,7 +36,6 @@ export const OPEN_PLAY_POS_ITEMS_PROPS_TO_IDS = {
 } as const
 export const OPEN_PLAY_POS_ITEMS_IDS_TO_PROPS = {
   "%3BTO~": "highlight",
-  "%3C%5DT%3A": "iconChar",
   "RWeU": "foodDiscount",
   "Y%3E%7Cv": "id",
   "sQCI": "workshopsIncluded",
@@ -51,7 +49,6 @@ export const OPEN_PLAY_POS_ITEMS_IDS_TO_PROPS = {
 } as const
 export const OPEN_PLAY_POS_ITEMS_PROPS_TO_TYPES = {
   "highlight": "checkbox",
-  "iconChar": "rich_text",
   "foodDiscount": "rich_text",
   "id": "rich_text",
   "workshopsIncluded": "rich_text",

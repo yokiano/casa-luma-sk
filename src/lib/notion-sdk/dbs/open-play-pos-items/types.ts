@@ -21,7 +21,6 @@ import { OPEN_PLAY_POS_ITEMS_PROPS_TO_IDS } from './constants'
 export interface OpenPlayPosItemsResponse extends WithOptional<Omit<DatabaseObjectResponse, 'properties'>, 'title'| 'description'| 'is_inline'| 'url'| 'public_url'> {
   properties: {
     "Highlight": CheckboxPropertyItemObjectResponse,
-    "Icon Char": RichTextPropertyItemObjectResponse,
     "Food Discount": RichTextPropertyItemObjectResponse,
     "ID": RichTextPropertyItemObjectResponse,
     "Workshops Included": RichTextPropertyItemObjectResponse,
@@ -39,7 +38,6 @@ export type OpenPlayPosItemsResponseProperties = keyof OpenPlayPosItemsResponse[
 export type OpenPlayPosItemsPath = Join<PathsToStringProps<OpenPlayPosItemsResponse>>
 
 type OpenPlayPosItemsHighlightPropertyFilter = CheckboxPropertyFilter
-type OpenPlayPosItemsIconCharPropertyFilter = TextPropertyFilter
 type OpenPlayPosItemsFoodDiscountPropertyFilter = TextPropertyFilter
 type OpenPlayPosItemsIdPropertyFilter = TextPropertyFilter
 type OpenPlayPosItemsWorkshopsIncludedPropertyFilter = TextPropertyFilter
@@ -73,7 +71,7 @@ type OpenPlayPosItemsCategoryPropertyFilter =
 
 type OpenPlayPosItemsLoyverseIdPropertyFilter = TextPropertyFilter
 
-export type OpenPlayPosItemsPropertyFilter = { highlight: OpenPlayPosItemsHighlightPropertyFilter } | { iconChar: OpenPlayPosItemsIconCharPropertyFilter } | { foodDiscount: OpenPlayPosItemsFoodDiscountPropertyFilter } | { id: OpenPlayPosItemsIdPropertyFilter } | { workshopsIncluded: OpenPlayPosItemsWorkshopsIncludedPropertyFilter } | { duration: OpenPlayPosItemsDurationPropertyFilter } | { perks: OpenPlayPosItemsPerksPropertyFilter } | { access: OpenPlayPosItemsAccessPropertyFilter } | { priceBaht: OpenPlayPosItemsPriceBahtPropertyFilter } | { name: OpenPlayPosItemsNamePropertyFilter } | { category: OpenPlayPosItemsCategoryPropertyFilter } | { loyverseId: OpenPlayPosItemsLoyverseIdPropertyFilter }
+export type OpenPlayPosItemsPropertyFilter = { highlight: OpenPlayPosItemsHighlightPropertyFilter } | { foodDiscount: OpenPlayPosItemsFoodDiscountPropertyFilter } | { id: OpenPlayPosItemsIdPropertyFilter } | { workshopsIncluded: OpenPlayPosItemsWorkshopsIncludedPropertyFilter } | { duration: OpenPlayPosItemsDurationPropertyFilter } | { perks: OpenPlayPosItemsPerksPropertyFilter } | { access: OpenPlayPosItemsAccessPropertyFilter } | { priceBaht: OpenPlayPosItemsPriceBahtPropertyFilter } | { name: OpenPlayPosItemsNamePropertyFilter } | { category: OpenPlayPosItemsCategoryPropertyFilter } | { loyverseId: OpenPlayPosItemsLoyverseIdPropertyFilter }
 
 export type OpenPlayPosItemsQuery = Omit<QueryDatabaseBodyParameters, 'filter' | 'sorts'> & {
   sorts?: Array<

@@ -4,6 +4,34 @@ import sharp from 'sharp';
 
 const BASE_URL = 'https://api.loyverse.com/v1.0';
 
+export interface LoyverseCustomer {
+  id: string;
+  customer_id?: string;
+  name: string;
+  email?: string;
+  phone_number?: string;
+  address?: string;
+  note?: string;
+  created_at?: string;
+  updated_at?: string;
+  deleted_at?: string;
+}
+
+export interface CreateLoyverseCustomerPayload {
+  /**
+   * Loyverse internal ID. If included, should update existing customer (if supported).
+   * Prefer using email-based upsert behavior instead.
+   */
+  id?: string;
+  /** External reference ID */
+  customer_id?: string;
+  name: string;
+  email?: string;
+  phone_number?: string;
+  address?: string;
+  note?: string;
+}
+
 export interface LoyverseItem {
   id: string;
   handle: string;
@@ -141,6 +169,11 @@ interface GetCategoriesResponse {
   cursor?: string;
 }
 
+interface GetCustomersResponse {
+  customers: LoyverseCustomer[];
+  cursor?: string;
+}
+
 interface GetItemsResponse {
   items: LoyverseItem[];
   cursor?: string;
@@ -194,6 +227,43 @@ class LoyverseClient {
       console.warn(`Loyverse API: Failed to parse JSON response from ${endpoint}`, e);
       return {} as T;
     }
+  }
+
+  // --- Customers ---
+
+  async getCustomers(limit = 50, cursor?: string): Promise<GetCustomersResponse> {
+    const params = new URLSearchParams();
+    params.append('limit', limit.toString());
+    if (cursor) {
+      params.append('cursor', cursor);
+    }
+
+    return this.request<GetCustomersResponse>(`/customers?${params.toString()}`);
+  }
+
+  async getAllCustomers(): Promise<LoyverseCustomer[]> {
+    let allCustomers: LoyverseCustomer[] = [];
+    let cursor: string | undefined;
+
+    do {
+      const response = await this.getCustomers(250, cursor);
+      const activeCustomers = response.customers.filter(c => !c.deleted_at);
+      allCustomers = allCustomers.concat(activeCustomers);
+      cursor = response.cursor;
+    } while (cursor);
+
+    return allCustomers;
+  }
+
+  /**
+   * Create (or update) a customer.
+   * Loyverse behavior: if `email` matches an existing customer, it updates that customer.
+   */
+  async createOrUpdateCustomer(customer: CreateLoyverseCustomerPayload): Promise<LoyverseCustomer> {
+    return this.request<LoyverseCustomer>('/customers', {
+      method: 'POST',
+      body: JSON.stringify(customer),
+    });
   }
 
   async getItems(limit = 50, cursor?: string): Promise<GetItemsResponse> {

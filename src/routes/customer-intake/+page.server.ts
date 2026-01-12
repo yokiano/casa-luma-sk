@@ -1,6 +1,49 @@
 import type { Actions } from './$types';
 import { fail } from '@sveltejs/kit';
 import type { IntakeFormData } from '$lib/types/intake';
+import { NOTION_API_KEY } from '$env/static/private';
+import {
+  FamiliesDatabase,
+  FamiliesPatchDTO,
+  type FamiliesDietaryPreferenceFamilyPropertyType,
+  type FamiliesHowDidYouHearAboutUsPropertyType,
+} from '$lib/notion-sdk/dbs/families';
+import { FamilyMembersDatabase, FamilyMembersPatchDTO } from '$lib/notion-sdk/dbs/family-members';
+import { loyverse } from '$lib/server/loyverse';
+
+function normalizeDietaryPreference(input: string): {
+  value: FamiliesDietaryPreferenceFamilyPropertyType;
+  extraNote?: string;
+} {
+  const trimmed = (input ?? '').trim();
+
+  if (!trimmed) return { value: 'None' };
+  if (trimmed === 'None') return { value: 'None' };
+  if (trimmed === 'Vegetarian') return { value: 'Vegetarian' };
+  if (trimmed === 'Vegan') return { value: 'Vegan' };
+  if (trimmed === 'Gluten Free') return { value: 'Gluten Free' };
+  if (trimmed === 'Other') return { value: 'Other' };
+
+  return { value: 'Other', extraNote: `Dietary preference: ${trimmed}` };
+}
+
+function normalizeHowDidYouHear(input: string): {
+  value?: FamiliesHowDidYouHearAboutUsPropertyType;
+  extraNote?: string;
+} {
+  const trimmed = (input ?? '').trim();
+  if (!trimmed) return { value: undefined };
+
+  // Keep in sync with the form <select> values
+  if (trimmed === 'instagram') return { value: 'Instagram' };
+  if (trimmed === 'facebook') return { value: 'Facebook' };
+  if (trimmed === 'google') return { value: 'Google' };
+  if (trimmed === 'friend') return { value: 'Friend' };
+  if (trimmed === 'walkin') return { value: 'Walk-in' };
+  if (trimmed === 'other') return { value: 'Other' };
+
+  return { value: 'Other', extraNote: `How did you hear about us?: ${trimmed}` };
+}
 
 export const actions: Actions = {
   submit: async ({ request }) => {
@@ -15,16 +58,104 @@ export const actions: Actions = {
       const data: IntakeFormData = JSON.parse(rawData);
       
       // Basic Validation
-      if (!data.familyName) {
+      if (!data.familyName?.trim()) {
         return fail(400, { success: false, message: 'Family name is required' });
       }
+      if (!data.mainPhone?.trim()) {
+        return fail(400, { success: false, message: 'Main phone is required' });
+      }
+      if (!Array.isArray(data.caregivers) || data.caregivers.length === 0) {
+        return fail(400, { success: false, message: 'At least one caregiver is required' });
+      }
 
-      // Log to console for now as requested
-      console.log('--- NEW CUSTOMER INTAKE ---');
-      console.log(JSON.stringify(data, null, 2));
-      console.log('---------------------------');
+      // --- Save to Notion (Families + Family Members) ---
+      const familiesDb = new FamiliesDatabase({ notionSecret: NOTION_API_KEY });
+      const membersDb = new FamilyMembersDatabase({ notionSecret: NOTION_API_KEY });
 
-      // In future: Save to Notion
+      const dietary = normalizeDietaryPreference(data.dietaryPreference);
+      const heard = normalizeHowDidYouHear(data.howDidYouHear);
+
+      const extraNotes = [dietary.extraNote, heard.extraNote].filter(Boolean).join('\n');
+      const specialNotes = [data.specialNotes?.trim(), extraNotes].filter(Boolean).join('\n');
+
+      const familyPage = await familiesDb.createPage(
+        new FamiliesPatchDTO({
+          properties: {
+            familyName: data.familyName.trim(),
+            mainPhone: data.mainPhone.trim(),
+            mainEmail: data.email?.trim() ? data.email.trim() : undefined,
+            livesInKohPhangan: data.livesInPhangan ?? undefined,
+            nationality: data.nationality?.trim() ? data.nationality.trim() : undefined,
+            dietaryPreferenceFamily: dietary.value,
+            howDidYouHearAboutUs: heard.value,
+            specialNotes,
+            status: 'Active',
+          },
+        }),
+      );
+
+      const memberPages = await Promise.all([
+        ...data.kids.map((kid) =>
+          membersDb.createPage(
+            new FamilyMembersPatchDTO({
+              properties: {
+                name: kid.name?.trim() ? kid.name.trim() : 'Kid',
+                memberType: 'Kid',
+                gender: kid.gender,
+                dob: kid.dob?.trim() ? { start: kid.dob.trim() } : undefined,
+                notes: kid.notes?.trim() ? kid.notes.trim() : undefined,
+                family: [{ id: familyPage.id }],
+              },
+            }),
+          ),
+        ),
+        ...data.caregivers.map((cg) =>
+          membersDb.createPage(
+            new FamilyMembersPatchDTO({
+              properties: {
+                name: cg.name?.trim() ? cg.name.trim() : 'Caregiver',
+                memberType: 'Caregiver',
+                caregiverRole: cg.caregiverRole,
+                contactMethod: cg.contactMethod,
+                phone: cg.phone?.trim() ? cg.phone.trim() : undefined,
+                notes: cg.notes?.trim() ? cg.notes.trim() : undefined,
+                family: [{ id: familyPage.id }],
+              },
+            }),
+          ),
+        ),
+      ]);
+
+      // Ensure Families.Members is populated even if the relation isn't 2-way
+      await familiesDb.updatePage(
+        familyPage.id,
+        new FamiliesPatchDTO({
+          properties: {
+            members: memberPages.map((p) => ({ id: p.id })),
+          },
+        }),
+      );
+
+      // --- Sync to Loyverse Customers ---
+      try {
+        const loyverseCustomer = await loyverse.createOrUpdateCustomer({
+          name: data.familyName.trim(),
+          email: data.email?.trim() ? data.email.trim() : undefined,
+          phone_number: data.mainPhone.trim(),
+          note: 'Created from Casa Luma customer intake form',
+        });
+
+        await familiesDb.updatePage(
+          familyPage.id,
+          new FamiliesPatchDTO({
+            properties: {
+              loyverseCustomerId: loyverseCustomer.id,
+            },
+          }),
+        );
+      } catch (e) {
+        console.error('[customer-intake] Loyverse sync failed:', e);
+      }
 
       return { success: true };
     } catch (error) {

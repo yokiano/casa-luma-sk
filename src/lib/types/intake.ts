@@ -1,8 +1,9 @@
 export interface IntakeFormData {
   familyName: string;
+  mainPhone: string;
   email?: string;
   kids: Kid[];
-  guardians: Guardian[];
+  caregivers: Caregiver[];
   livesInPhangan: boolean | null;
   nationality?: string;
   dietaryPreference: string;
@@ -13,15 +14,16 @@ export interface IntakeFormData {
 export interface Kid {
   id: string;
   name: string;
-  gender: 'boy' | 'girl';
-  age: number;
+  gender: 'Boy' | 'Girl';
+  dob: string; // YYYY-MM-DD (from <input type="date" />)
   notes?: string;
 }
 
-export interface Guardian {
+export interface Caregiver {
   id: string;
   name: string;
-  contactType: 'thai' | 'whatsapp';
+  caregiverRole: 'Parent' | 'Caregiver';
+  contactMethod: 'Thai Phone' | 'WhatsApp';
   phone: string;
   notes?: string;
 }

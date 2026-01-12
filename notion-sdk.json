@@ -940,12 +940,6 @@
           "varName": "highlight",
           "readOnly": false
         },
-        "%3C%5DT%3A": {
-          "_name": "Icon Char",
-          "_type": "rich_text",
-          "varName": "iconChar",
-          "readOnly": false
-        },
         "RWeU": {
           "_name": "Food Discount",
           "_type": "rich_text",
@@ -1191,6 +1185,12 @@
           "_name": "Scan QR",
           "_type": "files",
           "varName": "scanQr",
+          "readOnly": false
+        },
+        "UqIQ": {
+          "_name": "Salary Calculation",
+          "_type": "select",
+          "varName": "salaryCalculation",
           "readOnly": false
         }
       }
@@ -1501,49 +1501,6 @@
         }
       }
     },
-    "ebb7a436-a2bd-402d-88cb-59d095a57609": {
-      "_name": "SOP Catalog",
-      "varName": "sopCatalog",
-      "pathName": "sop-catalog",
-      "properties": {
-        "%40pJj": {
-          "_name": "Role",
-          "_type": "relation",
-          "varName": "role",
-          "readOnly": false
-        },
-        "JsMl": {
-          "_name": "When",
-          "_type": "select",
-          "varName": "when",
-          "readOnly": false
-        },
-        "%5D%40Pq": {
-          "_name": "Status",
-          "_type": "status",
-          "varName": "status",
-          "readOnly": false
-        },
-        "pf%60b": {
-          "_name": "SOP Type",
-          "_type": "select",
-          "varName": "sopType",
-          "readOnly": false
-        },
-        "ybjG": {
-          "_name": "Department",
-          "_type": "select",
-          "varName": "department",
-          "readOnly": false
-        },
-        "title": {
-          "_name": "Name",
-          "_type": "title",
-          "varName": "name",
-          "readOnly": false
-        }
-      }
-    },
     "344408c3-1b29-4510-a726-0d09a25ba7c4": {
       "_name": "End of Shift Reports",
       "varName": "endOfShiftReports",
@@ -1661,6 +1618,146 @@
           "_name": "Coin 2 Baht 1",
           "_type": "number",
           "varName": "coin_2Baht_1",
+          "readOnly": false
+        }
+      }
+    },
+    "31ab63b7-3278-4d59-a20a-e0427f1c9431": {
+      "_name": "Family Members",
+      "varName": "familyMembers",
+      "pathName": "family-members",
+      "properties": {
+        "%3BsKT": {
+          "_name": "Member Type",
+          "_type": "select",
+          "varName": "memberType",
+          "readOnly": false
+        },
+        "Lptv": {
+          "_name": "Contact Method",
+          "_type": "select",
+          "varName": "contactMethod",
+          "readOnly": false
+        },
+        "N%7CR%3C": {
+          "_name": "Caregiver Role",
+          "_type": "select",
+          "varName": "caregiverRole",
+          "readOnly": false
+        },
+        "T%3AgX": {
+          "_name": "Notes",
+          "_type": "rich_text",
+          "varName": "notes",
+          "readOnly": false
+        },
+        "TSd~": {
+          "_name": "Email",
+          "_type": "email",
+          "varName": "email",
+          "readOnly": false
+        },
+        "YFwB": {
+          "_name": "DOB",
+          "_type": "date",
+          "varName": "dob",
+          "readOnly": false
+        },
+        "g%60j%7D": {
+          "_name": "Gender",
+          "_type": "select",
+          "varName": "gender",
+          "readOnly": false
+        },
+        "qI%7Cv": {
+          "_name": "Family",
+          "_type": "relation",
+          "varName": "family",
+          "readOnly": false
+        },
+        "%7Djl%5C": {
+          "_name": "Phone",
+          "_type": "phone_number",
+          "varName": "phone",
+          "readOnly": false
+        },
+        "title": {
+          "_name": "Name",
+          "_type": "title",
+          "varName": "name",
+          "readOnly": false
+        }
+      }
+    },
+    "4dd6c32d-9b02-44fb-bed6-e6b41033e598": {
+      "_name": "Families",
+      "varName": "families",
+      "pathName": "families",
+      "properties": {
+        "AA%5B%5B": {
+          "_name": "Main Email",
+          "_type": "email",
+          "varName": "mainEmail",
+          "readOnly": false
+        },
+        "Ai%5Cc": {
+          "_name": "Lives in Koh Phangan",
+          "_type": "checkbox",
+          "varName": "livesInKohPhangan",
+          "readOnly": false
+        },
+        "LgsR": {
+          "_name": "Loyverse Customer ID",
+          "_type": "rich_text",
+          "varName": "loyverseCustomerId",
+          "readOnly": false
+        },
+        "LiO%5D": {
+          "_name": "Status",
+          "_type": "select",
+          "varName": "status",
+          "readOnly": false
+        },
+        "R%5BPE": {
+          "_name": "Nationality",
+          "_type": "rich_text",
+          "varName": "nationality",
+          "readOnly": false
+        },
+        "SC%3FD": {
+          "_name": "Members",
+          "_type": "relation",
+          "varName": "members",
+          "readOnly": false
+        },
+        "e%3Faj": {
+          "_name": "Main Phone",
+          "_type": "phone_number",
+          "varName": "mainPhone",
+          "readOnly": false
+        },
+        "e~QZ": {
+          "_name": "Special Notes",
+          "_type": "rich_text",
+          "varName": "specialNotes",
+          "readOnly": false
+        },
+        "klPk": {
+          "_name": "Dietary Preference (Family)",
+          "_type": "select",
+          "varName": "dietaryPreferenceFamily",
+          "readOnly": false
+        },
+        "mKsK": {
+          "_name": "How did you hear about us?",
+          "_type": "select",
+          "varName": "howDidYouHearAboutUs",
+          "readOnly": false
+        },
+        "title": {
+          "_name": "Family Name",
+          "_type": "title",
+          "varName": "familyName",
           "readOnly": false
         }
       }

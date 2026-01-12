@@ -36,6 +36,7 @@ export type EmployeesPropertiesPatch = {
   dateOfBirth?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'date' }>['date']
   workPermitScan?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'files' }>['files']
   scanQr?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'files' }>['files']
+  salaryCalculation?: EmployeesResponse['properties']['Salary Calculation']['select']['name']
 }
 
   
@@ -413,6 +414,13 @@ export class EmployeesPatchDTO {
       this.__data.properties['y%5EAY'] = {
         type: 'files',
         files: props.scanQr,
+      }
+    }
+
+    if (props?.salaryCalculation !== undefined) {
+      this.__data.properties['UqIQ'] = {
+        type: 'select',
+        select: { name: props.salaryCalculation },
       }
     }
   }

@@ -91,6 +91,7 @@ export class EmployeesPropertiesResponseDTO {
       dateOfBirth: this.__props['Date of Birth'],
       workPermitScan: this.__props['Work Permit Scan'],
       scanQr: this.__props['Scan QR'],
+      salaryCalculation: this.__props['Salary Calculation'],
     }
   }
 
@@ -277,4 +278,8 @@ export class EmployeesPropertiesResponseDTO {
     }
   }
 
+
+  get salaryCalculation() {
+    return this.__props['Salary Calculation']?.select
+  }
 }
