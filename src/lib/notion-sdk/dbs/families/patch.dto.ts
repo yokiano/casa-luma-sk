@@ -17,6 +17,7 @@ export type FamiliesPropertiesPatch = {
   dietaryPreferenceFamily?: FamiliesResponse['properties']['Dietary Preference (Family)']['select']['name']
   howDidYouHearAboutUs?: FamiliesResponse['properties']['How did you hear about us?']['select']['name']
   familyName?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
+  customerNumber?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
 }
 
   
@@ -169,6 +170,28 @@ export class FamiliesPatchDTO {
                       link: props.familyName?.url ? { url: props.familyName.url } : undefined
                     },
                     annotations: props.familyName.annotations
+                  },
+                ]
+      }
+    }
+
+    if (props?.customerNumber !== undefined) {
+      this.__data.properties['hO%3Eb'] = {
+        type: 'rich_text',
+        rich_text: typeof props.customerNumber === 'string' 
+          ? [{ type: 'text', text: { content: props.customerNumber } }]
+          : Array.isArray(props.customerNumber)
+            ? props.customerNumber
+            : props.customerNumber === null
+              ? []
+              : [
+                  {
+                    type: 'text',
+                    text: {
+                      content: props.customerNumber.text,
+                      link: props.customerNumber?.url ? { url: props.customerNumber.url } : undefined
+                    },
+                    annotations: props.customerNumber.annotations
                   },
                 ]
       }

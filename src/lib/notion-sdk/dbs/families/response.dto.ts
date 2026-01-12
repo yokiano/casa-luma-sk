@@ -72,6 +72,7 @@ export class FamiliesPropertiesResponseDTO {
       dietaryPreferenceFamily: this.__props['Dietary Preference (Family)'],
       howDidYouHearAboutUs: this.__props['How did you hear about us?'],
       familyName: this.__props['Family Name'],
+      customerNumber: this.__props['Customer Code'],
     }
   }
 
@@ -134,6 +135,14 @@ export class FamiliesPropertiesResponseDTO {
       text: this.__props['Family Name']?.title ? this.__props['Family Name'].title.reduce((acc, item) => acc + item.plain_text, '') : undefined,
       links: this.__props['Family Name']?.title ? this.__props['Family Name'].title.filter((item) => item.href?.length).map((item) => item.href) : [],
       title: this.__props['Family Name']?.title,
+    }
+  }
+
+  get customerNumber() {
+    return {
+      text: this.__props['Customer Code']?.rich_text ? this.__props['Customer Code'].rich_text.reduce((acc, item) => acc + item.plain_text, '') : undefined,
+      links: this.__props['Customer Code']?.rich_text ? this.__props['Customer Code'].rich_text.filter((item) => item.href?.length).map((item) => item.href) : [],
+      rich_text: this.__props['Customer Code']?.rich_text,
     }
   }
 }

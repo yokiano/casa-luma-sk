@@ -1,6 +1,9 @@
 <script lang="ts">
   import { enhance } from "$app/forms";
+  import { browser } from '$app/environment';
   import type { IntakeFormData } from "$lib/types/intake";
+  import { toast } from 'svelte-sonner';
+  import { fade } from 'svelte/transition';
   import PersonListEditor from "./PersonListEditor.svelte";
   import KidCard from "./KidCard.svelte";
   import GuardianCard from "./GuardianCard.svelte";
@@ -19,6 +22,39 @@
   });
 
   let submitting = $state(false);
+  let success = $state(false);
+
+  async function runConfetti() {
+    if (!browser) return;
+
+    const mod = await import('canvas-confetti');
+    const confetti = (mod as unknown as { default?: (opts: unknown) => void }).default ?? (mod as unknown as (opts: unknown) => void);
+
+    confetti({
+      particleCount: 120,
+      spread: 70,
+      startVelocity: 35,
+      scalar: 0.9,
+      origin: { y: 0.7 },
+      colors: ['#5c4a3d', '#d4a373', '#e7d8c9', '#b08968'],
+    });
+  }
+
+  function resetForm() {
+    success = false;
+    formData = {
+      familyName: "",
+      mainPhone: "",
+      email: "",
+      kids: [],
+      caregivers: [],
+      livesInPhangan: null,
+      nationality: "",
+      dietaryPreference: "None",
+      howDidYouHear: "",
+      specialNotes: "",
+    };
+  }
 
   function addKid() {
     formData.kids = [
@@ -54,39 +90,83 @@
     <div class="w-10"></div>
   </div>
 
-  <div class="text-center space-y-4">
-    <div class="space-y-2">
-      <h1 class="text-3xl sm:text-4xl font-bold text-primary tracking-tight">
-        Welcome to Casa Luma
-      </h1>
-      <p class="text-xl sm:text-2xl font-semibold text-secondary">
-        We want to know you better
-      </p>
-    </div>
-    <div
-      class="bg-red-50 p-4 rounded-2xl border border-red-200 max-w-sm mx-auto"
-    >
-      <p class="text-sm text-red-400/80 leading-relaxed font-medium">
-        We ask for this information to help us keep everyone safe and to provide
-        the best experience for your family. Rest assured, your details won’t be
-        stored or shared.
-      </p>
-    </div>
-  </div>
+  {#if success}
+    <div in:fade class="space-y-6">
+      <div class="text-center space-y-4">
+        <div class="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center text-green-700 text-3xl">
+          ✓
+        </div>
+        <h1 class="text-3xl sm:text-4xl font-bold tracking-tight text-[#5c4a3d]">
+          Registration received
+        </h1>
+        <p class="text-muted-foreground text-base leading-relaxed">
+          Thank you. We saved your details and will contact you if we need anything else.
+        </p>
+      </div>
 
-  <form
-    method="POST"
-    action="?/submit"
-    use:enhance={() => {
-      submitting = true;
-      return async ({ update, result }) => {
-        submitting = false;
-        await update();
-      };
-    }}
-    class="space-y-10"
-  >
-    <input type="hidden" name="data" value={JSON.stringify(formData)} />
+      <button
+        type="button"
+        class="w-full bg-secondary text-primary font-semibold text-lg py-4 rounded-xl hover:bg-secondary/80 transition-colors"
+        onclick={() => {
+          resetForm();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+      >
+        Submit another registration
+      </button>
+    </div>
+  {:else}
+    <div class="text-center space-y-4">
+      <div class="space-y-2">
+        <h1 class="text-3xl sm:text-4xl font-bold text-primary tracking-tight">
+          Welcome to Casa Luma
+        </h1>
+        <p class="text-xl sm:text-2xl font-semibold text-secondary">
+          We want to know you better
+        </p>
+      </div>
+      <div
+        class="bg-red-50 p-4 rounded-2xl border border-red-200 max-w-sm mx-auto"
+      >
+        <p class="text-sm text-red-400/80 leading-relaxed font-medium">
+          We ask for this information to help us keep everyone safe and to provide
+          the best experience for your family. Rest assured, your details won’t be
+          stored or shared.
+        </p>
+      </div>
+    </div>
+
+    <form
+      method="POST"
+      action="?/submit"
+      use:enhance={() => {
+        submitting = true;
+        return async ({ update, result }) => {
+          submitting = false;
+
+          if (result.type === 'success') {
+            const data = result.data as unknown as { success?: boolean; message?: string };
+            if (data?.success) {
+              success = true;
+              toast.success('Sent successfully');
+              await runConfetti();
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+              toast.error(data?.message ?? 'Submission failed');
+            }
+          } else if (result.type === 'failure') {
+            const data = result.data as unknown as { message?: string };
+            toast.error(data?.message ?? 'Please review the form and try again');
+          } else if (result.type === 'error') {
+            toast.error('Server error');
+          }
+
+          await update();
+        };
+      }}
+      class="space-y-10"
+    >
+      <input type="hidden" name="data" value={JSON.stringify(formData)} />
 
     <div class="space-y-6">
       <div class="space-y-3 bg-card/30 p-5 rounded-2xl border border-border/30">
@@ -334,5 +414,6 @@
         {submitting ? "Submitting..." : "Complete Registration"}
       </button>
     </div>
-  </form>
+    </form>
+  {/if}
 </div>

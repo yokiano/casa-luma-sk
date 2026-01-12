@@ -10,6 +10,7 @@ import {
 } from '$lib/notion-sdk/dbs/families';
 import { FamilyMembersDatabase, FamilyMembersPatchDTO } from '$lib/notion-sdk/dbs/family-members';
 import { loyverse } from '$lib/server/loyverse';
+import { assignFamilyCustomerCode } from '$lib/server/customer-code';
 
 function normalizeDietaryPreference(input: string): {
   value: FamiliesDietaryPreferenceFamilyPropertyType;
@@ -94,6 +95,12 @@ export const actions: Actions = {
         }),
       );
 
+      const customerCode = await assignFamilyCustomerCode({
+        familiesDb,
+        familyPageId: familyPage.id,
+        familyName: data.familyName.trim(),
+      });
+
       const memberPages = await Promise.all([
         ...data.kids.map((kid) =>
           membersDb.createPage(
@@ -139,10 +146,11 @@ export const actions: Actions = {
       // --- Sync to Loyverse Customers ---
       try {
         const loyverseCustomer = await loyverse.createOrUpdateCustomer({
+          customer_code: customerCode,
           name: data.familyName.trim(),
           email: data.email?.trim() ? data.email.trim() : undefined,
           phone_number: data.mainPhone.trim(),
-          note: 'Created from Casa Luma customer intake form',
+          note: `Created from Casa Luma customer intake form [${customerCode}]`,
         });
 
         await familiesDb.updatePage(

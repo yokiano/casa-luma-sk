@@ -56,6 +56,7 @@
 	},
 	"dependencies": {
 		"@notionhq/client": "^5.1.0",
+		"canvas-confetti": "^1.9.4",
 		"dotenv": "^16.4.5",
 		"modern-screenshot": "^4.6.6",
 		"sharp": "^0.34.5",

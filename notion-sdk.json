@@ -1250,43 +1250,6 @@
         }
       }
     },
-    "8a6cc48c-180b-452e-ae4f-80fe64b749f7": {
-      "_name": "Roles",
-      "varName": "roles",
-      "pathName": "roles",
-      "properties": {
-        "HIEV": {
-          "_name": "Employees",
-          "_type": "relation",
-          "varName": "employees",
-          "readOnly": false
-        },
-        "YFml": {
-          "_name": "Active",
-          "_type": "checkbox",
-          "varName": "active",
-          "readOnly": false
-        },
-        "_YcL": {
-          "_name": "Required per Day",
-          "_type": "number",
-          "varName": "requiredPerDay",
-          "readOnly": false
-        },
-        "dgcQ": {
-          "_name": "Department",
-          "_type": "select",
-          "varName": "department",
-          "readOnly": false
-        },
-        "title": {
-          "_name": "Role",
-          "_type": "title",
-          "varName": "role",
-          "readOnly": false
-        }
-      }
-    },
     "bfcd6bd8-b292-405e-8fde-6e099d0fd7af": {
       "_name": "Team Calendar",
       "varName": "teamCalendar",
@@ -1758,6 +1721,12 @@
           "_name": "Family Name",
           "_type": "title",
           "varName": "familyName",
+          "readOnly": false
+        },
+        "hO%3Eb": {
+          "_name": "Customer Code",
+          "_type": "rich_text",
+          "varName": "customerNumber",
           "readOnly": false
         }
       }

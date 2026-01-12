@@ -31,7 +31,8 @@ export interface FamiliesResponse extends WithOptional<Omit<DatabaseObjectRespon
     "Special Notes": RichTextPropertyItemObjectResponse,
     "Dietary Preference (Family)": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'None', color: 'gray' } | { id: StringRequest, name: 'Vegetarian', color: 'green' } | { id: StringRequest, name: 'Vegan', color: 'green' } | { id: StringRequest, name: 'Gluten Free', color: 'yellow' } | { id: StringRequest, name: 'Other', color: 'default' }},
     "How did you hear about us?": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'Instagram', color: 'pink' } | { id: StringRequest, name: 'Facebook', color: 'blue' } | { id: StringRequest, name: 'Google', color: 'yellow' } | { id: StringRequest, name: 'Friend', color: 'green' } | { id: StringRequest, name: 'Walk-in', color: 'orange' } | { id: StringRequest, name: 'Other', color: 'default' }},
-    "Family Name": TitlePropertyItemObjectResponse
+    "Family Name": TitlePropertyItemObjectResponse,
+    "Customer Code": RichTextPropertyItemObjectResponse
   }
 }
 
@@ -82,8 +83,9 @@ type FamiliesHowDidYouHearAboutUsPropertyFilter =
   | ExistencePropertyFilter      
 
 type FamiliesFamilyNamePropertyFilter = TextPropertyFilter
+type FamiliesCustomerNumberPropertyFilter = TextPropertyFilter
 
-export type FamiliesPropertyFilter = { mainEmail: FamiliesMainEmailPropertyFilter } | { livesInKohPhangan: FamiliesLivesInKohPhanganPropertyFilter } | { loyverseCustomerId: FamiliesLoyverseCustomerIdPropertyFilter } | { status: FamiliesStatusPropertyFilter } | { nationality: FamiliesNationalityPropertyFilter } | { members: FamiliesMembersPropertyFilter } | { mainPhone: FamiliesMainPhonePropertyFilter } | { specialNotes: FamiliesSpecialNotesPropertyFilter } | { dietaryPreferenceFamily: FamiliesDietaryPreferenceFamilyPropertyFilter } | { howDidYouHearAboutUs: FamiliesHowDidYouHearAboutUsPropertyFilter } | { familyName: FamiliesFamilyNamePropertyFilter }
+export type FamiliesPropertyFilter = { mainEmail: FamiliesMainEmailPropertyFilter } | { livesInKohPhangan: FamiliesLivesInKohPhanganPropertyFilter } | { loyverseCustomerId: FamiliesLoyverseCustomerIdPropertyFilter } | { status: FamiliesStatusPropertyFilter } | { nationality: FamiliesNationalityPropertyFilter } | { members: FamiliesMembersPropertyFilter } | { mainPhone: FamiliesMainPhonePropertyFilter } | { specialNotes: FamiliesSpecialNotesPropertyFilter } | { dietaryPreferenceFamily: FamiliesDietaryPreferenceFamilyPropertyFilter } | { howDidYouHearAboutUs: FamiliesHowDidYouHearAboutUsPropertyFilter } | { familyName: FamiliesFamilyNamePropertyFilter } | { customerNumber: FamiliesCustomerNumberPropertyFilter }
 
 export type FamiliesQuery = Omit<QueryDatabaseBodyParameters, 'filter' | 'sorts'> & {
   sorts?: Array<

@@ -6,7 +6,7 @@ const BASE_URL = 'https://api.loyverse.com/v1.0';
 
 export interface LoyverseCustomer {
   id: string;
-  customer_id?: string;
+  customer_code?: string;
   name: string;
   email?: string;
   phone_number?: string;
@@ -23,8 +23,8 @@ export interface CreateLoyverseCustomerPayload {
    * Prefer using email-based upsert behavior instead.
    */
   id?: string;
-  /** External reference ID */
-  customer_id?: string;
+  /** External customer code (e.g. GR1) */
+  customer_code?: string;
   name: string;
   email?: string;
   phone_number?: string;
