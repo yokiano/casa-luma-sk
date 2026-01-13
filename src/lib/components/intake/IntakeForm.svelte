@@ -195,9 +195,15 @@
           placeholder="+66 81 234 5678"
           required
         />
-        <p class="text-xs text-muted-foreground px-1 italic">
-          This is our primary way to reach you about your child.
-        </p>
+        <div class="space-y-2 px-1">
+          <p class="text-xs text-muted-foreground italic">
+            This is our primary way to reach you about your child.
+          </p>
+          <p class="text-sm text-red-600 font-medium leading-relaxed">
+            We will never send any message or call you without reason. This is
+            only for safety and to ensure we can reach you immediately if needed.
+          </p>
+        </div>
       </div>
 
       <div class="space-y-3 bg-card/30 p-5 rounded-2xl border border-border/30">
@@ -230,7 +236,6 @@
       addButtonText="Add Kid"
       onAdd={addKid}
       onRemove={removeKid}
-      emptyText="No kids added yet"
     >
       {#snippet itemRenderer(kid, onRemove)}
         <KidCard {kid} {onRemove} />
@@ -244,7 +249,6 @@
         addButtonText="Add Caregiver"
         onAdd={addCaregiver}
         onRemove={removeCaregiver}
-        emptyText="No caregivers added yet"
       >
         {#snippet itemRenderer(caregiver, onRemove)}
           <GuardianCard guardian={caregiver} {onRemove} />

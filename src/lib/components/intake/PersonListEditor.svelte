@@ -41,21 +41,15 @@
       </div>
     {/each}
 
-    {#if items.length === 0}
-      <div class="text-center py-8 border-2 border-dashed border-border rounded-xl text-muted-foreground bg-secondary/5" in:fade>
-        <p>{emptyText}</p>
-      </div>
-    {/if}
-
     <button
       onclick={onAdd}
       type="button"
-      class="w-full py-4 border-2 border-dashed border-primary/30 rounded-xl flex items-center justify-center gap-2 text-primary hover:bg-primary/5 hover:border-primary/50 active:scale-[0.99] transition-all group cursor-pointer"
+      class="w-full py-4 bg-[#5c4a3d] rounded-xl flex items-center justify-center gap-2 text-white hover:bg-[#5c4a3d]/90 active:scale-[0.99] transition-all group cursor-pointer shadow-md"
     >
-      <div class="size-8 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+      <div class="size-8 rounded-full bg-white/20 flex items-center justify-center group-hover:bg-white/30 transition-colors">
         <Plus class="size-5" />
       </div>
-      <span class="font-medium text-lg">{addButtonText}</span>
+      <span class="font-bold text-lg">{addButtonText}</span>
     </button>
   </div>
 </div>
