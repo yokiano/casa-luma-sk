@@ -7,7 +7,8 @@ export const MENU_ITEMS_PROP_VALUES = {
   "Keto",
   "Paleo",
   "Nut-Free",
-  "Low-Carb"
+  "Low-Carb",
+  "Vegan Option"
 ] as const,
 "ingridients": [
   "Cucumber",
@@ -51,7 +52,8 @@ export const MENU_ITEMS_PROP_VALUES = {
   "Kids Favorites",
   "Cute Sandwich",
   "Kid Sized Drinks",
-  "Kitchen Extras"
+  "Kitchen Extras",
+  "More Vegan"
 ] as const,
 "grandCategory": [
   "Food",
@@ -86,7 +88,8 @@ export const MENU_ITEMS_PROPS_TO_IDS = {
   "variantOption_2Name": "wt%7Dr",
   "modifiers": "eqWu",
   "order": "TAGg",
-  "thaiName": "K%7DaB"
+  "thaiName": "K%7DaB",
+  "recommended": "APh%5C"
 } as const
 export const MENU_ITEMS_IDS_TO_PROPS = {
   "%40w%3Bd": "description",
@@ -109,7 +112,8 @@ export const MENU_ITEMS_IDS_TO_PROPS = {
   "wt%7Dr": "variantOption_2Name",
   "eqWu": "modifiers",
   "TAGg": "order",
-  "K%7DaB": "thaiName"
+  "K%7DaB": "thaiName",
+  "APh%5C": "recommended"
 } as const
 export const MENU_ITEMS_PROPS_TO_TYPES = {
   "description": "rich_text",
@@ -132,7 +136,8 @@ export const MENU_ITEMS_PROPS_TO_TYPES = {
   "variantOption_2Name": "rich_text",
   "modifiers": "relation",
   "order": "number",
-  "thaiName": "rich_text"
+  "thaiName": "rich_text",
+  "recommended": "checkbox"
 } as const
 
   export type MenuItemsDTOProperties = keyof typeof MENU_ITEMS_PROPS_TO_IDS

@@ -12,6 +12,7 @@ RelationPropertyItemObjectResponse,
 RichTextPropertyItemObjectResponse,
 SelectPropertyItemObjectResponse,
 TitlePropertyItemObjectResponse,
+UrlPropertyItemObjectResponse,
 ExistencePropertyFilter,
 QueryDatabaseBodyParameters,
 TimestampCreatedTimeFilter,
@@ -36,6 +37,7 @@ export interface PayForPlayItemsResponse extends WithOptional<Omit<DatabaseObjec
     "Name": TitlePropertyItemObjectResponse,
     "LoyverseID": RichTextPropertyItemObjectResponse,
     "Procurement Item": RelationPropertyItemObjectResponse,
+    "Purchase Link": UrlPropertyItemObjectResponse,
     "Created time": CreatedTimePropertyItemObjectResponse,
     "Last edited time": LastEditedTimePropertyItemObjectResponse,
     "Last edited by": LastEditedByPropertyItemObjectResponse,
@@ -67,12 +69,13 @@ type PayForPlayItemsImagePropertyFilter = ExistencePropertyFilter
 type PayForPlayItemsNamePropertyFilter = TextPropertyFilter
 type PayForPlayItemsLoyverseIdPropertyFilter = TextPropertyFilter
 type PayForPlayItemsProcurementItemPropertyFilter = RelationPropertyFilter
+type PayForPlayItemsPurchaseLinkPropertyFilter = TextPropertyFilter
 type PayForPlayItemsCreatedTimePropertyFilter = DatePropertyFilter
 type PayForPlayItemsLastEditedTimePropertyFilter = DatePropertyFilter
 type PayForPlayItemsLastEditedByPropertyFilter = PeoplePropertyFilter
 type PayForPlayItemsCreatedByPropertyFilter = PeoplePropertyFilter
 
-export type PayForPlayItemsPropertyFilter = { stock: PayForPlayItemsStockPropertyFilter } | { price: PayForPlayItemsPricePropertyFilter } | { category: PayForPlayItemsCategoryPropertyFilter } | { cogs: PayForPlayItemsCogsPropertyFilter } | { description: PayForPlayItemsDescriptionPropertyFilter } | { supplier: PayForPlayItemsSupplierPropertyFilter } | { image: PayForPlayItemsImagePropertyFilter } | { name: PayForPlayItemsNamePropertyFilter } | { loyverseId: PayForPlayItemsLoyverseIdPropertyFilter } | { procurementItem: PayForPlayItemsProcurementItemPropertyFilter } | { createdTime: PayForPlayItemsCreatedTimePropertyFilter } | { lastEditedTime: PayForPlayItemsLastEditedTimePropertyFilter } | { lastEditedBy: PayForPlayItemsLastEditedByPropertyFilter } | { createdBy: PayForPlayItemsCreatedByPropertyFilter }
+export type PayForPlayItemsPropertyFilter = { stock: PayForPlayItemsStockPropertyFilter } | { price: PayForPlayItemsPricePropertyFilter } | { category: PayForPlayItemsCategoryPropertyFilter } | { cogs: PayForPlayItemsCogsPropertyFilter } | { description: PayForPlayItemsDescriptionPropertyFilter } | { supplier: PayForPlayItemsSupplierPropertyFilter } | { image: PayForPlayItemsImagePropertyFilter } | { name: PayForPlayItemsNamePropertyFilter } | { loyverseId: PayForPlayItemsLoyverseIdPropertyFilter } | { procurementItem: PayForPlayItemsProcurementItemPropertyFilter } | { purchaseLink: PayForPlayItemsPurchaseLinkPropertyFilter } | { createdTime: PayForPlayItemsCreatedTimePropertyFilter } | { lastEditedTime: PayForPlayItemsLastEditedTimePropertyFilter } | { lastEditedBy: PayForPlayItemsLastEditedByPropertyFilter } | { createdBy: PayForPlayItemsCreatedByPropertyFilter }
 
 export type PayForPlayItemsQuery = Omit<QueryDatabaseBodyParameters, 'filter' | 'sorts'> & {
   sorts?: Array<

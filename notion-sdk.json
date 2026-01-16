@@ -386,6 +386,12 @@
           "_type": "rich_text",
           "varName": "thaiName",
           "readOnly": false
+        },
+        "APh%5C": {
+          "_name": "Recommended",
+          "_type": "checkbox",
+          "varName": "recommended",
+          "readOnly": false
         }
       }
     },
@@ -903,6 +909,12 @@
           "varName": "procurementItem",
           "readOnly": false
         },
+        "DR%5CB": {
+          "_name": "Purchase Link",
+          "_type": "url",
+          "varName": "purchaseLink",
+          "readOnly": false
+        },
         "LK%3EH": {
           "_name": "Created time",
           "_type": "created_time",
@@ -1191,6 +1203,12 @@
           "_name": "Salary Calculation",
           "_type": "select",
           "varName": "salaryCalculation",
+          "readOnly": false
+        },
+        "pe~h": {
+          "_name": "OT Rate (THB/hr)",
+          "_type": "formula",
+          "varName": "otRateThBhr",
           "readOnly": false
         }
       }

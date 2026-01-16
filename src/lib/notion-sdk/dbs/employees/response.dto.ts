@@ -92,6 +92,7 @@ export class EmployeesPropertiesResponseDTO {
       workPermitScan: this.__props['Work Permit Scan'],
       scanQr: this.__props['Scan QR'],
       salaryCalculation: this.__props['Salary Calculation'],
+      otRateThBhr: this.__props['OT Rate (THB/hr)'],
     }
   }
 
@@ -281,5 +282,9 @@ export class EmployeesPropertiesResponseDTO {
 
   get salaryCalculation() {
     return this.__props['Salary Calculation']?.select
+  }
+
+  get otRateThBhr() {
+    return this.__props['OT Rate (THB/hr)']?.formula
   }
 }

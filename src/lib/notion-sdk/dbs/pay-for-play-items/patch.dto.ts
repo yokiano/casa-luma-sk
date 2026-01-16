@@ -16,6 +16,7 @@ export type PayForPlayItemsPropertiesPatch = {
   name?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   loyverseId?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   procurementItem?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'relation' }>['relation']
+  purchaseLink?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'url' }>['url']
 }
 
   
@@ -148,6 +149,13 @@ export class PayForPlayItemsPatchDTO {
       this.__data.properties['K%3DPZ'] = {
         type: 'relation',
         relation: props.procurementItem,
+      }
+    }
+
+    if (props?.purchaseLink !== undefined) {
+      this.__data.properties['DR%5CB'] = {
+        type: 'url',
+        url: props.purchaseLink,
       }
     }
   }

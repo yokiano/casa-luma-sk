@@ -29,6 +29,7 @@ const MENU_PROPERTIES = {
 	dietary: 'Dietary Options',
 	allergens: 'Allergens',
 	highlight: 'Highlight',
+	recommended: 'Recommended',
 	available: 'Available',
 	status: 'Status',
 	availabilityWindow: 'Availability',
@@ -109,6 +110,9 @@ const toMenuItem = (page: any, modifiersMap?: Map<string, MenuModifier>): MenuIt
 		dietaryTags: getMultiSelectValues(props[MENU_PROPERTIES.dietary]) as MenuItem['dietaryTags'],
 		allergens: getMultiSelectValues(props[MENU_PROPERTIES.allergens]),
 		highlight: getCheckboxValue(props[MENU_PROPERTIES.highlight]),
+		recommended: props[MENU_PROPERTIES.recommended]
+			? getCheckboxValue(props[MENU_PROPERTIES.recommended])
+			: false,
 		isAvailable: props[MENU_PROPERTIES.available]
 			? getCheckboxValue(props[MENU_PROPERTIES.available])
 			: true,

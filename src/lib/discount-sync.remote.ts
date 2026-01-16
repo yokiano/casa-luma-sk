@@ -288,7 +288,11 @@ export const syncDiscounts = command(
               report.deleted++;
             } catch (err: any) {
                console.error(`Error deleting discount ${lItem.name}:`, err);
-               report.errors.push(`Failed to delete "${lItem.name}": ${err.message}`);
+               if (err.message && (err.message.includes('404') || err.message.includes('NOT_FOUND'))) {
+                 report.errors.push(`Warning: Discount "${lItem.name}" could not be deleted (404 Not Found). It may have been already deleted.`);
+               } else {
+                 report.errors.push(`Failed to delete "${lItem.name}": ${err.message}`);
+               }
             }
           }
         }

@@ -82,6 +82,7 @@ export class MenuItemsPropertiesResponseDTO {
       modifiers: this.__props['Modifiers'],
       order: this.__props['Order'],
       thaiName: this.__props['Thai Name'],
+      recommended: this.__props['Recommended'],
     }
   }
 
@@ -216,5 +217,9 @@ export class MenuItemsPropertiesResponseDTO {
       links: this.__props['Thai Name']?.rich_text ? this.__props['Thai Name'].rich_text.filter((item) => item.href?.length).map((item) => item.href) : [],
       rich_text: this.__props['Thai Name']?.rich_text,
     }
+  }
+
+  get recommended() {
+    return this.__props['Recommended']?.checkbox
   }
 }

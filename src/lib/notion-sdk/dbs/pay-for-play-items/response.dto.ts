@@ -71,6 +71,7 @@ export class PayForPlayItemsPropertiesResponseDTO {
       name: this.__props['Name'],
       loyverseId: this.__props['LoyverseID'],
       procurementItem: this.__props['Procurement Item'],
+      purchaseLink: this.__props['Purchase Link'],
       createdTime: this.__props['Created time'],
       lastEditedTime: this.__props['Last edited time'],
       lastEditedBy: this.__props['Last edited by'],
@@ -137,6 +138,10 @@ export class PayForPlayItemsPropertiesResponseDTO {
     return (this.__props['Procurement Item']?.relation as unknown as Array<{ id: string }>).map((item) => item.id)  
   }
 
+
+  get purchaseLink() {
+    return this.__props['Purchase Link']?.url
+  }
 
   get createdTime() {
     return this.__props['Created time']?.created_time

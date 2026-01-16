@@ -1,6 +1,7 @@
 export type DietaryTag =
 	| 'Vegetarian'
 	| 'Vegan'
+	| 'Vegan Option'
 	| 'Gluten-Free'
 	| 'Dairy-Free'
 	| 'Keto'
@@ -38,6 +39,7 @@ export interface MenuItem {
 	dietaryTags: DietaryTag[];
 	allergens: string[];
 	highlight: boolean;
+	recommended: boolean;
 	isAvailable: boolean;
 	status: MenuItemStatus;
 	availabilityWindow?: MenuAvailability;

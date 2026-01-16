@@ -2,6 +2,7 @@
     import type { MenuSummary, MenuModifierOption } from '$lib/types/menu';
     import MenuModifiersList from './MenuModifiersList.svelte';
     import { cleanName } from '$lib/utils';
+    import MenuItemIcons from './MenuItemIcons.svelte';
     
     import type { MenuModifier } from '$lib/types/menu';
     
@@ -32,9 +33,22 @@
             }))
             .filter((grand) => grand.sections.length > 0)
     );
+
+    const hasAnyBadges = $derived.by(() => {
+        for (const grand of grandCategories) {
+            for (const section of grand.sections) {
+                for (const item of section.items) {
+                    if (item.recommended) return true;
+                    if (item.dietaryTags?.includes('Vegan')) return true;
+                    if (item.dietaryTags?.includes('Vegan Option')) return true;
+                }
+            }
+        }
+        return false;
+    });
 </script>
 
-<div class="font-sans text-slate-900 w-full h-full print:[print-color-adjust:exact] print:[color-adjust:exact] print:text-[13px]">
+<div class="menu-root font-sans text-slate-900 w-full h-full print:[print-color-adjust:exact] print:[color-adjust:exact] print:text-[13px]">
     <header class="mb-12 border-b-4 border-slate-900 pb-4 print:mb-8 print:border-b-[3px]">
         <h2 class="text-6xl font-bold tracking-tighter text-slate-900 print:text-5xl">MENU</h2>
     </header>
@@ -82,7 +96,22 @@
                                 {#each section.items as item}
                                     <div class="break-inside-avoid">
                                         <div class="flex justify-between items-start mb-0.5">
-                                            <h5 class="text-base font-normal uppercase text-slate-900 leading-tight tracking-tight">{cleanName(item.name)}</h5>
+                                            <h5 class="text-base font-normal uppercase text-slate-900 leading-tight tracking-tight">
+                                                <span class="inline-flex flex-wrap items-center gap-1">
+                                                    <span>{cleanName(item.name)}</span>
+                                                    <span class="inline-flex items-center gap-1 pl-0.5">
+                                                        {#if item.recommended}
+                                                            <MenuItemIcons kind="recommended" class="h-4 w-4 text-slate-700" title="Recommended" />
+                                                        {/if}
+                                                        {#if item.dietaryTags?.includes('Vegan')}
+                                                            <MenuItemIcons kind="vegan" class="h-4 w-4 text-emerald-700" title="Vegan" />
+                                                        {/if}
+                                                        {#if item.dietaryTags?.includes('Vegan Option')}
+                                                            <MenuItemIcons kind="vegan-option" class="h-4 w-4 text-emerald-700" title="Vegan option" />
+                                                        {/if}
+                                                    </span>
+                                                </span>
+                                            </h5>
                                             <div class="font-bold text-sm text-slate-900 print:text-[15px]">
                                                 {item.price.toLocaleString()}
                                             </div>
@@ -147,17 +176,51 @@
             </section>
         {/each}
     </div>
+
+    {#if hasAnyBadges}
+        <footer class="menu-legend mt-10 border-t border-slate-200 pt-3 text-[11px] text-slate-600 print:mt-0 print:border-slate-300">
+            <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
+                <div class="inline-flex items-center gap-2">
+                    <MenuItemIcons kind="recommended" class="h-4 w-4 text-slate-700" />
+                    <span class="uppercase tracking-wide">Recommended</span>
+                </div>
+                <div class="inline-flex items-center gap-2">
+                    <MenuItemIcons kind="vegan" class="h-4 w-4 text-emerald-700" />
+                    <span class="uppercase tracking-wide">Vegan</span>
+                </div>
+                <div class="inline-flex items-center gap-2">
+                    <MenuItemIcons kind="vegan-option" class="h-4 w-4 text-emerald-700" />
+                    <span class="uppercase tracking-wide">Vegan option</span>
+                </div>
+            </div>
+        </footer>
+    {/if}
 </div>
 
 <style>
     @media print {
         @page {
-            margin: 1.5cm;
+            /* Extra bottom space so the fixed legend never overlaps content */
+            margin: 1.5cm 1.5cm 2.7cm 1.5cm;
             size: A4;
         }
         :global(body) {
             margin: 0;
             padding: 0;
+        }
+
+        .menu-root {
+            /* Keep content clear of the fixed legend */
+            padding-bottom: 1.2cm;
+        }
+
+        .menu-legend {
+            position: fixed;
+            left: 1.5cm;
+            right: 1.5cm;
+            bottom: 1.1cm;
+            background: white;
+            padding-top: 0.25cm;
         }
     }
 </style>
