@@ -392,6 +392,18 @@
           "_type": "checkbox",
           "varName": "recommended",
           "readOnly": false
+        },
+        "OoM%7D": {
+          "_name": "Thai Description",
+          "_type": "rich_text",
+          "varName": "thaiDescription",
+          "readOnly": false
+        },
+        "avHW": {
+          "_name": "Created time",
+          "_type": "created_time",
+          "varName": "createdTime",
+          "readOnly": true
         }
       }
     },

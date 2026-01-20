@@ -8,10 +8,18 @@ const parseOptions = (jsonString?: string): MenuModifierOption[] => {
 	try {
 		const parsed = JSON.parse(jsonString);
 		if (Array.isArray(parsed)) {
-			return parsed.map((o: any) => ({
-				name: o.name || '',
-				price: Number(o.price) || 0
-			}));
+			return parsed
+				.map((o: any) => ({
+					name: o?.name || '',
+					thaiName: o?.name_th || undefined,
+					position: typeof o?.position === 'number' ? o.position : Number(o?.position) || 0,
+					price: Number(o?.price) || 0
+				}))
+				.filter((o: MenuModifierOption) => !!o.name)
+				.sort((a, b) => {
+					if ((a.position ?? 0) !== (b.position ?? 0)) return (a.position ?? 0) - (b.position ?? 0);
+					return a.name.localeCompare(b.name);
+				});
 		}
 		return [];
 	} catch (e) {
@@ -35,10 +43,12 @@ export const getActiveModifiers = query(async (): Promise<Map<string, MenuModifi
 		const dto = new PosModifiersResponseDTO(page);
 		const name = dto.properties.name.text || 'Untitled';
 		const options = parseOptions(dto.properties.optionsJson.text);
+		const position = typeof dto.properties.position === 'number' ? dto.properties.position : undefined;
 
 		modifiers.set(page.id, {
 			id: page.id,
 			name,
+			position,
 			options
 		});
 	}

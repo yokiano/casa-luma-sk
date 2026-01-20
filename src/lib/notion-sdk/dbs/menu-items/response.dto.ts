@@ -83,6 +83,8 @@ export class MenuItemsPropertiesResponseDTO {
       order: this.__props['Order'],
       thaiName: this.__props['Thai Name'],
       recommended: this.__props['Recommended'],
+      thaiDescription: this.__props['Thai Description'],
+      createdTime: this.__props['Created time'],
     }
   }
 
@@ -221,5 +223,17 @@ export class MenuItemsPropertiesResponseDTO {
 
   get recommended() {
     return this.__props['Recommended']?.checkbox
+  }
+
+  get thaiDescription() {
+    return {
+      text: this.__props['Thai Description']?.rich_text ? this.__props['Thai Description'].rich_text.reduce((acc, item) => acc + item.plain_text, '') : undefined,
+      links: this.__props['Thai Description']?.rich_text ? this.__props['Thai Description'].rich_text.filter((item) => item.href?.length).map((item) => item.href) : [],
+      rich_text: this.__props['Thai Description']?.rich_text,
+    }
+  }
+
+  get createdTime() {
+    return this.__props['Created time']?.created_time
   }
 }

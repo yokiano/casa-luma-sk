@@ -16,12 +16,15 @@ export type MenuItemStatus = 'Active' | 'Archived';
 
 export interface MenuModifierOption {
 	name: string;
+	thaiName?: string;
+	position?: number;
 	price: number;
 }
 
 export interface MenuModifier {
 	id: string;
 	name: string;
+	position?: number;
 	options: MenuModifierOption[];
 }
 
@@ -33,6 +36,8 @@ export interface MenuItem {
 	grandCategory: string;
 	category: string;
 	description: string;
+	thaiName?: string;
+	thaiDescription?: string;
 	price: number;
 	secondaryPrice?: number;
 	currency?: string;

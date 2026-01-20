@@ -199,7 +199,7 @@
           <p class="text-xs text-muted-foreground italic">
             This is our primary way to reach you about your child.
           </p>
-          <p class="text-sm text-red-600 font-medium leading-relaxed">
+          <p class="text-sm text-amber-600 font-medium leading-relaxed">
             We will never send any message or call you without reason. This is
             only for safety and to ensure we can reach you immediately if needed.
           </p>

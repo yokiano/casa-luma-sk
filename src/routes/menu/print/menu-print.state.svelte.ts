@@ -1,8 +1,11 @@
-import type { MenuSummary, MenuModifierOption, StructuredMenuSection, MenuModifier } from '$lib/types/menu';
+import type { MenuSummary, MenuModifierOption, MenuModifier, MenuItem } from '$lib/types/menu';
 import { cleanName } from '$lib/utils';
 
 export class MenuPrintState {
 	menu: MenuSummary;
+
+	// itemId -> hidden (entire item is removed from print)
+	hiddenItems = $state<Set<string>>(new Set());
 	// itemId/sectionId -> Set of modifierIds that are COMPLETELY hidden
 	hiddenModifiers = $state<Map<string, Set<string>>>(new Map());
 	
@@ -32,6 +35,13 @@ export class MenuPrintState {
 	loadState() {
 		if (typeof localStorage === 'undefined') return;
 		try {
+			// Load hidden items
+			const storedHiddenItems = localStorage.getItem('menu-print-hidden-items');
+			if (storedHiddenItems) {
+				const parsed = JSON.parse(storedHiddenItems);
+				this.hiddenItems = new Set(parsed);
+			}
+
 			// Load hidden modifiers
 			const storedModifiers = localStorage.getItem('menu-print-hidden-modifiers');
 			if (storedModifiers) {
@@ -103,6 +113,10 @@ export class MenuPrintState {
 	saveState() {
 		if (typeof localStorage === 'undefined') return;
 		try {
+			// Save hidden items
+			const serializedHiddenItems = Array.from(this.hiddenItems);
+			localStorage.setItem('menu-print-hidden-items', JSON.stringify(serializedHiddenItems));
+
 			// Save hidden modifiers
 			const serializedModifiers = Array.from(this.hiddenModifiers.entries()).map(
 				([itemId, modifierIds]) => [itemId, Array.from(modifierIds)]
@@ -139,6 +153,20 @@ export class MenuPrintState {
 		} catch (e) {
 			console.error('Failed to save menu print state:', e);
 		}
+	}
+
+	toggleItem(itemId: string) {
+		if (this.hiddenItems.has(itemId)) {
+			this.hiddenItems.delete(itemId);
+		} else {
+			this.hiddenItems.add(itemId);
+		}
+		this.hiddenItems = new Set(this.hiddenItems);
+		this.saveState();
+	}
+
+	isItemVisible(itemId: string) {
+		return !this.hiddenItems.has(itemId);
 	}
 
 	toggleManualModifier(sectionId: string, modifierId: string) {
@@ -301,7 +329,7 @@ export class MenuPrintState {
 	}
 
 	itemsWithModifiers = $derived.by(() => {
-		const items = [];
+		const items: MenuItem[] = [];
 		for (const grand of this.menu.grandCategories) {
 			for (const section of grand.sections) {
 				for (const item of section.items) {
@@ -312,6 +340,18 @@ export class MenuPrintState {
 			}
 		}
 		return items;
+	});
+
+	allItems = $derived.by(() => {
+		const byId = new Map<string, MenuItem>();
+		for (const grand of this.menu.grandCategories) {
+			for (const section of grand.sections) {
+				for (const item of section.items) {
+					if (!byId.has(item.id)) byId.set(item.id, item);
+				}
+			}
+		}
+		return Array.from(byId.values());
 	});
 
 	// Return ALL sections, as any section can have manual modifiers

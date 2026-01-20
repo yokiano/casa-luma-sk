@@ -1,5 +1,5 @@
 import { query, command } from '$app/server';
-import { NOTION_API_KEY } from '$env/static/private';
+import { NOTION_API_KEY, LOYVERSE_STORE_ID } from '$env/static/private';
 import { PosDiscountsDatabase, PosDiscountsResponseDTO, PosDiscountsPatchDTO } from '$lib/notion-sdk/dbs/pos-discounts';
 import { loyverse } from '$lib/server/loyverse';
 import * as v from 'valibot';
@@ -73,8 +73,17 @@ function compareDiscounts(notionItem: PosDiscountsResponseDTO, loyverseItem: any
   const notionRestricted = notionItem.properties.restrictedAccess ?? false;
   const loyverseRestricted = loyverseItem.restricted_access ?? false;
 
-  if (notionRestricted !== loyverseRestricted) {
+    if (notionRestricted !== loyverseRestricted) {
     diffs.push(`Restricted Access mismatch: ${notionRestricted} vs ${loyverseRestricted}`);
+  }
+
+  // Stores
+  const loyverseStores = loyverseItem.stores || [];
+  // If stores is empty, Loyverse might treat it as "All stores" or "No stores" depending on context?
+  // The user image shows "Available in all stores" unchecked and "Casa Luma" unchecked.
+  // So likely we need explicit store assignment.
+  if (!loyverseStores.includes(LOYVERSE_STORE_ID)) {
+     diffs.push('Store mismatch: Missing current store');
   }
 
   return diffs;
@@ -239,7 +248,7 @@ export const syncDiscounts = command(
             name,
             type,
             restricted_access: restrictedAccess,
-            // Stores: default to all (undefined)
+            stores: [LOYVERSE_STORE_ID],
           };
           
           if (type === 'FIXED_PERCENT') {

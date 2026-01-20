@@ -5,10 +5,12 @@
     
     let { 
         menu, 
-        getVisibleModifiers 
+        getVisibleModifiers,
+        isItemVisible
     }: { 
         menu: MenuSummary;
         getVisibleModifiers?: (itemId: string) => MenuModifierOption[];
+        isItemVisible?: (itemId: string) => boolean;
     } = $props();
 
     const grandCategories = $derived(
@@ -16,6 +18,10 @@
             .map((grand) => ({
                 ...grand,
                 sections: grand.sections
+                    .map((section) => ({
+                        ...section,
+                        items: !isItemVisible ? section.items : section.items.filter((item) => isItemVisible(item.id))
+                    }))
                     .filter((section) => section.items.length > 0)
             }))
             .filter((grand) => grand.sections.length > 0)

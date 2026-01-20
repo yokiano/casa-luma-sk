@@ -42,6 +42,29 @@ export interface SyncReport {
 // Helper to normalize strings for comparison
 const normalize = (str?: string | null) => str?.trim() || '';
 
+// Helper to fetch all pages with pagination
+async function fetchAllPages(db: any, filter: any) {
+  const allResults: any[] = [];
+  let startCursor: string | undefined = undefined;
+  
+  while (true) {
+    const response: any = await db.query({
+      filter,
+      page_size: 100,
+      start_cursor: startCursor
+    } as any);
+    
+    if (response.results) {
+      allResults.push(...response.results);
+    }
+    
+    if (!response.has_more || !response.next_cursor) break;
+    startCursor = response.next_cursor;
+  }
+  
+  return { results: allResults };
+}
+
 interface ParsedVariant {
   option1_value?: string;
   option2_value?: string;
@@ -194,15 +217,11 @@ export const getMenuSyncStatus = query(async () => {
   
   // Parallel fetch
   const [notionResult, notionModifiersResult, loyverseItems, loyverseCategoriesList, loyverseModifiers] = await Promise.all([
-    notionDb.query({
-      filter: {
-        status: { equals: 'Active' }
-      }
+    fetchAllPages(notionDb, {
+      status: { equals: 'Active' }
     }),
-    modifiersDb.query({
-      filter: {
-        active: { equals: true }
-      }
+    fetchAllPages(modifiersDb, {
+      active: { equals: true }
     }),
     loyverse.getAllItems(),
     loyverse.getAllCategories(),
@@ -320,15 +339,11 @@ export const syncMenuItems = command(
     try {
       // Fetch data - Only sync Active items from Notion
       const [notionResult, notionModifiersResult, loyverseItems, loyverseCategoriesList, loyverseModifiers] = await Promise.all([
-        notionDb.query({
-          filter: {
-            status: { equals: 'Active' }
-          }
+        fetchAllPages(notionDb, {
+          status: { equals: 'Active' }
         }),
-        modifiersDb.query({
-          filter: {
-            active: { equals: true }
-          }
+        fetchAllPages(modifiersDb, {
+          active: { equals: true }
         }),
         loyverse.getAllItems(),
         loyverse.getAllCategories(),

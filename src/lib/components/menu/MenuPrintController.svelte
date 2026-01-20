@@ -354,127 +354,151 @@
 					</div>
 				{/each}
 
-				{#if printState.itemsWithModifiers.length > 0}
+				{#if printState.allItems.length > 0}
 					<div class="text-xs font-semibold uppercase tracking-wider text-neutral-500 mt-4 mb-1">Items</div>
-					{#each printState.itemsWithModifiers as item (item.id)}
+					{#each printState.allItems as item (item.id)}
+						{@const itemModifiers = item.modifiers || []}
 						<div class="rounded-lg border border-neutral-100 bg-neutral-50 px-3 py-2">
 							<div class="mb-1 flex items-center justify-between gap-2">
-								<span class="text-xs font-bold text-neutral-800">{item.name}</span>
+								<span
+									class="text-xs font-bold text-neutral-800"
+									class:opacity-50={!printState.isItemVisible(item.id)}
+									class:line-through={!printState.isItemVisible(item.id)}
+								>
+									{item.name}
+								</span>
 								<div class="flex gap-1">
 									<button
 										type="button"
-										title="Show all"
-										onclick={() => printState.showAllForTarget(item.id)}
-										class="rounded p-1 text-neutral-400 hover:bg-white hover:text-green-600 hover:shadow-sm"
+										title={printState.isItemVisible(item.id) ? 'Hide item' : 'Show item'}
+										onclick={() => printState.toggleItem(item.id)}
+										class="rounded p-1 text-neutral-400 hover:bg-white hover:text-neutral-900 hover:shadow-sm"
 									>
-										<Eye class="h-3.5 w-3.5" />
+										{#if printState.isItemVisible(item.id)}
+											<Eye class="h-3.5 w-3.5" />
+										{:else}
+											<EyeOff class="h-3.5 w-3.5" />
+										{/if}
 									</button>
-									<button
-										type="button"
-										title="Hide all"
-										onclick={() => printState.hideAllForTarget(item.id, item.modifiers || [])}
-										class="rounded p-1 text-neutral-400 hover:bg-white hover:text-red-600 hover:shadow-sm"
-									>
-										<EyeOff class="h-3.5 w-3.5" />
-									</button>
+
+									{#if itemModifiers.length > 0}
+										<button
+											type="button"
+											title="Show all modifiers"
+											onclick={() => printState.showAllForTarget(item.id)}
+											class="rounded p-1 text-neutral-400 hover:bg-white hover:text-green-600 hover:shadow-sm"
+										>
+											<Eye class="h-3.5 w-3.5" />
+										</button>
+										<button
+											type="button"
+											title="Hide all modifiers"
+											onclick={() => printState.hideAllForTarget(item.id, itemModifiers)}
+											class="rounded p-1 text-neutral-400 hover:bg-white hover:text-red-600 hover:shadow-sm"
+										>
+											<EyeOff class="h-3.5 w-3.5" />
+										</button>
+									{/if}
 								</div>
 							</div>
 
-							<div class="space-y-1.5">
-								{#each item.modifiers || [] as modifier (modifier.id)}
-									<div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
-										<label class="flex cursor-pointer items-center gap-1.5 rounded py-0.5 hover:bg-white hover:shadow-sm">
-											<input
-												type="checkbox"
-												checked={printState.isModifierVisible(item.id, modifier.id)}
-												onchange={() => printState.toggleModifier(item.id, modifier.id)}
-												class="h-3.5 w-3.5 rounded border-neutral-300 text-neutral-900 focus:ring-neutral-900"
-											/>
-											<span class="select-none font-semibold text-neutral-700" class:opacity-50={!printState.isModifierVisible(item.id, modifier.id)}>
-												{modifier.name}:
-											</span>
-										</label>
+							{#if itemModifiers.length > 0}
+								<div class="space-y-1.5">
+									{#each itemModifiers as modifier (modifier.id)}
+										<div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+											<label class="flex cursor-pointer items-center gap-1.5 rounded py-0.5 hover:bg-white hover:shadow-sm">
+												<input
+													type="checkbox"
+													checked={printState.isModifierVisible(item.id, modifier.id)}
+													onchange={() => printState.toggleModifier(item.id, modifier.id)}
+													class="h-3.5 w-3.5 rounded border-neutral-300 text-neutral-900 focus:ring-neutral-900"
+												/>
+												<span class="select-none font-semibold text-neutral-700" class:opacity-50={!printState.isModifierVisible(item.id, modifier.id)}>
+													{modifier.name}:
+												</span>
+											</label>
 
-										<button
-											type="button"
-											title="Edit Modifier Description"
-											onclick={() => {
-												editingModifierDescription = modifier.id;
-												modifierDescriptionText = printState.getModifierDescription(modifier.id);
-											}}
-											class="rounded px-1.5 py-0.5 text-[9px] font-medium text-neutral-400 hover:bg-white hover:text-neutral-700 hover:shadow-sm"
-										>
-											{printState.getModifierDescription(modifier.id) ? 'Edit' : 'Add'} Desc
-										</button>
+											<button
+												type="button"
+												title="Edit Modifier Description"
+												onclick={() => {
+													editingModifierDescription = modifier.id;
+													modifierDescriptionText = printState.getModifierDescription(modifier.id);
+												}}
+												class="rounded px-1.5 py-0.5 text-[9px] font-medium text-neutral-400 hover:bg-white hover:text-neutral-700 hover:shadow-sm"
+											>
+												{printState.getModifierDescription(modifier.id) ? 'Edit' : 'Add'} Desc
+											</button>
 
-										<div class="flex flex-wrap gap-x-3 gap-y-1">
-											{#each modifier.options as option}
-												<label class="flex cursor-pointer items-center gap-1.5 rounded py-0.5 hover:bg-white/50">
-													<input
-														type="checkbox"
-														checked={printState.isOptionVisible(item.id, modifier.id, option.name)}
-														onchange={() => printState.toggleOption(item.id, modifier.id, option.name)}
-														disabled={!printState.isModifierVisible(item.id, modifier.id)}
-														class="h-3 w-3 rounded border-neutral-300 text-neutral-600 focus:ring-neutral-900 disabled:opacity-50"
-													/>
-													<span 
-														class="select-none text-[11px] text-neutral-600 transition-opacity" 
-														class:opacity-50={!printState.isOptionVisible(item.id, modifier.id, option.name) || !printState.isModifierVisible(item.id, modifier.id)}
-													>
-														{option.name}
-													</span>
-												</label>
-											{/each}
-										</div>
-										{#if editingModifierDescription === modifier.id}
-											<div class="mt-1.5 rounded border border-blue-100 bg-blue-50 p-2">
-												<textarea
-													bind:value={modifierDescriptionText}
-													placeholder="Enter description for {modifier.name}..."
-													class="w-full rounded border border-blue-200 bg-white px-2 py-1 text-[10px] text-neutral-900 placeholder:text-neutral-400 focus:border-blue-300 focus:outline-none focus:ring-1 focus:ring-blue-300"
-													rows="1"
-												></textarea>
-												<div class="mt-1 flex gap-1">
-													<button
-														type="button"
-														onclick={() => {
-															printState.setModifierDescription(modifier.id, modifierDescriptionText);
-															editingModifierDescription = null;
-															modifierDescriptionText = '';
-														}}
-														class="rounded bg-blue-600 px-1.5 py-0.5 text-[9px] font-medium text-white hover:bg-blue-700"
-													>
-														Save
-													</button>
-													<button
-														type="button"
-														onclick={() => {
-															editingModifierDescription = null;
-															modifierDescriptionText = '';
-														}}
-														class="rounded border border-blue-200 bg-white px-1.5 py-0.5 text-[9px] font-medium text-blue-600 hover:bg-blue-50"
-													>
-														Cancel
-													</button>
-													{#if printState.getModifierDescription(modifier.id)}
+											<div class="flex flex-wrap gap-x-3 gap-y-1">
+												{#each modifier.options as option}
+													<label class="flex cursor-pointer items-center gap-1.5 rounded py-0.5 hover:bg-white/50">
+														<input
+															type="checkbox"
+															checked={printState.isOptionVisible(item.id, modifier.id, option.name)}
+															onchange={() => printState.toggleOption(item.id, modifier.id, option.name)}
+															disabled={!printState.isModifierVisible(item.id, modifier.id)}
+															class="h-3 w-3 rounded border-neutral-300 text-neutral-600 focus:ring-neutral-900 disabled:opacity-50"
+														/>
+														<span 
+															class="select-none text-[11px] text-neutral-600 transition-opacity" 
+															class:opacity-50={!printState.isOptionVisible(item.id, modifier.id, option.name) || !printState.isModifierVisible(item.id, modifier.id)}
+														>
+															{option.name}
+														</span>
+													</label>
+												{/each}
+											</div>
+											{#if editingModifierDescription === modifier.id}
+												<div class="mt-1.5 rounded border border-blue-100 bg-blue-50 p-2">
+													<textarea
+														bind:value={modifierDescriptionText}
+														placeholder="Enter description for {modifier.name}..."
+														class="w-full rounded border border-blue-200 bg-white px-2 py-1 text-[10px] text-neutral-900 placeholder:text-neutral-400 focus:border-blue-300 focus:outline-none focus:ring-1 focus:ring-blue-300"
+														rows="1"
+													></textarea>
+													<div class="mt-1 flex gap-1">
 														<button
 															type="button"
 															onclick={() => {
-																printState.setModifierDescription(modifier.id, '');
+																printState.setModifierDescription(modifier.id, modifierDescriptionText);
 																editingModifierDescription = null;
 																modifierDescriptionText = '';
 															}}
-															class="ml-auto rounded border border-red-200 bg-white px-1.5 py-0.5 text-[9px] font-medium text-red-600 hover:bg-red-50"
+															class="rounded bg-blue-600 px-1.5 py-0.5 text-[9px] font-medium text-white hover:bg-blue-700"
 														>
-															Remove
+															Save
 														</button>
-													{/if}
+														<button
+															type="button"
+															onclick={() => {
+																editingModifierDescription = null;
+																modifierDescriptionText = '';
+															}}
+															class="rounded border border-blue-200 bg-white px-1.5 py-0.5 text-[9px] font-medium text-blue-600 hover:bg-blue-50"
+														>
+															Cancel
+														</button>
+														{#if printState.getModifierDescription(modifier.id)}
+															<button
+																type="button"
+																onclick={() => {
+																	printState.setModifierDescription(modifier.id, '');
+																	editingModifierDescription = null;
+																	modifierDescriptionText = '';
+																}}
+																class="ml-auto rounded border border-red-200 bg-white px-1.5 py-0.5 text-[9px] font-medium text-red-600 hover:bg-red-50"
+															>
+																Remove
+															</button>
+														{/if}
+													</div>
 												</div>
-											</div>
-										{/if}
-									</div>
-								{/each}
-							</div>
+											{/if}
+										</div>
+									{/each}
+								</div>
+							{/if}
 						</div>
 					{/each}
 				{/if}

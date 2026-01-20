@@ -2,6 +2,8 @@ import type { Actions } from './$types';
 import { fail } from '@sveltejs/kit';
 import type { IntakeFormData } from '$lib/types/intake';
 import { NOTION_API_KEY } from '$env/static/private';
+import { env } from '$env/dynamic/private';
+import type { PageServerLoad } from './$types';
 import {
   FamiliesDatabase,
   FamiliesPatchDTO,
@@ -45,6 +47,30 @@ function normalizeHowDidYouHear(input: string): {
 
   return { value: 'Other', extraNote: `How did you hear about us?: ${trimmed}` };
 }
+
+export const load: PageServerLoad = async ({ url, cookies }) => {
+  const secret = url.searchParams.get('secret');
+  const hasAccess = cookies.get('intake_access') === 'true';
+
+  // If secret is provided and matches env var, grant access
+  if (env.CUSTOMER_INTAKE_SECRET && secret === env.CUSTOMER_INTAKE_SECRET) {
+    cookies.set('intake_access', 'true', {
+      path: '/customer-intake',
+      httpOnly: true,
+      sameSite: 'lax', // Allow valid link navigation
+      maxAge: 60 * 60 * 24, // 1 day
+      secure: process.env.NODE_ENV === 'production'
+    });
+    return { authorized: true };
+  }
+
+  // If cookie exists, grant access
+  if (hasAccess) {
+    return { authorized: true };
+  }
+
+  return { authorized: false };
+};
 
 export const actions: Actions = {
   submit: async ({ request }) => {

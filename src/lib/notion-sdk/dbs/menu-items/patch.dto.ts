@@ -28,6 +28,7 @@ export type MenuItemsPropertiesPatch = {
   order?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'number' }>['number']
   thaiName?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   recommended?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'checkbox' }>['checkbox']
+  thaiDescription?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
 }
 
   
@@ -334,6 +335,28 @@ export class MenuItemsPatchDTO {
       this.__data.properties['APh%5C'] = {
         type: 'checkbox',
         checkbox: props.recommended,
+      }
+    }
+
+    if (props?.thaiDescription !== undefined) {
+      this.__data.properties['OoM%7D'] = {
+        type: 'rich_text',
+        rich_text: typeof props.thaiDescription === 'string' 
+          ? [{ type: 'text', text: { content: props.thaiDescription } }]
+          : Array.isArray(props.thaiDescription)
+            ? props.thaiDescription
+            : props.thaiDescription === null
+              ? []
+              : [
+                  {
+                    type: 'text',
+                    text: {
+                      content: props.thaiDescription.text,
+                      link: props.thaiDescription?.url ? { url: props.thaiDescription.url } : undefined
+                    },
+                    annotations: props.thaiDescription.annotations
+                  },
+                ]
       }
     }
   }

@@ -7,7 +7,12 @@
 
 	let { children } = $props();
 	const isHomePage = $derived(page.url.pathname === '/');
-	const isPrintPage = $derived(page.url.pathname.startsWith('/menu/print') || page.url.pathname.startsWith('/print/') || page.url.pathname === '/customer-intake/print');
+	const isPrintPage = $derived(
+		page.url.pathname.startsWith('/menu/print') ||
+			page.url.pathname.startsWith('/print/') ||
+			page.url.pathname === '/customer-intake/print' ||
+			page.url.pathname.startsWith('/tools/onboarding')
+	);
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>

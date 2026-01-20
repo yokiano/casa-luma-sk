@@ -23,7 +23,6 @@
 	<ThumbsUp
 		class={className}
 		strokeWidth={strokeWidth}
-		fill="currentColor"
 		aria-hidden={title ? undefined : true}
 		aria-label={title}
 		role={title ? 'img' : 'presentation'}

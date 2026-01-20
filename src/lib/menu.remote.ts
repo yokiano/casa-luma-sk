@@ -23,6 +23,8 @@ const MENU_PROPERTIES = {
 	category: 'Category',
 	grandCategory: 'Grand Category',
 	description: 'Description',
+	thaiName: 'Thai Name',
+	thaiDescription: 'Thai Description',
 	price: 'Price',
 	secondaryPrice: 'Secondary Price',
 	currency: 'Currency',
@@ -104,6 +106,8 @@ const toMenuItem = (page: any, modifiersMap?: Map<string, MenuModifier>): MenuIt
 		grandCategory: grandCategoryValue,
 		category: categoryValue,
 		description: getTextContent(props[MENU_PROPERTIES.description]),
+		thaiName: getTextContent(props[MENU_PROPERTIES.thaiName]),
+		thaiDescription: getTextContent(props[MENU_PROPERTIES.thaiDescription]),
 		price,
 		secondaryPrice: secondPrice > 0 ? secondPrice : undefined,
 		currency: getCurrency(price, getSelectValue(props[MENU_PROPERTIES.currency])),
@@ -282,15 +286,31 @@ const buildSummary = (pages: any[], categoryOrder: Map<string, number>, modifier
 
 const queryMenuPages = async () => {
 	ensureMenuConfigured();
-	const response = await (notion as any).dataSources.query({
-		data_source_id: NOTION_DBS.MENU,
-		filter: {
-			property: MENU_PROPERTIES.status,
-			status: { equals: 'Active' }
-		},
-		sorts: [{ property: MENU_PROPERTIES.name, direction: 'ascending' }]
-	});
-	return response.results ?? [];
+	// Notion queries are paginated (max 100 results per request).
+	// Without pagination, items can "disappear" from the menu once you have enough Active entries.
+	const allResults: any[] = [];
+	let startCursor: string | undefined = undefined;
+
+	// eslint-disable-next-line no-constant-condition
+	while (true) {
+		const response: any = await (notion as any).dataSources.query({
+			data_source_id: NOTION_DBS.MENU,
+			filter: {
+				property: MENU_PROPERTIES.status,
+				status: { equals: 'Active' }
+			},
+			sorts: [{ property: MENU_PROPERTIES.name, direction: 'ascending' }],
+			page_size: 100,
+			...(startCursor ? { start_cursor: startCursor } : {})
+		});
+
+		allResults.push(...(response.results ?? []));
+
+		if (!response.has_more || !response.next_cursor) break;
+		startCursor = response.next_cursor;
+	}
+
+	return allResults;
 };
 
 const getCategoryOrderMap = async (): Promise<Map<string, number>> => {

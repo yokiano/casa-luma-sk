@@ -89,7 +89,9 @@ export const MENU_ITEMS_PROPS_TO_IDS = {
   "modifiers": "eqWu",
   "order": "TAGg",
   "thaiName": "K%7DaB",
-  "recommended": "APh%5C"
+  "recommended": "APh%5C",
+  "thaiDescription": "OoM%7D",
+  "createdTime": "avHW"
 } as const
 export const MENU_ITEMS_IDS_TO_PROPS = {
   "%40w%3Bd": "description",
@@ -113,7 +115,9 @@ export const MENU_ITEMS_IDS_TO_PROPS = {
   "eqWu": "modifiers",
   "TAGg": "order",
   "K%7DaB": "thaiName",
-  "APh%5C": "recommended"
+  "APh%5C": "recommended",
+  "OoM%7D": "thaiDescription",
+  "avHW": "createdTime"
 } as const
 export const MENU_ITEMS_PROPS_TO_TYPES = {
   "description": "rich_text",
@@ -137,7 +141,9 @@ export const MENU_ITEMS_PROPS_TO_TYPES = {
   "modifiers": "relation",
   "order": "number",
   "thaiName": "rich_text",
-  "recommended": "checkbox"
+  "recommended": "checkbox",
+  "thaiDescription": "rich_text",
+  "createdTime": "created_time"
 } as const
 
   export type MenuItemsDTOProperties = keyof typeof MENU_ITEMS_PROPS_TO_IDS

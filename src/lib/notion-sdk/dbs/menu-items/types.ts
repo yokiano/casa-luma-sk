@@ -3,6 +3,7 @@ import {
 DatabaseObjectResponse,
 StringRequest,
 CheckboxPropertyItemObjectResponse,
+CreatedTimePropertyItemObjectResponse,
 FilesPropertyItemObjectResponse,
 MultiSelectPropertyItemObjectResponse,
 NumberPropertyItemObjectResponse,
@@ -16,6 +17,7 @@ QueryDatabaseBodyParameters,
 TimestampCreatedTimeFilter,
 TimestampLastEditedTimeFilter,
 CheckboxPropertyFilter,
+DatePropertyFilter,
 NumberPropertyFilter,
 RelationPropertyFilter,
 TextPropertyFilter
@@ -45,7 +47,9 @@ export interface MenuItemsResponse extends WithOptional<Omit<DatabaseObjectRespo
     "Modifiers": RelationPropertyItemObjectResponse,
     "Order": NumberPropertyItemObjectResponse,
     "Thai Name": RichTextPropertyItemObjectResponse,
-    "Recommended": CheckboxPropertyItemObjectResponse
+    "Recommended": CheckboxPropertyItemObjectResponse,
+    "Thai Description": RichTextPropertyItemObjectResponse,
+    "Created time": CreatedTimePropertyItemObjectResponse
   }
 }
 
@@ -140,8 +144,10 @@ type MenuItemsModifiersPropertyFilter = RelationPropertyFilter
 type MenuItemsOrderPropertyFilter = NumberPropertyFilter
 type MenuItemsThaiNamePropertyFilter = TextPropertyFilter
 type MenuItemsRecommendedPropertyFilter = CheckboxPropertyFilter
+type MenuItemsThaiDescriptionPropertyFilter = TextPropertyFilter
+type MenuItemsCreatedTimePropertyFilter = DatePropertyFilter
 
-export type MenuItemsPropertyFilter = { description: MenuItemsDescriptionPropertyFilter } | { dietaryOptions: MenuItemsDietaryOptionsPropertyFilter } | { cogs: MenuItemsCogsPropertyFilter } | { price: MenuItemsPricePropertyFilter } | { ingridients: MenuItemsIngridientsPropertyFilter } | { allergens: MenuItemsAllergensPropertyFilter } | { image: MenuItemsImagePropertyFilter } | { category: MenuItemsCategoryPropertyFilter } | { name: MenuItemsNamePropertyFilter } | { loyverseId: MenuItemsLoyverseIdPropertyFilter } | { grandCategory: MenuItemsGrandCategoryPropertyFilter } | { status: MenuItemsStatusPropertyFilter } | { variantOption_1Name: MenuItemsVariantOption_1NamePropertyFilter } | { variantsJson: MenuItemsVariantsJsonPropertyFilter } | { loyverseHandle: MenuItemsLoyverseHandlePropertyFilter } | { hasVariants: MenuItemsHasVariantsPropertyFilter } | { variantOption_3Name: MenuItemsVariantOption_3NamePropertyFilter } | { variantOption_2Name: MenuItemsVariantOption_2NamePropertyFilter } | { modifiers: MenuItemsModifiersPropertyFilter } | { order: MenuItemsOrderPropertyFilter } | { thaiName: MenuItemsThaiNamePropertyFilter } | { recommended: MenuItemsRecommendedPropertyFilter }
+export type MenuItemsPropertyFilter = { description: MenuItemsDescriptionPropertyFilter } | { dietaryOptions: MenuItemsDietaryOptionsPropertyFilter } | { cogs: MenuItemsCogsPropertyFilter } | { price: MenuItemsPricePropertyFilter } | { ingridients: MenuItemsIngridientsPropertyFilter } | { allergens: MenuItemsAllergensPropertyFilter } | { image: MenuItemsImagePropertyFilter } | { category: MenuItemsCategoryPropertyFilter } | { name: MenuItemsNamePropertyFilter } | { loyverseId: MenuItemsLoyverseIdPropertyFilter } | { grandCategory: MenuItemsGrandCategoryPropertyFilter } | { status: MenuItemsStatusPropertyFilter } | { variantOption_1Name: MenuItemsVariantOption_1NamePropertyFilter } | { variantsJson: MenuItemsVariantsJsonPropertyFilter } | { loyverseHandle: MenuItemsLoyverseHandlePropertyFilter } | { hasVariants: MenuItemsHasVariantsPropertyFilter } | { variantOption_3Name: MenuItemsVariantOption_3NamePropertyFilter } | { variantOption_2Name: MenuItemsVariantOption_2NamePropertyFilter } | { modifiers: MenuItemsModifiersPropertyFilter } | { order: MenuItemsOrderPropertyFilter } | { thaiName: MenuItemsThaiNamePropertyFilter } | { recommended: MenuItemsRecommendedPropertyFilter } | { thaiDescription: MenuItemsThaiDescriptionPropertyFilter } | { createdTime: MenuItemsCreatedTimePropertyFilter }
 
 export type MenuItemsQuery = Omit<QueryDatabaseBodyParameters, 'filter' | 'sorts'> & {
   sorts?: Array<
