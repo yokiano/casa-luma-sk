@@ -9,6 +9,11 @@
 		familyName: string;
 		customerCode: string | null;
 		mainPhone: string | null;
+		members?: {
+			id: string;
+			name: string;
+			type: string | null;
+		}[];
 	};
 
 	interface Props {
@@ -123,14 +128,19 @@
 							<Command.Item
 								value={family.id}
 								onSelect={() => handleSelect(family)}
-								class="cursor-pointer"
+								class="cursor-pointer group aria-selected:bg-[#7a6550] aria-selected:text-white"
 							>
 								<CheckIcon class={cn('mr-2 h-4 w-4', value?.id === family.id ? 'opacity-100' : 'opacity-0')} />
 								<div class="flex flex-col">
-									<span>{family.familyName}</span>
-									<span class="text-xs text-[#7a6550]/70">
+									<span class="group-aria-selected:text-white">{family.familyName}</span>
+									<span class="text-xs text-[#7a6550]/70 group-aria-selected:text-white/90">
 										{family.customerCode ?? 'No customer code'} · {family.mainPhone ?? 'No phone'}
 									</span>
+									{#if family.members?.length}
+										<span class="text-xs text-[#7a6550]/60 mt-0.5 group-aria-selected:text-white/80">
+											{family.members.map((m) => `${m.name} (${m.type ?? 'Member'})`).join(', ')}
+										</span>
+									{/if}
 								</div>
 							</Command.Item>
 						{/each}

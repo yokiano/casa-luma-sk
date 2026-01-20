@@ -1,12 +1,20 @@
 import { NOTION_API_KEY } from '$env/static/private';
 import { MembershipsDatabase, MembershipsPatchDTO, MembershipsResponseDTO } from '$lib/notion-sdk/dbs/memberships';
 import { FamiliesDatabase, FamiliesResponseDTO } from '$lib/notion-sdk/dbs/families';
+import { FamilyMembersDatabase, FamilyMembersResponseDTO } from '$lib/notion-sdk/dbs/family-members';
+
+type FamilyMemberSummary = {
+	id: string;
+	name: string;
+	type: string | null;
+};
 
 type FamilySummary = {
 	id: string;
 	familyName: string;
 	customerCode: string | null;
 	mainPhone: string | null;
+	members?: FamilyMemberSummary[];
 };
 
 type MembershipItem = {
@@ -36,11 +44,12 @@ const getFormulaText = (formula: unknown) => {
 	return null;
 };
 
-const toFamilySummary = (dto: FamiliesResponseDTO): FamilySummary => ({
+const toFamilySummary = (dto: FamiliesResponseDTO, members: FamilyMemberSummary[] = []): FamilySummary => ({
 	id: dto.id,
 	familyName: dto.properties.familyName?.text ?? 'Untitled Family',
 	customerCode: dto.properties.customerNumber?.text ?? null,
-	mainPhone: dto.properties.mainPhone ?? null
+	mainPhone: dto.properties.mainPhone ?? null,
+	members
 });
 
 const toMembershipItem = (dto: MembershipsResponseDTO, familiesById: Map<string, FamilySummary>): MembershipItem => {
@@ -170,7 +179,39 @@ export const getMembershipsData = async (input: {
 export const searchFamiliesData = async (search: string) => {
 	const normalizedSearch = normalizeSearch(search);
 	const matches = await queryFamilyMatches(normalizedSearch, 25);
-	return matches.map((dto) => toFamilySummary(dto));
+	
+	// Fetch members for the found families
+	const familyIds = matches.map(m => m.id);
+	let membersByFamilyId = new Map<string, FamilyMemberSummary[]>();
+	
+	if (familyIds.length > 0) {
+		const membersDb = new FamilyMembersDatabase({ notionSecret: NOTION_API_KEY });
+		const membersResponse = await membersDb.query({
+			filter: {
+				or: familyIds.map(id => ({ family: { contains: id } }))
+			}
+		});
+		
+		const members = membersResponse.results.map(r => new FamilyMembersResponseDTO(r));
+		
+		for (const member of members) {
+			const summary: FamilyMemberSummary = {
+				id: member.id,
+				name: member.properties.name?.text ?? 'Untitled Member',
+				type: member.properties.memberType?.name ?? null
+			};
+			
+			const memberFamilyIds = member.properties.familyIds;
+			for (const fId of memberFamilyIds) {
+				if (!membersByFamilyId.has(fId)) {
+					membersByFamilyId.set(fId, []);
+				}
+				membersByFamilyId.get(fId)?.push(summary);
+			}
+		}
+	}
+
+	return matches.map((dto) => toFamilySummary(dto, membersByFamilyId.get(dto.id) ?? []));
 };
 
 export const createMembershipData = async (input: {

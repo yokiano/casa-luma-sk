@@ -119,7 +119,13 @@
 		// If the existing end date differs from calculated, it was overridden
 		const existingEndDate = m.endDate ?? '';
 		endDate = existingEndDate;
-		endDateOverridden = existingEndDate !== '' && existingEndDate !== calculatedEndDate;
+		
+		// Calculate what the end date should be based on the loaded values
+		// We use the helper function instead of the derived calculatedEndDate to avoid 
+		// creating a dependency that would cause this effect to re-run when local state changes
+		const calculated = calculateEndDate(startDate, membershipType) ?? '';
+		endDateOverridden = existingEndDate !== '' && existingEndDate !== calculated;
+		
 		notes = m.notes ?? '';
 		errorMessage = null;
 	};

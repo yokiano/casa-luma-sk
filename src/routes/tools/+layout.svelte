@@ -4,13 +4,13 @@
   import { Toaster } from "$lib/components/ui/sonner";
 
   const tabs = [
-    { href: '/tools/procurement-import', label: 'Procurement Import' },
-    { href: '/tools/menu-assistant', label: 'Menu Assistant' },
+    // { href: '/tools/procurement-import', label: 'Procurement Import' },
+    // { href: '/tools/menu-assistant', label: 'Menu Assistant' },
     { href: '/tools/pos-sync', label: 'POS Sync' },
     { href: '/tools/checklist', label: 'Checklist' },
     { href: '/tools/close-shift', label: 'Close Shift' },
     { href: '/tools/memberships', label: 'Memberships' },
-    { href: '/tools/graphics', label: 'Graphics' },
+    // { href: '/tools/graphics', label: 'Graphics' },
     { href: '/tools/onboarding/kitchen', label: 'Onboarding' }
   ];
 
