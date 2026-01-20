@@ -24,7 +24,7 @@ export interface ShiftsResponse extends WithOptional<Omit<DatabaseObjectResponse
   properties: {
     "Employee": RelationPropertyItemObjectResponse,
     "Type": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'Opening (08:30 - 17:00)', color: 'yellow' } | { id: StringRequest, name: 'Closing (10:30 - 19:00)', color: 'blue' } | { id: StringRequest, name: 'Custom', color: 'gray' }},
-    "Status": Omit<StatusPropertyItemObjectResponse, 'status'> & { status: { id: StringRequest, name: 'Planned', color: 'gray' } | { id: StringRequest, name: 'Confirmed', color: 'blue' } | { id: StringRequest, name: 'Completed', color: 'green' } | { id: StringRequest, name: 'Cancelled', color: 'red' }},
+    "Status": Omit<StatusPropertyItemObjectResponse, 'status'> & { status: { id: StringRequest, name: 'Planned', color: 'gray' } | { id: StringRequest, name: 'Confirmed', color: 'blue' } | { id: StringRequest, name: 'Sick Day', color: 'pink' } | { id: StringRequest, name: 'Completed', color: 'green' } | { id: StringRequest, name: 'Cancelled', color: 'red' }},
     "Shift Time": DatePropertyItemObjectResponse,
     "Role": RelationPropertyItemObjectResponse,
     "Shift Note": TitlePropertyItemObjectResponse,

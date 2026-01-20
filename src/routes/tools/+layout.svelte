@@ -9,6 +9,7 @@
     { href: '/tools/pos-sync', label: 'POS Sync' },
     { href: '/tools/checklist', label: 'Checklist' },
     { href: '/tools/close-shift', label: 'Close Shift' },
+    { href: '/tools/memberships', label: 'Memberships' },
     { href: '/tools/graphics', label: 'Graphics' },
     { href: '/tools/onboarding/kitchen', label: 'Onboarding' }
   ];

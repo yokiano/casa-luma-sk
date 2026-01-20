@@ -7,6 +7,7 @@ export const SHIFTS_PROP_VALUES = {
 "status": [
   "Planned",
   "Confirmed",
+  "Sick Day",
   "Completed",
   "Cancelled"
 ] as const,

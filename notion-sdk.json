@@ -1840,6 +1840,67 @@
           "readOnly": false
         }
       }
+    },
+    "4267d8b5-4c93-43b3-9b0b-6941ccf79145": {
+      "_name": "Memberships",
+      "varName": "memberships",
+      "pathName": "memberships",
+      "properties": {
+        "GY%3E%3F": {
+          "_name": "Type",
+          "_type": "select",
+          "varName": "type",
+          "readOnly": false
+        },
+        "NbGe": {
+          "_name": "Has Sibling Discount",
+          "_type": "formula",
+          "varName": "hasSiblingDiscount",
+          "readOnly": false
+        },
+        "%5CdlW": {
+          "_name": "Status",
+          "_type": "formula",
+          "varName": "status",
+          "readOnly": false
+        },
+        "c%60rq": {
+          "_name": "Family",
+          "_type": "relation",
+          "varName": "family",
+          "readOnly": false
+        },
+        "ev%5Et": {
+          "_name": "Start Date",
+          "_type": "date",
+          "varName": "startDate",
+          "readOnly": false
+        },
+        "iSVs": {
+          "_name": "End Date",
+          "_type": "date",
+          "varName": "endDate",
+          "readOnly": false
+        },
+        "kYoY": {
+          "_name": "Number of Kids",
+          "_type": "number",
+          "varName": "numberOfKids",
+          "readOnly": false
+        },
+        "%7Caqz": {
+          "_name": "Notes",
+          "_type": "rich_text",
+          "varName": "notes",
+          "readOnly": false
+        },
+        "title": {
+          "_name": "Name",
+          "_type": "title",
+          "varName": "name",
+          "readOnly": false
+        }
+      }
     }
   }
 }

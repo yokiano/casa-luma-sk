@@ -410,6 +410,30 @@ npx notion-ts-client generate
 
 ## Common Patterns
 
+### Handling Large Datasets (Pagination)
+
+Notion API responses are capped at 100 items per request. For any database that can grow beyond that,
+use cursor-based pagination with `start_cursor`, `next_cursor`, and `has_more`. This is required for
+reliable results (items can "disappear" if you only take the first 100).
+
+```typescript
+const allResults: any[] = [];
+let startCursor: string | undefined = undefined;
+
+// eslint-disable-next-line no-constant-condition
+while (true) {
+  const response = await db.query({
+    page_size: 100,
+    ...(startCursor ? { start_cursor: startCursor } : {}),
+    // filter/sorts here
+  });
+
+  allResults.push(...(response.results ?? []));
+  if (!response.has_more || !response.next_cursor) break;
+  startCursor = response.next_cursor;
+}
+```
+
 ### Query with Filters
 
 ```typescript
