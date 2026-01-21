@@ -74,10 +74,7 @@ export const NAV_LINKS = [
 	{ label: 'Home', href: '/' },
 	{ label: 'Open Play', href: '/open-play' },
 	{ label: 'Pricing', href: '/pricing' },
-	{ label: 'Café', href: '/cafe' },
-	{ label: 'Shop', href: '/shop' },
-	{ label: 'Workshops', href: '/workshops3' },
-	{ label: 'Events', href: '/events' },
+	// { label: 'Workshops', href: '/workshops3' },
 	{ label: 'Birthday Parties', href: '/birthday-parties' },
 	{ label: 'About', href: '/about' },
 	{ label: 'Contact', href: '/contact' }

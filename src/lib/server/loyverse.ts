@@ -164,6 +164,88 @@ export interface CreateLoyverseModifierPayload {
   }[];
 }
 
+export interface LoyverseReceiptDiscount {
+  id?: string;
+  type?: string;
+  name?: string;
+  percentage?: number;
+  money_amount?: number;
+}
+
+export interface LoyverseReceiptTax {
+  id?: string;
+  type?: string;
+  name?: string;
+  rate?: number;
+  money_amount?: number;
+}
+
+export interface LoyverseReceiptLineItemModifier {
+  id?: string;
+  name?: string;
+  price?: number;
+  quantity?: number;
+}
+
+export interface LoyverseReceiptLineItem {
+  id?: string;
+  item_id?: string;
+  variant_id?: string;
+  item_name?: string;
+  variant_name?: string | null;
+  sku?: string;
+  quantity?: number;
+  price?: number;
+  gross_total_money?: number;
+  total_money?: number;
+  cost?: number;
+  cost_total?: number;
+  line_note?: string | null;
+  line_taxes?: LoyverseReceiptTax[];
+  total_discount?: number;
+  line_discounts?: LoyverseReceiptDiscount[];
+  line_modifiers?: LoyverseReceiptLineItemModifier[];
+}
+
+export interface LoyverseReceiptPayment {
+  payment_type_id?: string;
+  name?: string;
+  type?: string;
+  money_amount?: number;
+  paid_at?: string;
+  payment_details?: Record<string, unknown> | null;
+}
+
+export interface LoyverseReceipt {
+  receipt_number: string;
+  note?: string | null;
+  receipt_type?: 'SALE' | 'REFUND';
+  refund_for?: string | null;
+  order?: string | null;
+  created_at?: string;
+  receipt_date?: string;
+  updated_at?: string;
+  cancelled_at?: string | null;
+  source?: string;
+  total_money?: number;
+  total_tax?: number;
+  points_earned?: number;
+  points_deducted?: number;
+  points_balance?: number;
+  customer_id?: string;
+  total_discount?: number;
+  employee_id?: string;
+  store_id?: string;
+  pos_device_id?: string;
+  dining_option?: string;
+  total_discounts?: LoyverseReceiptDiscount[];
+  total_taxes?: LoyverseReceiptTax[];
+  tip?: number;
+  surcharge?: number;
+  line_items?: LoyverseReceiptLineItem[];
+  payments?: LoyverseReceiptPayment[];
+}
+
 interface GetCategoriesResponse {
   categories: LoyverseCategory[];
   cursor?: string;
@@ -186,6 +268,26 @@ interface GetDiscountsResponse {
 
 interface GetModifiersResponse {
   modifiers: LoyverseModifier[];
+  cursor?: string;
+}
+
+interface GetReceiptsResponse {
+  receipts: LoyverseReceipt[];
+  cursor?: string;
+}
+
+export interface GetReceiptsParams {
+  receipt_numbers?: string;
+  since_receipt_number?: string;
+  before_receipt_number?: string;
+  store_id?: string;
+  order?: string;
+  source?: string;
+  updated_at_min?: string;
+  updated_at_max?: string;
+  created_at_min?: string;
+  created_at_max?: string;
+  limit?: number;
   cursor?: string;
 }
 
@@ -503,6 +605,32 @@ class LoyverseClient {
     await this.request<void>(`/modifiers/${id}`, {
       method: 'DELETE',
     });
+  }
+
+  // --- Receipts ---
+
+  async getReceipts(params: GetReceiptsParams = {}): Promise<GetReceiptsResponse> {
+    const searchParams = new URLSearchParams();
+    const limit = params.limit ?? 50;
+    searchParams.append('limit', limit.toString());
+
+    if (params.cursor) searchParams.append('cursor', params.cursor);
+    if (params.receipt_numbers) searchParams.append('receipt_numbers', params.receipt_numbers);
+    if (params.since_receipt_number) searchParams.append('since_receipt_number', params.since_receipt_number);
+    if (params.before_receipt_number) searchParams.append('before_receipt_number', params.before_receipt_number);
+    if (params.store_id) searchParams.append('store_id', params.store_id);
+    if (params.order) searchParams.append('order', params.order);
+    if (params.source) searchParams.append('source', params.source);
+    if (params.updated_at_min) searchParams.append('updated_at_min', params.updated_at_min);
+    if (params.updated_at_max) searchParams.append('updated_at_max', params.updated_at_max);
+    if (params.created_at_min) searchParams.append('created_at_min', params.created_at_min);
+    if (params.created_at_max) searchParams.append('created_at_max', params.created_at_max);
+
+    return this.request<GetReceiptsResponse>(`/receipts?${searchParams.toString()}`);
+  }
+
+  async getReceipt(receiptNumber: string): Promise<LoyverseReceipt> {
+    return this.request<LoyverseReceipt>(`/receipts/${encodeURIComponent(receiptNumber)}`);
   }
 }
 
