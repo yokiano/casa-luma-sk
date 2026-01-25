@@ -1,7 +1,7 @@
-import { getMemberships } from '$lib/memberships.remote';
+import { getMembershipsData } from '$lib/server/memberships';
 
 export const load = async () => {
-	const result = await getMemberships({});
+	const result = await getMembershipsData({});
 
 	return {
 		initialMemberships: result.items,

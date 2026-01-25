@@ -25,6 +25,7 @@ export type EndOfShiftReportsPropertiesPatch = {
   coin_5Baht_1?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'number' }>['number']
   bill_100Baht_1?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'number' }>['number']
   coin_2Baht_1?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'number' }>['number']
+  allIncome?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'formula' }>['formula']
 }
 
   
@@ -205,6 +206,13 @@ export class EndOfShiftReportsPatchDTO {
       this.__data.properties['smDb'] = {
         type: 'number',
         number: props.coin_2Baht_1,
+      }
+    }
+
+    if (props?.allIncome !== undefined) {
+      this.__data.properties['%3DHVV'] = {
+        type: 'formula',
+        formula: props.allIncome,
       }
     }
   }

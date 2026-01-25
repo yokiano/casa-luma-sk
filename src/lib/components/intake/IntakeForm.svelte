@@ -7,6 +7,7 @@
   import PersonListEditor from "./PersonListEditor.svelte";
   import KidCard from "./KidCard.svelte";
   import GuardianCard from "./GuardianCard.svelte";
+  import IntakeQRCode from "./IntakeQRCode.svelte";
 
   let formData = $state<IntakeFormData>({
     familyName: "",
@@ -419,5 +420,7 @@
       </button>
     </div>
     </form>
+
+    <IntakeQRCode />
   {/if}
 </div>

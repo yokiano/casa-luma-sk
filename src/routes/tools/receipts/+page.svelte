@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { LoyverseReceipt } from '$lib/server/loyverse';
   import { getReceipts } from '$lib/receipts.remote';
-  import { ReceiptsList, ReceiptsToolbar } from '$lib/components/receipts';
+  import { ReceiptsAnalytics, ReceiptsList, ReceiptsTabs, ReceiptsToolbar } from '$lib/components/receipts';
 
   const toInputDate = (date: Date) => date.toISOString().slice(0, 10);
 
@@ -17,11 +17,16 @@
 
   let viewMode = $state<'compact' | 'expanded'>('compact');
   let sortOrder = $state<'desc' | 'asc'>('desc');
+  let activeTab = $state<'receipts' | 'analytics'>('receipts');
   let dateFrom = $state(toInputDate(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)));
   let dateTo = $state(toInputDate(new Date()));
   let storeId = $state('');
 
   let receipts = $state<LoyverseReceipt[]>([]);
+  let analyticsReceipts = $state<LoyverseReceipt[]>([]);
+  let analyticsRequestedKey = $state('');
+  let analyticsLoading = $state(false);
+  let analyticsError = $state<string | null>(null);
   let cursor = $state<string | null>(null);
   let hasMore = $state(false);
   let isLoading = $state(false);
@@ -36,6 +41,41 @@
     });
     return list;
   });
+
+  const analyticsKey = $derived.by(() => `${dateFrom}|${dateTo}|${storeId}`);
+
+  const loadAnalyticsReceipts = async (key: string) => {
+    if (analyticsLoading) return;
+    analyticsLoading = true;
+    analyticsError = null;
+    analyticsReceipts = [];
+
+    let nextCursor: string | undefined;
+    const allReceipts: LoyverseReceipt[] = [];
+
+    try {
+      do {
+        const response = await getReceipts({
+          dateFrom: dateFrom ? startOfDayIso(dateFrom) : undefined,
+          dateTo: dateTo ? endOfDayIso(dateTo) : undefined,
+          storeId: storeId || undefined,
+          limit: 250,
+          cursor: nextCursor
+        });
+
+        allReceipts.push(...(response.receipts ?? []));
+        nextCursor = response.cursor ?? undefined;
+      } while (nextCursor && analyticsRequestedKey === key);
+
+      if (analyticsRequestedKey === key) {
+        analyticsReceipts = allReceipts;
+      }
+    } catch (error) {
+      analyticsError = error instanceof Error ? error.message : 'Failed to load analytics.';
+    } finally {
+      analyticsLoading = false;
+    }
+  };
 
   const loadReceipts = async ({ reset }: { reset?: boolean } = {}) => {
     if (isLoading) return;
@@ -80,6 +120,13 @@
     loadReceipts({ reset: true });
   };
 
+  $effect(() => {
+    if (activeTab !== 'analytics') return;
+    if (analyticsRequestedKey === analyticsKey) return;
+    analyticsRequestedKey = analyticsKey;
+    loadAnalyticsReceipts(analyticsKey);
+  });
+
   loadReceipts({ reset: true });
 </script>
 
@@ -103,12 +150,27 @@
     onRefresh={refresh}
   />
 
-  <ReceiptsList
-    receipts={sortedReceipts}
-    {viewMode}
-    {isLoading}
-    {hasMore}
-    {errorMessage}
-    onLoadMore={() => loadReceipts()}
-  />
+  <div class="space-y-3">
+    <ReceiptsTabs activeTab={activeTab} onChange={(tab) => (activeTab = tab)} />
+    {#if activeTab === 'analytics'}
+      {#if analyticsError}
+        <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {analyticsError}
+        </div>
+      {/if}
+      <ReceiptsAnalytics receipts={analyticsReceipts} />
+      {#if analyticsLoading}
+        <p class="text-xs text-[#7a6550]/70">Loading full analytics dataset...</p>
+      {/if}
+    {:else}
+      <ReceiptsList
+        receipts={sortedReceipts}
+        {viewMode}
+        {isLoading}
+        {hasMore}
+        {errorMessage}
+        onLoadMore={() => loadReceipts()}
+      />
+    {/if}
+  </div>
 </section>

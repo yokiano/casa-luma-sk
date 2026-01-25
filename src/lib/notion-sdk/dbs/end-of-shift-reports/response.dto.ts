@@ -80,6 +80,7 @@ export class EndOfShiftReportsPropertiesResponseDTO {
       coin_5Baht_1: this.__props['Coin 5 Baht 1'],
       bill_100Baht_1: this.__props['Bill 100 Baht 1'],
       coin_2Baht_1: this.__props['Coin 2 Baht 1'],
+      allIncome: this.__props['All Income'],
     }
   }
 
@@ -171,5 +172,9 @@ export class EndOfShiftReportsPropertiesResponseDTO {
 
   get coin_2Baht_1() {
     return this.__props['Coin 2 Baht 1']?.number
+  }
+
+  get allIncome() {
+    return this.__props['All Income']?.formula
   }
 }

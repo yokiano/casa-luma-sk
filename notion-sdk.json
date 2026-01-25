@@ -1612,6 +1612,12 @@
           "_type": "number",
           "varName": "coin_2Baht_1",
           "readOnly": false
+        },
+        "%3DHVV": {
+          "_name": "All Income",
+          "_type": "formula",
+          "varName": "allIncome",
+          "readOnly": false
         }
       }
     },
@@ -1804,43 +1810,6 @@
         }
       }
     },
-    "8a6cc48c-180b-452e-ae4f-80fe64b749f7": {
-      "_name": "Roles",
-      "varName": "roles",
-      "pathName": "roles",
-      "properties": {
-        "HIEV": {
-          "_name": "Employees",
-          "_type": "relation",
-          "varName": "employees",
-          "readOnly": false
-        },
-        "YFml": {
-          "_name": "Active",
-          "_type": "checkbox",
-          "varName": "active",
-          "readOnly": false
-        },
-        "_YcL": {
-          "_name": "Required per Day",
-          "_type": "number",
-          "varName": "requiredPerDay",
-          "readOnly": false
-        },
-        "dgcQ": {
-          "_name": "Department",
-          "_type": "select",
-          "varName": "department",
-          "readOnly": false
-        },
-        "title": {
-          "_name": "Role",
-          "_type": "title",
-          "varName": "role",
-          "readOnly": false
-        }
-      }
-    },
     "4267d8b5-4c93-43b3-9b0b-6941ccf79145": {
       "_name": "Memberships",
       "varName": "memberships",
@@ -1899,6 +1868,121 @@
           "_type": "title",
           "varName": "name",
           "readOnly": false
+        }
+      }
+    },
+    "2b5fc77d-b4f3-8065-8975-e282f1aab7d2": {
+      "_name": "Expenses Tracker",
+      "varName": "expensesTracker",
+      "pathName": "expenses-tracker",
+      "properties": {
+        "%3F%40%3FW": {
+          "_name": "Category",
+          "_type": "select",
+          "varName": "category",
+          "readOnly": false
+        },
+        "EZCK": {
+          "_name": "Payment Method",
+          "_type": "select",
+          "varName": "paymentMethod",
+          "readOnly": false
+        },
+        "QHWE": {
+          "_name": "Team",
+          "_type": "formula",
+          "varName": "team",
+          "readOnly": false
+        },
+        "UKHL": {
+          "_name": "Date",
+          "_type": "date",
+          "varName": "date",
+          "readOnly": false
+        },
+        "%5Efar": {
+          "_name": "Department",
+          "_type": "select",
+          "varName": "department",
+          "readOnly": false
+        },
+        "hfQc": {
+          "_name": "Procurement Item",
+          "_type": "relation",
+          "varName": "procurementItem",
+          "readOnly": false
+        },
+        "jfMg": {
+          "_name": "In favor of",
+          "_type": "people",
+          "varName": "inFavorOf",
+          "readOnly": false
+        },
+        "sSzY": {
+          "_name": "Status",
+          "_type": "status",
+          "varName": "status",
+          "readOnly": false
+        },
+        "v%5EhZ": {
+          "_name": "Paid By",
+          "_type": "select",
+          "varName": "paidBy",
+          "readOnly": false
+        },
+        "xthe": {
+          "_name": "Amount (THB)",
+          "_type": "number",
+          "varName": "amountThb",
+          "readOnly": false
+        },
+        "%7C%5DZy": {
+          "_name": "Supplier",
+          "_type": "relation",
+          "varName": "supplier",
+          "readOnly": false
+        },
+        "~Rsq": {
+          "_name": "Invoice / Receipt",
+          "_type": "files",
+          "varName": "invoiceReceipt",
+          "readOnly": false
+        },
+        "title": {
+          "_name": "Expense",
+          "_type": "title",
+          "varName": "expense",
+          "readOnly": false
+        },
+        "Wx_e": {
+          "_name": "Reference Number",
+          "_type": "rich_text",
+          "varName": "referenceNumber",
+          "readOnly": false
+        },
+        "DSA_": {
+          "_name": "Created by",
+          "_type": "created_by",
+          "varName": "createdBy",
+          "readOnly": true
+        },
+        "LP%7C%5B": {
+          "_name": "Last edited by",
+          "_type": "last_edited_by",
+          "varName": "lastEditedBy",
+          "readOnly": true
+        },
+        "QLfy": {
+          "_name": "Last edited time",
+          "_type": "last_edited_time",
+          "varName": "lastEditedTime",
+          "readOnly": true
+        },
+        "%7Bguj": {
+          "_name": "Created time",
+          "_type": "created_time",
+          "varName": "createdTime",
+          "readOnly": true
         }
       }
     }

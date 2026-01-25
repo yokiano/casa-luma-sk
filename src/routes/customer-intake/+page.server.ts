@@ -48,29 +48,29 @@ function normalizeHowDidYouHear(input: string): {
   return { value: 'Other', extraNote: `How did you hear about us?: ${trimmed}` };
 }
 
-export const load: PageServerLoad = async ({ url, cookies }) => {
+export const load: PageServerLoad = async ({ url }) => {
   const secret = url.searchParams.get('secret');
-  const hasAccess = cookies.get('intake_access') === 'true';
 
-  // If secret is provided and matches env var, grant access
+  // Only grant access if secret is present and matches
   if (env.CUSTOMER_INTAKE_SECRET && secret === env.CUSTOMER_INTAKE_SECRET) {
-    cookies.set('intake_access', 'true', {
-      path: '/customer-intake',
-      httpOnly: true,
-      sameSite: 'lax', // Allow valid link navigation
-      maxAge: 60 * 60 * 24, // 1 day
-      secure: process.env.NODE_ENV === 'production'
-    });
-    return { authorized: true };
-  }
-
-  // If cookie exists, grant access
-  if (hasAccess) {
     return { authorized: true };
   }
 
   return { authorized: false };
 };
+
+function getNewLoyverseName(currentName: string, customerCode: string | undefined): string {
+  if (!customerCode) return currentName;
+  
+  // Strip any existing suffix like "(customer code ...)" or "[...]"
+  // The user said: Cohen (customer code CO3) -> Cohen [CO3]
+  let baseName = currentName
+    .replace(/\(customer code [^)]+\)/gi, '')
+    .replace(/\[[^\]]+\]/g, '')
+    .trim();
+    
+  return `${baseName} [${customerCode}]`;
+}
 
 export const actions: Actions = {
   submit: async ({ request }) => {
@@ -171,9 +171,10 @@ export const actions: Actions = {
 
       // --- Sync to Loyverse Customers ---
       try {
+        const loyverseName = getNewLoyverseName(data.familyName.trim(), customerCode);
         const loyverseCustomer = await loyverse.createOrUpdateCustomer({
           customer_code: customerCode,
-          name: data.familyName.trim(),
+          name: loyverseName,
           email: data.email?.trim() ? data.email.trim() : undefined,
           phone_number: data.mainPhone.trim(),
           note: `Created from Casa Luma customer intake form [${customerCode}]`,
