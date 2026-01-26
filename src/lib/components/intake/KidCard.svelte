@@ -7,7 +7,7 @@
     onRemove: () => void;
   }
   
-  let { kid, onRemove }: Props = $props();
+  let { kid = $bindable(), onRemove }: Props = $props();
 </script>
 
 <div class="bg-card/50 rounded-xl p-5 border border-border/50 relative shadow-sm">

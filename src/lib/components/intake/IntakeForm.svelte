@@ -4,6 +4,7 @@
   import type { IntakeFormData } from "$lib/types/intake";
   import { toast } from 'svelte-sonner';
   import { fade } from 'svelte/transition';
+  import { untrack } from 'svelte';
   import PersonListEditor from "./PersonListEditor.svelte";
   import KidCard from "./KidCard.svelte";
   import GuardianCard from "./GuardianCard.svelte";
@@ -24,6 +25,62 @@
 
   let submitting = $state(false);
   let success = $state(false);
+  let existingCustomer = $state<{ name: string; code: string | undefined } | null>(null);
+  let checkingExistence = $state(false);
+
+  async function checkExistence() {
+    if (success) return;
+    if (!formData.mainPhone && !formData.email) {
+      existingCustomer = null;
+      return;
+    }
+
+    checkingExistence = true;
+    try {
+      const data = new FormData();
+      data.append('phone', formData.mainPhone || '');
+      data.append('email', formData.email || '');
+
+      const response = await fetch('?/check', {
+        method: 'POST',
+        body: data
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        // SvelteKit action response is nested in 'data'
+        const actionData = JSON.parse(result.data);
+        if (actionData && actionData[1] && actionData[1].exists) {
+          existingCustomer = actionData[1].customer;
+        } else {
+          existingCustomer = null;
+        }
+      }
+    } catch (e) {
+      console.error('Check existence failed:', e);
+    } finally {
+      checkingExistence = false;
+    }
+  }
+
+  let checkTimeout: ReturnType<typeof setTimeout>;
+  
+  $effect(() => {
+    // track specific fields
+    const phone = formData.mainPhone;
+    const email = formData.email;
+    const isSuccess = success;
+
+    untrack(() => {
+      if (isSuccess) return;
+      if (phone || email) {
+        clearTimeout(checkTimeout);
+        checkTimeout = setTimeout(checkExistence, 1000);
+      } else {
+        existingCustomer = null;
+      }
+    });
+  });
 
   async function runConfetti() {
     if (!browser) return;
@@ -162,7 +219,9 @@
             toast.error('Server error');
           }
 
-          await update();
+          if (result.type !== 'success') {
+            await update();
+          }
         };
       }}
       class="space-y-10"
@@ -207,6 +266,22 @@
         </div>
       </div>
 
+      {#if existingCustomer}
+        <div in:fade class="bg-amber-50 border border-amber-200 p-4 rounded-2xl space-y-2">
+          <div class="flex items-center gap-2 text-amber-800 font-semibold">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alert-circle"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+            Existing Customer Found
+          </div>
+          <p class="text-sm text-amber-700 leading-relaxed">
+            A customer named <strong>{existingCustomer.name}</strong> 
+            {existingCustomer.code ? `(Code: ${existingCustomer.code})` : ''} 
+            is already registered with this phone/email. 
+            <br/><br/>
+            <strong>Staff:</strong> If this is a return visit, you can search for them in Loyverse. If this is a new family using a shared phone, you may proceed.
+          </p>
+        </div>
+      {/if}
+
       <div class="space-y-3 bg-card/30 p-5 rounded-2xl border border-border/30">
         <div class="flex justify-between items-center">
           <label for="email" class="text-lg font-semibold block"
@@ -233,26 +308,26 @@
 
     <PersonListEditor
       title="Kids"
-      items={formData.kids}
+      bind:items={formData.kids}
       addButtonText="Add Kid"
       onAdd={addKid}
       onRemove={removeKid}
     >
-      {#snippet itemRenderer(kid, onRemove)}
-        <KidCard {kid} {onRemove} />
+      {#snippet itemRenderer(kid, i, onRemove)}
+        <KidCard bind:kid={formData.kids[i]} {onRemove} />
       {/snippet}
     </PersonListEditor>
 
     <div class="space-y-4">
       <PersonListEditor
         title="Parents / Caregivers"
-        items={formData.caregivers}
+        bind:items={formData.caregivers}
         addButtonText="Add Caregiver"
         onAdd={addCaregiver}
         onRemove={removeCaregiver}
       >
-        {#snippet itemRenderer(caregiver, onRemove)}
-          <GuardianCard guardian={caregiver} {onRemove} />
+        {#snippet itemRenderer(caregiver, i, onRemove)}
+          <GuardianCard bind:guardian={formData.caregivers[i]} {onRemove} />
         {/snippet}
       </PersonListEditor>
       <div class="bg-card/30 p-4 rounded-xl border border-border/30">

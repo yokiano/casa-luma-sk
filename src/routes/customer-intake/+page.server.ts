@@ -172,13 +172,25 @@ export const actions: Actions = {
       // --- Sync to Loyverse Customers ---
       try {
         const loyverseName = getNewLoyverseName(data.familyName.trim(), customerCode);
-        const loyverseCustomer = await loyverse.createOrUpdateCustomer({
+        
+        // Attempt 1: Create or Update by matching email/phone
+        let loyverseCustomer = await loyverse.createOrUpdateCustomer({
           customer_code: customerCode,
           name: loyverseName,
           email: data.email?.trim() ? data.email.trim() : undefined,
           phone_number: data.mainPhone.trim(),
           note: `Created from Casa Luma customer intake form [${customerCode}]`,
         });
+
+        // Attempt 2: If Loyverse matched an existing customer but ignored the name change
+        // (common when matching by email/phone without an ID), force the update using the ID.
+        if (loyverseCustomer.name !== loyverseName) {
+          loyverseCustomer = await loyverse.createOrUpdateCustomer({
+            id: loyverseCustomer.id,
+            name: loyverseName,
+            customer_code: customerCode,
+          });
+        }
 
         await familiesDb.updatePage(
           familyPage.id,
@@ -196,6 +208,41 @@ export const actions: Actions = {
     } catch (error) {
       console.error('Intake form error:', error);
       return fail(500, { success: false, message: 'Server error' });
+    }
+  },
+  check: async ({ request }) => {
+    try {
+      const formData = await request.formData();
+      const email = formData.get('email')?.toString().trim();
+      const phone = formData.get('phone')?.toString().trim();
+
+      if (!email && !phone) {
+        return { exists: false };
+      }
+
+      // This is expensive as it grows, but Loyverse API doesn't support 
+      // direct search by phone/email currently in our client.
+      const allCustomers = await loyverse.getAllCustomers();
+      
+      const found = allCustomers.find(c => 
+        (email && c.email === email) || 
+        (phone && c.phone_number === phone)
+      );
+
+      if (found) {
+        return { 
+          exists: true, 
+          customer: {
+            name: found.name,
+            code: found.customer_code
+          }
+        };
+      }
+
+      return { exists: false };
+    } catch (e) {
+      console.error('[customer-intake] Check failed:', e);
+      return { exists: false, error: true };
     }
   }
 };

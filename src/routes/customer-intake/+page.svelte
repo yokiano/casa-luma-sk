@@ -2,10 +2,11 @@
   import IntakeForm from '$lib/components/intake/IntakeForm.svelte';
   import { replaceState } from '$app/navigation';
   import { page } from '$app/stores';
+  import { onMount } from 'svelte';
 
   let { data } = $props();
 
-  $effect(() => {
+  onMount(() => {
     // If authorized and the secret is still in the URL, remove it
     if (data.authorized && $page.url.searchParams.has('secret')) {
       const newUrl = new URL($page.url);

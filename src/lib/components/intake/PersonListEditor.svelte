@@ -10,7 +10,7 @@
     emptyText?: string;
     addButtonText: string;
     // Snippet for rendering each item card
-    itemRenderer: Snippet<[T, () => void]>; // item, remove callback
+    itemRenderer: Snippet<[T, number, () => void]>; // item, index, remove callback
     onAdd: () => void;
     onRemove: (id: string) => void;
   }
@@ -35,9 +35,9 @@
   </div>
 
   <div class="space-y-4">
-    {#each items as item (item.id)}
+    {#each items as item, i (item.id)}
       <div animate:flip={{ duration: 300 }} transition:slide={{ axis: 'y', duration: 300 }}>
-        {@render itemRenderer(item, () => onRemove(item.id))}
+        {@render itemRenderer(item, i, () => onRemove(item.id))}
       </div>
     {/each}
 

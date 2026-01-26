@@ -7,7 +7,7 @@
     onRemove: () => void;
   }
   
-  let { guardian, onRemove }: Props = $props();
+  let { guardian = $bindable(), onRemove }: Props = $props();
 
   function formatPhone(value: string) {
     // Basic formatting placeholder if needed in the future
@@ -85,7 +85,7 @@
 
     <!-- Phone Input -->
     <div>
-      <label for={`caregiver-phone-${guardian.id}`} class="block text-sm font-medium mb-1.5 ml-1 text-muted-foreground">Number <span class="text-destructive">*</span></label>
+      <label for={`caregiver-phone-${guardian.id}`} class="block text-sm font-medium mb-1.5 ml-1 text-muted-foreground">Number</label>
       <div class="relative">
         <span class="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium select-none">
              {guardian.contactMethod === 'Thai Phone' ? '+66' : '+'}
@@ -96,7 +96,6 @@
           bind:value={guardian.phone}
           class="w-full bg-background border border-input rounded-xl pl-14 pr-4 py-3 text-lg focus:ring-2 focus:ring-primary/20 outline-none font-mono transition-all"
           placeholder={guardian.contactMethod === 'Thai Phone' ? '81 234 5678' : 'Country Code + Number'}
-          required
         />
       </div>
     </div>
