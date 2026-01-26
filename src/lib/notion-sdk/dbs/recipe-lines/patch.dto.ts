@@ -1,25 +1,24 @@
-import { SopCatalogResponse } from "./types"
+import { RecipeLinesResponse } from "./types"
 import { UpdatePageBodyParameters,
 RichTextItemRequest
 } from '../../core/types/notion-api.types'
 
 type TypeFromRecord<Obj, Type> = Obj extends Record<string, infer T> ? Extract<T, Type> : never
 
-export type SopCatalogPropertiesPatch = {
-  when?: SopCatalogResponse['properties']['When']['select']['name']
-  status?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'status' }>['status']
-  sopType?: SopCatalogResponse['properties']['SOP Type']['select']['name']
-  department?: SopCatalogResponse['properties']['Department']['select']['name']
+export type RecipeLinesPropertiesPatch = {
+  amount?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'number' }>['number']
+  lineCost?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'formula' }>['formula']
+  unit?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'formula' }>['formula']
+  ingredient?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'relation' }>['relation']
   name?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
-  role?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'relation' }>['relation']
 }
 
   
-export class SopCatalogPatchDTO {
+export class RecipeLinesPatchDTO {
   __data: UpdatePageBodyParameters
 
   constructor(opts: {
-    properties?: SopCatalogPropertiesPatch
+    properties?: RecipeLinesPropertiesPatch
     coverUrl?: string
     icon?: UpdatePageBodyParameters['icon']
     archived?: UpdatePageBodyParameters['archived']
@@ -32,31 +31,31 @@ export class SopCatalogPatchDTO {
     this.__data.icon = icon
     this.__data.archived = archived
     
-    if (props?.when !== undefined) {
-      this.__data.properties['JsMl'] = {
-        type: 'select',
-        select: { name: props.when },
+    if (props?.amount !== undefined) {
+      this.__data.properties['c%5BnZ'] = {
+        type: 'number',
+        number: props.amount,
       }
     }
 
-    if (props?.status !== undefined) {
-      this.__data.properties['%5D%40Pq'] = {
-        type: 'status',
-        status: props.status,
+    if (props?.lineCost !== undefined) {
+      this.__data.properties['e%3Dw%5C'] = {
+        type: 'formula',
+        formula: props.lineCost,
       }
     }
 
-    if (props?.sopType !== undefined) {
-      this.__data.properties['pf%60b'] = {
-        type: 'select',
-        select: { name: props.sopType },
+    if (props?.unit !== undefined) {
+      this.__data.properties['kVXs'] = {
+        type: 'formula',
+        formula: props.unit,
       }
     }
 
-    if (props?.department !== undefined) {
-      this.__data.properties['ybjG'] = {
-        type: 'select',
-        select: { name: props.department },
+    if (props?.ingredient !== undefined) {
+      this.__data.properties['nRYL'] = {
+        type: 'relation',
+        relation: props.ingredient,
       }
     }
 
@@ -79,13 +78,6 @@ export class SopCatalogPatchDTO {
                     annotations: props.name.annotations
                   },
                 ]
-      }
-    }
-
-    if (props?.role !== undefined) {
-      this.__data.properties['%40pJj'] = {
-        type: 'relation',
-        relation: props.role,
       }
     }
   }

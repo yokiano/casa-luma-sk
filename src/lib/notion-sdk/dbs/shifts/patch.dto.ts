@@ -10,10 +10,10 @@ export type ShiftsPropertiesPatch = {
   type?: ShiftsResponse['properties']['Type']['select']['name']
   status?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'status' }>['status']
   shiftTime?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'date' }>['date']
-  role?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'relation' }>['relation']
   shiftNote?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   otApprover?: ShiftsResponse['properties']['OT Approver']['multi_select'][number]['name'][]
   ot?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'number' }>['number']
+  role?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'relation' }>['relation']
 }
 
   
@@ -62,13 +62,6 @@ export class ShiftsPatchDTO {
       }
     }
 
-    if (props?.role !== undefined) {
-      this.__data.properties['mbpd'] = {
-        type: 'relation',
-        relation: props.role,
-      }
-    }
-
     if (props?.shiftNote !== undefined) {
       this.__data.properties['title'] = {
         type: 'title',
@@ -102,6 +95,13 @@ export class ShiftsPatchDTO {
       this.__data.properties['aT%5Bq'] = {
         type: 'number',
         number: props.ot,
+      }
+    }
+
+    if (props?.role !== undefined) {
+      this.__data.properties['mbpd'] = {
+        type: 'relation',
+        relation: props.role,
       }
     }
   }

@@ -65,7 +65,6 @@ export const EMPLOYEES_PROPS_TO_IDS = {
   "notes": "gdZF",
   "bankAccountDetails": "jNcC",
   "phone": "lJ%7CL",
-  "position": "o%5DfK",
   "hometown": "pi%5Dw",
   "employmentStatus": "vCD%5E",
   "reportsTo": "wUr%5B",
@@ -77,7 +76,8 @@ export const EMPLOYEES_PROPS_TO_IDS = {
   "workPermitScan": "Z%5ECt",
   "scanQr": "y%5EAY",
   "salaryCalculation": "UqIQ",
-  "otRateThBhr": "pe~h"
+  "otRateThBhr": "pe~h",
+  "role": "o%5DfK"
 } as const
 export const EMPLOYEES_IDS_TO_PROPS = {
   "%3CK%5BF": "visaExpiry",
@@ -99,7 +99,6 @@ export const EMPLOYEES_IDS_TO_PROPS = {
   "gdZF": "notes",
   "jNcC": "bankAccountDetails",
   "lJ%7CL": "phone",
-  "o%5DfK": "position",
   "pi%5Dw": "hometown",
   "vCD%5E": "employmentStatus",
   "wUr%5B": "reportsTo",
@@ -111,7 +110,8 @@ export const EMPLOYEES_IDS_TO_PROPS = {
   "Z%5ECt": "workPermitScan",
   "y%5EAY": "scanQr",
   "UqIQ": "salaryCalculation",
-  "pe~h": "otRateThBhr"
+  "pe~h": "otRateThBhr",
+  "o%5DfK": "role"
 } as const
 export const EMPLOYEES_PROPS_TO_TYPES = {
   "visaExpiry": "date",
@@ -133,7 +133,6 @@ export const EMPLOYEES_PROPS_TO_TYPES = {
   "notes": "rich_text",
   "bankAccountDetails": "rich_text",
   "phone": "phone_number",
-  "position": "relation",
   "hometown": "rich_text",
   "employmentStatus": "status",
   "reportsTo": "people",
@@ -145,7 +144,8 @@ export const EMPLOYEES_PROPS_TO_TYPES = {
   "workPermitScan": "files",
   "scanQr": "files",
   "salaryCalculation": "select",
-  "otRateThBhr": "formula"
+  "otRateThBhr": "formula",
+  "role": "relation"
 } as const
 
   export type EmployeesDTOProperties = keyof typeof EMPLOYEES_PROPS_TO_IDS

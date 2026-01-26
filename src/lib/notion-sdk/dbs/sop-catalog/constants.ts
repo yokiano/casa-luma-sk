@@ -29,28 +29,28 @@ export const SOP_CATALOG_PROP_VALUES = {
 }
 
 export const SOP_CATALOG_PROPS_TO_IDS = {
-  "role": "%40pJj",
   "when": "JsMl",
   "status": "%5D%40Pq",
   "sopType": "pf%60b",
   "department": "ybjG",
-  "name": "title"
+  "name": "title",
+  "role": "%40pJj"
 } as const
 export const SOP_CATALOG_IDS_TO_PROPS = {
-  "%40pJj": "role",
   "JsMl": "when",
   "%5D%40Pq": "status",
   "pf%60b": "sopType",
   "ybjG": "department",
-  "title": "name"
+  "title": "name",
+  "%40pJj": "role"
 } as const
 export const SOP_CATALOG_PROPS_TO_TYPES = {
-  "role": "relation",
   "when": "select",
   "status": "status",
   "sopType": "select",
   "department": "select",
-  "name": "title"
+  "name": "title",
+  "role": "relation"
 } as const
 
   export type SopCatalogDTOProperties = keyof typeof SOP_CATALOG_PROPS_TO_IDS

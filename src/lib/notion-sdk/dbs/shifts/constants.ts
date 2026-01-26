@@ -24,30 +24,30 @@ export const SHIFTS_PROPS_TO_IDS = {
   "type": "L%60OW",
   "status": "VPhk",
   "shiftTime": "YKt%5C",
-  "role": "mbpd",
   "shiftNote": "title",
   "otApprover": "X%3FPo",
-  "ot": "aT%5Bq"
+  "ot": "aT%5Bq",
+  "role": "mbpd"
 } as const
 export const SHIFTS_IDS_TO_PROPS = {
   "%40QLu": "employee",
   "L%60OW": "type",
   "VPhk": "status",
   "YKt%5C": "shiftTime",
-  "mbpd": "role",
   "title": "shiftNote",
   "X%3FPo": "otApprover",
-  "aT%5Bq": "ot"
+  "aT%5Bq": "ot",
+  "mbpd": "role"
 } as const
 export const SHIFTS_PROPS_TO_TYPES = {
   "employee": "relation",
   "type": "select",
   "status": "status",
   "shiftTime": "date",
-  "role": "relation",
   "shiftNote": "title",
   "otApprover": "multi_select",
-  "ot": "number"
+  "ot": "number",
+  "role": "relation"
 } as const
 
   export type ShiftsDTOProperties = keyof typeof SHIFTS_PROPS_TO_IDS

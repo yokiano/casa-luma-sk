@@ -11,30 +11,6 @@
     {
       "name": "Job Prospects",
       "id": "505310d2-281e-44f1-9392-034539d209cf"
-    },
-    {
-      "name": "Suppliers",
-      "id": "839a6083-9aaa-4cf7-add0-a8397534726a"
-    },
-    {
-      "name": "Recipes",
-      "id": "b7fc72df-194c-4be8-9f64-99e86f97f5ac"
-    },
-    {
-      "name": "Recipe Lines",
-      "id": "9c809c61-fee0-4b7c-b167-d04863218e2a"
-    },
-    {
-      "name": "Recipes",
-      "id": "af9f8711-f515-4714-8774-2378990a7889"
-    },
-    {
-      "name": "Ingredients",
-      "id": "57c02c7c-fa7c-4ea8-919d-c9db03b545c3"
-    },
-    {
-      "name": "Ingredients",
-      "id": "ba611e70-d6c2-469b-917f-01e7af21b180"
     }
   ],
   "databases": {
@@ -1145,12 +1121,6 @@
           "varName": "phone",
           "readOnly": false
         },
-        "o%5DfK": {
-          "_name": "Role",
-          "_type": "relation",
-          "varName": "position",
-          "readOnly": false
-        },
         "pi%5Dw": {
           "_name": "Hometown",
           "_type": "rich_text",
@@ -1222,6 +1192,12 @@
           "_type": "formula",
           "varName": "otRateThBhr",
           "readOnly": false
+        },
+        "o%5DfK": {
+          "_name": "Role",
+          "_type": "relation",
+          "varName": "role",
+          "readOnly": false
         }
       }
     },
@@ -1254,12 +1230,6 @@
           "varName": "shiftTime",
           "readOnly": false
         },
-        "mbpd": {
-          "_name": "Role",
-          "_type": "relation",
-          "varName": "role",
-          "readOnly": false
-        },
         "title": {
           "_name": "Shift Note",
           "_type": "title",
@@ -1276,6 +1246,12 @@
           "_name": "OT",
           "_type": "number",
           "varName": "ot",
+          "readOnly": false
+        },
+        "mbpd": {
+          "_name": "Role",
+          "_type": "relation",
+          "varName": "role",
           "readOnly": false
         }
       }
@@ -1772,12 +1748,6 @@
       "varName": "sopCatalog",
       "pathName": "sop-catalog",
       "properties": {
-        "%40pJj": {
-          "_name": "Role",
-          "_type": "relation",
-          "varName": "role",
-          "readOnly": false
-        },
         "JsMl": {
           "_name": "When",
           "_type": "select",
@@ -1806,6 +1776,12 @@
           "_name": "Name",
           "_type": "title",
           "varName": "name",
+          "readOnly": false
+        },
+        "%40pJj": {
+          "_name": "Role",
+          "_type": "relation",
+          "varName": "role",
           "readOnly": false
         }
       }
@@ -1983,6 +1959,257 @@
           "_type": "created_time",
           "varName": "createdTime",
           "readOnly": true
+        }
+      }
+    },
+    "9c809c61-fee0-4b7c-b167-d04863218e2a": {
+      "_name": "Recipe Lines",
+      "varName": "recipeLines",
+      "pathName": "recipe-lines",
+      "properties": {
+        "c%5BnZ": {
+          "_name": "Amount",
+          "_type": "number",
+          "varName": "amount",
+          "readOnly": false
+        },
+        "e%3Dw%5C": {
+          "_name": "Line Cost",
+          "_type": "formula",
+          "varName": "lineCost",
+          "readOnly": false
+        },
+        "kVXs": {
+          "_name": "Unit",
+          "_type": "formula",
+          "varName": "unit",
+          "readOnly": false
+        },
+        "nRYL": {
+          "_name": "Ingredient",
+          "_type": "relation",
+          "varName": "ingredient",
+          "readOnly": false
+        },
+        "title": {
+          "_name": "Name",
+          "_type": "title",
+          "varName": "name",
+          "readOnly": false
+        }
+      }
+    },
+    "ba611e70-d6c2-469b-917f-01e7af21b180": {
+      "_name": "Ingredients",
+      "varName": "ingredients",
+      "pathName": "ingredients",
+      "properties": {
+        "%3Cr%5Dr": {
+          "_name": "Cost",
+          "_type": "number",
+          "varName": "cost",
+          "readOnly": false
+        },
+        "%3DLVj": {
+          "_name": "Department",
+          "_type": "multi_select",
+          "varName": "department",
+          "readOnly": false
+        },
+        "%3DaXL": {
+          "_name": "Supplier",
+          "_type": "relation",
+          "varName": "supplier",
+          "readOnly": false
+        },
+        "B%60hP": {
+          "_name": "Unit",
+          "_type": "select",
+          "varName": "unit",
+          "readOnly": false
+        },
+        "L~Gj": {
+          "_name": "Sku",
+          "_type": "rich_text",
+          "varName": "sku",
+          "readOnly": false
+        },
+        "MifD": {
+          "_name": "Thai Name",
+          "_type": "rich_text",
+          "varName": "thaiName",
+          "readOnly": false
+        },
+        "%5COA%60": {
+          "_name": "Weight (g)",
+          "_type": "number",
+          "varName": "weightG",
+          "readOnly": false
+        },
+        "%5DUmz": {
+          "_name": "Order Link",
+          "_type": "url",
+          "varName": "orderLink",
+          "readOnly": false
+        },
+        "yw%5D%3E": {
+          "_name": "Image",
+          "_type": "files",
+          "varName": "image",
+          "readOnly": false
+        },
+        "title": {
+          "_name": "Name",
+          "_type": "title",
+          "varName": "name",
+          "readOnly": false
+        }
+      }
+    },
+    "b7fc72df-194c-4be8-9f64-99e86f97f5ac": {
+      "_name": "Recipes",
+      "varName": "recipes",
+      "pathName": "recipes",
+      "properties": {
+        "%3EAo%5D": {
+          "_name": "Recipe Lines",
+          "_type": "relation",
+          "varName": "recipeLines",
+          "readOnly": false
+        },
+        "In%3D%3A": {
+          "_name": "COGS",
+          "_type": "rollup",
+          "varName": "cogs",
+          "readOnly": false
+        },
+        "K%3E%3AU": {
+          "_name": "Thai Name",
+          "_type": "rich_text",
+          "varName": "thaiName",
+          "readOnly": false
+        },
+        "Uqli": {
+          "_name": "Instructions",
+          "_type": "rich_text",
+          "varName": "instructions",
+          "readOnly": false
+        },
+        "_nNq": {
+          "_name": "Menu Item",
+          "_type": "relation",
+          "varName": "menuItem",
+          "readOnly": false
+        },
+        "ruvh": {
+          "_name": "Image",
+          "_type": "files",
+          "varName": "image",
+          "readOnly": false
+        },
+        "title": {
+          "_name": "Name",
+          "_type": "title",
+          "varName": "name",
+          "readOnly": false
+        }
+      }
+    },
+    "839a6083-9aaa-4cf7-add0-a8397534726a": {
+      "_name": "Suppliers",
+      "varName": "suppliers",
+      "pathName": "suppliers",
+      "properties": {
+        "D%3CzK": {
+          "_name": "Website",
+          "_type": "url",
+          "varName": "website",
+          "readOnly": false
+        },
+        "L%5D%3An": {
+          "_name": "Location",
+          "_type": "rich_text",
+          "varName": "location",
+          "readOnly": false
+        },
+        "W%3Fxz": {
+          "_name": "Phone",
+          "_type": "phone_number",
+          "varName": "phone",
+          "readOnly": false
+        },
+        "%5EK%7DY": {
+          "_name": "Bank Details",
+          "_type": "rich_text",
+          "varName": "bankDetails",
+          "readOnly": false
+        },
+        "caqu": {
+          "_name": "Category",
+          "_type": "multi_select",
+          "varName": "category",
+          "readOnly": false
+        },
+        "u%3FeQ": {
+          "_name": "Contact Person",
+          "_type": "rich_text",
+          "varName": "contactPerson",
+          "readOnly": false
+        },
+        "zTr_": {
+          "_name": "Scan picture",
+          "_type": "files",
+          "varName": "scanPicture",
+          "readOnly": false
+        },
+        "zjGR": {
+          "_name": "Email",
+          "_type": "email",
+          "varName": "email",
+          "readOnly": false
+        },
+        "title": {
+          "_name": "Name",
+          "_type": "title",
+          "varName": "name",
+          "readOnly": false
+        }
+      }
+    },
+    "8a6cc48c-180b-452e-ae4f-80fe64b749f7": {
+      "_name": "Roles",
+      "varName": "roles",
+      "pathName": "roles",
+      "properties": {
+        "HIEV": {
+          "_name": "Employees",
+          "_type": "relation",
+          "varName": "employees",
+          "readOnly": false
+        },
+        "YFml": {
+          "_name": "Active",
+          "_type": "checkbox",
+          "varName": "active",
+          "readOnly": false
+        },
+        "_YcL": {
+          "_name": "Required per Day",
+          "_type": "number",
+          "varName": "requiredPerDay",
+          "readOnly": false
+        },
+        "dgcQ": {
+          "_name": "Department",
+          "_type": "select",
+          "varName": "department",
+          "readOnly": false
+        },
+        "title": {
+          "_name": "Role",
+          "_type": "title",
+          "varName": "role",
+          "readOnly": false
         }
       }
     }

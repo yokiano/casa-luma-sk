@@ -80,7 +80,6 @@ export class EmployeesPropertiesResponseDTO {
       notes: this.__props['Notes'],
       bankAccountDetails: this.__props['Bank Account Details'],
       phone: this.__props['Phone'],
-      position: this.__props['Role'],
       hometown: this.__props['Hometown'],
       employmentStatus: this.__props['Employment Status'],
       reportsTo: this.__props['Reports To'],
@@ -93,6 +92,7 @@ export class EmployeesPropertiesResponseDTO {
       scanQr: this.__props['Scan QR'],
       salaryCalculation: this.__props['Salary Calculation'],
       otRateThBhr: this.__props['OT Rate (THB/hr)'],
+      role: this.__props['Role'],
     }
   }
 
@@ -209,11 +209,6 @@ export class EmployeesPropertiesResponseDTO {
     return this.__props['Phone']?.phone_number
   }
 
-  get positionIds() {
-    return (this.__props['Role']?.relation as unknown as Array<{ id: string }>).map((item) => item.id)  
-  }
-
-
   get hometown() {
     return {
       text: this.__props['Hometown']?.rich_text ? this.__props['Hometown'].rich_text.reduce((acc, item) => acc + item.plain_text, '') : undefined,
@@ -287,4 +282,9 @@ export class EmployeesPropertiesResponseDTO {
   get otRateThBhr() {
     return this.__props['OT Rate (THB/hr)']?.formula
   }
+
+  get roleIds() {
+    return (this.__props['Role']?.relation as unknown as Array<{ id: string }>).map((item) => item.id)  
+  }
+
 }

@@ -25,7 +25,6 @@ export type EmployeesPropertiesPatch = {
   notes?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   bankAccountDetails?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   phone?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'phone_number' }>['phone_number']
-  position?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'relation' }>['relation']
   hometown?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   employmentStatus?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'status' }>['status']
   reportsTo?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'people' }>['people']
@@ -38,6 +37,7 @@ export type EmployeesPropertiesPatch = {
   scanQr?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'files' }>['files']
   salaryCalculation?: EmployeesResponse['properties']['Salary Calculation']['select']['name']
   otRateThBhr?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'formula' }>['formula']
+  role?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'relation' }>['relation']
 }
 
   
@@ -281,13 +281,6 @@ export class EmployeesPatchDTO {
       }
     }
 
-    if (props?.position !== undefined) {
-      this.__data.properties['o%5DfK'] = {
-        type: 'relation',
-        relation: props.position,
-      }
-    }
-
     if (props?.hometown !== undefined) {
       this.__data.properties['pi%5Dw'] = {
         type: 'rich_text',
@@ -429,6 +422,13 @@ export class EmployeesPatchDTO {
       this.__data.properties['pe~h'] = {
         type: 'formula',
         formula: props.otRateThBhr,
+      }
+    }
+
+    if (props?.role !== undefined) {
+      this.__data.properties['o%5DfK'] = {
+        type: 'relation',
+        relation: props.role,
       }
     }
   }

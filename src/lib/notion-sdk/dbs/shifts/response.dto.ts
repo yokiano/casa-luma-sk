@@ -65,10 +65,10 @@ export class ShiftsPropertiesResponseDTO {
       type: this.__props['Type'],
       status: this.__props['Status'],
       shiftTime: this.__props['Shift Time'],
-      role: this.__props['Role'],
       shiftNote: this.__props['Shift Note'],
       otApprover: this.__props['OT Approver'],
       ot: this.__props['OT'],
+      role: this.__props['Role'],
     }
   }
 
@@ -90,11 +90,6 @@ export class ShiftsPropertiesResponseDTO {
     return this.__props['Shift Time']?.date
   }
 
-  get roleIds() {
-    return (this.__props['Role']?.relation as unknown as Array<{ id: string }>).map((item) => item.id)  
-  }
-
-
   get shiftNote() {
     return {
       text: this.__props['Shift Note']?.title ? this.__props['Shift Note'].title.reduce((acc, item) => acc + item.plain_text, '') : undefined,
@@ -112,4 +107,9 @@ export class ShiftsPropertiesResponseDTO {
   get ot() {
     return this.__props['OT']?.number
   }
+
+  get roleIds() {
+    return (this.__props['Role']?.relation as unknown as Array<{ id: string }>).map((item) => item.id)  
+  }
+
 }

@@ -61,18 +61,13 @@ export class SopCatalogPropertiesResponseDTO {
   constructor(props: SopCatalogResponse['properties']) {
     this.__props = props
     this.__data = {
-      role: this.__props['Role'],
       when: this.__props['When'],
       status: this.__props['Status'],
       sopType: this.__props['SOP Type'],
       department: this.__props['Department'],
       name: this.__props['Name'],
+      role: this.__props['Role'],
     }
-  }
-
-
-  get roleIds() {
-    return (this.__props['Role']?.relation as unknown as Array<{ id: string }>).map((item) => item.id)  
   }
 
 
@@ -99,4 +94,9 @@ export class SopCatalogPropertiesResponseDTO {
       title: this.__props['Name']?.title,
     }
   }
+
+  get roleIds() {
+    return (this.__props['Role']?.relation as unknown as Array<{ id: string }>).map((item) => item.id)  
+  }
+
 }
