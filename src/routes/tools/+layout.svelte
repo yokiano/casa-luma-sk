@@ -11,6 +11,7 @@
     { href: '/tools/close-shift', label: 'Close Shift' },
     { href: '/tools/receipts', label: 'Receipts' },
     { href: '/tools/expense-scan', label: 'Expense Scan' },
+    { href: '/tools/salary-payment', label: 'Salary Payment' },
     { href: '/tools/memberships', label: 'Memberships' },
     // { href: '/tools/graphics', label: 'Graphics' },
     { href: '/tools/onboarding/kitchen', label: 'Onboarding' }

@@ -23,7 +23,8 @@ export const scanExpenseSlip = command(ScanSchema, async ({ dataUrl, fileName })
       date: result.date,
       amount: result.amount,
       recipientName: result.recipientName,
-      transactionId: result.transactionId
+      transactionId: result.transactionId,
+      rawText: result.rawText
     };
   } catch (error: any) {
     console.error('[Remote] OCR Scan failed:', error);

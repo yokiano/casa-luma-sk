@@ -50,7 +50,7 @@ export interface EmployeesResponse extends WithOptional<Omit<DatabaseObjectRespo
     "Bank Account Details": RichTextPropertyItemObjectResponse,
     "Phone": PhoneNumberPropertyItemObjectResponse,
     "Hometown": RichTextPropertyItemObjectResponse,
-    "Employment Status": Omit<StatusPropertyItemObjectResponse, 'status'> & { status: { id: StringRequest, name: 'Onboarding', color: 'default' } | { id: StringRequest, name: 'Working', color: 'default' } | { id: StringRequest, name: 'Active', color: 'default' } | { id: StringRequest, name: 'Resigned', color: 'default' } | { id: StringRequest, name: 'Terminated', color: 'default' } | { id: StringRequest, name: 'Contract Ended', color: 'default' }},
+    "Employment Status": Omit<StatusPropertyItemObjectResponse, 'status'> & { status: { id: StringRequest, name: 'Onboarding', color: 'yellow' } | { id: StringRequest, name: 'Working', color: 'green' } | { id: StringRequest, name: 'Active', color: 'default' } | { id: StringRequest, name: 'Resigned', color: 'red' } | { id: StringRequest, name: 'Terminated', color: 'red' } | { id: StringRequest, name: 'Contract Ended', color: 'red' }},
     "Reports To": PeoplePropertyItemObjectResponse,
     "Start Date": DatePropertyItemObjectResponse,
     "Nickname": TitlePropertyItemObjectResponse,

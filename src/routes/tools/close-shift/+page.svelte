@@ -1,6 +1,5 @@
 <script lang="ts">
   import { CloseShiftState } from './CloseShiftState.svelte';
-  import ShiftsReviewSection from '$lib/components/tools/close-shift/sections/ShiftsReviewSection.svelte';
   import GeneralInfoSection from '$lib/components/tools/close-shift/sections/GeneralInfoSection.svelte';
   import CashCountSection from '$lib/components/tools/close-shift/sections/CashCountSection.svelte';
   import OtherPaymentsSection from '$lib/components/tools/close-shift/sections/OtherPaymentsSection.svelte';
@@ -63,28 +62,6 @@
       <p class="text-green-700">The report has been saved to Notion.</p>
     </div>
   {:else}
-    <div class="space-y-6">
-      {#if data.shiftsLoadFailed}
-        <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          Couldn’t load shifts right now. The close-shift report still works, but the shifts sections may be empty.
-        </div>
-      {/if}
-
-      <ShiftsReviewSection
-        title="Today’s Shifts"
-        mode="today"
-        shifts={data.todayShifts}
-        employeesById={data.employeesById}
-      />
-
-      <ShiftsReviewSection
-        title="Tomorrow’s Shifts"
-        mode="tomorrow"
-        shifts={data.tomorrowShifts}
-        employeesById={data.employeesById}
-      />
-    </div>
-
     <div class="grid gap-8 md:grid-cols-2">
       <!-- Left Column: Inputs -->
       <div class="space-y-8">

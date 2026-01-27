@@ -21,6 +21,7 @@ export type ScannedSlip = {
   parsedDate?: string | null;
   parsedRecipientName?: string | null;
   parsedTransactionId?: string | null;
+  rawText?: string | null;
   category?: string;
   department?: string;
   supplierId?: string;
@@ -65,7 +66,8 @@ export class ExpenseScanState {
       parsedAmount: null,
       parsedDate: null,
       parsedRecipientName: null,
-      parsedTransactionId: null
+      parsedTransactionId: null,
+      rawText: null
     });
 
     try {
@@ -80,7 +82,8 @@ export class ExpenseScanState {
         parsedAmount: parsed.amount ?? null,
         parsedDate: parsed.date ?? null,
         parsedRecipientName: parsed.recipientName ?? null,
-        parsedTransactionId: parsed.transactionId ?? null
+        parsedTransactionId: parsed.transactionId ?? null,
+        rawText: parsed.rawText ?? null
       });
     } catch (e: any) {
       this.updateSlip(id, {

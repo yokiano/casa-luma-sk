@@ -33,11 +33,14 @@
 					if (manager) {
 						shiftState.closerName = manager.name;
 						shiftState.closerPersonId = (manager as any).personId;
+					} else {
+						shiftState.closerName = '';
+						shiftState.closerPersonId = undefined;
 					}
 				}}
 				class="w-full rounded-xl border border-input bg-background px-3 py-3 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 			>
-				<option value="" disabled selected>Select closer...</option>
+				<option value="">Select closer (optional)...</option>
 				{#each managers as manager}
 					<option value={manager.id}>{manager.name}</option>
 				{/each}

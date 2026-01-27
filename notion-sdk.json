@@ -165,73 +165,6 @@
         }
       }
     },
-    "288ce863-4e80-4e7a-aa23-83fbf2224cda": {
-      "_name": "Hourly Reports",
-      "varName": "hourlyReports",
-      "pathName": "hourly-reports",
-      "properties": {
-        "QY%3FD": {
-          "_name": "Employee",
-          "_type": "people",
-          "varName": "employee",
-          "readOnly": false
-        },
-        "SXma": {
-          "_name": "Tasks/Description",
-          "_type": "rich_text",
-          "varName": "tasksDescription",
-          "readOnly": false
-        },
-        "Ttd%5C": {
-          "_name": "End Time",
-          "_type": "date",
-          "varName": "endTime",
-          "readOnly": false
-        },
-        "%5CLjc": {
-          "_name": "Work Date",
-          "_type": "date",
-          "varName": "workDate",
-          "readOnly": false
-        },
-        "%5EdMJ": {
-          "_name": "Start Time",
-          "_type": "date",
-          "varName": "startTime",
-          "readOnly": false
-        },
-        "_%5B%5B%5C": {
-          "_name": "Status",
-          "_type": "status",
-          "varName": "status",
-          "readOnly": false
-        },
-        "j%3A%60P": {
-          "_name": "Notes",
-          "_type": "rich_text",
-          "varName": "notes",
-          "readOnly": false
-        },
-        "title": {
-          "_name": "Report Title",
-          "_type": "title",
-          "varName": "reportTitle",
-          "readOnly": false
-        },
-        "NG%3Eq": {
-          "_name": "Submitted On",
-          "_type": "created_time",
-          "varName": "submittedOn",
-          "readOnly": true
-        },
-        "hhDf": {
-          "_name": "Submitted By",
-          "_type": "created_by",
-          "varName": "submittedBy",
-          "readOnly": true
-        }
-      }
-    },
     "284fc77d-b4f3-8079-ac1d-fc3ac4e76992": {
       "_name": "Menu Items",
       "varName": "menuItems",
@@ -2209,6 +2142,128 @@
           "_name": "Role",
           "_type": "title",
           "varName": "role",
+          "readOnly": false
+        }
+      }
+    },
+    "eb751fe6-8e76-4a61-8c43-98560a0ae114": {
+      "_name": "Salary Adjustments",
+      "varName": "salaryAdjustments",
+      "pathName": "salary-adjustments",
+      "properties": {
+        "CVGT": {
+          "_name": "Adjustment Type",
+          "_type": "select",
+          "varName": "adjustmentType",
+          "readOnly": false
+        },
+        "FmEN": {
+          "_name": "Employee",
+          "_type": "relation",
+          "varName": "employee",
+          "readOnly": false
+        },
+        "T%5D%40%5E": {
+          "_name": "Applied to Payment",
+          "_type": "relation",
+          "varName": "appliedToPayment",
+          "readOnly": false
+        },
+        "a%3A%3Ag": {
+          "_name": "Notes",
+          "_type": "rich_text",
+          "varName": "notes",
+          "readOnly": false
+        },
+        "c%5DuU": {
+          "_name": "Approved By",
+          "_type": "select",
+          "varName": "approvedBy",
+          "readOnly": false
+        },
+        "vNz%40": {
+          "_name": "Date",
+          "_type": "date",
+          "varName": "date",
+          "readOnly": false
+        },
+        "y~eP": {
+          "_name": "Amount (THB)",
+          "_type": "number",
+          "varName": "amountThb",
+          "readOnly": false
+        },
+        "title": {
+          "_name": "Adjustment Title",
+          "_type": "title",
+          "varName": "adjustmentTitle",
+          "readOnly": false
+        }
+      }
+    },
+    "49bdd87a-f3a5-4ce7-96a5-ac64229af3e1": {
+      "_name": "Salary Payments",
+      "varName": "salaryPayments",
+      "pathName": "salary-payments",
+      "properties": {
+        "%40%7CnG": {
+          "_name": "Notes",
+          "_type": "rich_text",
+          "varName": "notes",
+          "readOnly": false
+        },
+        "Ch%3CJ": {
+          "_name": "Base Salary (THB)",
+          "_type": "number",
+          "varName": "baseSalaryThb",
+          "readOnly": false
+        },
+        "RL%3C%5D": {
+          "_name": "Pay Slip",
+          "_type": "files",
+          "varName": "paySlip",
+          "readOnly": false
+        },
+        "RRKi": {
+          "_name": "Payment Date",
+          "_type": "date",
+          "varName": "paymentDate",
+          "readOnly": false
+        },
+        "TS%3C%40": {
+          "_name": "Employee",
+          "_type": "relation",
+          "varName": "employee",
+          "readOnly": false
+        },
+        "fA%3AV": {
+          "_name": "Advances (THB)",
+          "_type": "number",
+          "varName": "advancesThb",
+          "readOnly": false
+        },
+        "kmxK": {
+          "_name": "OT Amount (THB)",
+          "_type": "number",
+          "varName": "otAmountThb",
+          "readOnly": false
+        },
+        "ouAH": {
+          "_name": "Total Paid (THB)",
+          "_type": "number",
+          "varName": "totalPaidThb",
+          "readOnly": false
+        },
+        "vMss": {
+          "_name": "Deductions (THB)",
+          "_type": "number",
+          "varName": "deductionsThb",
+          "readOnly": false
+        },
+        "title": {
+          "_name": "Payment Title",
+          "_type": "title",
+          "varName": "paymentTitle",
           "readOnly": false
         }
       }

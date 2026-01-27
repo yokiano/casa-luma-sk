@@ -41,7 +41,13 @@ export const getEmployees = query(async () => {
 	return results;
 });
 
-export const getManagers = query(async () => {
+export type ManagerDetails = {
+	id: string;
+	name: string;
+	personId?: string;
+};
+
+export const getManagers  = query<ManagerDetails[]>(async () => {
 	const rolesDb = new RolesDatabase({ notionSecret: NOTION_API_KEY });
 	const rolesRes = await rolesDb.query({});
 	
@@ -75,8 +81,8 @@ export const getManagers = query(async () => {
 	return response.results
 		.map(r => new EmployeesResponseDTO(r))
 		.filter(dto => {
-			const positionIds = dto.properties.positionIds;
-			return positionIds?.some(id => managerRoleIds.has(id));
+			const roleIds = dto.properties.roleIds;
+			return roleIds?.some(id => managerRoleIds.has(id));
 		})
 		.map(dto => {
 			// Try to find a person ID in Reports To or similar property if available

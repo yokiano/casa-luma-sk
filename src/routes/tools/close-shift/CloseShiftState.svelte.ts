@@ -68,10 +68,6 @@ export class CloseShiftState {
     this.error = null;
     
     try {
-      if (!this.closerId) {
-        throw new Error('Please select a manager');
-      }
-
       const result = await submitCloseShift({
         expectedCash: this.expectedCash,
         billCounts: this.billCounts,

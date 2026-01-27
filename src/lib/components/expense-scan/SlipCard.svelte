@@ -11,6 +11,7 @@
     parsedDate?: string | null;
     parsedRecipientName?: string | null;
     parsedTransactionId?: string | null;
+    rawText?: string | null;
     category?: string;
     department?: string;
     supplierId?: string;
@@ -40,6 +41,7 @@
   }: Props = $props();
 
   let showLightbox = $state(false);
+  let showRawOCR = $state(false);
 
   const statusLabel = $derived.by(() => {
     if (slip.status === 'pending') return 'Pending';
@@ -177,7 +179,23 @@
         >
           Remove
         </button>
+        {#if slip.rawText}
+          <button
+            type="button"
+            onclick={() => (showRawOCR = !showRawOCR)}
+            class="rounded-full border border-[#d8c9bb] px-4 py-2 text-sm font-semibold text-[#7a6550]"
+          >
+            {showRawOCR ? 'Hide Raw OCR' : 'Show Raw OCR'}
+          </button>
+        {/if}
       </div>
+
+      {#if showRawOCR && slip.rawText}
+        <div class="mt-4 rounded-2xl bg-[#f8f5f2] p-4">
+          <p class="mb-2 text-xs font-bold uppercase tracking-wider text-[#5c4a3d]/60">Raw OCR Text</p>
+          <pre class="max-h-60 overflow-y-auto whitespace-pre-wrap text-xs text-[#2c2925]">{slip.rawText}</pre>
+        </div>
+      {/if}
     </div>
   </div>
 </div>

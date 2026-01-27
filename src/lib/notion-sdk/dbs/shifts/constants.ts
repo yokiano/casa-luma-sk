@@ -2,14 +2,18 @@ export const SHIFTS_PROP_VALUES = {
 "type": [
   "Opening (08:30 - 17:00)",
   "Closing (10:30 - 19:00)",
-  "Custom"
+  "Custom",
+  "No-Show"
 ] as const,
 "status": [
   "Planned",
   "Confirmed",
-  "Sick Day",
   "Completed",
-  "Cancelled"
+  "Cancelled",
+  "Sick Day (Paid)",
+  "Sick Day (Unpaid)",
+  "Day Off (Paid)",
+  "Day Off (Unpaid)"
 ] as const,
 "otApprover": [
   "Roza",
