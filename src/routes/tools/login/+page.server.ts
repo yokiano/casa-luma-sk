@@ -1,4 +1,4 @@
-import { AUTH_PASSWORD } from '$env/static/private';
+import { AUTH_PASSWORD, MANAGER_PASSWORD } from '$env/static/private';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions } from './$types';
 
@@ -7,8 +7,15 @@ export const actions: Actions = {
 		const data = await request.formData();
 		const password = data.get('password');
 
-		if (password === AUTH_PASSWORD) {
-			cookies.set('casa_luma_tools_auth', 'authenticated', {
+		let role = '';
+		if (password === MANAGER_PASSWORD) {
+			role = 'manager';
+		} else if (password === AUTH_PASSWORD) {
+			role = 'staff';
+		}
+
+		if (role) {
+			cookies.set('casa_luma_tools_auth', role, {
 				path: '/',
 				httpOnly: true,
 				sameSite: 'strict',

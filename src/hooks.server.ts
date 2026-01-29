@@ -23,6 +23,18 @@ export const handle: Handle = async ({ event, resolve }) => {
 		if (!authCookie) {
 			throw redirect(303, '/tools/login');
 		}
+
+		// Role-based protection
+		const isManager = authCookie === 'manager';
+		
+		// List of routes that require manager access
+		const managerOnlyRoutes = [
+			'/tools/salary-payment'
+		];
+
+		if (managerOnlyRoutes.some(route => event.url.pathname.startsWith(route)) && !isManager) {
+			throw redirect(303, '/tools');
+		}
 	}
 
 	const response = await resolve(event);

@@ -1,3 +1,12 @@
+/**
+ * Casa Luma Payroll Calculation Engine
+ * 
+ * This logic follows the bi-monthly independent period model.
+ * See documentation for full details: docs/casa-luma/tools/payroll/logic-guide.md
+ * 
+ * CRITICAL: When updating this logic, ensure the documentation is updated accordingly.
+ */
+
 export type SalaryAdjustment = {
 	id: string;
 	title: string;
@@ -13,6 +22,23 @@ export type SalaryShift = {
 	type: string | undefined;
 	status: string | undefined;
 	ot: number | undefined;
+	otType?: '1.5' | '1.0' | '3.0';
+	hoursAbsent?: number;
+};
+
+// A "CalendarDay" represents each day in the pay period with its calculated status
+export type CalendarDay = {
+	id: string; // date string YYYY-MM-DD
+	date: string;
+	dayOfWeek: number; // 0-6
+	shift?: SalaryShift; // Original shift from Notion if exists
+	status: 'Completed' | 'Confirmed' | 'Sick Day (Paid)' | 'Day Off (Paid)' | 'Unpaid Leave' | 'Absent' | 'Business Day-Off' | 'No Data';
+	ot: number;
+	otType: '1.5' | '1.0' | '3.0';
+	hoursAbsent: number;
+	isBusinessDayOff: boolean;
+	isWeekend: boolean;
+	hasShiftData: boolean;
 };
 
 export type SalaryEmployee = {
@@ -23,75 +49,263 @@ export type SalaryEmployee = {
 	salaryCalculation: string | undefined;
 	otRateThBhr: number | undefined;
 	bankAccountDetails: string | undefined;
+	startDate?: string;
+	resignationDate?: string;
 };
 
 export type SalaryResult = {
+	dailyRate: number;
+	hourlyRate: number;
+	
+	// Attendance Metrics
 	workedShifts: number;
 	paidSickDays: number;
+	unpaidSickDays: number;
 	paidDaysOff: number;
-	totalWorkedDays: number;
-	otHours: number;
-	basePay: number;
+	businessDaysOff: number;
+	unpaidLeaveDays: number;
+	totalPaidDays: number;
+	calendarDaysInPeriod: number;
+	
+	// OT Metrics
+	otHours15: number;
+	otHours10: number;
+	otHours30: number;
 	otPay: number;
+	
+	// Pay Components
+	grossMonthlySalary: number;
+	baseSalaryForPeriod: number;
+	proratedBaseSalary: number;
+	lateDeductions: number;
+	unpaidLeaveDeductions: number;
 	totalAdjustments: number;
+	ssfDeduction: number;
+	
+	// Totals
+	totalGrossEarned: number;
 	netPay: number;
-	dailyRate: number;
+	
+	// Bi-Monthly Split
+	midMonthPayout: number;
+	finalMonthPayout: number;
 };
+
+export const STANDARD_MONTH_DAYS = 30;
+export const STANDARD_DAY_HOURS = 8;
+export const SSF_RATE = 0.05;
+export const SSF_MAX = 750;
+export const SSF_SALARY_CAP = 15000;
+
+// Generate all calendar days for the period
+export function generateCalendarDays(
+	startDate: string,
+	endDate: string,
+	shifts: SalaryShift[],
+	businessDayOff: number // 0-6 (e.g., 3 for Wednesday)
+): CalendarDay[] {
+	const days: CalendarDay[] = [];
+	const start = new Date(startDate);
+	const end = new Date(endDate);
+	
+	// Create a map of shifts by date for quick lookup
+	const shiftsByDate = new Map<string, SalaryShift>();
+	shifts.forEach(s => {
+		if (s.date) {
+			const dateKey = s.date.substring(0, 10); // YYYY-MM-DD
+			shiftsByDate.set(dateKey, s);
+		}
+	});
+	
+	const current = new Date(start);
+	while (current <= end) {
+		const dateStr = current.toISOString().substring(0, 10);
+		const dayOfWeek = current.getDay();
+		const isBusinessDayOff = dayOfWeek === businessDayOff;
+		const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+		const shift = shiftsByDate.get(dateStr);
+		const hasShiftData = !!shift;
+		
+		let status: CalendarDay['status'];
+		let ot = 0;
+		let otType: CalendarDay['otType'] = '1.5';
+		let hoursAbsent = 0;
+		
+		if (shift) {
+			// Use shift data
+			status = (shift.status as CalendarDay['status']) || 'Completed';
+			ot = shift.ot || 0;
+			otType = shift.otType || '1.5';
+			hoursAbsent = shift.hoursAbsent || 0;
+		} else if (isBusinessDayOff) {
+			// Business day-off (e.g., Wednesday) - paid by default
+			status = 'Business Day-Off';
+		} else {
+			// No data - unpaid by default
+			status = 'No Data';
+		}
+		
+		days.push({
+			id: dateStr,
+			date: dateStr,
+			dayOfWeek,
+			shift,
+			status,
+			ot,
+			otType,
+			hoursAbsent,
+			isBusinessDayOff,
+			isWeekend,
+			hasShiftData
+		});
+		
+		current.setDate(current.getDate() + 1);
+	}
+	
+	return days;
+}
 
 export function calculateSalary(
 	employee: SalaryEmployee,
-	shifts: SalaryShift[],
+	calendarDays: CalendarDay[],
 	adjustments: SalaryAdjustment[],
-	startDate: string
+	periodStartDate: string,
+	periodEndDate: string,
+	options: {
+		isMidMonthRun?: boolean;
+		sickDaysUsedYearToDate?: number;
+		includeSSF?: boolean;
+	} = {}
 ): SalaryResult {
-	const workedShiftsList = shifts.filter(s => s.status === 'Completed' || s.status === 'Confirmed');
-	const paidSickDaysList = shifts.filter(s => s.status === 'Sick Day (Paid)');
-	const paidDaysOffList = shifts.filter(s => s.status === 'Day Off (Paid)');
-
-	const workedShifts = workedShiftsList.length;
-	const paidSickDays = paidSickDaysList.length;
-	const paidDaysOff = paidDaysOffList.length;
-	const totalWorkedDays = workedShifts + paidSickDays + paidDaysOff;
-
-	const otHours = shifts.reduce((acc, s) => acc + (s.ot || 0), 0);
-
-	const date = new Date(startDate);
-	const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
 	const monthlySalary = employee.salaryThb || 0;
-	const dailyRate = monthlySalary / daysInMonth;
+	const dailyRate = monthlySalary / STANDARD_MONTH_DAYS;
+	const hourlyRate = dailyRate / STANDARD_DAY_HOURS;
 
-	let basePay = 0;
-	if (employee.salaryCalculation === 'Monthly') {
-		basePay = dailyRate * totalWorkedDays;
-	} else if (employee.salaryCalculation === 'Daily') {
-		basePay = (employee.salaryThb || 0) * totalWorkedDays;
-	}
+	const calendarDaysInPeriod = calendarDays.length;
 
-	const otPay = otHours * (employee.otRateThBhr || 0);
+	// Process Calendar Days
+	let workedShifts = 0;
+	let paidSickDays = 0;
+	let unpaidSickDays = 0;
+	let paidDaysOff = 0;
+	let businessDaysOff = 0;
+	let unpaidLeaveDays = 0;
+	let lateDeductions = 0;
+	let otHours15 = 0;
+	let otHours10 = 0;
+	let otHours30 = 0;
 
-	const totalAdjustments = adjustments.reduce((acc, a) => {
+	let sickDaysThisPeriod = 0;
+	const sickDaysBefore = options.sickDaysUsedYearToDate || 0;
+
+	calendarDays.forEach(day => {
+		lateDeductions += day.hoursAbsent * hourlyRate;
+
+		if (day.status === 'Completed' || day.status === 'Confirmed') {
+			workedShifts++;
+		} else if (day.status === 'Sick Day (Paid)') {
+			if (sickDaysBefore + sickDaysThisPeriod < 30) {
+				paidSickDays++;
+				sickDaysThisPeriod++;
+			} else {
+				unpaidSickDays++;
+			}
+		} else if (day.status === 'Day Off (Paid)') {
+			paidDaysOff++;
+		} else if (day.status === 'Business Day-Off') {
+			businessDaysOff++;
+		} else if (day.status === 'Unpaid Leave' || day.status === 'Absent' || day.status === 'No Data') {
+			unpaidLeaveDays++;
+		}
+
+		// OT Calculation
+		const ot = day.ot || 0;
+		if (day.otType === '1.0') otHours10 += ot;
+		else if (day.otType === '3.0') otHours30 += ot;
+		else otHours15 += ot;
+	});
+
+	const totalPaidDays = workedShifts + paidSickDays + paidDaysOff + businessDaysOff;
+	
+	// OT Calculation: Fixed at 1.5x for all hours per business rule
+	const totalOtHours = otHours15 + otHours10 + otHours30;
+	const otPay = totalOtHours * hourlyRate * 1.5;
+
+	// Adjustments
+	let bonuses = 0;
+	let deductions = 0;
+	let advances = 0;
+
+	adjustments.forEach(a => {
 		const amount = a.amount || 0;
 		if (['Bonus', 'Reimbursement'].includes(a.type || '')) {
-			return acc + amount;
+			bonuses += amount;
+		} else if (['Advance'].includes(a.type || '')) {
+			advances += amount;
+		} else if (['Deduction', 'Loan Repayment', 'Late Penalty', 'Uniform', 'Damages'].includes(a.type || '')) {
+			deductions += amount;
 		}
-		if (['Advance', 'Deduction', 'Loan Repayment', 'Late Penalty'].includes(a.type || '')) {
-			return acc - amount;
-		}
-		return acc;
-	}, 0);
+	});
 
-	const netPay = basePay + otPay + totalAdjustments;
+	const totalAdjustments = bonuses - deductions - advances;
+
+	// 1. Start with 50% of monthly salary as the base for the period
+	const baseSalaryForPeriod = monthlySalary / 2;
+
+	// 2. Subtract deductions for unpaid days in THIS period
+	const unpaidLeaveDeductions = unpaidLeaveDays * dailyRate;
+	const unpaidSickDeductions = unpaidSickDays * dailyRate;
+	const totalAttendanceDeductions = unpaidLeaveDeductions + unpaidSickDeductions + lateDeductions;
+
+	// 3. Total gross for this period
+	// Base Salary item for display should be the sub-total (baseSalaryForPeriod - attendanceDeductions)
+	// Actually, the user wants the "Base Salary" item to NOT include deductions if possible, 
+	// or at least show the 50% fixed.
+	const proratedBaseSalary = baseSalaryForPeriod;
+
+	// 4. Total gross for this period
+	// Net = Base(50%) + OT + Adjustments - Attendance Deductions - Regular Deductions
+	const totalGrossEarned = baseSalaryForPeriod + otPay + bonuses - totalAttendanceDeductions - deductions;
+	
+	// SSF Calculation - only on End of Month run and only if enabled
+	let ssfDeduction = 0;
+	if (!options.isMidMonthRun && options.includeSSF !== false) {
+		const ssfBase = Math.min(monthlySalary, SSF_SALARY_CAP);
+		ssfDeduction = Math.min(SSF_MAX, Math.round(ssfBase * SSF_RATE));
+	}
+
+	// Net payout for this period
+	const netPay = totalGrossEarned - ssfDeduction - advances;
+
+	// Both runs now calculate based on their period's attendance
+	const midMonthPayout = options.isMidMonthRun ? netPay : (monthlySalary / 2);
+	const finalMonthPayout = netPay;
 
 	return {
+		dailyRate,
+		hourlyRate,
 		workedShifts,
 		paidSickDays,
+		unpaidSickDays,
 		paidDaysOff,
-		totalWorkedDays,
-		otHours,
-		basePay,
+		businessDaysOff,
+		unpaidLeaveDays,
+		totalPaidDays,
+		calendarDaysInPeriod,
+		otHours15,
+		otHours10,
+		otHours30,
 		otPay,
+		grossMonthlySalary: monthlySalary,
+		baseSalaryForPeriod,
+		proratedBaseSalary,
+		lateDeductions,
+		unpaidLeaveDeductions: unpaidLeaveDeductions + unpaidSickDeductions,
 		totalAdjustments,
+		ssfDeduction,
+		totalGrossEarned,
 		netPay,
-		dailyRate
+		midMonthPayout,
+		finalMonthPayout
 	};
 }

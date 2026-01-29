@@ -17,13 +17,19 @@ export const getSalaryData = query(SalaryDataSchema, async ({ employeeId, startD
 	const adjustmentsDb = new SalaryAdjustmentsDatabase({ notionSecret: NOTION_API_KEY });
 	const employeesDb = new EmployeesDatabase({ notionSecret: NOTION_API_KEY });
 
+	// Add one day to endDate to make the filter inclusive
+	// Notion's "before" filter is exclusive, so we need to add a day
+	const endDateInclusive = new Date(endDate);
+	endDateInclusive.setDate(endDateInclusive.getDate() + 1);
+	const endDateInclusiveStr = endDateInclusive.toISOString().substring(0, 10);
+
 	const [shiftsRes, adjustmentsRes, employeeRes] = await Promise.all([
 		shiftsDb.query({
 			filter: {
 				and: [
 					{ employee: { contains: employeeId } },
 					{ shiftTime: { on_or_after: startDate } },
-					{ shiftTime: { before: endDate } }
+					{ shiftTime: { before: endDateInclusiveStr } }
 				]
 			},
 			sorts: [{ property: 'shiftTime', direction: 'ascending' }]
@@ -33,23 +39,28 @@ export const getSalaryData = query(SalaryDataSchema, async ({ employeeId, startD
 				and: [
 					{ employee: { contains: employeeId } },
 					{ date: { on_or_after: startDate } },
-					{ date: { before: endDate } }
+					{ date: { before: endDateInclusiveStr } }
 				]
 			},
 			sorts: [{ property: 'date', direction: 'ascending' }]
 		}),
-		employeesDb.retrievePage(employeeId)
+		employeesDb.getPage(employeeId)
 	]);
 
 	const employeeDto = new EmployeesResponseDTO(employeeRes as any);
+	const otFormula = employeeDto.properties.otRateThBhr;
+	const otRateValue = otFormula && 'number' in otFormula ? otFormula.number : undefined;
+	
 	const employee: SalaryEmployee = {
 		id: employeeDto.id,
 		name: employeeDto.properties.nickname.text || '',
 		fullName: employeeDto.properties.fullName.text || '',
-		salaryThb: employeeDto.properties.salaryThb,
+		salaryThb: employeeDto.properties.salaryThb ?? undefined,
 		salaryCalculation: employeeDto.properties.salaryCalculation?.name,
-		otRateThBhr: employeeDto.properties.otRateThBhr?.number,
-		bankAccountDetails: employeeDto.properties.bankAccountDetails.text
+		otRateThBhr: otRateValue ?? undefined,
+		bankAccountDetails: employeeDto.properties.bankAccountDetails.text,
+		startDate: employeeDto.properties.startDate?.start,
+		resignationDate: employeeDto.properties.endDate?.start
 	};
 
 	const shifts = shiftsRes.results.map((r) => {

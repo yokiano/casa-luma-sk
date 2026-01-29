@@ -3,7 +3,11 @@
   import { page } from '$app/state';
   import { Toaster } from "$lib/components/ui/sonner";
 
-  const tabs = [
+  let { children, data }: { children?: Snippet, data: any } = $props();
+
+  const role = $derived(data.role);
+
+  const allTabs = [
     // { href: '/tools/procurement-import', label: 'Procurement Import' },
     // { href: '/tools/menu-assistant', label: 'Menu Assistant' },
     { href: '/tools/pos-sync', label: 'POS Sync' },
@@ -11,16 +15,18 @@
     { href: '/tools/close-shift', label: 'Close Shift' },
     { href: '/tools/receipts', label: 'Receipts' },
     { href: '/tools/expense-scan', label: 'Expense Scan' },
-    { href: '/tools/salary-payment', label: 'Salary Payment' },
+    { href: '/tools/salary-payment', label: 'Salary Payment', managerOnly: true },
     { href: '/tools/memberships', label: 'Memberships' },
     // { href: '/tools/graphics', label: 'Graphics' },
     { href: '/tools/onboarding/kitchen', label: 'Onboarding' }
   ];
 
-  let { children }: { children?: Snippet } = $props();
+  const tabs = $derived(allTabs.filter(tab => !tab.managerOnly || role === 'manager'));
 
   const currentPath = $derived(page.url.pathname);
   const isOnboarding = $derived(currentPath.startsWith('/tools/onboarding'));
+
+  const isSalaryPayment = $derived(currentPath === '/tools/salary-payment');
 
   const isActive = (href: string) => {
     return currentPath === href || currentPath.startsWith(`${href}/`);
@@ -61,7 +67,7 @@
     </header>
   {/if}
 
-  <main class={isOnboarding ? 'mx-auto max-w-6xl px-6 py-10 print:px-0 print:py-0' : 'mx-auto max-w-6xl px-6 py-10'}>
+  <main class={isOnboarding || isSalaryPayment ? 'mx-auto max-w-6xl px-6 py-10 print:px-0 print:py-0 print:max-w-none' : 'mx-auto max-w-6xl px-6 py-10'}>
     {@render children?.()}
   </main>
 </div>
