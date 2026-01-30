@@ -32,11 +32,6 @@
 	let notes = $state("");
 
 	async function handleSave() {
-		if (!fileDataUrl) {
-			toast.error("Please upload the PDF payslip first");
-			return;
-		}
-
 		isSaving = true;
 		try {
 			const totalDeductions = result.totalAttendanceDeductions + result.deductions + result.ssfDeduction;
@@ -51,8 +46,8 @@
 				deductionsThb: totalDeductions,
 				totalPaidThb: result.netPay,
 				notes: notes || undefined,
-				fileDataUrl: fileDataUrl,
-				fileName: fileName || "payslip.pdf"
+				fileDataUrl: fileDataUrl || undefined,
+				fileName: fileName || undefined
 			});
 
 			toast.success("Salary payment saved to Notion successfully");
@@ -72,7 +67,7 @@
 </script>
 
 <Dialog.Root bind:open={isOpen}>
-	<Dialog.Content class="sm:max-w-[500px] bg-[#fdfbf9] border-[#d3c5b8] rounded-[2rem] p-6 shadow-2xl">
+	<Dialog.Content class="sm:max-w-[500px] max-h-[90vh] overflow-y-auto bg-[#fdfbf9] border-[#d3c5b8] rounded-[2rem] p-6 shadow-2xl">
 		<Dialog.Header class="mb-6">
 			<Dialog.Title class="text-2xl font-serif text-[#7a6550] mb-1">Save to Notion</Dialog.Title>
 			<Dialog.Description class="text-[#7a6550]/60">
@@ -153,7 +148,7 @@
 			<button 
 				type="button"
 				onclick={handleSave}
-				disabled={isSaving || !fileDataUrl}
+				disabled={isSaving}
 				class="flex-[2] bg-[#7a6550] hover:bg-[#635241] text-white py-3 rounded-full font-semibold text-sm shadow-lg shadow-[#7a6550]/20 transition-all disabled:opacity-50 disabled:shadow-none flex items-center justify-center gap-2"
 			>
 				{#if isSaving}

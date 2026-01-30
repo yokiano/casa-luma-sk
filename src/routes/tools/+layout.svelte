@@ -9,20 +9,20 @@
   const role = $derived(data.role);
 
   const allTabs = [
-    // { href: '/tools/procurement-import', label: 'Procurement Import' },
-    // { href: '/tools/menu-assistant', label: 'Menu Assistant' },
-    { href: '/tools/pos-sync', label: 'POS Sync' },
     { href: '/tools/checklist', label: 'Checklist' },
     { href: '/tools/close-shift', label: 'Close Shift' },
-    { href: '/tools/receipts', label: 'Receipts' },
-    { href: '/tools/expense-scan', label: 'Expense Scan' },
-    { href: '/tools/salary-payment', label: 'Payroll', managerOnly: true },
     { href: '/tools/memberships', label: 'Memberships' },
-    // { href: '/tools/graphics', label: 'Graphics' },
-    { href: '/tools/onboarding/kitchen', label: 'Onboarding' }
+    { href: '/tools/onboarding/kitchen', label: 'Onboarding' },
+
+    { href: '/tools/salary-payment', label: 'Payroll', managerOnly: true },
+    { href: '/tools/pos-sync', label: 'POS Sync', managerOnly: true },
+    { href: '/tools/receipts', label: 'Receipts', managerOnly: true },
+    { href: '/tools/expense-scan', label: 'Expense Scan', managerOnly: true }
   ];
 
-  const tabs = $derived(allTabs.filter(tab => !tab.managerOnly || role === 'manager'));
+  const staffTabs = $derived(allTabs.filter(tab => !tab.managerOnly));
+  const managerTabs = $derived(allTabs.filter(tab => tab.managerOnly && role === 'manager'));
+  const hasManagerTools = $derived(managerTabs.length > 0);
 
   const currentPath = $derived(page.url.pathname);
   const isOnboarding = $derived(currentPath.startsWith('/tools/onboarding'));
@@ -59,19 +59,48 @@
         {/if}
       </div>
       {#if currentPath !== '/tools/login'}
-        <nav class="mx-auto flex max-w-6xl gap-2 px-6 pb-4 print:hidden">
-          {#each tabs as tab}
-            <a
-              href={tab.href}
-              class={`group rounded-full px-4 py-2 text-sm font-medium transition-colors duration-150 ${
-                isActive(tab.href)
-                  ? 'bg-[#7a6550] text-white shadow'
-                  : 'text-[#7a6550]/65 hover:bg-white hover:text-[#7a6550]'
-              }`}
-            >
-              {tab.label}
-            </a>
-          {/each}
+        <nav class="mx-auto flex max-w-6xl flex-col gap-6 px-6 pb-6 print:hidden">
+          <div class="flex flex-col gap-2">
+            <span class="text-[10px] font-bold uppercase tracking-widest text-[#7a6550]/40 ml-1">
+              Staff Tools
+            </span>
+            <div class="flex flex-wrap gap-2">
+              {#each staffTabs as tab}
+                <a
+                  href={tab.href}
+                  class={`group rounded-full px-4 py-2 text-sm font-medium transition-colors duration-150 ${
+                    isActive(tab.href)
+                      ? 'bg-[#7a6550] text-white shadow'
+                      : 'text-[#7a6550]/65 hover:bg-white hover:text-[#7a6550]'
+                  }`}
+                >
+                  {tab.label}
+                </a>
+              {/each}
+            </div>
+          </div>
+
+          {#if hasManagerTools}
+            <div class="flex flex-col gap-2">
+              <span class="text-[10px] font-bold uppercase tracking-widest text-[#7a6550]/40 ml-1">
+                Manager Tools
+              </span>
+              <div class="flex flex-wrap gap-2">
+                {#each managerTabs as tab}
+                  <a
+                    href={tab.href}
+                    class={`group rounded-full px-4 py-2 text-sm font-medium transition-colors duration-150 ${
+                      isActive(tab.href)
+                        ? 'bg-[#7a6550] text-white shadow'
+                        : 'text-[#7a6550]/65 hover:bg-white hover:text-[#7a6550]'
+                    }`}
+                  >
+                    {tab.label}
+                  </a>
+                {/each}
+              </div>
+            </div>
+          {/if}
         </nav>
       {/if}
     </header>

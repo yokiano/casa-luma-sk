@@ -38,7 +38,8 @@ export async function uploadToNotion(url: string, filename: string) {
 		throw new Error(`Failed to initiate Notion file upload: ${errorText}`);
 	}
 
-	const { id: file_id, upload_url, complete_url } = await notionResponse.json();
+	const { id: file_id, upload_url } = await notionResponse.json();
+	console.log(`Notion upload initiated. ID: ${file_id}`);
 
 	// 3. Upload the binary data using multipart/form-data
 	const formData = new FormData();
@@ -49,35 +50,20 @@ export async function uploadToNotion(url: string, filename: string) {
 		headers: {
 			'Authorization': `Bearer ${NOTION_API_KEY}`,
 			'Notion-Version': '2025-09-03'
-			// Content-Type is set automatically by fetch when using FormData
 		},
 		body: formData
 	});
 
 	if (!uploadResult.ok) {
 		const errorText = await uploadResult.text();
+		console.error(`Notion upload failed: ${errorText}`);
 		throw new Error(`Failed to upload file content to Notion storage: ${errorText}`);
 	}
+	console.log(`Notion file content sent. Polling for status...`);
 
-	// 4. Complete the upload
-	const completeResponse = await fetch(complete_url, {
-		method: 'POST',
-		headers: {
-			'Authorization': `Bearer ${NOTION_API_KEY}`,
-			'Notion-Version': '2025-09-03',
-			'Content-Type': 'application/json'
-		},
-		body: JSON.stringify({})
-	});
-
-	if (!completeResponse.ok) {
-		const errorText = await completeResponse.text();
-		throw new Error(`Failed to complete Notion file upload: ${errorText}`);
-	}
-
-	// 5. Poll for the status to be 'uploaded' to ensure it's ready
+	// 4. Poll for the status to be 'uploaded' to ensure it's ready
 	let attempts = 0;
-	const maxAttempts = 10;
+	const maxAttempts = 15;
 	while (attempts < maxAttempts) {
 		const statusResponse = await fetch(`https://api.notion.com/v1/file_uploads/${file_id}`, {
 			headers: {
@@ -94,6 +80,10 @@ export async function uploadToNotion(url: string, filename: string) {
 
 		await new Promise(r => setTimeout(r, 1000));
 		attempts++;
+	}
+
+	if (attempts >= maxAttempts) {
+		throw new Error('Timed out waiting for Notion to process the file');
 	}
 
 	// 5. Return the file_upload object format expected by Notion properties
