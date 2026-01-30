@@ -20,6 +20,7 @@ export type ExpensesTrackerPropertiesPatch = {
   invoiceReceipt?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'files' }>['files']
   expense?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   referenceNumber?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
+  notes?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
 }
 
   
@@ -163,6 +164,28 @@ export class ExpensesTrackerPatchDTO {
                       link: props.referenceNumber?.url ? { url: props.referenceNumber.url } : undefined
                     },
                     annotations: props.referenceNumber.annotations
+                  },
+                ]
+      }
+    }
+
+    if (props?.notes !== undefined) {
+      this.__data.properties['K%5DFJ'] = {
+        type: 'rich_text',
+        rich_text: typeof props.notes === 'string' 
+          ? [{ type: 'text', text: { content: props.notes } }]
+          : Array.isArray(props.notes)
+            ? props.notes
+            : props.notes === null
+              ? []
+              : [
+                  {
+                    type: 'text',
+                    text: {
+                      content: props.notes.text,
+                      link: props.notes?.url ? { url: props.notes.url } : undefined
+                    },
+                    annotations: props.notes.annotations
                   },
                 ]
       }

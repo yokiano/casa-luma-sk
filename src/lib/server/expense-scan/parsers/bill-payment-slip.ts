@@ -1,16 +1,17 @@
 import type { ExpenseParser, ParsedExpense } from '../types';
 
-export class TransferSlipParser implements ExpenseParser {
-  id = 'kbank-transfer';
-  name = 'K-Bank Transfer Slip';
+export class BillPaymentSlipParser implements ExpenseParser {
+  id = 'kbank-bill-payment';
+  name = 'K-Bank Bill Payment Slip';
 
   validate(rawText: string): boolean {
     const text = rawText.toLowerCase();
-    // Keywords specific to a bank transfer slip
+    // Keywords specific to a bill payment slip
+    // Note: OCR sometimes adds spaces or misses characters in Thai words
     return (
-      (text.includes('transfer completed') || 
-       text.includes('โอนเงินสำเร็จ') || 
-       text.includes('โ อ น เ ง ิ น ส ำ เ ร จ')) &&
+      (text.includes('bill payment completed') || 
+       text.includes('จ่ายบิลสำเร็จ') || 
+       text.includes('จ า ย บ ิ ล ส า เ ร จ')) &&
       text.includes('transaction id')
     );
   }
@@ -27,10 +28,7 @@ export class TransferSlipParser implements ExpenseParser {
 
   private extractTransactionId(rawText: string): string | null {
     const match = rawText.match(/Transaction\s*ID\s*:\s*([A-Z0-9]+)/i);
-    if (match) return match[1];
-
-    const relaxedMatch = rawText.match(/ID\s*:\s*([A-Z]{2,}[0-9]{5,})/i);
-    return relaxedMatch ? relaxedMatch[1] : null;
+    return match ? match[1] : null;
   }
 
   private extractDateTime(rawText: string): string | null {
@@ -53,40 +51,46 @@ export class TransferSlipParser implements ExpenseParser {
 
   private extractRecipient(rawText: string): string | null {
     const lines = rawText.split('\n');
+    
+    // Search for lines containing Fami House and potentially the recipient name
     for (const line of lines) {
       const upperLine = line.toUpperCase();
-      if (upperLine.includes('FAMI HOUSE')) {
-        const match = line.match(/FAMI\s*HOUSE\s*CO\.?\s*\.?\s*LTD\s*\+\+\s*(.+)/i);
-        if (match) {
-          const possible = match[1].trim();
-          if (possible.length > 2) return possible;
-        }
-        
-        const parts = line.split(/FAMI\s*HOUSE/i);
+      if (upperLine.includes('FAMI HOUSE') || upperLine.includes('ฟา ม ิ เฮ')) {
+        // Try splitting by the common "++" separator seen in OCR
+        const parts = line.split(/\+\+\s*/);
         if (parts.length > 1) {
-          const secondPart = parts[1].replace(/.*?LTD\s*\+\+\s*/i, '').trim();
-          if (secondPart.length > 2) return secondPart;
+          const possible = parts[parts.length - 1].trim();
+          // Filter out IDs and labels
+          if (possible.length > 2 && 
+              !possible.toLowerCase().includes('biller id') && 
+              !possible.toLowerCase().includes('transaction id') &&
+              !possible.toLowerCase().includes('ref')) {
+            return possible;
+          }
         }
       }
     }
 
-    const businessSuffixes = ['CO.', 'LTD', 'CORP', 'INC', 'LIMITED'];
+    // Fallback: search for business suffixes or Thai business indicators
+    const businessSuffixes = ['บ ร ิ ษั ท', 'จ ํ า ก ั ด', 'CO.', 'LTD', 'CORP', 'INC', 'LIMITED'];
     for (const line of lines) {
       const upperLine = line.toUpperCase();
       if (businessSuffixes.some(suffix => upperLine.includes(suffix)) && 
           !upperLine.includes('FAMI HOUSE') &&
-          !upperLine.includes('KASIKORNBANK') &&
-          !upperLine.includes('KRUNG THAI')) {
+          !upperLine.includes('ฟา ม ิ เฮ') &&
+          !upperLine.includes('KASIKORNBANK')) {
         return line.trim();
       }
     }
+
     return null;
   }
 
   private extractMemo(rawText: string): string | null {
     const lines = rawText.split('\n');
     for (let i = 0; i < lines.length; i++) {
-      if (lines[i].toLowerCase().includes('memo')) {
+      const lowerLine = lines[i].toLowerCase();
+      if (lowerLine.includes('memo') || lowerLine.includes('บ ั น ท ึ ก ช ว ย จ ํ า')) {
         if (i + 1 < lines.length) {
           const nextLine = lines[i + 1].trim();
           if (nextLine && !nextLine.toLowerCase().includes('issued by')) {

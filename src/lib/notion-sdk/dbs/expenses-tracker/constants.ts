@@ -24,7 +24,7 @@ export const EXPENSES_TRACKER_PROP_VALUES = {
   "Open Play",
   "Cafe",
   "garden",
-  "Shop",
+  "Store",
   "Owners"
 ] as const,
 "status": [
@@ -57,6 +57,7 @@ export const EXPENSES_TRACKER_PROPS_TO_IDS = {
   "invoiceReceipt": "~Rsq",
   "expense": "title",
   "referenceNumber": "Wx_e",
+  "notes": "K%5DFJ",
   "createdBy": "DSA_",
   "lastEditedBy": "LP%7C%5B",
   "lastEditedTime": "QLfy",
@@ -77,6 +78,7 @@ export const EXPENSES_TRACKER_IDS_TO_PROPS = {
   "~Rsq": "invoiceReceipt",
   "title": "expense",
   "Wx_e": "referenceNumber",
+  "K%5DFJ": "notes",
   "DSA_": "createdBy",
   "LP%7C%5B": "lastEditedBy",
   "QLfy": "lastEditedTime",
@@ -97,6 +99,7 @@ export const EXPENSES_TRACKER_PROPS_TO_TYPES = {
   "invoiceReceipt": "files",
   "expense": "title",
   "referenceNumber": "rich_text",
+  "notes": "rich_text",
   "createdBy": "created_by",
   "lastEditedBy": "last_edited_by",
   "lastEditedTime": "last_edited_time",

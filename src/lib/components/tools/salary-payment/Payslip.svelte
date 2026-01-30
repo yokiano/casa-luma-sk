@@ -34,7 +34,7 @@
 	const displayNetPay = $derived(result.netPay);
 </script>
 
-<div class="payslip-container bg-white p-8 text-[#2c2925] shadow-sm print:p-0 print:shadow-none" style="width: 210mm; min-height: 297mm; margin: 0 auto;">
+<div class="payslip-container bg-white p-8 text-[#2c2925] shadow-sm print:shadow-none" style="width: 210mm; min-height: 297mm; margin: 0 auto;">
 	<div class="flex items-center justify-between border-b-2 border-[#7a6550] pb-6 mb-8">
 		<div>
 			<h1 class="text-3xl font-serif font-bold text-[#7a6550]">CASA LUMA</h1>
@@ -221,14 +221,9 @@
 
 <style>
 	@media print {
-		:global(body) {
-			background: white !important;
-			margin: 0 !important;
-			padding: 0 !important;
-		}
 		@page {
-			margin: 0;
-			size: auto;
+			margin: 1.5cm;
+			size: A4;
 		}
 		.payslip-container {
 			margin: 0 !important;
@@ -236,7 +231,6 @@
 			height: auto !important;
 			min-height: 0 !important;
 			box-shadow: none !important;
-			padding: 0 !important;
 			border: none !important;
 		}
 	}

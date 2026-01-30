@@ -75,6 +75,7 @@ export class ExpensesTrackerPropertiesResponseDTO {
       invoiceReceipt: this.__props['Invoice / Receipt'],
       expense: this.__props['Expense'],
       referenceNumber: this.__props['Reference Number'],
+      notes: this.__props['Notes'],
       createdBy: this.__props['Created by'],
       lastEditedBy: this.__props['Last edited by'],
       lastEditedTime: this.__props['Last edited time'],
@@ -151,6 +152,14 @@ export class ExpensesTrackerPropertiesResponseDTO {
       text: this.__props['Reference Number']?.rich_text ? this.__props['Reference Number'].rich_text.reduce((acc, item) => acc + item.plain_text, '') : undefined,
       links: this.__props['Reference Number']?.rich_text ? this.__props['Reference Number'].rich_text.filter((item) => item.href?.length).map((item) => item.href) : [],
       rich_text: this.__props['Reference Number']?.rich_text,
+    }
+  }
+
+  get notes() {
+    return {
+      text: this.__props['Notes']?.rich_text ? this.__props['Notes'].rich_text.reduce((acc, item) => acc + item.plain_text, '') : undefined,
+      links: this.__props['Notes']?.rich_text ? this.__props['Notes'].rich_text.filter((item) => item.href?.length).map((item) => item.href) : [],
+      rich_text: this.__props['Notes']?.rich_text,
     }
   }
 

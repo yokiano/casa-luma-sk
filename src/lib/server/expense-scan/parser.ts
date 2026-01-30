@@ -1,9 +1,11 @@
 import type { ParsedExpense, ExpenseParser } from './types';
 import { TransferSlipParser } from './parsers/transfer-slip';
+import { BillPaymentSlipParser } from './parsers/bill-payment-slip';
 
 class ExpenseScanParser {
   private parsers: ExpenseParser[] = [
-    new TransferSlipParser()
+    new TransferSlipParser(),
+    new BillPaymentSlipParser()
   ];
 
   parse(rawText: string): ParsedExpense {

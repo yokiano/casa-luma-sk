@@ -360,8 +360,10 @@
 	@media print {
 		:global(body) {
 			background-color: white !important;
-			margin: 0 !important;
-			padding: 0 !important;
+		}
+		@page {
+			margin: 1.5cm;
+			size: A4;
 		}
 		:global(main) {
 			max-width: none !important;

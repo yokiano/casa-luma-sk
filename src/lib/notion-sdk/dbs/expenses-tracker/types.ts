@@ -35,7 +35,7 @@ export interface ExpensesTrackerResponse extends WithOptional<Omit<DatabaseObjec
     "Payment Method": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'Cash', color: 'default' } | { id: StringRequest, name: 'Wire Transfer', color: 'green' } | { id: StringRequest, name: 'Scan', color: 'blue' } | { id: StringRequest, name: 'Credit Card', color: 'pink' }},
     "Team": FormulaPropertyItemObjectResponse,
     "Date": DatePropertyItemObjectResponse,
-    "Department": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'General', color: 'default' } | { id: StringRequest, name: 'Open Play', color: 'yellow' } | { id: StringRequest, name: 'Cafe', color: 'gray' } | { id: StringRequest, name: 'garden', color: 'red' } | { id: StringRequest, name: 'Shop', color: 'blue' } | { id: StringRequest, name: 'Owners', color: 'brown' }},
+    "Department": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'General', color: 'default' } | { id: StringRequest, name: 'Open Play', color: 'yellow' } | { id: StringRequest, name: 'Cafe', color: 'gray' } | { id: StringRequest, name: 'garden', color: 'red' } | { id: StringRequest, name: 'Store', color: 'blue' } | { id: StringRequest, name: 'Owners', color: 'brown' }},
     "Procurement Item": RelationPropertyItemObjectResponse,
     "In favor of": PeoplePropertyItemObjectResponse,
     "Status": Omit<StatusPropertyItemObjectResponse, 'status'> & { status: { id: StringRequest, name: 'To Pay', color: 'red' } | { id: StringRequest, name: 'Refunded', color: 'orange' } | { id: StringRequest, name: 'Paid', color: 'blue' } | { id: StringRequest, name: 'Reconciled', color: 'green' }},
@@ -45,6 +45,7 @@ export interface ExpensesTrackerResponse extends WithOptional<Omit<DatabaseObjec
     "Invoice / Receipt": FilesPropertyItemObjectResponse,
     "Expense": TitlePropertyItemObjectResponse,
     "Reference Number": RichTextPropertyItemObjectResponse,
+    "Notes": RichTextPropertyItemObjectResponse,
     "Created by": CreatedByPropertyItemObjectResponse,
     "Last edited by": LastEditedByPropertyItemObjectResponse,
     "Last edited time": LastEditedTimePropertyItemObjectResponse,
@@ -124,12 +125,13 @@ type ExpensesTrackerSupplierPropertyFilter = RelationPropertyFilter
 type ExpensesTrackerInvoiceReceiptPropertyFilter = ExistencePropertyFilter
 type ExpensesTrackerExpensePropertyFilter = TextPropertyFilter
 type ExpensesTrackerReferenceNumberPropertyFilter = TextPropertyFilter
+type ExpensesTrackerNotesPropertyFilter = TextPropertyFilter
 type ExpensesTrackerCreatedByPropertyFilter = PeoplePropertyFilter
 type ExpensesTrackerLastEditedByPropertyFilter = PeoplePropertyFilter
 type ExpensesTrackerLastEditedTimePropertyFilter = DatePropertyFilter
 type ExpensesTrackerCreatedTimePropertyFilter = DatePropertyFilter
 
-export type ExpensesTrackerPropertyFilter = { category: ExpensesTrackerCategoryPropertyFilter } | { paymentMethod: ExpensesTrackerPaymentMethodPropertyFilter } | { team: ExpensesTrackerTeamPropertyFilter } | { date: ExpensesTrackerDatePropertyFilter } | { department: ExpensesTrackerDepartmentPropertyFilter } | { procurementItem: ExpensesTrackerProcurementItemPropertyFilter } | { inFavorOf: ExpensesTrackerInFavorOfPropertyFilter } | { status: ExpensesTrackerStatusPropertyFilter } | { paidBy: ExpensesTrackerPaidByPropertyFilter } | { amountThb: ExpensesTrackerAmountThbPropertyFilter } | { supplier: ExpensesTrackerSupplierPropertyFilter } | { invoiceReceipt: ExpensesTrackerInvoiceReceiptPropertyFilter } | { expense: ExpensesTrackerExpensePropertyFilter } | { referenceNumber: ExpensesTrackerReferenceNumberPropertyFilter } | { createdBy: ExpensesTrackerCreatedByPropertyFilter } | { lastEditedBy: ExpensesTrackerLastEditedByPropertyFilter } | { lastEditedTime: ExpensesTrackerLastEditedTimePropertyFilter } | { createdTime: ExpensesTrackerCreatedTimePropertyFilter }
+export type ExpensesTrackerPropertyFilter = { category: ExpensesTrackerCategoryPropertyFilter } | { paymentMethod: ExpensesTrackerPaymentMethodPropertyFilter } | { team: ExpensesTrackerTeamPropertyFilter } | { date: ExpensesTrackerDatePropertyFilter } | { department: ExpensesTrackerDepartmentPropertyFilter } | { procurementItem: ExpensesTrackerProcurementItemPropertyFilter } | { inFavorOf: ExpensesTrackerInFavorOfPropertyFilter } | { status: ExpensesTrackerStatusPropertyFilter } | { paidBy: ExpensesTrackerPaidByPropertyFilter } | { amountThb: ExpensesTrackerAmountThbPropertyFilter } | { supplier: ExpensesTrackerSupplierPropertyFilter } | { invoiceReceipt: ExpensesTrackerInvoiceReceiptPropertyFilter } | { expense: ExpensesTrackerExpensePropertyFilter } | { referenceNumber: ExpensesTrackerReferenceNumberPropertyFilter } | { notes: ExpensesTrackerNotesPropertyFilter } | { createdBy: ExpensesTrackerCreatedByPropertyFilter } | { lastEditedBy: ExpensesTrackerLastEditedByPropertyFilter } | { lastEditedTime: ExpensesTrackerLastEditedTimePropertyFilter } | { createdTime: ExpensesTrackerCreatedTimePropertyFilter }
 
 export type ExpensesTrackerQuery = Omit<QueryDatabaseBodyParameters, 'filter' | 'sorts'> & {
   sorts?: Array<

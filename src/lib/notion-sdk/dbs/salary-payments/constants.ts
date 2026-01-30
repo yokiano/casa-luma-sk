@@ -1,4 +1,8 @@
 export const SALARY_PAYMENTS_PROP_VALUES = {
+"status": [
+  "To Pay",
+  "Paid"
+] as const,
 }
 
 export const SALARY_PAYMENTS_PROPS_TO_IDS = {
@@ -11,7 +15,8 @@ export const SALARY_PAYMENTS_PROPS_TO_IDS = {
   "otAmountThb": "kmxK",
   "totalPaidThb": "ouAH",
   "deductionsThb": "vMss",
-  "paymentTitle": "title"
+  "paymentTitle": "title",
+  "status": "_I%60A"
 } as const
 export const SALARY_PAYMENTS_IDS_TO_PROPS = {
   "%40%7CnG": "notes",
@@ -23,7 +28,8 @@ export const SALARY_PAYMENTS_IDS_TO_PROPS = {
   "kmxK": "otAmountThb",
   "ouAH": "totalPaidThb",
   "vMss": "deductionsThb",
-  "title": "paymentTitle"
+  "title": "paymentTitle",
+  "_I%60A": "status"
 } as const
 export const SALARY_PAYMENTS_PROPS_TO_TYPES = {
   "notes": "rich_text",
@@ -35,7 +41,8 @@ export const SALARY_PAYMENTS_PROPS_TO_TYPES = {
   "otAmountThb": "number",
   "totalPaidThb": "number",
   "deductionsThb": "number",
-  "paymentTitle": "title"
+  "paymentTitle": "title",
+  "status": "status"
 } as const
 
   export type SalaryPaymentsDTOProperties = keyof typeof SALARY_PAYMENTS_PROPS_TO_IDS

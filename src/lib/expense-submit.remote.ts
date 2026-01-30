@@ -4,6 +4,24 @@ import { NOTION_API_KEY } from '$env/static/private';
 import { ExpensesTrackerDatabase } from '$lib/notion-sdk/dbs/expenses-tracker/db';
 import { ExpensesTrackerPatchDTO } from '$lib/notion-sdk/dbs/expenses-tracker/patch.dto';
 
+/**
+ * Converts "DD/MM/YYYY HH:mm" to ISO 8601 "YYYY-MM-DDTHH:mm:00"
+ */
+function normalizeDate(dateStr: string): string {
+  if (!dateStr || !dateStr.includes('/')) return dateStr;
+  
+  const [datePart, timePart] = dateStr.split(/\s+/);
+  const [day, month, year] = datePart.split('/');
+  
+  if (!day || !month || !year) return dateStr;
+
+  let iso = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  if (timePart) {
+    iso += `T${timePart}:00`;
+  }
+  return iso;
+}
+
 const SubmitSchema = v.object({
   title: v.string(),
   amount: v.number(),
@@ -20,25 +38,44 @@ export const submitExpenseSlip = command(SubmitSchema, async (data) => {
     notionSecret: NOTION_API_KEY
   });
 
+  const normalizedDate = normalizeDate(data.date);
+
   // 1. Check for duplicates if transactionId is provided
-  if (data.transactionId) {
+  if (data.transactionId?.trim()) {
+    const tid = data.transactionId.trim();
     const existing = await db.query({
       filter: {
         referenceNumber: {
-          equals: data.transactionId
+          equals: tid
         }
       }
     });
 
     if (existing.results.length > 0) {
-      throw new Error(`Duplicate: An expense with Reference Number ${data.transactionId} already exists in Notion.`);
+      throw new Error(`Duplicate: An expense with Reference Number ${tid} already exists in Notion.`);
+    }
+  } else {
+    // 1b. Soft duplicate check for same amount, date and department if no transactionId
+    const existing = await db.query({
+      filter: {
+        and: [
+          { amountThb: { equals: data.amount } },
+          { date: { equals: normalizedDate } },
+          { department: { equals: data.department as any } }
+        ]
+      }
+    });
+
+    if (existing.results.length > 0) {
+      throw new Error(`Potential Duplicate: An expense with the same amount (${data.amount}) and date already exists in the same department.`);
     }
   }
 
   const invoiceReceipt = data.receiptUrl
     ? [
         {
-          type: 'external',
+          type: 'external' as const,
+          name: 'Slip',
           external: { url: data.receiptUrl }
         }
       ]
@@ -50,12 +87,13 @@ export const submitExpenseSlip = command(SubmitSchema, async (data) => {
         expense: data.title,
         status: { name: 'Paid' },
         amountThb: data.amount,
-        date: { start: data.date },
+        date: { start: normalizedDate },
         paidBy: 'Company',
-        department: data.department,
-        category: data.category,
-        referenceNumber: data.transactionId ?? undefined,
+        department: data.department as any,
+        category: data.category as any,
+        referenceNumber: data.transactionId?.trim() ?? undefined,
         paymentMethod: 'Scan',
+        notes: 'synced via expense tool',
         supplier: data.supplierId ? [{ id: data.supplierId }] : undefined,
         invoiceReceipt
       }

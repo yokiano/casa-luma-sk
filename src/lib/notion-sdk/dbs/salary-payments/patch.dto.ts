@@ -16,6 +16,7 @@ export type SalaryPaymentsPropertiesPatch = {
   totalPaidThb?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'number' }>['number']
   deductionsThb?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'number' }>['number']
   paymentTitle?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
+  status?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'status' }>['status']
 }
 
   
@@ -133,6 +134,13 @@ export class SalaryPaymentsPatchDTO {
                     annotations: props.paymentTitle.annotations
                   },
                 ]
+      }
+    }
+
+    if (props?.status !== undefined) {
+      this.__data.properties['_I%60A'] = {
+        type: 'status',
+        status: props.status,
       }
     }
   }

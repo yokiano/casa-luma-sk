@@ -71,6 +71,7 @@ export class SalaryPaymentsPropertiesResponseDTO {
       totalPaidThb: this.__props['Total Paid (THB)'],
       deductionsThb: this.__props['Deductions (THB)'],
       paymentTitle: this.__props['Payment Title'],
+      status: this.__props['Status'],
     }
   }
 
@@ -127,5 +128,9 @@ export class SalaryPaymentsPropertiesResponseDTO {
       links: this.__props['Payment Title']?.title ? this.__props['Payment Title'].title.filter((item) => item.href?.length).map((item) => item.href) : [],
       title: this.__props['Payment Title']?.title,
     }
+  }
+
+  get status() {
+    return this.__props['Status']?.status
   }
 }

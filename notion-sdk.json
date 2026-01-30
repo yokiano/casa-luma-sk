@@ -1869,6 +1869,12 @@
           "varName": "referenceNumber",
           "readOnly": false
         },
+        "K%5DFJ": {
+          "_name": "Notes",
+          "_type": "rich_text",
+          "varName": "notes",
+          "readOnly": false
+        },
         "DSA_": {
           "_name": "Created by",
           "_type": "created_by",
@@ -2264,6 +2270,12 @@
           "_name": "Payment Title",
           "_type": "title",
           "varName": "paymentTitle",
+          "readOnly": false
+        },
+        "_I%60A": {
+          "_name": "Status",
+          "_type": "status",
+          "varName": "status",
           "readOnly": false
         }
       }

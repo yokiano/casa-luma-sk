@@ -18,7 +18,8 @@ export const SOP_CATALOG_PROP_VALUES = {
   "Checklist",
   "How-to",
   "Policy / management procedure",
-  "Training / onboarding"
+  "Training / onboarding",
+  "Meeting Agenda"
 ] as const,
 "department": [
   "Open Play",

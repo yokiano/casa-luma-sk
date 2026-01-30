@@ -7,6 +7,7 @@ FilesPropertyItemObjectResponse,
 NumberPropertyItemObjectResponse,
 RelationPropertyItemObjectResponse,
 RichTextPropertyItemObjectResponse,
+StatusPropertyItemObjectResponse,
 TitlePropertyItemObjectResponse,
 ExistencePropertyFilter,
 QueryDatabaseBodyParameters,
@@ -30,7 +31,8 @@ export interface SalaryPaymentsResponse extends WithOptional<Omit<DatabaseObject
     "OT Amount (THB)": NumberPropertyItemObjectResponse,
     "Total Paid (THB)": NumberPropertyItemObjectResponse,
     "Deductions (THB)": NumberPropertyItemObjectResponse,
-    "Payment Title": TitlePropertyItemObjectResponse
+    "Payment Title": TitlePropertyItemObjectResponse,
+    "Status": Omit<StatusPropertyItemObjectResponse, 'status'> & { status: { id: StringRequest, name: 'To Pay', color: 'default' } | { id: StringRequest, name: 'Paid', color: 'green' }}
   }
 }
 
@@ -48,7 +50,19 @@ type SalaryPaymentsTotalPaidThbPropertyFilter = NumberPropertyFilter
 type SalaryPaymentsDeductionsThbPropertyFilter = NumberPropertyFilter
 type SalaryPaymentsPaymentTitlePropertyFilter = TextPropertyFilter
 
-export type SalaryPaymentsPropertyFilter = { notes: SalaryPaymentsNotesPropertyFilter } | { baseSalaryThb: SalaryPaymentsBaseSalaryThbPropertyFilter } | { paySlip: SalaryPaymentsPaySlipPropertyFilter } | { paymentDate: SalaryPaymentsPaymentDatePropertyFilter } | { employee: SalaryPaymentsEmployeePropertyFilter } | { advancesThb: SalaryPaymentsAdvancesThbPropertyFilter } | { otAmountThb: SalaryPaymentsOtAmountThbPropertyFilter } | { totalPaidThb: SalaryPaymentsTotalPaidThbPropertyFilter } | { deductionsThb: SalaryPaymentsDeductionsThbPropertyFilter } | { paymentTitle: SalaryPaymentsPaymentTitlePropertyFilter }
+export type SalaryPaymentsStatusPropertyType = SalaryPaymentsResponse['properties']['Status']['status']['name']
+
+type SalaryPaymentsStatusPropertyFilter =
+  | {
+      equals: SalaryPaymentsStatusPropertyType
+    }
+  | {
+      does_not_equal: SalaryPaymentsStatusPropertyType
+    }
+  | ExistencePropertyFilter      
+
+
+export type SalaryPaymentsPropertyFilter = { notes: SalaryPaymentsNotesPropertyFilter } | { baseSalaryThb: SalaryPaymentsBaseSalaryThbPropertyFilter } | { paySlip: SalaryPaymentsPaySlipPropertyFilter } | { paymentDate: SalaryPaymentsPaymentDatePropertyFilter } | { employee: SalaryPaymentsEmployeePropertyFilter } | { advancesThb: SalaryPaymentsAdvancesThbPropertyFilter } | { otAmountThb: SalaryPaymentsOtAmountThbPropertyFilter } | { totalPaidThb: SalaryPaymentsTotalPaidThbPropertyFilter } | { deductionsThb: SalaryPaymentsDeductionsThbPropertyFilter } | { paymentTitle: SalaryPaymentsPaymentTitlePropertyFilter } | { status: SalaryPaymentsStatusPropertyFilter }
 
 export type SalaryPaymentsQuery = Omit<QueryDatabaseBodyParameters, 'filter' | 'sorts'> & {
   sorts?: Array<
