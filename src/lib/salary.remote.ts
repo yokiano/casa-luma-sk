@@ -1,9 +1,11 @@
-import { query } from '$app/server';
+import { query, command } from '$app/server';
 import * as v from 'valibot';
 import { NOTION_API_KEY } from '$env/static/private';
 import { ShiftsDatabase, ShiftsResponseDTO } from '$lib/notion-sdk/dbs/shifts';
 import { SalaryAdjustmentsDatabase, SalaryAdjustmentsResponseDTO } from '$lib/notion-sdk/dbs/salary-adjustments';
 import { EmployeesDatabase, EmployeesResponseDTO } from '$lib/notion-sdk/dbs/employees';
+import { SalaryPaymentsDatabase, SalaryPaymentsPatchDTO } from '$lib/notion-sdk/dbs/salary-payments';
+import { uploadToNotion } from '$lib/server/notion/upload';
 import type { SalaryEmployee, SalaryShift, SalaryAdjustment } from './salary';
 
 const SalaryDataSchema = v.object({
@@ -91,4 +93,47 @@ export const getSalaryData = query(SalaryDataSchema, async ({ employeeId, startD
 		shifts,
 		adjustments
 	};
+});
+
+const SaveSalaryPaymentSchema = v.object({
+	employeeId: v.string(),
+	paymentDate: v.string(), // ISO date string (YYYY-MM-DD)
+	baseSalaryThb: v.number(),
+	otAmountThb: v.number(),
+	advancesThb: v.number(),
+	deductionsThb: v.number(),
+	totalPaidThb: v.number(),
+	paymentTitle: v.string(),
+	notes: v.optional(v.string()),
+	fileDataUrl: v.optional(v.string()), // Data URL (base64) of the PDF
+	fileName: v.optional(v.string())
+});
+
+export const saveSalaryPayment = command(SaveSalaryPaymentSchema, async (data) => {
+	const db = new SalaryPaymentsDatabase({ notionSecret: NOTION_API_KEY });
+	
+	let paySlip = undefined;
+	if (data.fileDataUrl && data.fileName) {
+		// uploadToNotion accepts a URL, and fetch() handles data URLs
+		const uploaded = await uploadToNotion(data.fileDataUrl, data.fileName);
+		paySlip = [uploaded];
+	}
+
+	const patch = new SalaryPaymentsPatchDTO({
+		properties: {
+			paymentTitle: data.paymentTitle,
+			employee: [{ id: data.employeeId }],
+			paymentDate: { start: data.paymentDate },
+			baseSalaryThb: data.baseSalaryThb,
+			otAmountThb: data.otAmountThb,
+			advancesThb: data.advancesThb,
+			deductionsThb: data.deductionsThb,
+			totalPaidThb: data.totalPaidThb,
+			notes: data.notes,
+			paySlip: paySlip as any
+		}
+	});
+
+	const result = await db.createPage(patch);
+	return { id: result.id };
 });

@@ -23,6 +23,7 @@ export class SalaryPaymentState {
 	
 	// UI State
 	isAttendanceExpanded = $state(true);
+	isSaveDialogOpen = $state(false);
 	
 	salaryData = $state<{
 		employee: SalaryEmployee;

@@ -23,7 +23,7 @@ export async function uploadToNotion(url: string, filename: string) {
 		headers: {
 			'Authorization': `Bearer ${NOTION_API_KEY}`,
 			'Content-Type': 'application/json',
-			'Notion-Version': '2022-06-28'
+			'Notion-Version': '2025-09-03'
 		},
 		body: JSON.stringify({
 			mode: 'single_part',
@@ -38,15 +38,20 @@ export async function uploadToNotion(url: string, filename: string) {
 		throw new Error(`Failed to initiate Notion file upload: ${errorText}`);
 	}
 
-	const { id: file_id, upload_url } = await notionResponse.json();
+	const { id: file_id, upload_url, complete_url } = await notionResponse.json();
 
-	// 3. Upload the binary data to the signed URL provided by Notion
+	// 3. Upload the binary data using multipart/form-data
+	const formData = new FormData();
+	formData.append('file', blob, filename);
+
 	const uploadResult = await fetch(upload_url, {
-		method: 'PUT',
+		method: 'POST',
 		headers: {
-			'Content-Type': contentType
+			'Authorization': `Bearer ${NOTION_API_KEY}`,
+			'Notion-Version': '2025-09-03'
+			// Content-Type is set automatically by fetch when using FormData
 		},
-		body: blob
+		body: formData
 	});
 
 	if (!uploadResult.ok) {
@@ -54,14 +59,30 @@ export async function uploadToNotion(url: string, filename: string) {
 		throw new Error(`Failed to upload file content to Notion storage: ${errorText}`);
 	}
 
-	// 4. Poll for the status to be 'uploaded' to ensure it's ready
+	// 4. Complete the upload
+	const completeResponse = await fetch(complete_url, {
+		method: 'POST',
+		headers: {
+			'Authorization': `Bearer ${NOTION_API_KEY}`,
+			'Notion-Version': '2025-09-03',
+			'Content-Type': 'application/json'
+		},
+		body: JSON.stringify({})
+	});
+
+	if (!completeResponse.ok) {
+		const errorText = await completeResponse.text();
+		throw new Error(`Failed to complete Notion file upload: ${errorText}`);
+	}
+
+	// 5. Poll for the status to be 'uploaded' to ensure it's ready
 	let attempts = 0;
 	const maxAttempts = 10;
 	while (attempts < maxAttempts) {
 		const statusResponse = await fetch(`https://api.notion.com/v1/file_uploads/${file_id}`, {
 			headers: {
 				'Authorization': `Bearer ${NOTION_API_KEY}`,
-				'Notion-Version': '2022-06-28'
+				'Notion-Version': '2025-09-03'
 			}
 		});
 
@@ -71,7 +92,7 @@ export async function uploadToNotion(url: string, filename: string) {
 			if (status === 'failed') throw new Error('Notion file processing failed');
 		}
 
-		await new Promise(r => setTimeout(r, 500));
+		await new Promise(r => setTimeout(r, 1000));
 		attempts++;
 	}
 

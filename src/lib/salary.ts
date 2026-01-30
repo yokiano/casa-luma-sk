@@ -76,11 +76,16 @@ export type SalaryResult = {
 	// Pay Components
 	grossMonthlySalary: number;
 	baseSalaryForPeriod: number;
-	proratedBaseSalary: number;
 	lateDeductions: number;
 	unpaidLeaveDeductions: number;
 	totalAdjustments: number;
 	ssfDeduction: number;
+	
+	// Granular Adjustment Components
+	bonuses: number;
+	deductions: number;
+	advances: number;
+	totalAttendanceDeductions: number;
 	
 	// Totals
 	totalGrossEarned: number;
@@ -258,14 +263,8 @@ export function calculateSalary(
 	const totalAttendanceDeductions = unpaidLeaveDeductions + unpaidSickDeductions + lateDeductions;
 
 	// 3. Total gross for this period
-	// Base Salary item for display should be the sub-total (baseSalaryForPeriod - attendanceDeductions)
-	// Actually, the user wants the "Base Salary" item to NOT include deductions if possible, 
-	// or at least show the 50% fixed.
-	const proratedBaseSalary = baseSalaryForPeriod;
-
-	// 4. Total gross for this period
-	// Net = Base(50%) + OT + Adjustments - Attendance Deductions - Regular Deductions
-	const totalGrossEarned = baseSalaryForPeriod + otPay + bonuses - totalAttendanceDeductions - deductions;
+	// Net = Base(50%) + OT + Bonuses - Attendance Deductions
+	const totalGrossEarned = baseSalaryForPeriod + otPay + bonuses - totalAttendanceDeductions;
 	
 	// SSF Calculation - only on End of Month run and only if enabled
 	let ssfDeduction = 0;
@@ -275,7 +274,7 @@ export function calculateSalary(
 	}
 
 	// Net payout for this period
-	const netPay = totalGrossEarned - ssfDeduction - advances;
+	const netPay = totalGrossEarned - ssfDeduction - advances - deductions;
 
 	// Both runs now calculate based on their period's attendance
 	const midMonthPayout = options.isMidMonthRun ? netPay : (monthlySalary / 2);
@@ -298,11 +297,14 @@ export function calculateSalary(
 		otPay,
 		grossMonthlySalary: monthlySalary,
 		baseSalaryForPeriod,
-		proratedBaseSalary,
 		lateDeductions,
 		unpaidLeaveDeductions: unpaidLeaveDeductions + unpaidSickDeductions,
 		totalAdjustments,
 		ssfDeduction,
+		bonuses,
+		deductions,
+		advances,
+		totalAttendanceDeductions,
 		totalGrossEarned,
 		netPay,
 		midMonthPayout,

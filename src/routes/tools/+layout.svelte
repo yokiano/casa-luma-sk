@@ -2,6 +2,7 @@
   import type { Snippet } from 'svelte';
   import { page } from '$app/state';
   import { Toaster } from "$lib/components/ui/sonner";
+  import { LogOut } from 'lucide-svelte';
 
   let { children, data }: { children?: Snippet, data: any } = $props();
 
@@ -15,7 +16,7 @@
     { href: '/tools/close-shift', label: 'Close Shift' },
     { href: '/tools/receipts', label: 'Receipts' },
     { href: '/tools/expense-scan', label: 'Expense Scan' },
-    { href: '/tools/salary-payment', label: 'Salary Payment', managerOnly: true },
+    { href: '/tools/salary-payment', label: 'Payroll', managerOnly: true },
     { href: '/tools/memberships', label: 'Memberships' },
     // { href: '/tools/graphics', label: 'Graphics' },
     { href: '/tools/onboarding/kitchen', label: 'Onboarding' }
@@ -47,6 +48,15 @@
             Lightweight utilities for procurement and operations.
           </p>
         </div>
+        {#if currentPath !== '/tools/login'}
+          <a
+            href="/tools/logout"
+            class="flex items-center gap-2 rounded-full border border-[#d3c5b8] px-4 py-2 text-sm font-medium text-[#7a6550] transition-colors hover:bg-[#7a6550] hover:text-white"
+          >
+            <LogOut size={16} />
+            Log Out
+          </a>
+        {/if}
       </div>
       {#if currentPath !== '/tools/login'}
         <nav class="mx-auto flex max-w-6xl gap-2 px-6 pb-4 print:hidden">

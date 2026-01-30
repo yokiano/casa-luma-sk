@@ -1,14 +1,48 @@
 <script lang="ts">
 	import { SalaryPaymentState } from './SalaryPaymentState.svelte';
 	import Payslip from '$lib/components/tools/salary-payment/Payslip.svelte';
-	import { LoaderCircle, Printer, ChevronRight, ChevronDown, User, CircleAlert, Info, CircleCheck } from 'lucide-svelte';
+	import SaveToNotionDialog from '$lib/components/tools/salary-payment/SaveToNotionDialog.svelte';
+	import { LoaderCircle, Printer, ChevronRight, ChevronDown, User, CircleAlert, Info, CircleCheck, CloudUpload } from 'lucide-svelte';
+	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
+	import { onMount } from 'svelte';
 
 	const state = new SalaryPaymentState();
 
 	async function selectEmployee(id: string) {
 		state.selectedEmployeeId = id;
+		
+		// Update query param without reloading
+		const url = new URL(window.location.href);
+		url.searchParams.set('employeeId', id);
+		goto(url.toString(), { replaceState: true, keepFocus: true, noScroll: true });
+		
 		await state.fetchData();
 	}
+
+	onMount(async () => {
+		const employeeId = page.url.searchParams.get('employeeId');
+		if (employeeId && state.employees.length > 0) {
+			await selectEmployee(employeeId);
+		} else if (employeeId) {
+			// If employees haven't loaded yet, we might need to wait or watch
+			// But state.employees is likely empty initially. 
+			// Let's watch for when employees are loaded.
+		}
+	});
+
+	// Watch for employees loading to set initial selected employee if from URL
+	$effect(() => {
+		if (state.employees.length > 0 && !state.selectedEmployeeId) {
+			const employeeId = page.url.searchParams.get('employeeId');
+			if (employeeId) {
+				const emp = state.employees.find(e => e.id === employeeId);
+				if (emp) {
+					selectEmployee(employeeId);
+				}
+			}
+		}
+	});
 
 	function handlePrint() {
 		window.print();
@@ -19,18 +53,18 @@
 
 	const statusOptions = [
 		{ value: 'Completed', label: 'Worked', paid: true },
-		{ value: 'Confirmed', label: 'Confirmed', paid: true },
 		{ value: 'Sick Day (Paid)', label: 'Sick (Paid)', paid: true },
+		{ value: 'Sick Day (Unpaid)', label: 'Sick (Unpaid)', paid: false },
 		{ value: 'Day Off (Paid)', label: 'Day Off (Paid)', paid: true },
+		{ value: 'Day Off (Unpaid)', label: 'Day Off (Unpaid)', paid: false },
 		{ value: 'Business Day-Off', label: 'Business Day-Off', paid: true },
-		{ value: 'Unpaid Leave', label: 'Unpaid Leave', paid: false },
 		{ value: 'Absent', label: 'Absent', paid: false },
 		{ value: 'No Data', label: 'No Data (Unpaid)', paid: false }
 	];
 </script>
 
 <svelte:head>
-	<title>Salary Payment | Casa Luma</title>
+	<title>Payroll | Casa Luma</title>
 </svelte:head>
 
 <div class="flex gap-8 print:block">
@@ -122,13 +156,22 @@
 					<div class="flex-grow"></div>
 					
 					{#if state.salaryData}
-						<button 
-							onclick={handlePrint}
-							class="bg-[#7a6550] hover:bg-[#635241] text-white flex items-center gap-2 px-6 py-3 rounded-full font-semibold shadow-lg shadow-[#7a6550]/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-						>
-							<Printer size={18} />
-							Print Payslip
-						</button>
+						<div class="flex gap-3">
+							<button 
+								onclick={() => state.isSaveDialogOpen = true}
+								class="bg-white border border-[#d3c5b8] text-[#7a6550] hover:bg-[#f6f1eb] flex items-center gap-2 px-6 py-3 rounded-full font-semibold shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
+							>
+								<CloudUpload size={18} />
+								Save to Notion
+							</button>
+							<button 
+								onclick={handlePrint}
+								class="bg-[#7a6550] hover:bg-[#635241] text-white flex items-center gap-2 px-6 py-3 rounded-full font-semibold shadow-lg shadow-[#7a6550]/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+							>
+								<Printer size={18} />
+								Print Payslip
+							</button>
+						</div>
 					{/if}
 				</div>
 
@@ -252,8 +295,6 @@
 															aria-label="OT Type"
 														>
 															<option value="1.5">1.5x</option>
-															<option value="1.0">1.0x</option>
-															<option value="3.0">3.0x</option>
 														</select>
 														<input 
 															type="number" 
@@ -288,6 +329,17 @@
 					/>
 				</div>
 			</div>
+
+			{#if state.salaryResult}
+				<SaveToNotionDialog 
+					bind:isOpen={state.isSaveDialogOpen}
+					employee={state.salaryData.employee}
+					result={state.salaryResult}
+					startDate={state.startDate}
+					endDate={state.endDate}
+					isMidMonthRun={state.isMidMonthRun}
+				/>
+			{/if}
 		{:else if !state.selectedEmployeeId}
 			<div class="flex flex-col items-center justify-center py-32 text-[#7a6550]/30 border-2 border-dashed border-[#d3c5b8] rounded-[2.5rem] bg-[#fdfbf9]/50 print:hidden">
 				<div class="w-16 h-16 rounded-full bg-[#7a6550]/5 flex items-center justify-center mb-6">
@@ -308,6 +360,8 @@
 	@media print {
 		:global(body) {
 			background-color: white !important;
+			margin: 0 !important;
+			padding: 0 !important;
 		}
 		:global(main) {
 			max-width: none !important;

@@ -78,7 +78,7 @@
 				</tr>
 			</thead>
 			<tbody class="divide-y divide-[#d3c5b8]/30">
-				<!-- Base Salary starting from 50% -->
+				<!-- Earnings Section -->
 				<tr>
 					<td class="py-2 px-3">
 						Standard Period Base (50%)
@@ -89,22 +89,6 @@
 					<td class="text-center py-2 px-3">15 days</td>
 					<td class="text-right py-2 px-3">{result.baseSalaryForPeriod.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
 				</tr>
-
-				{#if result.unpaidLeaveDeductions > 0}
-					<tr class="text-amber-700">
-						<td class="py-2 px-3">Unpaid Days Deductions</td>
-						<td class="text-center py-2 px-3">{result.unpaidLeaveDays} days</td>
-						<td class="text-right py-2 px-3">-{result.unpaidLeaveDeductions.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-					</tr>
-				{/if}
-
-				{#if result.lateDeductions > 0}
-					<tr class="text-amber-700">
-						<td class="py-2 px-3">Attendance Deductions (Late/Early)</td>
-						<td class="text-center py-2 px-3">-</td>
-						<td class="text-right py-2 px-3">-{result.lateDeductions.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-					</tr>
-				{/if}
 
 				{#if result.otPay > 0}
 					<tr>
@@ -121,9 +105,8 @@
 					</tr>
 				{/if}
 
-				{#each adjustments as adj}
-					{@const isNegative = ['Advance', 'Deduction', 'Loan Repayment', 'Late Penalty', 'Uniform', 'Damages'].includes(adj.type || '')}
-					<tr class={isNegative ? 'text-amber-700' : ''}>
+				{#each adjustments.filter(a => ['Bonus', 'Reimbursement'].includes(a.type || '')) as adj}
+					<tr>
 						<td class="py-2 px-3">
 							{adj.title}
 							{#if adj.notes}
@@ -132,16 +115,48 @@
 						</td>
 						<td class="text-center py-2 px-3">{adj.type}</td>
 						<td class="text-right py-2 px-3">
-							{isNegative ? '-' : ''}
 							{(adj.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
 						</td>
 					</tr>
 				{/each}
 
+				<!-- Attendance Deductions (Before Gross) -->
+				{#if result.unpaidLeaveDeductions > 0}
+					<tr class="text-amber-700">
+						<td class="py-2 px-3">Unpaid Days Deductions</td>
+						<td class="text-center py-2 px-3">{result.unpaidLeaveDays} days</td>
+						<td class="text-right py-2 px-3">-{result.unpaidLeaveDeductions.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+					</tr>
+				{/if}
+
+				{#if result.lateDeductions > 0}
+					<tr class="text-amber-700">
+						<td class="py-2 px-3">Attendance Deductions (Late/Early)</td>
+						<td class="text-center py-2 px-3">-</td>
+						<td class="text-right py-2 px-3">-{result.lateDeductions.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+					</tr>
+				{/if}
+
 				<tr class="bg-[#f6f1eb]/30 font-semibold">
 					<td class="py-2 px-3" colspan="2">Total Gross Earned</td>
 					<td class="text-right py-2 px-3">{result.totalGrossEarned.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
 				</tr>
+
+				<!-- Post-Gross Deductions & Advances -->
+				{#each adjustments.filter(a => !['Bonus', 'Reimbursement'].includes(a.type || '')) as adj}
+					<tr class="text-amber-700">
+						<td class="py-2 px-3">
+							{adj.title}
+							{#if adj.notes}
+								<div class="text-[10px] text-gray-500">{adj.notes}</div>
+							{/if}
+						</td>
+						<td class="text-center py-2 px-3">{adj.type}</td>
+						<td class="text-right py-2 px-3">
+							-{(adj.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+						</td>
+					</tr>
+				{/each}
 
 				{#if !isMidMonthRun && result.ssfDeduction > 0 && includeSSF}
 					<tr class="text-amber-700">
@@ -208,12 +223,21 @@
 	@media print {
 		:global(body) {
 			background: white !important;
+			margin: 0 !important;
+			padding: 0 !important;
+		}
+		@page {
+			margin: 0;
+			size: auto;
 		}
 		.payslip-container {
 			margin: 0 !important;
 			width: 100% !important;
+			height: auto !important;
+			min-height: 0 !important;
 			box-shadow: none !important;
 			padding: 0 !important;
+			border: none !important;
 		}
 	}
 </style>
