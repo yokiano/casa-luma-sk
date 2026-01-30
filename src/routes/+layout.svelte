@@ -12,6 +12,7 @@
 			page.url.pathname.startsWith('/print/') ||
 			page.url.pathname === '/customer-intake/print' ||
 			page.url.pathname.startsWith('/tools/onboarding') ||
+			page.url.pathname.startsWith('/customer-intake') ||
 			page.url.pathname === '/tools/salary-payment'
 	);
 </script>
