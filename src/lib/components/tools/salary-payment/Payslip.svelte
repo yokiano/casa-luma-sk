@@ -37,7 +37,7 @@
 <div class="payslip-container bg-white p-8 text-[#2c2925] shadow-sm print:shadow-none" style="width: 210mm; min-height: 297mm; margin: 0 auto;">
 	<div class="flex items-center justify-between border-b-2 border-[#7a6550] pb-6 mb-8">
 		<div>
-			<h1 class="text-3xl font-serif font-bold text-[#7a6550]">CASA LUMA</h1>
+			<h1 class="text-3xl font-serif font-bold text-[#7a6550]">FAMI HOUSE CO., LTD.</h1>
 			<p class="text-sm uppercase tracking-widest text-[#7a6550]/80">
 				{isMidMonthRun ? 'Mid-Month Salary Statement' : 'End-of-Month Salary Statement'}
 			</p>
@@ -209,13 +209,13 @@
 		</div>
 		<div class="border-t border-black pt-2 text-center">
 			<p class="text-xs font-bold uppercase">Authorized Manager</p>
-			<p class="text-sm mt-1 italic">Casa Luma Management</p>
+			<p class="text-sm mt-1 italic">Fami House Co., Ltd. Management</p>
 		</div>
 	</div>
 	
 	<div class="mt-auto pt-10 text-[10px] text-gray-400 text-center">
 		<p>This is a professional payroll document compliant with Thai Labor Protection Act (LPA) standards.</p>
-		<p>Casa Luma · 2026</p>
+		<p>Fami House Co., Ltd. · 2026</p>
 	</div>
 </div>
 

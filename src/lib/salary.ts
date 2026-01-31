@@ -7,6 +7,8 @@
  * CRITICAL: When updating this logic, ensure the documentation is updated accordingly.
  */
 
+import { getBangkokDateStr, getBangkokDayOfWeek } from './date-utils';
+
 export type SalaryAdjustment = {
 	id: string;
 	title: string;
@@ -110,22 +112,22 @@ export function generateCalendarDays(
 	businessDayOff: number // 0-6 (e.g., 3 for Wednesday)
 ): CalendarDay[] {
 	const days: CalendarDay[] = [];
-	const start = new Date(startDate);
-	const end = new Date(endDate);
 	
 	// Create a map of shifts by date for quick lookup
 	const shiftsByDate = new Map<string, SalaryShift>();
 	shifts.forEach(s => {
 		if (s.date) {
-			const dateKey = s.date.substring(0, 10); // YYYY-MM-DD
+			const dateKey = getBangkokDateStr(s.date); // Use Bangkok date string
 			shiftsByDate.set(dateKey, s);
 		}
 	});
 	
-	const current = new Date(start);
-	while (current <= end) {
-		const dateStr = current.toISOString().substring(0, 10);
-		const dayOfWeek = current.getDay();
+	const current = new Date(`${startDate}T00:00:00+07:00`);
+	const endLimit = new Date(`${endDate}T00:00:00+07:00`);
+	
+	while (current <= endLimit) {
+		const dateStr = getBangkokDateStr(current);
+		const dayOfWeek = getBangkokDayOfWeek(current);
 		const isBusinessDayOff = dayOfWeek === businessDayOff;
 		const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
 		const shift = shiftsByDate.get(dateStr);
@@ -164,7 +166,7 @@ export function generateCalendarDays(
 			hasShiftData
 		});
 		
-		current.setDate(current.getDate() + 1);
+		current.setUTCDate(current.getUTCDate() + 1);
 	}
 	
 	return days;

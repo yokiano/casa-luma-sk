@@ -7,6 +7,7 @@ import { EmployeesDatabase, EmployeesResponseDTO } from '$lib/notion-sdk/dbs/emp
 import { SalaryPaymentsDatabase, SalaryPaymentsPatchDTO } from '$lib/notion-sdk/dbs/salary-payments';
 import { uploadToNotion } from '$lib/server/notion/upload';
 import type { SalaryEmployee, SalaryShift, SalaryAdjustment } from './salary';
+import { getBangkokDateStr } from './date-utils';
 
 const SalaryDataSchema = v.object({
 	employeeId: v.string(),
@@ -21,9 +22,9 @@ export const getSalaryData = query(SalaryDataSchema, async ({ employeeId, startD
 
 	// Add one day to endDate to make the filter inclusive
 	// Notion's "before" filter is exclusive, so we need to add a day
-	const endDateInclusive = new Date(endDate);
-	endDateInclusive.setDate(endDateInclusive.getDate() + 1);
-	const endDateInclusiveStr = endDateInclusive.toISOString().substring(0, 10);
+	const endDateInclusive = new Date(`${endDate}T00:00:00+07:00`);
+	endDateInclusive.setUTCDate(endDateInclusive.getUTCDate() + 1);
+	const endDateInclusiveStr = getBangkokDateStr(endDateInclusive);
 
 	const [shiftsRes, adjustmentsRes, employeeRes] = await Promise.all([
 		shiftsDb.query({
