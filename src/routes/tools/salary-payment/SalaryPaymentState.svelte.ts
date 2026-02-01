@@ -6,6 +6,10 @@ export class SalaryPaymentState {
 	employees = $state<PublicEmployee[]>([]);
 	selectedEmployeeId = $state<string | null>(null);
 	
+	// Payroll Period
+	currentMonth = $state(new Date().getMonth()); // 0-indexed
+	currentYear = $state(new Date().getFullYear());
+
 	// Payroll Run Type - this drives the date range
 	isMidMonthRun = $state(this.detectDefaultRun());
 	
@@ -44,9 +48,8 @@ export class SalaryPaymentState {
 	}
 
 	private getStartDateForRun(isMid: boolean): string {
-		const now = new Date();
-		const month = now.getMonth() + 1;
-		const year = now.getFullYear();
+		const month = this.currentMonth + 1;
+		const year = this.currentYear;
 		const monthStr = month.toString().padStart(2, '0');
 		
 		if (isMid) {
@@ -57,9 +60,8 @@ export class SalaryPaymentState {
 	}
 
 	private getEndDateForRun(isMid: boolean): string {
-		const now = new Date();
-		const month = now.getMonth() + 1;
-		const year = now.getFullYear();
+		const month = this.currentMonth + 1;
+		const year = this.currentYear;
 		const monthStr = month.toString().padStart(2, '0');
 		
 		if (isMid) {
@@ -70,15 +72,40 @@ export class SalaryPaymentState {
 		}
 	}
 
-	// When run type changes, update dates automatically
-	setRunType(isMid: boolean) {
-		this.isMidMonthRun = isMid;
-		this.startDate = this.getStartDateForRun(isMid);
-		this.endDate = this.getEndDateForRun(isMid);
+	// Navigation methods
+	prevMonth() {
+		if (this.currentMonth === 0) {
+			this.currentMonth = 11;
+			this.currentYear--;
+		} else {
+			this.currentMonth--;
+		}
+		this.updateDatesAndFetch();
+	}
+
+	nextMonth() {
+		if (this.currentMonth === 11) {
+			this.currentMonth = 0;
+			this.currentYear++;
+		} else {
+			this.currentMonth++;
+		}
+		this.updateDatesAndFetch();
+	}
+
+	private updateDatesAndFetch() {
+		this.startDate = this.getStartDateForRun(this.isMidMonthRun);
+		this.endDate = this.getEndDateForRun(this.isMidMonthRun);
 		this.overriddenDays = {}; // Reset overrides
 		if (this.selectedEmployeeId) {
 			this.fetchData();
 		}
+	}
+
+	// When run type changes, update dates automatically
+	setRunType(isMid: boolean) {
+		this.isMidMonthRun = isMid;
+		this.updateDatesAndFetch();
 	}
 
 	async loadEmployees() {

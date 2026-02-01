@@ -81,12 +81,21 @@
 				<!-- Earnings Section -->
 				<tr>
 					<td class="py-2 px-3">
-						Standard Period Base (50%)
-						<div class="text-[10px] text-gray-500">
-							({result.grossMonthlySalary.toLocaleString()} THB monthly) / 2
-						</div>
+						{#if employee.salaryCalculation === 'Daily'}
+							Days Worked ({result.workedShifts} days)
+							<div class="text-[10px] text-gray-500">
+								{result.dailyRate.toLocaleString()} THB per day
+							</div>
+						{:else}
+							Standard Period Base (50%)
+							<div class="text-[10px] text-gray-500">
+								({result.grossMonthlySalary.toLocaleString()} THB monthly) / 2
+							</div>
+						{/if}
 					</td>
-					<td class="text-center py-2 px-3">15 days</td>
+					<td class="text-center py-2 px-3">
+						{employee.salaryCalculation === 'Daily' ? result.workedShifts : 15} days
+					</td>
 					<td class="text-right py-2 px-3">{result.baseSalaryForPeriod.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
 				</tr>
 

@@ -184,8 +184,9 @@ export function calculateSalary(
 		includeSSF?: boolean;
 	} = {}
 ): SalaryResult {
-	const monthlySalary = employee.salaryThb || 0;
-	const dailyRate = monthlySalary / STANDARD_MONTH_DAYS;
+	const isDaily = employee.salaryCalculation === 'Daily';
+	const monthlySalary = !isDaily ? (employee.salaryThb || 0) : 0;
+	const dailyRate = isDaily ? (employee.salaryThb || 0) : (monthlySalary / STANDARD_MONTH_DAYS);
 	const hourlyRate = dailyRate / STANDARD_DAY_HOURS;
 
 	const calendarDaysInPeriod = calendarDays.length;
@@ -211,16 +212,25 @@ export function calculateSalary(
 		if (day.status === 'Completed' || day.status === 'Confirmed') {
 			workedShifts++;
 		} else if (day.status === 'Sick Day (Paid)') {
-			if (sickDaysBefore + sickDaysThisPeriod < 30) {
+			if (!isDaily && (sickDaysBefore + sickDaysThisPeriod < 30)) {
 				paidSickDays++;
 				sickDaysThisPeriod++;
 			} else {
 				unpaidSickDays++;
 			}
 		} else if (day.status === 'Day Off (Paid)') {
-			paidDaysOff++;
+			if (!isDaily) {
+				paidDaysOff++;
+			} else {
+				unpaidLeaveDays++;
+			}
 		} else if (day.status === 'Business Day-Off') {
-			businessDaysOff++;
+			if (!isDaily) {
+				businessDaysOff++;
+			} else {
+				// Daily workers don't get paid for business day off
+				unpaidLeaveDays++;
+			}
 		} else if (
 			day.status === 'Planned' || 
 			day.status === 'Cancelled' || 
@@ -262,22 +272,26 @@ export function calculateSalary(
 
 	const totalAdjustments = bonuses - deductions - advances;
 
-	// 1. Start with 50% of monthly salary as the base for the period
-	const baseSalaryForPeriod = monthlySalary / 2;
+	// 1. Base salary calculation
+	// For daily employees, it's strictly worked shifts * daily rate
+	// For monthly employees, it's 50% of monthly salary
+	const baseSalaryForPeriod = isDaily ? (workedShifts * dailyRate) : (monthlySalary / 2);
 
 	// 2. Subtract deductions for unpaid days in THIS period
-	const unpaidLeaveDeductions = unpaidLeaveDays * dailyRate;
-	const unpaidSickDeductions = unpaidSickDays * dailyRate;
+	// Daily workers don't have unpaid leave deductions because they are only paid for what they worked.
+	const unpaidLeaveDeductions = isDaily ? 0 : (unpaidLeaveDays * dailyRate);
+	const unpaidSickDeductions = isDaily ? 0 : (unpaidSickDays * dailyRate);
 	const totalAttendanceDeductions = unpaidLeaveDeductions + unpaidSickDeductions + lateDeductions;
 
 	// 3. Total gross for this period
-	// Net = Base(50%) + OT + Bonuses - Attendance Deductions
+	// Net = Base + OT + Bonuses - Attendance Deductions
 	const totalGrossEarned = baseSalaryForPeriod + otPay + bonuses - totalAttendanceDeductions;
 	
 	// SSF Calculation - only on End of Month run and only if enabled
 	let ssfDeduction = 0;
 	if (!options.isMidMonthRun && options.includeSSF !== false) {
-		const ssfBase = Math.min(monthlySalary, SSF_SALARY_CAP);
+		const ssfBaseSalary = isDaily ? (totalGrossEarned + advances + deductions - bonuses - otPay) : monthlySalary;
+		const ssfBase = Math.min(ssfBaseSalary, SSF_SALARY_CAP);
 		ssfDeduction = Math.min(SSF_MAX, Math.round(ssfBase * SSF_RATE));
 	}
 
@@ -285,7 +299,7 @@ export function calculateSalary(
 	const netPay = totalGrossEarned - ssfDeduction - advances - deductions;
 
 	// Both runs now calculate based on their period's attendance
-	const midMonthPayout = options.isMidMonthRun ? netPay : (monthlySalary / 2);
+	const midMonthPayout = options.isMidMonthRun ? netPay : (isDaily ? 0 : (monthlySalary / 2));
 	const finalMonthPayout = netPay;
 
 	return {
@@ -303,7 +317,7 @@ export function calculateSalary(
 		otHours10,
 		otHours30,
 		otPay,
-		grossMonthlySalary: monthlySalary,
+		grossMonthlySalary: isDaily ? (dailyRate * STANDARD_MONTH_DAYS) : monthlySalary,
 		baseSalaryForPeriod,
 		lateDeductions,
 		unpaidLeaveDeductions: unpaidLeaveDeductions + unpaidSickDeductions,

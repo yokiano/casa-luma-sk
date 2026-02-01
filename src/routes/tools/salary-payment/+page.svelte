@@ -2,7 +2,7 @@
 	import { SalaryPaymentState } from './SalaryPaymentState.svelte';
 	import Payslip from '$lib/components/tools/salary-payment/Payslip.svelte';
 	import SaveToNotionDialog from '$lib/components/tools/salary-payment/SaveToNotionDialog.svelte';
-	import { LoaderCircle, Printer, ChevronRight, ChevronDown, User, CircleAlert, Info, CircleCheck, CloudUpload } from 'lucide-svelte';
+	import { LoaderCircle, Printer, ChevronLeft, ChevronRight, ChevronDown, User, CircleAlert, Info, CircleCheck, CloudUpload, Calendar } from 'lucide-svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
@@ -107,6 +107,32 @@
 		<div class="mb-8 print:hidden">
 			<div class="bg-white/30 backdrop-blur p-6 rounded-[2.5rem] border border-[#d3c5b8]/30 flex flex-col gap-6">
 				<div class="flex flex-wrap items-end gap-6">
+					<!-- Month Selector -->
+					<div class="space-y-2">
+						<span class="block text-[10px] font-bold uppercase tracking-widest text-[#7a6550]/60 ml-1">Period</span>
+						<div class="flex items-center gap-1 bg-[#f6f1eb] p-1 rounded-2xl">
+							<button 
+								onclick={() => state.prevMonth()}
+								class="p-2 hover:bg-white rounded-xl transition-all text-[#7a6550] hover:shadow-sm"
+								aria-label="Previous Month"
+							>
+								<ChevronLeft size={16} />
+							</button>
+							<div class="px-3 text-sm font-bold text-[#7a6550] min-w-[140px] text-center">
+								{new Date(state.currentYear, state.currentMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+							</div>
+							<button 
+								onclick={() => state.nextMonth()}
+								class="p-2 hover:bg-white rounded-xl transition-all text-[#7a6550] hover:shadow-sm"
+								aria-label="Next Month"
+							>
+								<ChevronRight size={16} />
+							</button>
+						</div>
+					</div>
+
+					<div class="h-10 w-[2px] bg-[#d3c5b8]/30 self-center mx-2"></div>
+
 					<!-- Payroll Run Selector (Primary Control) -->
 					<div class="space-y-2">
 						<span class="block text-[10px] font-bold uppercase tracking-widest text-[#7a6550]/60 ml-1">Payroll Run</span>
@@ -121,7 +147,7 @@
 								class={`px-5 py-2 rounded-xl text-sm font-semibold transition-all ${!state.isMidMonthRun ? 'bg-white text-[#7a6550] shadow-sm' : 'text-[#7a6550]/50 hover:text-[#7a6550]'}`}
 								onclick={() => state.setRunType(false)}
 							>
-								End of Month (16-{new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()})
+								End of Month (16-{new Date(state.currentYear, state.currentMonth + 1, 0).getDate()})
 							</button>
 						</div>
 					</div>
@@ -183,7 +209,10 @@
 						<div class="text-xs text-[#7a6550]/80 leading-relaxed">
 							<p>
 								<span class="font-bold">Period:</span> {state.startDate} to {state.endDate} | 
-								<span class="font-bold">Daily Rate:</span> {state.salaryResult?.dailyRate.toFixed(2)} THB |
+								<span class="font-bold">{state.salaryData.employee.salaryCalculation === 'Daily' ? 'Daily Rate' : 'Monthly Salary'}:</span> {state.salaryData.employee.salaryThb?.toLocaleString()} THB |
+								{#if state.salaryData.employee.salaryCalculation !== 'Daily'}
+									<span class="font-bold">Daily Rate:</span> {state.salaryResult?.dailyRate.toFixed(2)} THB |
+								{/if}
 								<span class="font-bold">Business Day-Off:</span> {daysFull[state.businessDayOff]}
 							</p>
 						</div>

@@ -102,7 +102,9 @@
 			</div>
 
 			<div class="bg-[#f6f1eb]/50 p-4 rounded-2xl border border-[#d3c5b8]/30 grid grid-cols-2 gap-y-2.5 text-xs">
-				<div class="text-[#7a6550]/60 font-semibold uppercase tracking-wider text-[9px]">Base Salary (50%)</div>
+				<div class="text-[#7a6550]/60 font-semibold uppercase tracking-wider text-[9px]">
+					{employee.salaryCalculation === 'Daily' ? 'Days Worked' : 'Base Salary (50%)'}
+				</div>
 				<div class="text-right font-bold text-[#7a6550]">{result.baseSalaryForPeriod.toLocaleString(undefined, { minimumFractionDigits: 2 })} THB</div>
 				
 				<div class="text-[#7a6550]/60 font-semibold uppercase tracking-wider text-[9px]">OT Amount</div>
