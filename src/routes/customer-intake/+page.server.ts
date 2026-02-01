@@ -204,7 +204,7 @@ export const actions: Actions = {
         console.error('[customer-intake] Loyverse sync failed:', e);
       }
 
-      return { success: true };
+      return { success: true, customerCode };
     } catch (error) {
       console.error('Intake form error:', error);
       return fail(500, { success: false, message: 'Server error' });

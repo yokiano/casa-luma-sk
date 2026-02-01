@@ -2279,6 +2279,121 @@
           "readOnly": false
         }
       }
+    },
+    "8c565c29-798a-4ac3-9e3b-23c35db93c5b": {
+      "_name": "Company Ledger",
+      "varName": "companyLedger",
+      "pathName": "company-ledger",
+      "properties": {
+        "%3EBPw": {
+          "_name": "Type",
+          "_type": "select",
+          "varName": "type",
+          "readOnly": false
+        },
+        "Eq%3Ac": {
+          "_name": "Amount (THB)",
+          "_type": "number",
+          "varName": "amountThb",
+          "readOnly": false
+        },
+        "EqO%3B": {
+          "_name": "Notes",
+          "_type": "rich_text",
+          "varName": "notes",
+          "readOnly": false
+        },
+        "I%3C%3Fx": {
+          "_name": "Date",
+          "_type": "date",
+          "varName": "date",
+          "readOnly": false
+        },
+        "T%3CJ%3B": {
+          "_name": "Supplier",
+          "_type": "relation",
+          "varName": "supplier",
+          "readOnly": false
+        },
+        "TPaD": {
+          "_name": "Status",
+          "_type": "status",
+          "varName": "status",
+          "readOnly": false
+        },
+        "TY%3F%7C": {
+          "_name": "Reference Number",
+          "_type": "rich_text",
+          "varName": "referenceNumber",
+          "readOnly": false
+        },
+        "g%40nv": {
+          "_name": "Department",
+          "_type": "select",
+          "varName": "department",
+          "readOnly": false
+        },
+        "iRV%5B": {
+          "_name": "Invoice / Receipt",
+          "_type": "files",
+          "varName": "invoiceReceipt",
+          "readOnly": false
+        },
+        "jw%3Am": {
+          "_name": "Owner",
+          "_type": "select",
+          "varName": "owner",
+          "readOnly": false
+        },
+        "j%7BRr": {
+          "_name": "Payment Method",
+          "_type": "select",
+          "varName": "paymentMethod",
+          "readOnly": false
+        },
+        "k%5BLG": {
+          "_name": "Category",
+          "_type": "select",
+          "varName": "category",
+          "readOnly": false
+        },
+        "mH_w": {
+          "_name": "Bank Account",
+          "_type": "select",
+          "varName": "bankAccount",
+          "readOnly": false
+        },
+        "title": {
+          "_name": "Description",
+          "_type": "title",
+          "varName": "description",
+          "readOnly": false
+        },
+        "B%5B~A": {
+          "_name": "Created by",
+          "_type": "created_by",
+          "varName": "createdBy",
+          "readOnly": true
+        },
+        "%5E%3C%3El": {
+          "_name": "Last edited time",
+          "_type": "last_edited_time",
+          "varName": "lastEditedTime",
+          "readOnly": true
+        },
+        "qdJT": {
+          "_name": "Created time",
+          "_type": "created_time",
+          "varName": "createdTime",
+          "readOnly": true
+        },
+        "%7CdIJ": {
+          "_name": "Last edited by",
+          "_type": "last_edited_by",
+          "varName": "lastEditedBy",
+          "readOnly": true
+        }
+      }
     }
   }
 }

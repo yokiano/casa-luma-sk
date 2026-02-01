@@ -1,12 +1,12 @@
 import { getSuppliers } from '$lib/suppliers.remote';
-import { EXPENSES_TRACKER_PROP_VALUES } from '$lib/notion-sdk/dbs/expenses-tracker/constants';
+import { COMPANY_LEDGER_PROP_VALUES } from '$lib/notion-sdk/dbs/company-ledger/constants';
 
 export const load = async () => {
   const suppliers = await getSuppliers({ search: undefined });
 
   return {
     suppliers,
-    categories: EXPENSES_TRACKER_PROP_VALUES.category,
-    departments: EXPENSES_TRACKER_PROP_VALUES.department
+    categories: COMPANY_LEDGER_PROP_VALUES.category as unknown as string[],
+    departments: COMPANY_LEDGER_PROP_VALUES.department as unknown as string[]
   };
 };

@@ -83,7 +83,7 @@
       <div>
         <h1 class="text-2xl font-semibold text-[#2c2925]">Expense Scan</h1>
         <p class="mt-2 text-sm text-[#5c4a3d]/70">
-          Upload transaction slips, review parsed data, and submit to the expense tracker.
+          Upload transaction slips, review parsed data, and submit to the company ledger.
         </p>
       </div>
       <div class="flex gap-2">

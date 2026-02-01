@@ -11,6 +11,7 @@
   const allTabs = [
     { href: '/tools/checklist', label: 'Checklist' },
     { href: '/tools/close-shift', label: 'Close Shift' },
+    { href: '/tools/families', label: 'Families' },
     { href: '/tools/memberships', label: 'Memberships' },
     { href: '/tools/onboarding/kitchen', label: 'Onboarding' },
 

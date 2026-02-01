@@ -1,21 +1,14 @@
 import { NOTION_API_KEY } from '$env/static/private';
 import { MembershipsDatabase, MembershipsPatchDTO, MembershipsResponseDTO } from '$lib/notion-sdk/dbs/memberships';
 import { FamiliesDatabase, FamiliesResponseDTO } from '$lib/notion-sdk/dbs/families';
-import { FamilyMembersDatabase, FamilyMembersResponseDTO } from '$lib/notion-sdk/dbs/family-members';
-
-type FamilyMemberSummary = {
-	id: string;
-	name: string;
-	type: string | null;
-};
-
-type FamilySummary = {
-	id: string;
-	familyName: string;
-	customerCode: string | null;
-	mainPhone: string | null;
-	members?: FamilyMemberSummary[];
-};
+import { 
+	queryFamilyMatches, 
+	fetchFamiliesByIds, 
+	toFamilySummary as toFamilySummaryInternal, 
+	searchFamiliesData as searchFamiliesDataInternal,
+	type FamilySummary,
+	getSearchVariations
+} from '$lib/tools/families/families.server';
 
 type MembershipItem = {
 	id: string;
@@ -44,14 +37,6 @@ const getFormulaText = (formula: unknown) => {
 	return null;
 };
 
-const toFamilySummary = (dto: FamiliesResponseDTO, members: FamilyMemberSummary[] = []): FamilySummary => ({
-	id: dto.id,
-	familyName: dto.properties.familyName?.text ?? 'Untitled Family',
-	customerCode: dto.properties.customerNumber?.text ?? null,
-	mainPhone: dto.properties.mainPhone ?? null,
-	members
-});
-
 const toMembershipItem = (dto: MembershipsResponseDTO, familiesById: Map<string, FamilySummary>): MembershipItem => {
 	const familyId = dto.properties.familyIds?.[0];
 	const family = familyId ? familiesById.get(familyId) ?? null : null;
@@ -68,58 +53,6 @@ const toMembershipItem = (dto: MembershipsResponseDTO, familiesById: Map<string,
 		createdTime: dto.createdTime,
 		family
 	};
-};
-
-const fetchFamiliesByIds = async (familyIds: string[]): Promise<Map<string, FamilySummary>> => {
-	if (familyIds.length === 0) return new Map();
-	const db = new FamiliesDatabase({ notionSecret: NOTION_API_KEY });
-	const uniqueIds = Array.from(new Set(familyIds));
-	const results = await Promise.allSettled(uniqueIds.map((id) => db.getPage(id)));
-	const map = new Map<string, FamilySummary>();
-
-	results.forEach((result, index) => {
-		if (result.status !== 'fulfilled') return;
-		const dto = new FamiliesResponseDTO(result.value);
-		map.set(uniqueIds[index], toFamilySummary(dto));
-	});
-
-	return map;
-};
-
-const queryFamilyMatches = async (search: string, pageSize = 100): Promise<FamiliesResponseDTO[]> => {
-	const db = new FamiliesDatabase({ notionSecret: NOTION_API_KEY });
-	const matches: FamiliesResponseDTO[] = [];
-	let cursor: string | undefined = undefined;
-
-	const searchLower = search.toLowerCase();
-	const searchUpper = search.toUpperCase();
-	const searchCapitalized = search.charAt(0).toUpperCase() + search.slice(1).toLowerCase();
-
-	// Combine unique search variations to handle Notion's case-sensitive 'contains' filter
-	const variations = Array.from(new Set([search, searchLower, searchUpper, searchCapitalized]));
-
-	// eslint-disable-next-line no-constant-condition
-	while (true) {
-		const response = await db.query({
-			page_size: pageSize,
-			...(cursor ? { start_cursor: cursor } : {}),
-			filter: {
-				or: variations.flatMap((v) => [
-					{ familyName: { contains: v } },
-					{ customerNumber: { contains: v } },
-					{ mainPhone: { contains: v } }
-				])
-			},
-			sorts: [{ property: 'familyName', direction: 'ascending' }]
-		});
-
-		response.results.forEach((result) => matches.push(new FamiliesResponseDTO(result)));
-
-		if (!response.has_more || !response.next_cursor) break;
-		cursor = response.next_cursor;
-	}
-
-	return matches;
 };
 
 const buildMembershipsResponse = async (rawResults: Array<unknown>) => {
@@ -147,13 +80,7 @@ export const getMembershipsData = async (input: {
 		const familyIds = familyMatches.map((dto) => dto.id).slice(0, MAX_FAMILY_IDS_FOR_SEARCH);
 		const relationFilters = familyIds.map((id) => ({ family: { contains: id } }));
 
-		const searchLower = normalizedSearch.toLowerCase();
-		const searchUpper = normalizedSearch.toUpperCase();
-		const searchCapitalized =
-			normalizedSearch.charAt(0).toUpperCase() + normalizedSearch.slice(1).toLowerCase();
-		const variations = Array.from(
-			new Set([normalizedSearch, searchLower, searchUpper, searchCapitalized])
-		);
+		const variations = getSearchVariations(normalizedSearch);
 
 		queryBody.filter = {
 			or: [
@@ -176,43 +103,7 @@ export const getMembershipsData = async (input: {
 	};
 };
 
-export const searchFamiliesData = async (search: string) => {
-	const normalizedSearch = normalizeSearch(search);
-	const matches = await queryFamilyMatches(normalizedSearch, 25);
-	
-	// Fetch members for the found families
-	const familyIds = matches.map(m => m.id);
-	let membersByFamilyId = new Map<string, FamilyMemberSummary[]>();
-	
-	if (familyIds.length > 0) {
-		const membersDb = new FamilyMembersDatabase({ notionSecret: NOTION_API_KEY });
-		const membersResponse = await membersDb.query({
-			filter: {
-				or: familyIds.map(id => ({ family: { contains: id } }))
-			}
-		});
-		
-		const members = membersResponse.results.map(r => new FamilyMembersResponseDTO(r));
-		
-		for (const member of members) {
-			const summary: FamilyMemberSummary = {
-				id: member.id,
-				name: member.properties.name?.text ?? 'Untitled Member',
-				type: member.properties.memberType?.name ?? null
-			};
-			
-			const memberFamilyIds = member.properties.familyIds;
-			for (const fId of memberFamilyIds) {
-				if (!membersByFamilyId.has(fId)) {
-					membersByFamilyId.set(fId, []);
-				}
-				membersByFamilyId.get(fId)?.push(summary);
-			}
-		}
-	}
-
-	return matches.map((dto) => toFamilySummary(dto, membersByFamilyId.get(dto.id) ?? []));
-};
+export const searchFamiliesData = searchFamiliesDataInternal;
 
 export const createMembershipData = async (input: {
 	familyId: string;
@@ -245,7 +136,7 @@ export const createMembershipData = async (input: {
 
 	const created = await membershipsDb.createPage(patch);
 	const createdDto = new MembershipsResponseDTO(created);
-	const familySummary = toFamilySummary(familyDto);
+	const familySummary = toFamilySummaryInternal(familyDto);
 
 	return {
 		item: toMembershipItem(createdDto, new Map([[familySummary.id, familySummary]]))
@@ -284,7 +175,7 @@ export const updateMembershipData = async (input: {
 
 	const updated = await membershipsDb.updatePage(input.id, patch);
 	const updatedDto = new MembershipsResponseDTO(updated);
-	const familySummary = toFamilySummary(familyDto);
+	const familySummary = toFamilySummaryInternal(familyDto);
 
 	return {
 		item: toMembershipItem(updatedDto, new Map([[familySummary.id, familySummary]]))

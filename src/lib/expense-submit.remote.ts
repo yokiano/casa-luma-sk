@@ -1,8 +1,9 @@
 import { command } from '$app/server';
 import * as v from 'valibot';
+import { error } from '@sveltejs/kit';
 import { NOTION_API_KEY } from '$env/static/private';
-import { ExpensesTrackerDatabase } from '$lib/notion-sdk/dbs/expenses-tracker/db';
-import { ExpensesTrackerPatchDTO } from '$lib/notion-sdk/dbs/expenses-tracker/patch.dto';
+import { CompanyLedgerDatabase } from '$lib/notion-sdk/dbs/company-ledger/db';
+import { CompanyLedgerPatchDTO } from '$lib/notion-sdk/dbs/company-ledger/patch.dto';
 
 /**
  * Converts "DD/MM/YYYY HH:mm" to ISO 8601 "YYYY-MM-DDTHH:mm:00"
@@ -34,7 +35,7 @@ const SubmitSchema = v.object({
 });
 
 export const submitExpenseSlip = command(SubmitSchema, async (data) => {
-  const db = new ExpensesTrackerDatabase({
+  const db = new CompanyLedgerDatabase({
     notionSecret: NOTION_API_KEY
   });
 
@@ -52,7 +53,7 @@ export const submitExpenseSlip = command(SubmitSchema, async (data) => {
     });
 
     if (existing.results.length > 0) {
-      throw new Error(`Duplicate: An expense with Reference Number ${tid} already exists in Notion.`);
+      throw error(400, { message: `Duplicate: An expense with Reference Number ${tid} already exists in Notion.` });
     }
   } else {
     // 1b. Soft duplicate check for same amount, date and department if no transactionId
@@ -67,7 +68,7 @@ export const submitExpenseSlip = command(SubmitSchema, async (data) => {
     });
 
     if (existing.results.length > 0) {
-      throw new Error(`Potential Duplicate: An expense with the same amount (${data.amount}) and date already exists in the same department.`);
+      throw error(400, { message: `Potential Duplicate: An expense with the same amount (${data.amount}) and date already exists in the same department.` });
     }
   }
 
@@ -82,13 +83,13 @@ export const submitExpenseSlip = command(SubmitSchema, async (data) => {
     : undefined;
 
   const response = await db.createPage(
-    new ExpensesTrackerPatchDTO({
+    new CompanyLedgerPatchDTO({
       properties: {
-        expense: data.title,
+        description: data.title,
+        type: 'Expense',
         status: { name: 'Paid' },
         amountThb: data.amount,
         date: { start: normalizedDate },
-        paidBy: 'Company',
         department: data.department as any,
         category: data.category as any,
         referenceNumber: data.transactionId?.trim() ?? undefined,

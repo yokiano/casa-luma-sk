@@ -8,8 +8,7 @@
   import PersonListEditor from "./PersonListEditor.svelte";
   import KidCard from "./KidCard.svelte";
   import GuardianCard from "./GuardianCard.svelte";
-  import IntakeQRCode from "./IntakeQRCode.svelte";
-
+  
   let formData = $state<IntakeFormData>({
     familyName: "",
     mainPhone: "",
@@ -25,6 +24,7 @@
 
   let submitting = $state(false);
   let success = $state(false);
+  let submittedCustomerCode = $state<string | undefined>(undefined);
   let existingCustomer = $state<{ name: string; code: string | undefined } | null>(null);
   let checkingExistence = $state(false);
 
@@ -100,6 +100,7 @@
 
   function resetForm() {
     success = false;
+    submittedCustomerCode = undefined;
     formData = {
       familyName: "",
       mainPhone: "",
@@ -160,6 +161,14 @@
         <p class="text-muted-foreground text-base leading-relaxed">
           Thank you. We saved your details and will contact you if we need anything else.
         </p>
+
+        {#if submittedCustomerCode}
+          <div class="mt-8 p-6 bg-secondary/20 rounded-2xl border-2 border-secondary/30 inline-block mx-auto">
+            <p class="text-sm font-medium text-secondary-foreground/60 uppercase tracking-widest mb-1">Your Family Code</p>
+            <p class="text-5xl font-black text-primary tracking-tighter">{submittedCustomerCode}</p>
+            <p class="text-xs text-muted-foreground mt-3 italic">Please show this code to our staff when checking in.</p>
+          </div>
+        {/if}
       </div>
 
       <button
@@ -203,9 +212,10 @@
           submitting = false;
 
           if (result.type === 'success') {
-            const data = result.data as unknown as { success?: boolean; message?: string };
+            const data = result.data as unknown as { success?: boolean; message?: string; customerCode?: string };
             if (data?.success) {
               success = true;
+              submittedCustomerCode = data.customerCode;
               toast.success('Sent successfully');
               await runConfetti();
               window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -495,7 +505,5 @@
       </button>
     </div>
     </form>
-
-    <IntakeQRCode />
   {/if}
 </div>

@@ -1,5 +1,6 @@
 import { scanExpenseSlip } from '$lib/expense-scan.remote';
 import { submitExpenseSlip } from '$lib/expense-submit.remote';
+import { toast } from 'svelte-sonner';
 
 export type DropItem = {
   id: string;
@@ -100,7 +101,7 @@ export class ExpenseScanState {
     this.isScanning = false;
   }
 
-  async submitSlip(id: string) {
+  async submitSlip(id: string, silent = false) {
     const slip = this.slips.find((item) => item.id === id);
     if (!slip) return;
 
@@ -131,18 +132,42 @@ export class ExpenseScanState {
         status: 'submitted',
         notionId: result.id
       });
+
+      if (!silent) {
+        toast.success('Submitted to Notion', {
+          description: `${slip.parsedTitle} - ${slip.parsedAmount} THB`
+        });
+      }
     } catch (e: any) {
+      const errorMessage = e?.body?.message || e?.message || 'Failed to submit slip';
       this.updateSlip(id, {
         status: 'error',
-        error: e?.message ?? 'Failed to submit slip'
+        error: errorMessage
       });
+      if (!silent) {
+        toast.error('Submission failed', {
+          description: errorMessage
+        });
+      }
+      throw e; // Rethrow so submitAll can track failures
     }
   }
 
   async submitAll() {
     this.isSubmittingAll = true;
     const targets = this.slips.filter((slip) => slip.status === 'scanned');
-    await Promise.all(targets.map((slip) => this.submitSlip(slip.id)));
+    const results = await Promise.allSettled(targets.map((slip) => this.submitSlip(slip.id, true)));
+    
+    const succeeded = results.filter((r) => r.status === 'fulfilled').length;
+    const failed = results.filter((r) => r.status === 'rejected').length;
+
+    if (succeeded > 0) {
+      toast.success(`Submitted ${succeeded} slip${succeeded > 1 ? 's' : ''} to Notion`);
+    }
+    if (failed > 0) {
+      toast.error(`Failed to submit ${failed} slip${failed > 1 ? 's' : ''}`);
+    }
+
     this.isSubmittingAll = false;
   }
 }

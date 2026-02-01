@@ -15,7 +15,7 @@
     category?: string;
     department?: string;
     supplierId?: string;
-    error?: string | null;
+    notionId?: string | null;
   };
 
   interface Props {
@@ -149,6 +149,20 @@
           </select>
         </label>
       </div>
+
+      {#if slip.status === 'submitted' && slip.notionId}
+        <div class="rounded-2xl border border-green-200 bg-green-50 px-3 py-2 text-xs text-green-700 flex items-center justify-between">
+          <span>Successfully submitted to Notion.</span>
+          <a 
+            href="https://notion.so/{slip.notionId.replace(/-/g, '')}" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            class="font-semibold underline hover:text-green-800"
+          >
+            View Page
+          </a>
+        </div>
+      {/if}
 
       {#if slip.error}
         <div class="rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
