@@ -52,13 +52,15 @@
 	const daysFull = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 	const statusOptions = [
-		{ value: 'Completed', label: 'Worked', paid: true },
+		{ value: 'Completed', label: 'Completed', paid: true },
+		{ value: 'Confirmed', label: 'Confirmed', paid: true },
+		{ value: 'Planned', label: 'Planned (Unpaid)', paid: false },
+		{ value: 'Cancelled', label: 'Cancelled', paid: false },
 		{ value: 'Sick Day (Paid)', label: 'Sick (Paid)', paid: true },
 		{ value: 'Sick Day (Unpaid)', label: 'Sick (Unpaid)', paid: false },
 		{ value: 'Day Off (Paid)', label: 'Day Off (Paid)', paid: true },
 		{ value: 'Day Off (Unpaid)', label: 'Day Off (Unpaid)', paid: false },
 		{ value: 'Business Day-Off', label: 'Business Day-Off', paid: true },
-		{ value: 'Absent', label: 'Absent', paid: false },
 		{ value: 'No Data', label: 'No Data (Unpaid)', paid: false }
 	];
 </script>

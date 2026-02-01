@@ -34,7 +34,7 @@ export type CalendarDay = {
 	date: string;
 	dayOfWeek: number; // 0-6
 	shift?: SalaryShift; // Original shift from Notion if exists
-	status: 'Completed' | 'Confirmed' | 'Sick Day (Paid)' | 'Day Off (Paid)' | 'Unpaid Leave' | 'Absent' | 'Business Day-Off' | 'No Data';
+	status: 'Completed' | 'Confirmed' | 'Planned' | 'Cancelled' | 'Sick Day (Paid)' | 'Sick Day (Unpaid)' | 'Day Off (Paid)' | 'Day Off (Unpaid)' | 'Business Day-Off' | 'No Data';
 	ot: number;
 	otType: '1.5' | '1.0' | '3.0';
 	hoursAbsent: number;
@@ -221,7 +221,13 @@ export function calculateSalary(
 			paidDaysOff++;
 		} else if (day.status === 'Business Day-Off') {
 			businessDaysOff++;
-		} else if (day.status === 'Unpaid Leave' || day.status === 'Absent' || day.status === 'No Data') {
+		} else if (
+			day.status === 'Planned' || 
+			day.status === 'Cancelled' || 
+			day.status === 'No Data' ||
+			day.status === 'Sick Day (Unpaid)' ||
+			day.status === 'Day Off (Unpaid)'
+		) {
 			unpaidLeaveDays++;
 		}
 
