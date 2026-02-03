@@ -70,7 +70,7 @@ export class CompanyLedgerPropertiesResponseDTO {
       referenceNumber: this.__props['Reference Number'],
       department: this.__props['Department'],
       invoiceReceipt: this.__props['Invoice / Receipt'],
-      owner: this.__props['Owner'],
+      owner: this.__props['Approved By'],
       paymentMethod: this.__props['Payment Method'],
       category: this.__props['Category'],
       bankAccount: this.__props['Bank Account'],
@@ -134,7 +134,7 @@ export class CompanyLedgerPropertiesResponseDTO {
 
 
   get owner() {
-    return this.__props['Owner']?.select
+    return this.__props['Approved By']?.select
   }
 
   get paymentMethod() {

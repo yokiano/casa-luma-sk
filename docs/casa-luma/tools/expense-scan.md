@@ -13,6 +13,16 @@ The system follows a 4-step process:
 
 ---
 
+## Automation Rules (New)
+
+To speed up data entry for recurring expenses (like salaries or utility bills), the system includes an **Automation Rules** mechanism:
+- **Rule Matching**: Upon loading the tool, all rules from the **Expense Scan Rules** database are fetched once. When a slip is scanned, the system matches the extracted `recipientName` against these rules in the browser.
+- **Auto-fill**: If a match is found, the **Category**, **Department**, and **Supplier** fields are automatically populated.
+- **Matched Indicator**: Slips that were auto-filled display a "Matched with Rule" badge.
+- **Save as Rule**: Users can create new rules directly from the UI by clicking "Save as Rule" after manually filling in the details for a new recipient.
+
+---
+
 ## Technical Architecture
 
 ### 1. OCR Service (`src/lib/server/ocr.service.ts`)

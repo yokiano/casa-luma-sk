@@ -8,6 +8,11 @@
   let { data }: { data: PageData } = $props();
 
   const esState = new ExpenseScanState();
+  
+  $effect(() => {
+    esState.rules = data.rules || [];
+  });
+
   let activeTab = $state<'upload' | 'review'>('upload');
   let dropItems = $state<DropItem[]>([]);
   let defaults = $state<{ category?: string; department?: string; supplierId?: string }>({});
@@ -120,15 +125,54 @@
         Add multiple images at once. Scanning starts immediately after upload.
       </p>
       <div class="mt-6">
-        <MultiFileDropZone value={dropItems} onFilesSelect={handleDropItems} maxFiles={10} maxSizeMB={8} />
+        <MultiFileDropZone value={dropItems} onFilesSelect={handleDropItems} maxFiles={200} maxSizeMB={8} />
       </div>
     </div>
   {:else}
     <div class="space-y-4">
       <div class="flex flex-wrap items-center justify-between gap-3">
-        <p class="text-sm text-[#5c4a3d]/70">
-          {esState.slips.length === 0 ? 'No slips uploaded yet.' : 'Review each slip and submit when ready.'}
-        </p>
+        <div class="flex flex-wrap items-center gap-4">
+          <p class="text-sm text-[#5c4a3d]/70">
+            {esState.slips.length === 0 ? 'No slips uploaded yet.' : 'Review each slip and submit when ready.'}
+          </p>
+          {#if esState.slips.length > 0}
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-medium text-[#5c4a3d]/50">Sort by:</span>
+              <select
+                class="rounded-lg border border-[#d8c9bb] bg-white px-2 py-1 text-xs text-[#7a6550] outline-none focus:border-[#7a6550]"
+                value={esState.sortBy || ''}
+                onchange={(e) => {
+                  const val = (e.target as HTMLSelectElement).value;
+                  esState.sortBy = val ? (val as any) : null;
+                  if (val === 'ruleMatch') {
+                    esState.sortOrder = 'asc'; // false (not matched) comes first
+                  } else {
+                    esState.sortOrder = 'desc'; // defaults to newest/highest/etc
+                  }
+                }}
+              >
+                <option value="">Original</option>
+                <option value="date">Date</option>
+                <option value="amount">Amount</option>
+                <option value="recipient">Recipient</option>
+                <option value="ruleMatch">Not Matched</option>
+              </select>
+              {#if esState.sortBy && esState.sortBy !== 'ruleMatch'}
+                <button
+                  type="button"
+                  onclick={() => (esState.sortOrder = esState.sortOrder === 'asc' ? 'desc' : 'asc')}
+                  class="rounded-lg border border-[#d8c9bb] p-1 text-[#7a6550] hover:bg-[#fcfaf8]"
+                >
+                  {#if esState.sortOrder === 'asc'}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+                  {:else}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+                  {/if}
+                </button>
+              {/if}
+            </div>
+          {/if}
+        </div>
         {#if esState.slips.length > 0}
           <button
             type="button"
@@ -142,7 +186,7 @@
       </div>
 
       <div class="grid gap-4">
-        {#each esState.slips as slip (slip.id)}
+        {#each esState.sortedSlips as slip (slip.id)}
           <SlipCard
             {slip}
             categories={data.categories}

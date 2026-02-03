@@ -23,24 +23,95 @@ export type ScannedSlip = {
   parsedRecipientName?: string | null;
   parsedTransactionId?: string | null;
   rawText?: string | null;
-  category?: string;
-  department?: string;
-  supplierId?: string;
+  category: string;
+  department: string;
+  supplierId: string;
+  ruleApplied?: boolean;
   error?: string | null;
   notionId?: string | null;
 };
 
+export type ScanRule = {
+  match: string;
+  category: string;
+  department: string;
+  supplierId?: string;
+};
+
+export type SortField = 'recipient' | 'amount' | 'date' | 'ruleMatch';
+
 export class ExpenseScanState {
   slips = $state<ScannedSlip[]>([]);
+  rules = $state<ScanRule[]>([]);
   isScanning = $state(false);
   isSubmittingAll = $state(false);
+  
+  sortBy = $state<SortField | null>(null);
+  sortOrder = $state<'asc' | 'desc'>('desc');
+
+  sortedSlips = $derived.by(() => {
+    if (!this.sortBy) return this.slips;
+
+    return [...this.slips].sort((a, b) => {
+      let valA: any;
+      let valB: any;
+
+      switch (this.sortBy) {
+        case 'recipient':
+          valA = (a.parsedRecipientName || '').toLowerCase();
+          valB = (b.parsedRecipientName || '').toLowerCase();
+          break;
+        case 'amount':
+          valA = a.parsedAmount || 0;
+          valB = b.parsedAmount || 0;
+          break;
+        case 'date':
+          valA = this.parseDate(a.parsedDate);
+          valB = this.parseDate(b.parsedDate);
+          break;
+        case 'ruleMatch':
+          // Sort not matched first: false (0) then true (1)
+          valA = a.ruleApplied ? 1 : 0;
+          valB = b.ruleApplied ? 1 : 0;
+          break;
+        default:
+          return 0;
+      }
+
+      if (valA < valB) return this.sortOrder === 'asc' ? -1 : 1;
+      if (valA > valB) return this.sortOrder === 'asc' ? 1 : -1;
+      return 0;
+    });
+  });
+
+  private parseDate(dateStr?: string | null): number {
+    if (!dateStr) return 0;
+    try {
+      // Format: DD/MM/YYYY HH:mm or DD/MM/YYYY
+      const parts = dateStr.split(' ');
+      const dmy = parts[0];
+      const [d, m, y] = dmy.split('/').map(Number);
+      
+      const date = new Date(y, m - 1, d);
+      if (parts[1]) {
+        const [h, min] = parts[1].split(':').map(Number);
+        date.setHours(h, min);
+      }
+      return date.getTime();
+    } catch {
+      return 0;
+    }
+  }
 
   addItems(items: DropItem[]) {
     const newSlips = items.map((item) => ({
       id: item.id,
       imageDataUrl: item.dataUrl,
       fileName: item.fileName,
-      status: 'pending' as const
+      status: 'pending' as const,
+      category: '',
+      department: '',
+      supplierId: ''
     }));
 
     this.slips = [...this.slips, ...newSlips];
@@ -77,6 +148,24 @@ export class ExpenseScanState {
         fileName: slip.fileName
       });
 
+      // Match rules locally
+      let ruleSuggestion: Partial<ScannedSlip> | null = null;
+      if (parsed.recipientName && (this.rules?.length ?? 0) > 0) {
+        const normalizedRecipient = parsed.recipientName.toLowerCase().replace(/\s+/g, '');
+        for (const rule of this.rules || []) {
+          const matchPattern = rule.match?.toLowerCase().replace(/\s+/g, '');
+          if (matchPattern && normalizedRecipient.includes(matchPattern)) {
+            ruleSuggestion = {
+              category: rule.category || undefined,
+              department: rule.department || undefined,
+              supplierId: rule.supplierId || '',
+              ruleApplied: true
+            };
+            break;
+          }
+        }
+      }
+
       this.updateSlip(id, {
         status: 'scanned',
         parsedTitle: parsed.title ?? null,
@@ -84,7 +173,12 @@ export class ExpenseScanState {
         parsedDate: parsed.date ?? null,
         parsedRecipientName: parsed.recipientName ?? null,
         parsedTransactionId: parsed.transactionId ?? null,
-        rawText: parsed.rawText ?? null
+        rawText: parsed.rawText ?? null,
+        // Apply rule suggestions if available
+        category: ruleSuggestion?.category || slip.category,
+        department: ruleSuggestion?.department || slip.department,
+        supplierId: ruleSuggestion?.supplierId || slip.supplierId,
+        ruleApplied: ruleSuggestion?.ruleApplied ?? false
       });
     } catch (e: any) {
       this.updateSlip(id, {
@@ -97,7 +191,14 @@ export class ExpenseScanState {
   async scanAll() {
     this.isScanning = true;
     const targets = this.slips.filter((slip) => slip.status === 'pending');
-    await Promise.all(targets.map((slip) => this.scanSlip(slip.id)));
+    
+    // Batch processing to avoid rate limits (concurrently scan 3 slips at a time)
+    const BATCH_SIZE = 3;
+    for (let i = 0; i < targets.length; i += BATCH_SIZE) {
+      const batch = targets.slice(i, i + BATCH_SIZE);
+      await Promise.all(batch.map((slip) => this.scanSlip(slip.id)));
+    }
+    
     this.isScanning = false;
   }
 
@@ -156,10 +257,19 @@ export class ExpenseScanState {
   async submitAll() {
     this.isSubmittingAll = true;
     const targets = this.slips.filter((slip) => slip.status === 'scanned');
-    const results = await Promise.allSettled(targets.map((slip) => this.submitSlip(slip.id, true)));
     
-    const succeeded = results.filter((r) => r.status === 'fulfilled').length;
-    const failed = results.filter((r) => r.status === 'rejected').length;
+    // Batch processing for submission (concurrently submit 5 slips at a time)
+    const BATCH_SIZE = 5;
+    let succeeded = 0;
+    let failed = 0;
+
+    for (let i = 0; i < targets.length; i += BATCH_SIZE) {
+      const batch = targets.slice(i, i + BATCH_SIZE);
+      const results = await Promise.allSettled(batch.map((slip) => this.submitSlip(slip.id, true)));
+      
+      succeeded += results.filter((r) => r.status === 'fulfilled').length;
+      failed += results.filter((r) => r.status === 'rejected').length;
+    }
 
     if (succeeded > 0) {
       toast.success(`Submitted ${succeeded} slip${succeeded > 1 ? 's' : ''} to Notion`);

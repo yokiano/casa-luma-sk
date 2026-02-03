@@ -95,6 +95,7 @@ export const submitExpenseSlip = command(SubmitSchema, async (data) => {
         referenceNumber: data.transactionId?.trim() ?? undefined,
         paymentMethod: 'Scan',
         notes: 'synced via expense tool',
+        owner: undefined,
         supplier: data.supplierId ? [{ id: data.supplierId }] : undefined,
         invoiceReceipt
       }

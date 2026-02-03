@@ -21,10 +21,11 @@ export const COMPANY_LEDGER_PROP_VALUES = {
   "Management"
 ] as const,
 "owner": [
+  "Roza",
   "Yarden",
   "Ohad",
   "Kwan",
-  "N/A"
+  "Karni"
 ] as const,
 "paymentMethod": [
   "Cash",

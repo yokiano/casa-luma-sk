@@ -15,7 +15,7 @@ export type CompanyLedgerPropertiesPatch = {
   referenceNumber?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   department?: CompanyLedgerResponse['properties']['Department']['select']['name']
   invoiceReceipt?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'files' }>['files']
-  owner?: CompanyLedgerResponse['properties']['Owner']['select']['name']
+  owner?: CompanyLedgerResponse['properties']['Approved By']['select']['name']
   paymentMethod?: CompanyLedgerResponse['properties']['Payment Method']['select']['name']
   category?: CompanyLedgerResponse['properties']['Category']['select']['name']
   bankAccount?: CompanyLedgerResponse['properties']['Bank Account']['select']['name']

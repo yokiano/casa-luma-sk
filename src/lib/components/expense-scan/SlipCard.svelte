@@ -1,4 +1,7 @@
 <script lang="ts">
+  import { saveExpenseScanRule } from '$lib/expense-scan-rules.remote';
+  import { toast } from 'svelte-sonner';
+
   type SupplierOption = { id: string; name: string };
 
   type ScannedSlip = {
@@ -15,6 +18,7 @@
     category?: string;
     department?: string;
     supplierId?: string;
+    ruleApplied?: boolean;
     notionId?: string | null;
   };
 
@@ -42,6 +46,32 @@
 
   let showLightbox = $state(false);
   let showRawOCR = $state(false);
+  let savingRule = $state(false);
+
+  async function handleSaveRule() {
+    if (!slip.parsedRecipientName || !slip.category || !slip.department) {
+      toast.error('Missing data to save rule');
+      return;
+    }
+
+    savingRule = true;
+    try {
+      await saveExpenseScanRule({
+        recipientMatch: slip.parsedRecipientName,
+        categoryName: slip.category,
+        departmentName: slip.department,
+        autoSupplierId: slip.supplierId
+      });
+      toast.success('Rule saved to Notion', {
+        description: `Next time "${slip.parsedRecipientName}" is scanned, it will auto-fill.`
+      });
+      onUpdate(slip.id, { ruleApplied: true });
+    } catch (e: any) {
+      toast.error('Failed to save rule', { description: e.message });
+    } finally {
+      savingRule = false;
+    }
+  }
 
   const statusLabel = $derived.by(() => {
     if (slip.status === 'pending') return 'Pending';
@@ -82,8 +112,13 @@
       <div class="flex items-center justify-between">
         <div>
           <p class="text-sm font-semibold text-[#2c2925]">{slip.parsedTitle ?? 'No title detected'}</p>
-          <p class="text-xs text-[#5c4a3d]/60">
+          <p class="text-xs text-[#5c4a3d]/60 flex items-center gap-2">
             {slip.parsedRecipientName ?? 'Supplier not detected'}
+            {#if slip.ruleApplied}
+              <span class="inline-flex items-center rounded-md bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
+                Matched with Rule
+              </span>
+            {/if}
           </p>
         </div>
         <span class="rounded-full bg-[#f6f1eb] px-3 py-1 text-xs font-semibold text-[#5c4a3d]">
@@ -193,6 +228,16 @@
         >
           Remove
         </button>
+        {#if slip.status === 'scanned' && slip.parsedRecipientName && !slip.ruleApplied}
+          <button
+            type="button"
+            onclick={handleSaveRule}
+            disabled={savingRule || !slip.category || !slip.department}
+            class="rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100 disabled:opacity-50"
+          >
+            {savingRule ? 'Saving...' : 'Save as Rule'}
+          </button>
+        {/if}
         {#if slip.rawText}
           <button
             type="button"

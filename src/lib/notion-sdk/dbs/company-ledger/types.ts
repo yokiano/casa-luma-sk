@@ -37,7 +37,7 @@ export interface CompanyLedgerResponse extends WithOptional<Omit<DatabaseObjectR
     "Reference Number": RichTextPropertyItemObjectResponse,
     "Department": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'General', color: 'gray' } | { id: StringRequest, name: 'Open Play', color: 'blue' } | { id: StringRequest, name: 'Cafe', color: 'brown' } | { id: StringRequest, name: 'Garden', color: 'green' } | { id: StringRequest, name: 'Store', color: 'purple' } | { id: StringRequest, name: 'Management', color: 'orange' }},
     "Invoice / Receipt": FilesPropertyItemObjectResponse,
-    "Owner": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'Yarden', color: 'blue' } | { id: StringRequest, name: 'Ohad', color: 'green' } | { id: StringRequest, name: 'Kwan', color: 'purple' } | { id: StringRequest, name: 'N/A', color: 'gray' }},
+    "Approved By": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'Roza', color: 'default' } | { id: StringRequest, name: 'Yarden', color: 'blue' } | { id: StringRequest, name: 'Ohad', color: 'green' } | { id: StringRequest, name: 'Kwan', color: 'purple' } | { id: StringRequest, name: 'Karni', color: 'gray' }},
     "Payment Method": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'Cash', color: 'green' } | { id: StringRequest, name: 'Wire Transfer', color: 'blue' } | { id: StringRequest, name: 'Scan', color: 'purple' } | { id: StringRequest, name: 'Credit Card', color: 'orange' }},
     "Category": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'Revenue', color: 'green' } | { id: StringRequest, name: 'Salary', color: 'red' } | { id: StringRequest, name: 'Owner Capital', color: 'purple' } | { id: StringRequest, name: 'Legal', color: 'red' } | { id: StringRequest, name: 'Bills', color: 'yellow' } | { id: StringRequest, name: 'Rent', color: 'gray' } | { id: StringRequest, name: 'Food & Groceries', color: 'orange' } | { id: StringRequest, name: 'Staff Food', color: 'blue' } | { id: StringRequest, name: 'Consumable Product', color: 'purple' } | { id: StringRequest, name: 'Physical Product', color: 'blue' } | { id: StringRequest, name: 'Maintenance', color: 'brown' } | { id: StringRequest, name: 'Entertainment', color: 'pink' } | { id: StringRequest, name: 'Miscellaneous', color: 'default' } | { id: StringRequest, name: 'Marketing', color: 'blue' }},
     "Bank Account": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'KBank', color: 'green' } | { id: StringRequest, name: 'SCB', color: 'purple' } | { id: StringRequest, name: 'Cash Register', color: 'orange' } | { id: StringRequest, name: 'Petty Cash', color: 'gray' }},
@@ -95,7 +95,7 @@ type CompanyLedgerDepartmentPropertyFilter =
 
 type CompanyLedgerInvoiceReceiptPropertyFilter = ExistencePropertyFilter
 
-export type CompanyLedgerOwnerPropertyType = CompanyLedgerResponse['properties']['Owner']['select']['name']
+export type CompanyLedgerOwnerPropertyType = CompanyLedgerResponse['properties']['Approved By']['select']['name']
 
 type CompanyLedgerOwnerPropertyFilter =
   | {

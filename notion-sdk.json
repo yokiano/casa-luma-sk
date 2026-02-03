@@ -2340,7 +2340,7 @@
           "readOnly": false
         },
         "jw%3Am": {
-          "_name": "Owner",
+          "_name": "Approved By",
           "_type": "select",
           "varName": "owner",
           "readOnly": false
@@ -2392,6 +2392,37 @@
           "_type": "last_edited_by",
           "varName": "lastEditedBy",
           "readOnly": true
+        }
+      }
+    },
+    "1e113e8a-876b-47e6-bf74-fe138360f520": {
+      "_name": "Expense Scan Rules",
+      "varName": "expenseScanRules",
+      "pathName": "expense-scan-rules",
+      "properties": {
+        "%3C%3AwL": {
+          "_name": "Category Name",
+          "_type": "rich_text",
+          "varName": "categoryName",
+          "readOnly": false
+        },
+        "edis": {
+          "_name": "Auto-Supplier",
+          "_type": "relation",
+          "varName": "autoSupplier",
+          "readOnly": false
+        },
+        "~NEX": {
+          "_name": "Department Name",
+          "_type": "rich_text",
+          "varName": "departmentName",
+          "readOnly": false
+        },
+        "title": {
+          "_name": "Recipient Match",
+          "_type": "title",
+          "varName": "recipientMatch",
+          "readOnly": false
         }
       }
     }
