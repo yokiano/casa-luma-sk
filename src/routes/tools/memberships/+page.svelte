@@ -1,9 +1,9 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import { toast } from 'svelte-sonner';
-	import { getMemberships, deleteMembership } from '$lib/memberships.remote';
+	import { getMemberships, deleteMembership, getFamilyDetails } from '$lib/memberships.remote';
 	import MembershipDialog from './MembershipDialog.svelte';
-	import { ChevronDown, ChevronUp, MoreVertical, Pencil, Trash2 } from 'lucide-svelte';
+	import { ChevronDown, ChevronUp, MoreVertical, Pencil, Trash2, Loader2 } from 'lucide-svelte';
 
 	type FamilySummary = {
 		id: string;
@@ -36,6 +36,7 @@
 	let isLoadingMore = $state(false);
 	let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 	let expandedMemberships = $state<Set<string>>(new Set());
+	let loadingFamilyDetails = $state<Set<string>>(new Set());
 
 	// Actions menu state
 	let openMenuId = $state<string | null>(null);
@@ -114,10 +115,33 @@
 		editDialogOpen = false;
 	};
 
-	const handleEdit = (membership: MembershipItem) => {
+	const handleEdit = async (membership: MembershipItem) => {
+		openMenuId = null;
+		
+		// Load family details if not already loaded (needed for edit form)
+		if (!hasFamilyDetails(membership) && membership.family?.id) {
+			loadingFamilyDetails.add(membership.id);
+			loadingFamilyDetails = new Set(loadingFamilyDetails);
+			
+			try {
+				const family = await getFamilyDetails({ familyId: membership.family.id });
+				if (family) {
+					membership = { ...membership, family };
+					// Also update in list
+					memberships = memberships.map((m) =>
+						m.id === membership.id ? membership : m
+					);
+				}
+			} catch (error) {
+				console.error('memberships: failed to load family details for edit', error);
+			} finally {
+				loadingFamilyDetails.delete(membership.id);
+				loadingFamilyDetails = new Set(loadingFamilyDetails);
+			}
+		}
+		
 		editingMembership = membership;
 		editDialogOpen = true;
-		openMenuId = null;
 	};
 
 	const handleDelete = async (membership: MembershipItem) => {
@@ -143,6 +167,47 @@
 
 	const closeMenu = () => {
 		openMenuId = null;
+	};
+
+	// Check if family has full details (customerCode or mainPhone loaded)
+	const hasFamilyDetails = (membership: MembershipItem) => {
+		return membership.family?.customerCode !== null || membership.family?.mainPhone !== null;
+	};
+
+	const loadFamilyDetails = async (membership: MembershipItem) => {
+		const familyId = membership.family?.id;
+		if (!familyId || hasFamilyDetails(membership)) return;
+
+		loadingFamilyDetails.add(membership.id);
+		loadingFamilyDetails = new Set(loadingFamilyDetails);
+
+		try {
+			const family = await getFamilyDetails({ familyId });
+			if (family) {
+				// Update the membership with full family details
+				memberships = memberships.map((m) =>
+					m.id === membership.id ? { ...m, family } : m
+				);
+			}
+		} catch (error) {
+			console.error('memberships: failed to load family details', error);
+		} finally {
+			loadingFamilyDetails.delete(membership.id);
+			loadingFamilyDetails = new Set(loadingFamilyDetails);
+		}
+	};
+
+	const toggleExpand = (membership: MembershipItem) => {
+		if (expandedMemberships.has(membership.id)) {
+			expandedMemberships.delete(membership.id);
+		} else {
+			expandedMemberships.add(membership.id);
+			// Lazy load family details when expanding
+			if (!hasFamilyDetails(membership)) {
+				void loadFamilyDetails(membership);
+			}
+		}
+		expandedMemberships = new Set(expandedMemberships);
 	};
 </script>
 
@@ -195,14 +260,7 @@
 					<div class="flex items-center gap-2 p-4">
 						<button
 							type="button"
-							onclick={() => {
-								if (expandedMemberships.has(membership.id)) {
-									expandedMemberships.delete(membership.id);
-								} else {
-									expandedMemberships.add(membership.id);
-								}
-								expandedMemberships = new Set(expandedMemberships);
-							}}
+							onclick={() => toggleExpand(membership)}
 							class="flex min-w-0 flex-1 flex-col gap-2 text-left transition hover:opacity-80 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
 						>
 							<div class="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:gap-3">
@@ -279,6 +337,7 @@
 
 					<!-- Expanded details -->
 					{#if isExpanded}
+						{@const isLoadingDetails = loadingFamilyDetails.has(membership.id)}
 						<div class="border-t border-[#e3d7cc] p-6">
 							<div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
 								<div class="space-y-3">
@@ -300,14 +359,23 @@
 										{/if}
 									</div>
 								</div>
-								<div class="rounded-2xl border border-[#f0e6db] bg-[#fdfbf9] px-4 py-3 text-xs text-[#7a6550]/80">
-									{#if membership.family?.customerCode}
-										<p>Customer Code: {membership.family.customerCode}</p>
-									{/if}
-									{#if membership.family?.mainPhone}
-										<p>Phone: {membership.family.mainPhone}</p>
-									{/if}
-								</div>
+								{#if isLoadingDetails}
+									<div class="rounded-2xl border border-[#f0e6db] bg-[#fdfbf9] px-4 py-3">
+										<div class="flex items-center gap-2 text-xs text-[#7a6550]/60">
+											<Loader2 class="h-3 w-3 animate-spin" />
+											<span>Loading details...</span>
+										</div>
+									</div>
+								{:else if membership.family?.customerCode || membership.family?.mainPhone}
+									<div class="rounded-2xl border border-[#f0e6db] bg-[#fdfbf9] px-4 py-3 text-xs text-[#7a6550]/80">
+										{#if membership.family?.customerCode}
+											<p>Customer Code: {membership.family.customerCode}</p>
+										{/if}
+										{#if membership.family?.mainPhone}
+											<p>Phone: {membership.family.mainPhone}</p>
+										{/if}
+									</div>
+								{/if}
 							</div>
 
 							<div class="mt-4 grid gap-4 text-sm text-[#5c4a3d] sm:grid-cols-3">

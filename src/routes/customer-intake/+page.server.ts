@@ -127,36 +127,90 @@ export const actions: Actions = {
         familyName: data.familyName.trim(),
       });
 
-      const memberPages = await Promise.all([
-        ...data.kids.map((kid) =>
-          membersDb.createPage(
-            new FamilyMembersPatchDTO({
-              properties: {
-                name: kid.name?.trim() ? kid.name.trim() : 'Kid',
-                memberType: 'Kid',
-                gender: kid.gender,
-                dob: kid.dob?.trim() ? { start: kid.dob.trim() } : undefined,
-                notes: kid.notes?.trim() ? kid.notes.trim() : undefined,
-                family: [{ id: familyPage.id }],
-              },
-            }),
+      // --- Sync to Loyverse Customers ---
+      const syncToLoyverse = async () => {
+        const maxRetries = 2;
+        let lastError: any = null;
+
+        for (let attempt = 0; attempt <= maxRetries; attempt++) {
+          try {
+            const loyverseName = getNewLoyverseName(data.familyName.trim(), customerCode);
+            
+            // Attempt 1: Create or Update by matching email/phone
+            let loyverseCustomer = await loyverse.createOrUpdateCustomer({
+              customer_code: customerCode,
+              name: loyverseName,
+              email: data.email?.trim() ? data.email.trim() : undefined,
+              phone_number: data.mainPhone.trim(),
+              note: `Created from Casa Luma customer intake form [${customerCode}]`,
+            });
+
+            // Attempt 2: If Loyverse matched an existing customer but ignored the name change
+            // (common when matching by email/phone without an ID), force the update using the ID.
+            if (loyverseCustomer.name !== loyverseName) {
+              loyverseCustomer = await loyverse.createOrUpdateCustomer({
+                id: loyverseCustomer.id,
+                name: loyverseName,
+                customer_code: customerCode,
+              });
+            }
+
+            await familiesDb.updatePage(
+              familyPage.id,
+              new FamiliesPatchDTO({
+                properties: {
+                  loyverseCustomerId: loyverseCustomer.id,
+                },
+              }),
+            );
+            return loyverseCustomer;
+          } catch (e: any) {
+            lastError = e;
+            console.error(`[customer-intake] Loyverse sync attempt ${attempt + 1} failed:`, e.message);
+            // Don't wait between retries as per user preference to avoid timers, 
+            // but Loyverse might benefit from a tiny gap if it's a rate limit.
+            // However, we'll follow the "no timers" rule strictly for now.
+          }
+        }
+        
+        console.error('[customer-intake] Loyverse sync failed after all attempts:', lastError);
+        return null;
+      };
+
+      // Run member creation and Loyverse sync in parallel to save time and improve reliability
+      const [memberPages] = await Promise.all([
+        Promise.all([
+          ...data.kids.map((kid) =>
+            membersDb.createPage(
+              new FamilyMembersPatchDTO({
+                properties: {
+                  name: kid.name?.trim() ? kid.name.trim() : 'Kid',
+                  memberType: 'Kid',
+                  gender: kid.gender,
+                  dob: kid.dob?.trim() ? { start: kid.dob.trim() } : undefined,
+                  notes: kid.notes?.trim() ? kid.notes.trim() : undefined,
+                  family: [{ id: familyPage.id }],
+                },
+              }),
+            ),
           ),
-        ),
-        ...data.caregivers.map((cg) =>
-          membersDb.createPage(
-            new FamilyMembersPatchDTO({
-              properties: {
-                name: cg.name?.trim() ? cg.name.trim() : 'Caregiver',
-                memberType: 'Caregiver',
-                caregiverRole: cg.caregiverRole,
-                contactMethod: cg.contactMethod,
-                phone: cg.phone?.trim() ? cg.phone.trim() : undefined,
-                notes: cg.notes?.trim() ? cg.notes.trim() : undefined,
-                family: [{ id: familyPage.id }],
-              },
-            }),
+          ...data.caregivers.map((cg) =>
+            membersDb.createPage(
+              new FamilyMembersPatchDTO({
+                properties: {
+                  name: cg.name?.trim() ? cg.name.trim() : 'Caregiver',
+                  memberType: 'Caregiver',
+                  caregiverRole: cg.caregiverRole,
+                  contactMethod: cg.contactMethod,
+                  phone: cg.phone?.trim() ? cg.phone.trim() : undefined,
+                  notes: cg.notes?.trim() ? cg.notes.trim() : undefined,
+                  family: [{ id: familyPage.id }],
+                },
+              }),
+            ),
           ),
-        ),
+        ]),
+        syncToLoyverse(),
       ]);
 
       // Ensure Families.Members is populated even if the relation isn't 2-way
@@ -168,41 +222,6 @@ export const actions: Actions = {
           },
         }),
       );
-
-      // --- Sync to Loyverse Customers ---
-      try {
-        const loyverseName = getNewLoyverseName(data.familyName.trim(), customerCode);
-        
-        // Attempt 1: Create or Update by matching email/phone
-        let loyverseCustomer = await loyverse.createOrUpdateCustomer({
-          customer_code: customerCode,
-          name: loyverseName,
-          email: data.email?.trim() ? data.email.trim() : undefined,
-          phone_number: data.mainPhone.trim(),
-          note: `Created from Casa Luma customer intake form [${customerCode}]`,
-        });
-
-        // Attempt 2: If Loyverse matched an existing customer but ignored the name change
-        // (common when matching by email/phone without an ID), force the update using the ID.
-        if (loyverseCustomer.name !== loyverseName) {
-          loyverseCustomer = await loyverse.createOrUpdateCustomer({
-            id: loyverseCustomer.id,
-            name: loyverseName,
-            customer_code: customerCode,
-          });
-        }
-
-        await familiesDb.updatePage(
-          familyPage.id,
-          new FamiliesPatchDTO({
-            properties: {
-              loyverseCustomerId: loyverseCustomer.id,
-            },
-          }),
-        );
-      } catch (e) {
-        console.error('[customer-intake] Loyverse sync failed:', e);
-      }
 
       return { success: true, customerCode };
     } catch (error) {

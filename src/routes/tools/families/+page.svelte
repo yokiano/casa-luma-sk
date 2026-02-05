@@ -36,6 +36,9 @@
 		if (searchTimeout) clearTimeout(searchTimeout);
 		
 		if (searchValue.trim().length >= 2) {
+			families = [];
+			hasSearched = false;
+			isLoading = true;
 			searchTimeout = setTimeout(() => {
 				runSearch(searchValue.trim());
 			}, 400);

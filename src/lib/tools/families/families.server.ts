@@ -22,15 +22,26 @@ export type FamilySummary = {
 
 const normalizeSearch = (value?: string | null) => value?.trim() ?? '';
 
-export const toFamilySummary = (dto: FamiliesResponseDTO, members: FamilyMemberSummary[] = []): FamilySummary => ({
-	id: dto.id,
-	familyName: dto.properties.familyName?.text ?? 'Untitled Family',
-	customerCode: dto.properties.customerNumber?.text ?? null,
-	mainPhone: dto.properties.mainPhone ?? null,
-	mainEmail: dto.properties.mainEmail ?? null,
-	status: dto.properties.status?.name ?? null,
-	members
-});
+// Simple in-memory cache for families to avoid redundant getPage calls
+const familyCache = new Map<string, { summary: FamilySummary, timestamp: number }>();
+const CACHE_TTL = 1000 * 60 * 5; // 5 minutes
+
+export const toFamilySummary = (dto: FamiliesResponseDTO, members: FamilyMemberSummary[] = []): FamilySummary => {
+	const summary = {
+		id: dto.id,
+		familyName: dto.properties.familyName?.text ?? 'Untitled Family',
+		customerCode: dto.properties.customerNumber?.text ?? null,
+		mainPhone: dto.properties.mainPhone ?? null,
+		mainEmail: dto.properties.mainEmail ?? null,
+		status: dto.properties.status?.name ?? null,
+		members
+	};
+	
+	// Only cache if there are no members (or update cache)
+	// Actually, let's cache everything but the members can be dynamic
+	// For memberships view, members are not needed usually
+	return summary;
+};
 
 export const getSearchVariations = (search: string) => {
 	const searchLower = search.toLowerCase();
@@ -56,7 +67,17 @@ export const queryFamilyMatches = async (search: string, pageSize = 50): Promise
 		sorts: [{ property: 'familyName', direction: 'ascending' }]
 	});
 
-	return response.results.map((result) => new FamiliesResponseDTO(result as any));
+	const dtos = response.results.map((result) => new FamiliesResponseDTO(result as any));
+	
+	// Seed cache with results
+	dtos.forEach(dto => {
+		familyCache.set(dto.id, {
+			summary: toFamilySummary(dto),
+			timestamp: Date.now()
+		});
+	});
+
+	return dtos;
 };
 
 export const queryMemberMatches = async (search: string, pageSize = 50): Promise<FamilyMembersResponseDTO[]> => {
@@ -79,90 +100,163 @@ export const queryMemberMatches = async (search: string, pageSize = 50): Promise
 
 export const fetchFamiliesByIds = async (familyIds: string[]): Promise<Map<string, FamilySummary>> => {
 	if (familyIds.length === 0) return new Map();
-	const db = new FamiliesDatabase({ notionSecret: NOTION_API_KEY });
+	
 	const uniqueIds = Array.from(new Set(familyIds));
-	const results = await Promise.allSettled(uniqueIds.map((id) => db.getPage(id)));
 	const map = new Map<string, FamilySummary>();
+	const idsToFetch: string[] = [];
 
-	results.forEach((result, index) => {
-		if (result.status !== 'fulfilled') return;
-		const dto = new FamiliesResponseDTO(result.value as any);
-		map.set(uniqueIds[index], toFamilySummary(dto));
+	// Check cache first
+	const now = Date.now();
+	uniqueIds.forEach(id => {
+		const cached = familyCache.get(id);
+		if (cached && (now - cached.timestamp < CACHE_TTL)) {
+			map.set(id, cached.summary);
+		} else {
+			idsToFetch.push(id);
+		}
 	});
 
+	if (idsToFetch.length === 0) return map;
+
+	const db = new FamiliesDatabase({ notionSecret: NOTION_API_KEY });
+	
+	// Notion doesn't support batch get, so we still use getPage but it's now throttled 
+	// and only for non-cached IDs.
+	// We chunk the requests to avoid overwhelming the throttler with too many concurrent promises
+	const CHUNK_SIZE = 5;
+	for (let i = 0; i < idsToFetch.length; i += CHUNK_SIZE) {
+		const chunk = idsToFetch.slice(i, i + CHUNK_SIZE);
+		const results = await Promise.allSettled(chunk.map((id) => db.getPage(id)));
+
+		results.forEach((result, index) => {
+			if (result.status !== 'fulfilled') return;
+			const id = chunk[index];
+			const dto = new FamiliesResponseDTO(result.value as any);
+			const summary = toFamilySummary(dto);
+			
+			map.set(id, summary);
+			familyCache.set(id, {
+				summary,
+				timestamp: now
+			});
+		});
+	}
+
 	return map;
+};
+
+export const fetchFamilyById = async (id: string): Promise<FamilySummary | null> => {
+	const families = await fetchFamiliesByIds([id]);
+	return families.get(id) ?? null;
 };
 
 export const searchFamiliesData = async (search: string) => {
 	const normalizedSearch = normalizeSearch(search);
 	if (!normalizedSearch) return [];
 
-	// 1. Search Families directly
-	const familyMatches = await queryFamilyMatches(normalizedSearch);
-	
-	// 2. Search Members
-	const memberMatches = await queryMemberMatches(normalizedSearch);
-	
-	// 3. Collect all family IDs
-	const familyIdsFromMembers = memberMatches.flatMap(m => m.properties.familyIds);
-	const allFamilyIds = new Set([
-		...familyMatches.map(m => m.id),
-		...familyIdsFromMembers
+	// Run family and member searches in parallel
+	const [familyMatches, memberMatches] = await Promise.all([
+		queryFamilyMatches(normalizedSearch),
+		queryMemberMatches(normalizedSearch)
 	]);
-
-	// 4. If we found families from members that weren't in direct family search, fetch them
-	const extraFamilyIds = Array.from(allFamilyIds).filter(id => !familyMatches.find(m => m.id === id));
 	
-	let allFamilies = [...familyMatches];
-	if (extraFamilyIds.length > 0) {
+	// Build a map of family IDs we already have from direct search
+	const familyMatchesMap = new Map(familyMatches.map(dto => [dto.id, dto]));
+	
+	// Collect extra family IDs from member search results
+	const extraFamilyIds = memberMatches
+		.flatMap(m => m.properties.familyIds)
+		.filter(id => !familyMatchesMap.has(id));
+	
+	// Dedupe and limit
+	const uniqueExtraIds = Array.from(new Set(extraFamilyIds)).slice(0, 20);
+
+	// For extra families, check cache first, then fetch remaining via getPage
+	// (Notion doesn't support querying by page ID, so getPage is unavoidable here)
+	const now = Date.now();
+	const cachedFamilies: FamilySummary[] = [];
+	const idsToFetch: string[] = [];
+	
+	uniqueExtraIds.forEach(id => {
+		const cached = familyCache.get(id);
+		if (cached && (now - cached.timestamp < CACHE_TTL)) {
+			cachedFamilies.push(cached.summary);
+		} else {
+			idsToFetch.push(id);
+		}
+	});
+
+	// Build initial families list
+	let finalFamilies: FamilySummary[] = [
+		...familyMatches.map(dto => toFamilySummary(dto)),
+		...cachedFamilies
+	];
+
+	// Fetch uncached extra families (throttled in smaller chunks to avoid rate limits)
+	if (idsToFetch.length > 0) {
 		const familiesDb = new FamiliesDatabase({ notionSecret: NOTION_API_KEY });
-		// Notion getPage doesn't support batching easily, but we can query by IDs
-		// or just fetch them individually if the list is small. 
-		// For search results, let's limit to top 20 extra families.
-		const results = await Promise.allSettled(
-			extraFamilyIds.slice(0, 20).map(id => familiesDb.getPage(id))
-		);
-		results.forEach(r => {
-			if (r.status === 'fulfilled') {
-				allFamilies.push(new FamiliesResponseDTO(r.value as any));
-			}
-		});
+		
+		// Sequential chunks of 3 to stay well under rate limit
+		const CHUNK_SIZE = 3;
+		for (let i = 0; i < idsToFetch.length; i += CHUNK_SIZE) {
+			const chunk = idsToFetch.slice(i, i + CHUNK_SIZE);
+			const results = await Promise.allSettled(chunk.map(id => familiesDb.getPage(id)));
+			
+			results.forEach(r => {
+				if (r.status === 'fulfilled') {
+					const dto = new FamiliesResponseDTO(r.value as any);
+					const summary = toFamilySummary(dto);
+					finalFamilies.push(summary);
+					familyCache.set(dto.id, { summary, timestamp: now });
+				}
+			});
+		}
 	}
 
-	// 5. Fetch ALL members for these families to show complete family profiles
-	const finalFamilyIds = allFamilies.map(f => f.id);
-	let membersByFamilyId = new Map<string, FamilyMemberSummary[]>();
+	// Fetch members for all found families in a single query (chunked if needed)
+	const finalFamilyIds = finalFamilies.map(f => f.id);
+	const membersByFamilyId = new Map<string, FamilyMemberSummary[]>();
 	
 	if (finalFamilyIds.length > 0) {
 		const membersDb = new FamilyMembersDatabase({ notionSecret: NOTION_API_KEY });
-		// Batch query members for all found families
-		const membersResponse = await membersDb.query({
-			filter: {
-				or: finalFamilyIds.map(id => ({ family: { contains: id } }))
-			}
-		});
 		
-		const allMembers = membersResponse.results.map(r => new FamilyMembersResponseDTO(r as any));
-		
-		for (const member of allMembers) {
-			const summary: FamilyMemberSummary = {
-				id: member.id,
-				name: member.properties.name?.text ?? 'Untitled Member',
-				type: member.properties.memberType?.name ?? null,
-				email: member.properties.email ?? null,
-				phone: member.properties.phone ?? null
-			};
+		// Notion OR filter limit is ~100, but we chunk at 20 for safety
+		const CHUNK_SIZE = 20;
+		const idChunks: string[][] = [];
+		for (let i = 0; i < finalFamilyIds.length; i += CHUNK_SIZE) {
+			idChunks.push(finalFamilyIds.slice(i, i + CHUNK_SIZE));
+		}
+
+		// Run member queries sequentially to avoid overwhelming the API
+		for (const chunk of idChunks) {
+			const res = await membersDb.query({
+				filter: { or: chunk.map(id => ({ family: { contains: id } })) }
+			});
 			
-			for (const fId of member.properties.familyIds) {
-				if (!membersByFamilyId.has(fId)) {
-					membersByFamilyId.set(fId, []);
+			for (const r of res.results) {
+				const member = new FamilyMembersResponseDTO(r as any);
+				const summary: FamilyMemberSummary = {
+					id: member.id,
+					name: member.properties.name?.text ?? 'Untitled Member',
+					type: member.properties.memberType?.name ?? null,
+					email: member.properties.email ?? null,
+					phone: member.properties.phone ?? null
+				};
+				
+				for (const fId of member.properties.familyIds) {
+					if (!membersByFamilyId.has(fId)) {
+						membersByFamilyId.set(fId, []);
+					}
+					membersByFamilyId.get(fId)?.push(summary);
 				}
-				membersByFamilyId.get(fId)?.push(summary);
 			}
 		}
 	}
 
-	return allFamilies
-		.map((dto) => toFamilySummary(dto, membersByFamilyId.get(dto.id) ?? []))
+	return finalFamilies
+		.map((summary) => ({
+			...summary,
+			members: membersByFamilyId.get(summary.id) ?? []
+		}))
 		.sort((a, b) => a.familyName.localeCompare(b.familyName));
 };

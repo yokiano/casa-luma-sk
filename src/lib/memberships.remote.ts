@@ -6,7 +6,8 @@ import {
 	deleteMembershipData,
 	getMembershipsData,
 	searchFamiliesData,
-	updateMembershipData
+	updateMembershipData,
+	getFamilyDetailsData
 } from '$lib/server/memberships';
 
 const MembershipsQuerySchema = v.object({
@@ -51,3 +52,9 @@ const DeleteMembershipSchema = v.object({
 });
 
 export const deleteMembership = command(DeleteMembershipSchema, deleteMembershipData);
+
+const GetFamilyDetailsSchema = v.object({
+	familyId: v.pipe(v.string(), v.trim(), v.minLength(1))
+});
+
+export const getFamilyDetails = query(GetFamilyDetailsSchema, getFamilyDetailsData);

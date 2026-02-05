@@ -1,9 +1,9 @@
 import { NOTION_API_KEY } from '$env/static/private';
 import { MembershipsDatabase, MembershipsPatchDTO, MembershipsResponseDTO } from '$lib/notion-sdk/dbs/memberships';
-import { FamiliesDatabase, FamiliesResponseDTO } from '$lib/notion-sdk/dbs/families';
 import { 
 	queryFamilyMatches, 
 	fetchFamiliesByIds, 
+	fetchFamilyById,
 	toFamilySummary as toFamilySummaryInternal, 
 	searchFamiliesData as searchFamiliesDataInternal,
 	type FamilySummary,
@@ -37,9 +37,38 @@ const getFormulaText = (formula: unknown) => {
 	return null;
 };
 
-const toMembershipItem = (dto: MembershipsResponseDTO, familiesById: Map<string, FamilySummary>): MembershipItem => {
-	const familyId = dto.properties.familyIds?.[0];
-	const family = familyId ? familiesById.get(familyId) ?? null : null;
+// Parse family name from membership name format: "FamilyName - Type - X kids"
+const parseFamilyNameFromMembership = (name: string | null): string => {
+	if (!name) return 'Unknown Family';
+	const parts = name.split(' - ');
+	return parts[0] || 'Unknown Family';
+};
+
+const toMembershipItem = (
+	dto: MembershipsResponseDTO, 
+	familiesById: Map<string, FamilySummary> | null = null
+): MembershipItem => {
+	const familyId = dto.properties.familyIds?.[0] ?? null;
+	
+	// If we have pre-fetched family data, use it
+	// Otherwise, create a minimal family object with parsed name
+	let family: FamilySummary | null = null;
+	if (familiesById && familyId) {
+		family = familiesById.get(familyId) ?? null;
+	}
+	
+	// If no family data but we have a familyId, create minimal placeholder
+	if (!family && familyId) {
+		family = {
+			id: familyId,
+			familyName: parseFamilyNameFromMembership(dto.properties.name?.text ?? null),
+			customerCode: null,
+			mainPhone: null,
+			mainEmail: null,
+			status: null,
+			members: []
+		};
+	}
 
 	return {
 		id: dto.id,
@@ -55,10 +84,17 @@ const toMembershipItem = (dto: MembershipsResponseDTO, familiesById: Map<string,
 	};
 };
 
-const buildMembershipsResponse = async (rawResults: Array<unknown>) => {
+const buildMembershipsResponse = async (rawResults: Array<unknown>, fetchFamilies = false) => {
 	const dtos = rawResults.map((result) => new MembershipsResponseDTO(result as any));
-	const familyIds = dtos.flatMap((dto) => dto.properties.familyIds ?? []);
-	const familiesById = await fetchFamiliesByIds(familyIds);
+	
+	// Only fetch family data if explicitly requested (e.g., for single membership operations)
+	// For list views, we use the parsed family name from membership.name to avoid N+1 queries
+	let familiesById: Map<string, FamilySummary> | null = null;
+	if (fetchFamilies) {
+		const familyIds = dtos.flatMap((dto) => dto.properties.familyIds ?? []);
+		familiesById = await fetchFamiliesByIds(familyIds);
+	}
+	
 	return dtos.map((dto) => toMembershipItem(dto, familiesById));
 };
 
@@ -114,11 +150,11 @@ export const createMembershipData = async (input: {
 	notes?: string;
 }) => {
 	const membershipsDb = new MembershipsDatabase({ notionSecret: NOTION_API_KEY });
-	const familiesDb = new FamiliesDatabase({ notionSecret: NOTION_API_KEY });
+	
+	const family = await fetchFamilyById(input.familyId);
+	if (!family) throw new Error('Family not found');
 
-	const familyPage = await familiesDb.getPage(input.familyId);
-	const familyDto = new FamiliesResponseDTO(familyPage);
-	const familyName = familyDto.properties.familyName?.text ?? 'Family';
+	const familyName = family.familyName;
 	const kidsLabel = input.numberOfKids === 1 ? 'kid' : 'kids';
 	const name = `${familyName} - ${input.type} - ${input.numberOfKids} ${kidsLabel}`;
 
@@ -136,10 +172,9 @@ export const createMembershipData = async (input: {
 
 	const created = await membershipsDb.createPage(patch);
 	const createdDto = new MembershipsResponseDTO(created);
-	const familySummary = toFamilySummaryInternal(familyDto);
 
 	return {
-		item: toMembershipItem(createdDto, new Map([[familySummary.id, familySummary]]))
+		item: toMembershipItem(createdDto, new Map([[family.id, family]]))
 	};
 };
 
@@ -153,11 +188,11 @@ export const updateMembershipData = async (input: {
 	notes?: string;
 }) => {
 	const membershipsDb = new MembershipsDatabase({ notionSecret: NOTION_API_KEY });
-	const familiesDb = new FamiliesDatabase({ notionSecret: NOTION_API_KEY });
 
-	const familyPage = await familiesDb.getPage(input.familyId);
-	const familyDto = new FamiliesResponseDTO(familyPage);
-	const familyName = familyDto.properties.familyName?.text ?? 'Family';
+	const family = await fetchFamilyById(input.familyId);
+	if (!family) throw new Error('Family not found');
+
+	const familyName = family.familyName;
 	const kidsLabel = input.numberOfKids === 1 ? 'kid' : 'kids';
 	const name = `${familyName} - ${input.type} - ${input.numberOfKids} ${kidsLabel}`;
 
@@ -175,10 +210,9 @@ export const updateMembershipData = async (input: {
 
 	const updated = await membershipsDb.updatePage(input.id, patch);
 	const updatedDto = new MembershipsResponseDTO(updated);
-	const familySummary = toFamilySummaryInternal(familyDto);
 
 	return {
-		item: toMembershipItem(updatedDto, new Map([[familySummary.id, familySummary]]))
+		item: toMembershipItem(updatedDto, new Map([[family.id, family]]))
 	};
 };
 
@@ -186,4 +220,9 @@ export const deleteMembershipData = async (input: { id: string }) => {
 	const membershipsDb = new MembershipsDatabase({ notionSecret: NOTION_API_KEY });
 	await membershipsDb.updatePage(input.id, new MembershipsPatchDTO({ archived: true }));
 	return { success: true };
+};
+
+// Fetch full family details for a specific family ID (used for lazy loading in UI)
+export const getFamilyDetailsData = async (input: { familyId: string }): Promise<FamilySummary | null> => {
+	return fetchFamilyById(input.familyId);
 };

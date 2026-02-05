@@ -2,7 +2,7 @@
     import { MapPin } from 'lucide-svelte';
 </script>
 
-<div class="sticky top-8">
+<div>
     <div class="bg-gray-50 rounded-2xl p-6 border border-gray-100">
         <h4 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
             <MapPin class="w-5 h-5 text-[#00A890]" strokeWidth={1.5} />
