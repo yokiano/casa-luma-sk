@@ -163,10 +163,15 @@
         </p>
 
         {#if submittedCustomerCode}
-          <div class="mt-8 p-6 bg-secondary/20 rounded-2xl border-2 border-secondary/30 inline-block mx-auto">
+          <div class="mt-8 p-6 bg-secondary/20 rounded-2xl border-2 border-secondary/30 inline-block mx-auto space-y-2">
             <p class="text-sm font-medium text-secondary-foreground/60 uppercase tracking-widest mb-1">Your Family Code</p>
             <p class="text-5xl font-black text-primary tracking-tighter">{submittedCustomerCode}</p>
-            <p class="text-xs text-muted-foreground mt-3 italic">Please show this code to our staff when checking in.</p>
+            <p class="text-sm font-semibold text-[#5c4a3d] mt-4">
+              This is your unique family code (starts with the first 2 letters of your family name).
+            </p>
+            <p class="text-xs text-muted-foreground italic">
+              Please remember it for faster check-in and when ordering food at our cafe.
+            </p>
           </div>
         {/if}
       </div>
@@ -357,11 +362,14 @@
       <h3 class="text-xl font-semibold px-1">Additional Info</h3>
 
       <div class="space-y-2">
-        <label
-          for="nationality"
-          class="block font-medium px-1 text-muted-foreground"
-          >Where are you from? (Nationality)</label
-        >
+        <div class="flex items-center gap-2 px-1">
+          <span class="text-lg">🌏</span>
+          <label
+            for="nationality"
+            class="block font-medium text-muted-foreground"
+            >Where are you from? (Nationality)</label
+          >
+        </div>
         <input
           id="nationality"
           type="text"
