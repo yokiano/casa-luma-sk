@@ -1,5 +1,7 @@
 import { createWorker } from 'tesseract.js';
 import { expenseScanParser } from './expense-scan/parser';
+import { tmpdir } from 'os';
+import { join } from 'path';
 
 export interface OCRScanResult {
 	title: string | null;
@@ -17,7 +19,13 @@ export interface OCRProvider {
 
 class TesseractProvider implements OCRProvider {
 	private async getWorker() {
-		const worker = await createWorker(['eng', 'tha']); // Support English and Thai
+		// Use CDN paths for Vercel/Serverless environment where local WASM files might be missing
+		// Also specify cachePath to use the system temp directory, which is writable in serverless environments
+		const worker = await createWorker(['eng', 'tha'], 1, {
+			workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/worker.min.js',
+			corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@7.0.0/tesseract-core.wasm.js',
+			cachePath: join(tmpdir(), 'tesseract-cache')
+		});
 		return worker;
 	}
 
