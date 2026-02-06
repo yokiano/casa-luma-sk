@@ -80,8 +80,6 @@ export class IntakeFormState {
         return this.mainPhone.trim().length > 0;
       case 'guardians':
         if (this.isVisitor) return true;
-        // If guardians step exists but is not required (from StepDef), always allow proceeding
-        if (!this.currentStepDef.required) return true;
         // Residents must have at least one caregiver with a name
         return this.caregivers.length > 0 && this.caregivers.every(c => c.name.trim().length > 0);
       case 'kids':

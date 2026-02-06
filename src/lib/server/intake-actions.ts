@@ -64,12 +64,6 @@ export async function submitIntakeForm(data: IntakeFormData) {
   if (!data.mainPhone?.trim()) {
     throw new Error('Main phone is required');
   }
-  
-  // Relaxed caregiver validation for visitors
-  const isResident = data.livesInPhangan !== false;
-  if (isResident && (!Array.isArray(data.caregivers) || data.caregivers.length === 0)) {
-    throw new Error('At least one caregiver is required for residents');
-  }
 
   // --- Save to Notion (Families + Family Members) ---
   const familiesDb = new FamiliesDatabase({ notionSecret: NOTION_API_KEY });

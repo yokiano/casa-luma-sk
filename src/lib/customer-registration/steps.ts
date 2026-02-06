@@ -23,7 +23,7 @@ export const STEPS: StepDef[] = [
     id: 'phone', 
     title: 'Your phone number', 
     required: true, 
-    explainer: 'This is only for safety and in case we need to contact you! We will never call or message you without reason.' 
+    explainer: 'This is a mandatory safety measure! (for example - we have your kid but we can\'t find you). We will never call or message you without reason.' 
   },
   { 
     id: 'guardians', 

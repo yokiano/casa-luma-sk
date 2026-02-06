@@ -148,40 +148,37 @@
   }
 </script>
 
-<div class="h-dvh w-full overflow-hidden bg-background">
-  {#if formState.success}
+<div class="h-dvh w-full bg-background">
+  {#if true || formState.success}
     <div 
       in:fly={{ y: 20, duration: 500, easing: cubicOut }}
-      class="h-full w-full flex flex-col items-center justify-center p-6 text-center"
+      class="h-full w-full flex flex-col items-center justify-center p-4 sm:p-6 text-center overflow-y-auto"
     >
-      <div class="max-w-md w-full space-y-8">
+      <div class="max-w-md w-full space-y-4 sm:space-y-8">
         <div class="flex justify-center">
-          <div class="size-24 rounded-full bg-primary/10 flex items-center justify-center">
-            <CheckCircle2 class="size-12 text-primary" />
+          <div class="size-16 sm:size-24 rounded-full bg-primary/10 flex items-center justify-center">
+            <CheckCircle2 class="size-8 sm:size-12 text-primary" />
           </div>
         </div>
         
-        <div class="space-y-4">
-          <h2 class="text-4xl font-bold tracking-tight">You're all set!</h2>
-          <p class="text-xl text-muted-foreground leading-relaxed">
-            Thank you for registering with Casa Luma. We're excited to have your family with us.
-          </p>
+        <div class="space-y-2 sm:space-y-4">
+          <h2 class="text-2xl sm:text-4xl font-bold tracking-tight">You're all set!</h2>
         </div>
 
-        {#if formState.customerCode}
-          <div class="p-8 bg-primary/5 rounded-[2.5rem] border-2 border-primary/20 space-y-3 relative overflow-hidden group">
-            <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
-              <CheckCircle2 class="size-24 text-primary" />
+        {#if true || formState.customerCode}
+          <div class="p-4 sm:p-8 bg-primary/5 rounded-[1.5rem] sm:rounded-[2.5rem] border-2 border-primary/20 space-y-2 sm:space-y-3 relative overflow-hidden group">
+            <div class="absolute top-0 right-0 p-2 sm:p-4 opacity-10 group-hover:scale-110 transition-transform">
+              <CheckCircle2 class="size-12 sm:size-24 text-primary" />
             </div>
             
-            <p class="text-xs font-bold text-primary/60 uppercase tracking-[0.2em]">Your Family Code</p>
-            <p class="text-6xl font-black tracking-tighter text-primary">{formState.customerCode}</p>
+            <p class="text-[10px] sm:text-xs font-bold text-primary/60 uppercase tracking-[0.2em]">Your Family Code</p>
+            <p class="text-3xl sm:text-6xl font-black tracking-tighter text-primary break-all">{formState.customerCode}</p>
             
-            <div class="pt-4 space-y-2">
-              <p class="text-sm font-semibold text-foreground/80">
+            <div class="pt-2 sm:pt-4 space-y-1 sm:space-y-2">
+              <p class="text-xs sm:text-sm font-semibold text-foreground/80">
                 This is your unique family code (starts with the first 2 letters of your family name).
               </p>
-              <p class="text-sm text-muted-foreground leading-relaxed">
+              <p class="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                 Please remember it for <span class="text-primary font-bold">faster check-in</span> and when <span class="text-primary font-bold">ordering food</span> at our cafe.
               </p>
             </div>
@@ -190,9 +187,9 @@
 
         <button
           onclick={() => formState.reset()}
-          class="w-full flex items-center justify-center gap-2 bg-foreground text-background py-5 rounded-full font-semibold text-lg hover:opacity-90 transition-all active:scale-95"
+          class="w-full flex items-center justify-center gap-2 bg-foreground text-background py-4 sm:py-5 rounded-full font-semibold text-base sm:text-lg hover:opacity-90 transition-all active:scale-95"
         >
-          <RefreshCw class="size-5" />
+          <RefreshCw class="size-4 sm:size-5" />
           Submit another registration
         </button>
       </div>
@@ -220,7 +217,7 @@
           {#if formState.currentStepDef.id === 'residency'}
             {@render residencyStep()}
           {:else}
-            <div class="w-full max-w-lg mx-auto space-y-8 py-4">
+            <div class="w-full max-w-lg mx-auto space-y-4 sm:space-y-8 py-2 sm:py-4">
               {#if formState.currentStepDef.id === 'family-name'}
                 {@render familyNameStep()}
               {:else}
@@ -254,32 +251,32 @@
 <!-- Step Snippets -->
 
 {#snippet residencyStep()}
-  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mt-4 w-full max-w-2xl mx-auto">
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6 mt-2 sm:mt-4 w-full max-w-2xl mx-auto">
     <button
       onclick={() => { formState.livesInPhangan = true; formState.next(); }}
-      class="flex flex-col items-center justify-center p-6 sm:p-8 rounded-[2rem] border-2 transition-all text-center gap-4 group
-        {formState.livesInPhangan === true ? 'border-primary bg-primary/5 shadow-xl shadow-primary/10' : 'border-muted hover:border-primary/40 hover:bg-muted/30'}"
+      class="flex flex-row sm:flex-col items-center sm:justify-center p-4 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] border-2 transition-all text-left sm:text-center gap-4 group
+        {formState.livesInPhangan === true ? 'border-primary bg-primary/5 shadow-lg sm:shadow-xl shadow-primary/10' : 'border-muted hover:border-primary/40 hover:bg-muted/30'}"
     >
-      <div class="size-16 rounded-2xl bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-        <span class="text-3xl">🏝️</span>
+      <div class="size-12 sm:size-16 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
+        <span class="text-2xl sm:text-3xl">🏝️</span>
       </div>
-      <div class="space-y-1">
-        <span class="text-xl font-bold block tracking-tight">I live in Koh Phangan</span>
-        <span class="text-xs text-muted-foreground leading-relaxed italic">Local resident with a home base on the island</span>
+      <div class="space-y-0.5 sm:space-y-1">
+        <span class="text-lg sm:text-xl font-bold block tracking-tight">I live in Koh Phangan</span>
+        <span class="text-[10px] sm:text-xs text-muted-foreground leading-relaxed italic">Local resident with a home base</span>
       </div>
     </button>
 
     <button
       onclick={() => { formState.livesInPhangan = false; formState.next(); }}
-      class="flex flex-col items-center justify-center p-6 sm:p-8 rounded-[2rem] border-2 transition-all text-center gap-4 group
-        {formState.livesInPhangan === false ? 'border-primary bg-primary/5 shadow-xl shadow-primary/10' : 'border-muted hover:border-primary/40 hover:bg-muted/30'}"
+      class="flex flex-row sm:flex-col items-center sm:justify-center p-4 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] border-2 transition-all text-left sm:text-center gap-4 group
+        {formState.livesInPhangan === false ? 'border-primary bg-primary/5 shadow-lg sm:shadow-xl shadow-primary/10' : 'border-muted hover:border-primary/40 hover:bg-muted/30'}"
     >
-      <div class="size-16 rounded-2xl bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-        <span class="text-3xl">🧳</span>
+      <div class="size-12 sm:size-16 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
+        <span class="text-2xl sm:text-3xl">🧳</span>
       </div>
-      <div class="space-y-1">
-        <span class="text-xl font-bold block tracking-tight">I'm only visiting</span>
-        <span class="text-xs text-muted-foreground leading-relaxed italic">Tourist or short-term visitor enjoying the island</span>
+      <div class="space-y-0.5 sm:space-y-1">
+        <span class="text-lg sm:text-xl font-bold block tracking-tight">I'm only visiting</span>
+        <span class="text-[10px] sm:text-xs text-muted-foreground leading-relaxed italic">Tourist or short-term visitor</span>
       </div>
     </button>
   </div>
@@ -291,7 +288,7 @@
       type="text"
       bind:value={formState.familyName}
       placeholder="e.g. Smith"
-      class="w-full text-4xl sm:text-6xl font-bold bg-transparent border-none focus:ring-0 placeholder:text-muted-foreground/20 text-center sm:text-left"
+      class="w-full text-3xl sm:text-6xl font-bold bg-transparent border-none focus:ring-0 placeholder:text-muted-foreground/20 text-center sm:text-left"
       autofocus
     />
     <div class="h-px w-full bg-gradient-to-r from-primary to-transparent opacity-30"></div>
@@ -305,7 +302,7 @@
         type="tel"
         bind:value={formState.mainPhone}
         placeholder="+66..."
-        class="w-full text-4xl sm:text-6xl font-bold bg-transparent border-none focus:ring-0 placeholder:text-muted-foreground/20 text-center sm:text-left"
+        class="w-full text-3xl sm:text-6xl font-bold bg-transparent border-none focus:ring-0 placeholder:text-muted-foreground/20 text-center sm:text-left"
         autofocus
       />
       {#if checkingPhone}
