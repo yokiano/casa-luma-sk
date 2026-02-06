@@ -1,4 +1,4 @@
-import { scanExpenseSlip } from '$lib/expense-scan.remote';
+import { scanExpenseSlipClient } from '$lib/expense-scan/ocr';
 import { submitExpenseSlip } from '$lib/expense-submit.remote';
 import { toast } from 'svelte-sonner';
 
@@ -143,10 +143,7 @@ export class ExpenseScanState {
     });
 
     try {
-      const parsed = await scanExpenseSlip({
-        dataUrl: slip.imageDataUrl,
-        fileName: slip.fileName
-      });
+      const parsed = await scanExpenseSlipClient(slip.imageDataUrl, slip.fileName);
 
       // Match rules locally
       let ruleSuggestion: Partial<ScannedSlip> | null = null;
