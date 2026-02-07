@@ -1,25 +1,25 @@
 <script lang="ts">
-  import CustomerIntakeStepForm from '$lib/customer-registration/CustomerIntakeStepForm.svelte';
+  import IntakeForm from '$lib/components/intake/IntakeForm.svelte';
   import { replaceState } from '$app/navigation';
-  import { page } from '$app/state';
-  import { onMount } from 'svelte';
+  import { page } from '$app/stores';
+  import { onMount } from 'svelte';../$types.js
 
   let { data } = $props();
 
   onMount(() => {
     // If authorized and the secret is still in the URL, remove it
-    if (data.authorized && page.url.searchParams.has('secret')) {
-      const newUrl = new URL(page.url);
+    if (data.authorized && $page.url.searchParams.has('secret')) {
+      const newUrl = new URL($page.url);
       newUrl.searchParams.delete('secret');
-      replaceState(newUrl, {});
+      replaceState(newUrl, $page.state);
     }
   });
 </script>
 
 {#if data.authorized}
-  <CustomerIntakeStepForm />
+  <IntakeForm />
 {:else}
-  <div class="flex min-h-screen flex-col items-center justify-center p-8 text-center bg-background">
+  <div class="flex min-h-[60vh] flex-col items-center justify-center p-8 text-center">
     <div class="mb-6 rounded-full bg-secondary/10 p-6 text-primary">
       <svg
         xmlns="http://www.w3.org/2000/svg"
