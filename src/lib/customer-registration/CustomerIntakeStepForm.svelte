@@ -149,7 +149,7 @@
 </script>
 
 <div class="h-dvh w-full bg-background">
-  {#if true || formState.success}
+  {#if formState.success}
     <div 
       in:fly={{ y: 20, duration: 500, easing: cubicOut }}
       class="h-full w-full flex flex-col items-center justify-center p-4 sm:p-6 text-center overflow-y-auto"
@@ -165,7 +165,7 @@
           <h2 class="text-2xl sm:text-4xl font-bold tracking-tight">You're all set!</h2>
         </div>
 
-        {#if true || formState.customerCode}
+        {#if formState.customerCode}
           <div class="p-4 sm:p-8 bg-primary/5 rounded-[1.5rem] sm:rounded-[2.5rem] border-2 border-primary/20 space-y-2 sm:space-y-3 relative overflow-hidden group">
             <div class="absolute top-0 right-0 p-2 sm:p-4 opacity-10 group-hover:scale-110 transition-transform">
               <CheckCircle2 class="size-12 sm:size-24 text-primary" />

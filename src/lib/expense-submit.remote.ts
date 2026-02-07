@@ -31,7 +31,10 @@ const SubmitSchema = v.object({
   department: v.string(),
   supplierId: v.optional(v.string()),
   transactionId: v.optional(v.string()),
-  receiptUrl: v.optional(v.string())
+  receiptUrl: v.optional(v.string()),
+  bankAccount: v.optional(v.string()),
+  paymentMethod: v.optional(v.string()),
+  notes: v.optional(v.string())
 });
 
 export const submitExpenseSlip = command(SubmitSchema, async (data) => {
@@ -93,8 +96,9 @@ export const submitExpenseSlip = command(SubmitSchema, async (data) => {
         department: data.department as any,
         category: data.category as any,
         referenceNumber: data.transactionId?.trim() ?? undefined,
-        paymentMethod: 'Scan',
-        notes: 'synced via expense tool',
+        paymentMethod: (data.paymentMethod as any) ?? 'Scan',
+        bankAccount: (data.bankAccount as any) ?? undefined,
+        notes: data.notes ?? 'synced via expense tool',
         owner: undefined,
         supplier: data.supplierId ? [{ id: data.supplierId }] : undefined,
         invoiceReceipt

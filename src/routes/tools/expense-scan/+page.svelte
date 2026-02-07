@@ -3,6 +3,7 @@
   import type { PageData } from './$types';
   import MultiFileDropZone from '$lib/components/ui/MultiFileDropZone.svelte';
   import SlipCard from '$lib/components/expense-scan/SlipCard.svelte';
+  import ManualExpenseModal from '$lib/components/expense-scan/ManualExpenseModal.svelte';
   import { ExpenseScanState, type DropItem, type ScannedSlip } from './ExpenseScanState.svelte';
 
   let { data }: { data: PageData } = $props();
@@ -16,6 +17,7 @@
   let activeTab = $state<'upload' | 'review'>('upload');
   let dropItems = $state<DropItem[]>([]);
   let defaults = $state<{ category?: string; department?: string; supplierId?: string }>({});
+  let showManualModal = $state(false);
 
   onMount(() => {
     try {
@@ -91,7 +93,14 @@
           Upload transaction slips, review parsed data, and submit to the company ledger.
         </p>
       </div>
-      <div class="flex gap-2">
+      <div class="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onclick={() => (showManualModal = true)}
+          class="rounded-full border border-[#d8c9bb] px-4 py-2 text-sm font-semibold text-[#7a6550] hover:bg-[#f6f1eb]"
+        >
+          Add transaction manually
+        </button>
         <button
           type="button"
           onclick={() => (activeTab = 'upload')}
@@ -117,6 +126,16 @@
       </div>
     </div>
   </div>
+
+  <ManualExpenseModal 
+    open={showManualModal} 
+    onClose={() => (showManualModal = false)}
+    categories={data.categories}
+    departments={data.departments}
+    suppliers={data.suppliers}
+    bankAccounts={data.bankAccounts}
+    paymentMethods={data.paymentMethods}
+  />
 
   {#if activeTab === 'upload'}
     <div class="rounded-3xl border border-[#e0d6cc] bg-white p-6">

@@ -14,6 +14,8 @@ export const load = async () => {
     suppliers,
     categories: COMPANY_LEDGER_PROP_VALUES.category as unknown as string[],
     departments: COMPANY_LEDGER_PROP_VALUES.department as unknown as string[],
+    bankAccounts: COMPANY_LEDGER_PROP_VALUES.bankAccount as unknown as string[],
+    paymentMethods: COMPANY_LEDGER_PROP_VALUES.paymentMethod as unknown as string[],
     rules: rules.results.map(r => ({
       match: r.properties["Recipient Match"]?.title?.[0]?.plain_text || '',
       category: r.properties["Category Name"]?.rich_text?.[0]?.plain_text || '',
