@@ -2,7 +2,7 @@
   import IntakeForm from '$lib/components/intake/IntakeForm.svelte';
   import { replaceState } from '$app/navigation';
   import { page } from '$app/stores';
-  import { onMount } from 'svelte';../$types.js
+  import { onMount } from 'svelte';
 
   let { data } = $props();
 
