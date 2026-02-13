@@ -4,11 +4,13 @@
   import MultiFileDropZone from '$lib/components/ui/MultiFileDropZone.svelte';
   import SlipCard from '$lib/components/expense-scan/SlipCard.svelte';
   import ManualExpenseModal from '$lib/components/expense-scan/ManualExpenseModal.svelte';
+  import AdvancedOcrTools from '$lib/components/expense-scan/AdvancedOcrTools.svelte';
   import { ExpenseScanState, type DropItem, type ScannedSlip } from './ExpenseScanState.svelte';
 
   let { data }: { data: PageData } = $props();
 
   const esState = new ExpenseScanState();
+  let suppliers = $state(data.suppliers);
   
   $effect(() => {
     esState.rules = data.rules || [];
@@ -16,7 +18,7 @@
 
   let activeTab = $state<'upload' | 'review'>('upload');
   let dropItems = $state<DropItem[]>([]);
-  let defaults = $state<{ category?: string; department?: string; supplierId?: string }>({});
+  let defaults = $state<{ category?: string; department?: string }>({});
   let showManualModal = $state(false);
 
   onMount(() => {
@@ -47,11 +49,10 @@
     if (newItems.length > 0) {
       esState.addItems(newItems);
       for (const item of newItems) {
-        if (defaults.category || defaults.department || defaults.supplierId) {
+        if (defaults.category || defaults.department) {
           esState.updateSlip(item.id, {
             category: defaults.category,
-            department: defaults.department,
-            supplierId: defaults.supplierId
+            department: defaults.department
           });
         }
       }
@@ -74,11 +75,10 @@
 
   function handleUpdate(id: string, patch: Partial<ScannedSlip>) {
     esState.updateSlip(id, patch);
-    if (patch.category || patch.department || patch.supplierId) {
+    if (patch.category || patch.department) {
       persistDefaults({
         category: patch.category ?? defaults.category,
-        department: patch.department ?? defaults.department,
-        supplierId: patch.supplierId ?? defaults.supplierId
+        department: patch.department ?? defaults.department
       });
     }
   }
@@ -132,7 +132,8 @@
     onClose={() => (showManualModal = false)}
     categories={data.categories}
     departments={data.departments}
-    suppliers={data.suppliers}
+    {suppliers}
+    onSupplierCreated={(s) => suppliers = [...suppliers, s].sort((a, b) => a.name.localeCompare(b.name))}
     bankAccounts={data.bankAccounts}
     paymentMethods={data.paymentMethods}
   />
@@ -210,7 +211,8 @@
             {slip}
             categories={data.categories}
             departments={data.departments}
-            suppliers={data.suppliers}
+            {suppliers}
+            onSupplierCreated={(s) => suppliers = [...suppliers, s].sort((a, b) => a.name.localeCompare(b.name))}
             onRemove={handleRemove}
             onSubmit={(id) => esState.submitSlip(id)}
             onUpdate={handleUpdate}
@@ -218,6 +220,10 @@
           />
         {/each}
       </div>
+
+      {#if esState.slips.length > 0}
+        <AdvancedOcrTools slips={esState.slips} />
+      {/if}
     </div>
   {/if}
 </div>

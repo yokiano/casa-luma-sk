@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { saveExpenseScanRule } from '$lib/expense-scan-rules.remote';
+  import { saveExpenseScanRule, updateExpenseScanRule } from '$lib/expense-scan-rules.remote';
   import { toast } from 'svelte-sonner';
+  import SupplierSelector from '$lib/components/suppliers/SupplierSelector.svelte';
 
   type SupplierOption = { id: string; name: string };
 
@@ -19,7 +20,9 @@
     department?: string;
     supplierId?: string;
     ruleApplied?: boolean;
+    matchedRuleId?: string | null;
     notionId?: string | null;
+    error?: string | null;
   };
 
   interface Props {
@@ -31,6 +34,7 @@
     onSubmit: (id: string) => void;
     onUpdate: (id: string, patch: Partial<ScannedSlip>) => void;
     onScan: (id: string) => void;
+    onSupplierCreated?: (newSupplier: SupplierOption) => void;
   }
 
   let {
@@ -41,12 +45,33 @@
     onRemove,
     onSubmit,
     onUpdate,
-    onScan
+    onScan,
+    onSupplierCreated
   }: Props = $props();
 
   let showLightbox = $state(false);
   let showRawOCR = $state(false);
   let savingRule = $state(false);
+
+  function copyAsTestCase() {
+    if (!slip.rawText) return;
+    const testCase = {
+      id: `generated-${Date.now()}`,
+      name: slip.parsedRecipientName || slip.fileName || 'Unknown Recipient',
+      rawText: slip.rawText,
+      expected: {
+        transactionId: slip.parsedTransactionId,
+        date: slip.parsedDate,
+        amount: slip.parsedAmount,
+        recipientName: slip.parsedRecipientName,
+        memo: slip.parsedTitle
+      }
+    };
+    
+    const formatted = JSON.stringify(testCase, null, 2);
+    navigator.clipboard.writeText(formatted);
+    toast.success('Copied as test case JSON');
+  }
 
   async function handleSaveRule() {
     if (!slip.parsedRecipientName || !slip.category || !slip.department) {
@@ -56,18 +81,30 @@
 
     savingRule = true;
     try {
-      await saveExpenseScanRule({
-        recipientMatch: slip.parsedRecipientName,
-        categoryName: slip.category,
-        departmentName: slip.department,
-        autoSupplierId: slip.supplierId
-      });
-      toast.success('Rule saved to Notion', {
-        description: `Next time "${slip.parsedRecipientName}" is scanned, it will auto-fill.`
-      });
-      onUpdate(slip.id, { ruleApplied: true });
+      if (slip.matchedRuleId) {
+        await updateExpenseScanRule({
+          id: slip.matchedRuleId,
+          categoryName: slip.category,
+          departmentName: slip.department,
+          autoSupplierId: slip.supplierId
+        });
+        toast.success('Rule updated in Notion', {
+          description: `Existing rule for "${slip.parsedRecipientName}" has been updated.`
+        });
+      } else {
+        const result = await saveExpenseScanRule({
+          recipientMatch: slip.parsedRecipientName,
+          categoryName: slip.category,
+          departmentName: slip.department,
+          autoSupplierId: slip.supplierId
+        });
+        toast.success('Rule saved to Notion', {
+          description: `Next time "${slip.parsedRecipientName}" is scanned, it will auto-fill.`
+        });
+        onUpdate(slip.id, { ruleApplied: true, matchedRuleId: result.id });
+      }
     } catch (e: any) {
-      toast.error('Failed to save rule', { description: e.message });
+      toast.error(slip.matchedRuleId ? 'Failed to update rule' : 'Failed to save rule', { description: e.message });
     } finally {
       savingRule = false;
     }
@@ -83,9 +120,9 @@
   });
 </script>
 
-<div class="relative rounded-3xl border border-[#e0d6cc] bg-white p-4 shadow-sm overflow-hidden">
+<div class="relative rounded-3xl border border-[#e0d6cc] bg-white p-4 shadow-sm">
   {#if slip.status === 'scanning' || slip.status === 'submitting'}
-    <div class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/60 backdrop-blur-[2px]">
+    <div class="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-3xl bg-white/60 backdrop-blur-[2px]">
       <div class="h-8 w-8 animate-spin rounded-full border-4 border-[#7a6550] border-t-transparent"></div>
       <p class="mt-2 text-sm font-medium text-[#5c4a3d]">{statusLabel}</p>
     </div>
@@ -111,7 +148,16 @@
     <div class="flex-1 space-y-3">
       <div class="flex items-center justify-between">
         <div>
-          <p class="text-sm font-semibold text-[#2c2925]">{slip.parsedTitle ?? 'No title detected'}</p>
+          <label class="text-xs font-semibold text-[#5c4a3d]">
+            Memo / Title
+            <input
+              type="text"
+              value={slip.parsedTitle ?? ''}
+              oninput={(event) => onUpdate(slip.id, { parsedTitle: (event.target as HTMLInputElement).value })}
+              placeholder="No memo"
+              class="mt-1 w-full rounded-2xl border border-[#d9d0c7] bg-white px-3 py-2 text-sm font-semibold text-[#2c2925]"
+            />
+          </label>
           <p class="text-xs text-[#5c4a3d]/60 flex items-center gap-2">
             {slip.parsedRecipientName ?? 'Supplier not detected'}
             {#if slip.ruleApplied}
@@ -170,19 +216,16 @@
           </select>
         </label>
 
-        <label class="text-xs font-semibold text-[#5c4a3d]">
-          Supplier (Optional)
-          <select
-            class="mt-1 w-full rounded-2xl border border-[#d9d0c7] bg-white px-3 py-2 text-sm"
-            value={slip.supplierId ?? ''}
-            onchange={(event) => onUpdate(slip.id, { supplierId: (event.target as HTMLSelectElement).value })}
-          >
-            <option value="">None</option>
-            {#each suppliers as supplier}
-              <option value={supplier.id}>{supplier.name}</option>
-            {/each}
-          </select>
-        </label>
+        <div class="flex flex-col gap-1">
+          <span class="text-xs font-semibold text-[#5c4a3d]">Supplier (Optional)</span>
+          <SupplierSelector
+            {suppliers}
+            value={slip.supplierId}
+            onSelect={(id) => onUpdate(slip.id, { supplierId: id })}
+            {onSupplierCreated}
+            placeholder="None"
+          />
+        </div>
       </div>
 
       {#if slip.status === 'submitted' && slip.notionId}
@@ -228,14 +271,18 @@
         >
           Remove
         </button>
-        {#if slip.status === 'scanned' && slip.parsedRecipientName && !slip.ruleApplied}
+        {#if slip.status === 'scanned' && slip.parsedRecipientName}
           <button
             type="button"
             onclick={handleSaveRule}
             disabled={savingRule || !slip.category || !slip.department}
             class="rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100 disabled:opacity-50"
           >
-            {savingRule ? 'Saving...' : 'Save as Rule'}
+            {#if savingRule}
+              {slip.matchedRuleId ? 'Updating...' : 'Saving...'}
+            {:else}
+              {slip.matchedRuleId ? 'Update Rule' : 'Save as Rule'}
+            {/if}
           </button>
         {/if}
         {#if slip.rawText}
@@ -251,7 +298,16 @@
 
       {#if showRawOCR && slip.rawText}
         <div class="mt-4 rounded-2xl bg-[#f8f5f2] p-4">
-          <p class="mb-2 text-xs font-bold uppercase tracking-wider text-[#5c4a3d]/60">Raw OCR Text</p>
+          <div class="mb-2 flex items-center justify-between">
+            <p class="text-xs font-bold uppercase tracking-wider text-[#5c4a3d]/60">Raw OCR Text</p>
+            <button
+              type="button"
+              onclick={copyAsTestCase}
+              class="rounded-lg border border-[#d8c9bb] bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[#7a6550] hover:bg-[#f6f1eb]"
+            >
+              Copy as Test Case
+            </button>
+          </div>
           <pre class="max-h-60 overflow-y-auto whitespace-pre-wrap text-xs text-[#2c2925]">{slip.rawText}</pre>
         </div>
       {/if}
@@ -268,6 +324,7 @@
   >
     <button 
       type="button"
+      aria-label="Close lightbox"
       class="absolute right-6 top-6 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
       onclick={() => (showLightbox = false)}
     >
@@ -277,9 +334,9 @@
     </button>
     <img 
       src={slip.imageDataUrl} 
+      aria-label="View image"
       alt={slip.fileName} 
-      class="max-h-full max-w-full rounded-lg object-contain shadow-2xl"
-      onclick={(e) => e.stopPropagation()}
+      class="max-h-full max-w-full rounded-lg object-contain shadow-2xl pointer-events-none"
     />
   </div>
 {/if}

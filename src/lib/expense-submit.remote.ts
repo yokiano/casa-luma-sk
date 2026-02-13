@@ -31,6 +31,7 @@ const SubmitSchema = v.object({
   department: v.string(),
   supplierId: v.optional(v.string()),
   transactionId: v.optional(v.string()),
+  sourceFileName: v.optional(v.string()),
   receiptUrl: v.optional(v.string()),
   bankAccount: v.optional(v.string()),
   paymentMethod: v.optional(v.string()),
@@ -85,6 +86,13 @@ export const submitExpenseSlip = command(SubmitSchema, async (data) => {
       ]
     : undefined;
 
+  const sourceFileName = data.sourceFileName?.trim();
+  const sourceFileNote = sourceFileName ? `source file: ${sourceFileName}` : undefined;
+  const trimmedNotes = data.notes?.trim();
+  const mergedNotes = trimmedNotes && sourceFileNote
+    ? `${trimmedNotes}\n${sourceFileNote}`
+    : trimmedNotes || sourceFileNote || 'synced via expense tool';
+
   const response = await db.createPage(
     new CompanyLedgerPatchDTO({
       properties: {
@@ -98,7 +106,7 @@ export const submitExpenseSlip = command(SubmitSchema, async (data) => {
         referenceNumber: data.transactionId?.trim() ?? undefined,
         paymentMethod: (data.paymentMethod as any) ?? 'Scan',
         bankAccount: (data.bankAccount as any) ?? undefined,
-        notes: data.notes ?? 'synced via expense tool',
+        notes: mergedNotes,
         owner: undefined,
         supplier: data.supplierId ? [{ id: data.supplierId }] : undefined,
         invoiceReceipt

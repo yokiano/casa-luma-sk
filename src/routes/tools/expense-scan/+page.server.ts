@@ -17,10 +17,11 @@ export const load = async () => {
     bankAccounts: COMPANY_LEDGER_PROP_VALUES.bankAccount as unknown as string[],
     paymentMethods: COMPANY_LEDGER_PROP_VALUES.paymentMethod as unknown as string[],
     rules: rules.results.map(r => ({
+      id: r.id,
       match: r.properties["Recipient Match"]?.title?.[0]?.plain_text || '',
       category: r.properties["Category Name"]?.rich_text?.[0]?.plain_text || '',
       department: r.properties["Department Name"]?.rich_text?.[0]?.plain_text || '',
-      supplierId: r.properties["Auto-Supplier"]?.relation?.[0]?.id || ''
+      supplierId: (r.properties["Auto-Supplier"]?.relation as unknown as { id: string }[])?.[0]?.id || ''
     })).filter(r => r.match)
   };
 };

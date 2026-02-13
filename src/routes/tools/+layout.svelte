@@ -35,7 +35,17 @@
   };
 </script>
 
-<Toaster />
+<Toaster 
+  richColors 
+  theme="light"
+  toastOptions={{
+    classes: {
+      toast: "rounded-3xl border-[#d9d0c7] shadow-xl",
+      title: "text-[#2c2925] font-semibold",
+      description: "text-[#5c4a3d] font-medium"
+    }
+  }}
+/>
 
 <div class="min-h-screen bg-[#f6f1eb] text-[#2c2925]">
   {#if !isOnboarding}

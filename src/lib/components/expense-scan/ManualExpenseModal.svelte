@@ -2,6 +2,7 @@
   import * as Dialog from '$lib/components/ui/dialog';
   import { submitExpenseSlip } from '$lib/expense-submit.remote';
   import { toast } from 'svelte-sonner';
+  import SupplierSelector from '$lib/components/suppliers/SupplierSelector.svelte';
 
   type Props = {
     open: boolean;
@@ -9,11 +10,12 @@
     categories: string[];
     departments: string[];
     suppliers: { id: string; name: string }[];
+    onSupplierCreated?: (newSupplier: { id: string; name: string }) => void;
     bankAccounts: string[];
     paymentMethods: string[];
   };
 
-  let { open, onClose, categories, departments, suppliers, bankAccounts, paymentMethods }: Props = $props();
+  let { open, onClose, categories, departments, suppliers, onSupplierCreated, bankAccounts, paymentMethods }: Props = $props();
 
   let isSubmitting = $state(false);
 
@@ -166,16 +168,12 @@
 
         <div class="space-y-2">
           <label for="supplier" class="text-sm font-semibold text-[#5c4a3d]">Supplier</label>
-          <select
-            id="supplier"
+          <SupplierSelector
+            {suppliers}
             bind:value={form.supplierId}
-            class="w-full rounded-2xl border border-[#d9d0c7] bg-white px-4 py-2 text-sm outline-none focus:border-[#7a6550]"
-          >
-            <option value="">None</option>
-            {#each suppliers as sup}
-              <option value={sup.id}>{sup.name}</option>
-            {/each}
-          </select>
+            {onSupplierCreated}
+            placeholder="None"
+          />
         </div>
 
         <div class="space-y-2">

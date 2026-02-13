@@ -27,11 +27,13 @@ export type ScannedSlip = {
   department: string;
   supplierId: string;
   ruleApplied?: boolean;
+  matchedRuleId?: string | null;
   error?: string | null;
   notionId?: string | null;
 };
 
 export type ScanRule = {
+  id: string;
   match: string;
   category: string;
   department: string;
@@ -83,6 +85,19 @@ export class ExpenseScanState {
       return 0;
     });
   });
+
+  private normalizeParsedTitle(title?: string | null): string {
+    const trimmedTitle = title?.trim();
+    if (!trimmedTitle) return 'No memo';
+
+    const normalized = trimmedTitle.toLowerCase();
+    const knownMissingMemoValues = ['title not exist', 'memo not exist', 'no title detected'];
+    if (knownMissingMemoValues.some((token) => normalized.includes(token))) {
+      return 'No memo';
+    }
+
+    return trimmedTitle;
+  }
 
   private parseDate(dateStr?: string | null): number {
     if (!dateStr) return 0;
@@ -143,7 +158,9 @@ export class ExpenseScanState {
     });
 
     try {
+      console.log(`[scanSlip] Scanning ${slip.fileName}, current supplierId: "${slip.supplierId}"`);
       const parsed = await scanExpenseSlipClient(slip.imageDataUrl, slip.fileName);
+      console.log(`[scanSlip] Parsed recipient: "${parsed.recipientName}"`);
 
       // Match rules locally
       let ruleSuggestion: Partial<ScannedSlip> | null = null;
@@ -152,20 +169,26 @@ export class ExpenseScanState {
         for (const rule of this.rules || []) {
           const matchPattern = rule.match?.toLowerCase().replace(/\s+/g, '');
           if (matchPattern && normalizedRecipient.includes(matchPattern)) {
+            console.log(`[scanSlip] Rule matched: "${rule.match}" -> supplierId: "${rule.supplierId}"`);
             ruleSuggestion = {
               category: rule.category || undefined,
               department: rule.department || undefined,
               supplierId: rule.supplierId || '',
-              ruleApplied: true
+              ruleApplied: true,
+              matchedRuleId: rule.id
             };
             break;
           }
         }
       }
 
+      if (!ruleSuggestion) {
+        console.log(`[scanSlip] No rule matched for "${parsed.recipientName}"`);
+      }
+
       this.updateSlip(id, {
         status: 'scanned',
-        parsedTitle: parsed.title ?? null,
+        parsedTitle: this.normalizeParsedTitle(parsed.title),
         parsedAmount: parsed.amount ?? null,
         parsedDate: parsed.date ?? null,
         parsedRecipientName: parsed.recipientName ?? null,
@@ -175,8 +198,10 @@ export class ExpenseScanState {
         category: ruleSuggestion?.category || slip.category,
         department: ruleSuggestion?.department || slip.department,
         supplierId: ruleSuggestion?.supplierId || slip.supplierId,
-        ruleApplied: ruleSuggestion?.ruleApplied ?? false
+        ruleApplied: ruleSuggestion?.ruleApplied ?? false,
+        matchedRuleId: ruleSuggestion?.matchedRuleId ?? null
       });
+      console.log(`[scanSlip] Final supplierId for ${slip.fileName}: "${this.slips.find(s => s.id === id)?.supplierId}"`);
     } catch (e: any) {
       this.updateSlip(id, {
         status: 'error',
@@ -203,7 +228,7 @@ export class ExpenseScanState {
     const slip = this.slips.find((item) => item.id === id);
     if (!slip) return;
 
-    if (!slip.parsedTitle || !slip.parsedAmount || !slip.parsedDate) {
+    if (!slip.parsedAmount || !slip.parsedDate) {
       this.updateSlip(id, { status: 'error', error: 'Missing scanned data' });
       return;
     }
@@ -216,14 +241,17 @@ export class ExpenseScanState {
     this.updateSlip(id, { status: 'submitting', error: null });
 
     try {
+      const title = slip.parsedTitle?.trim() || 'No memo';
+
       const result = await submitExpenseSlip({
-        title: slip.parsedTitle,
+        title,
         amount: slip.parsedAmount,
         date: slip.parsedDate,
         category: slip.category,
         department: slip.department,
         supplierId: slip.supplierId,
-        transactionId: slip.parsedTransactionId ?? undefined
+        transactionId: slip.parsedTransactionId ?? undefined,
+        sourceFileName: slip.fileName
       });
 
       this.updateSlip(id, {
@@ -233,7 +261,7 @@ export class ExpenseScanState {
 
       if (!silent) {
         toast.success('Submitted to Notion', {
-          description: `${slip.parsedTitle} - ${slip.parsedAmount} THB`
+          description: `${title} - ${slip.parsedAmount} THB`
         });
       }
     } catch (e: any) {

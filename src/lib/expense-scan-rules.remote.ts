@@ -11,6 +11,13 @@ const SaveRuleSchema = v.object({
   autoSupplierId: v.optional(v.string())
 });
 
+const UpdateRuleSchema = v.object({
+  id: v.string(),
+  categoryName: v.string(),
+  departmentName: v.string(),
+  autoSupplierId: v.optional(v.string())
+});
+
 export const saveExpenseScanRule = command(SaveRuleSchema, async (data) => {
   const db = new ExpenseScanRulesDatabase({
     notionSecret: NOTION_API_KEY
@@ -28,4 +35,23 @@ export const saveExpenseScanRule = command(SaveRuleSchema, async (data) => {
   );
 
   return { id: response.id };
+});
+
+export const updateExpenseScanRule = command(UpdateRuleSchema, async (data) => {
+  const db = new ExpenseScanRulesDatabase({
+    notionSecret: NOTION_API_KEY
+  });
+
+  await db.updatePage(
+    data.id,
+    new ExpenseScanRulesPatchDTO({
+      properties: {
+        categoryName: data.categoryName,
+        departmentName: data.departmentName,
+        autoSupplier: data.autoSupplierId ? [{ id: data.autoSupplierId }] : undefined
+      }
+    })
+  );
+
+  return { success: true };
 });

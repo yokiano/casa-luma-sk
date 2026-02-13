@@ -8,10 +8,15 @@ export class BillPaymentSlipParser implements ExpenseParser {
     const text = rawText.toLowerCase();
     // Keywords specific to a bill payment slip
     // Note: OCR sometimes adds spaces or misses characters in Thai words
+    const hasEnglishKeyword = /bill,?\s*payment\s*completed/i.test(text);
+    const hasThaiKeyword = 
+      text.includes('จ่ายบิลสำเร็จ') || 
+      text.includes('จ า ย บ ิ ล ส า เ ร จ') ||
+      text.includes('จ า ย บ ล ส า เ ร จ') || // common OCR error
+      text.includes('จ า ย บ ล ส า เร จ');   // another common variation
+
     return (
-      (text.includes('bill payment completed') || 
-       text.includes('จ่ายบิลสำเร็จ') || 
-       text.includes('จ า ย บ ิ ล ส า เ ร จ')) &&
+      (hasEnglishKeyword || hasThaiKeyword) &&
       text.includes('transaction id')
     );
   }

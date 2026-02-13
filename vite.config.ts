@@ -8,6 +8,14 @@ export default defineConfig({
 		sveltekit()
 	],
 
+	optimizeDeps: {
+		exclude: ['playwright', 'playwright-core', 'chromium-bidi']
+	},
+
+	ssr: {
+		external: ['playwright', 'playwright-core', 'chromium-bidi']
+	},
+
 	test: {
 		expect: { requireAssertions: true },
 

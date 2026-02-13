@@ -7,10 +7,14 @@ export class TransferSlipParser implements ExpenseParser {
   validate(rawText: string): boolean {
     const text = rawText.toLowerCase();
     // Keywords specific to a bank transfer slip
+    const hasEnglishKeyword = /transfer,?\s*completed/i.test(text);
+    const hasThaiKeyword = 
+      text.includes('โอนเงินสำเร็จ') || 
+      text.includes('โ อ น เ ง ิ น ส ำ เ ร จ') ||
+      text.includes('โ อ น เ ง น ส ำ เ ร จ'); // common OCR error (missing sara i)
+
     return (
-      (text.includes('transfer completed') || 
-       text.includes('โอนเงินสำเร็จ') || 
-       text.includes('โ อ น เ ง ิ น ส ำ เ ร จ')) &&
+      (hasEnglishKeyword || hasThaiKeyword) &&
       text.includes('transaction id')
     );
   }

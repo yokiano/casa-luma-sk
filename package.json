@@ -17,6 +17,7 @@
 	},
 	"devDependencies": {
 		"@iconify/svelte": "^5.0.2",
+		"@internationalized/date": "^3.10.0",
 		"@lucide/svelte": "^0.544.0",
 		"@playwright/test": "^1.49.1",
 		"@sveltejs/adapter-auto": "^6.0.0",
@@ -30,7 +31,7 @@
 		"@types/d3-scale": "^4.0.9",
 		"@types/node": "^24.7.0",
 		"@vitest/browser": "^3.2.3",
-		"bits-ui": "^2.11.4",
+		"bits-ui": "^2.15.5",
 		"clsx": "^2.1.1",
 		"cross-env": "^10.1.0",
 		"dotenv-cli": "^11.0.0",
