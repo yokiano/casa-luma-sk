@@ -142,7 +142,7 @@
           </svg>
         </div>
       </button>
-      <p class="mt-2 truncate text-xs text-[#5c4a3d]/60">{slip.fileName}</p>
+      <p class="mt-2 break-words text-xs text-[#5c4a3d]/60">{slip.fileName}</p>
     </div>
 
     <div class="flex-1 space-y-3">
@@ -179,7 +179,13 @@
         </div>
         <div>
           <p class="text-xs uppercase tracking-wide text-[#5c4a3d]/60">Date</p>
-          <p class="font-semibold">{slip.parsedDate ?? '-'}</p>
+          <input
+            type="text"
+            value={slip.parsedDate ?? ''}
+            oninput={(event) => onUpdate(slip.id, { parsedDate: (event.target as HTMLInputElement).value })}
+            placeholder="Date"
+            class="mt-1 w-full rounded-2xl border border-[#d9d0c7] bg-white px-3 py-2 text-sm font-semibold text-[#2c2925]"
+          />
         </div>
         <div>
           <p class="text-xs uppercase tracking-wide text-[#5c4a3d]/60">Reference</p>

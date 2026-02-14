@@ -3,6 +3,7 @@
   import type { PageData } from './$types';
   import MultiFileDropZone from '$lib/components/ui/MultiFileDropZone.svelte';
   import SlipCard from '$lib/components/expense-scan/SlipCard.svelte';
+  import SubmissionSummary from '$lib/components/expense-scan/SubmissionSummary.svelte';
   import ManualExpenseModal from '$lib/components/expense-scan/ManualExpenseModal.svelte';
   import AdvancedOcrTools from '$lib/components/expense-scan/AdvancedOcrTools.svelte';
   import { ExpenseScanState, type DropItem, type ScannedSlip } from './ExpenseScanState.svelte';
@@ -150,6 +151,10 @@
     </div>
   {:else}
     <div class="space-y-4">
+      {#if esState.slips.length > 0}
+        <SubmissionSummary slips={esState.slips} />
+      {/if}
+
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div class="flex flex-wrap items-center gap-4">
           <p class="text-sm text-[#5c4a3d]/70">
@@ -220,6 +225,26 @@
           />
         {/each}
       </div>
+
+      {#if esState.slips.length > 0}
+        <div class="space-y-4 pt-4">
+          <SubmissionSummary slips={esState.slips} />
+          <div class="flex justify-center">
+            <button
+              type="button"
+              onclick={() => esState.submitAll()}
+              class="rounded-full bg-[#7a6550] px-8 py-4 text-lg font-semibold text-white shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={esState.isSubmittingAll || esState.slips.filter(s => s.status === 'scanned' && s.parsedAmount && s.category && s.department).length === 0}
+            >
+              {#if esState.isSubmittingAll}
+                Submitting...
+              {:else}
+                Submit all ready slips
+              {/if}
+            </button>
+          </div>
+        </div>
+      {/if}
 
       {#if esState.slips.length > 0}
         <AdvancedOcrTools slips={esState.slips} />
