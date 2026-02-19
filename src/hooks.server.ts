@@ -1,6 +1,10 @@
 import { redirect, type Handle } from '@sveltejs/kit';
+import { MANAGER_PASSWORD_BYPASS } from '$env/static/private';
 
 export const handle: Handle = async ({ event, resolve }) => {
+	// Initialize role
+	event.locals.role = undefined;
+
 	// Bypass CSRF check for the customer webhook endpoint
 	if (event.url.pathname.startsWith('/api/customer')) {
 		// SvelteKit's CSRF protection expects the Origin header to match the request URL.
@@ -12,12 +16,18 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 	// Only protect /tools routes
 	if (event.url.pathname.startsWith('/tools')) {
+		const isBypass = MANAGER_PASSWORD_BYPASS === '1';
+
 		// Skip protection for the login page itself to avoid infinite loops
 		if (event.url.pathname === '/tools/login') {
 			return resolve(event);
 		}
 
-		const authCookie = event.cookies.get('casa_luma_tools_auth');
+		let authCookie = event.cookies.get('casa_luma_tools_auth');
+
+		if (isBypass && !authCookie) {
+			authCookie = 'manager';
+		}
 
 		// If no cookie, redirect to login
 		if (!authCookie) {
@@ -26,7 +36,8 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 		// Role-based protection
 		const isManager = authCookie === 'manager';
-		
+		event.locals.role = authCookie;
+
 		// List of routes that require manager access
 		const managerOnlyRoutes = [
 			'/tools/salary-payment'

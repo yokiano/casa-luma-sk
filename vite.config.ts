@@ -7,6 +7,10 @@ export default defineConfig({
 		tailwindcss(),
 		sveltekit()
 	],
+	server: {
+		host: '0.0.0.0',
+		port: Number(process.env.PORT) || 5173,
+	  },
 
 	optimizeDeps: {
 		exclude: ['playwright', 'playwright-core', 'chromium-bidi']
@@ -52,3 +56,5 @@ export default defineConfig({
 		]
 	}
 });
+
+
