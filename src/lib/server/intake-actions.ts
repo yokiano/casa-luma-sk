@@ -56,6 +56,67 @@ export function getNewLoyverseName(currentName: string, customerCode: string | u
   return `${baseName} [${customerCode}]`;
 }
 
+type LoyverseSyncResult =
+  | { ok: true; customerId: string }
+  | { ok: false; lastError: unknown };
+
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function notifyAfterSuccessfulLoyverseCreation(_payload: {
+  familyPageId: string;
+  customerCode?: string;
+  loyverseCustomerId: string;
+}) {
+  return;
+}
+
+async function syncFamilyToLoyverseWithRetry(params: {
+  familyName: string;
+  customerCode?: string;
+  email?: string;
+  phone: string;
+}): Promise<LoyverseSyncResult> {
+  const maxAttempts = 6;
+  const baseDelayMs = 800;
+  let lastError: unknown = null;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const loyverseName = getNewLoyverseName(params.familyName.trim(), params.customerCode);
+
+      let loyverseCustomer = await loyverse.createOrUpdateCustomer({
+        customer_code: params.customerCode,
+        name: loyverseName,
+        email: params.email?.trim() ? params.email.trim() : undefined,
+        phone_number: params.phone.trim(),
+        note: `Created from Casa Luma customer intake form [${params.customerCode}]`,
+      });
+
+      if (loyverseCustomer.name !== loyverseName) {
+        loyverseCustomer = await loyverse.createOrUpdateCustomer({
+          id: loyverseCustomer.id,
+          name: loyverseName,
+          customer_code: params.customerCode,
+        });
+      }
+
+      return { ok: true, customerId: loyverseCustomer.id };
+    } catch (error) {
+      lastError = error;
+      const waitMs = baseDelayMs * 2 ** (attempt - 1);
+      console.error(`[intake-actions] Loyverse sync attempt ${attempt}/${maxAttempts} failed:`, error);
+
+      if (attempt < maxAttempts) {
+        await delay(waitMs);
+      }
+    }
+  }
+
+  return { ok: false, lastError };
+}
+
 export async function submitIntakeForm(data: IntakeFormData) {
   // Basic Validation
   if (!data.familyName?.trim()) {
@@ -97,54 +158,8 @@ export async function submitIntakeForm(data: IntakeFormData) {
     familyName: data.familyName.trim(),
   });
 
-  // --- Sync to Loyverse Customers ---
-  const syncToLoyverse = async () => {
-    const maxRetries = 2;
-    let lastError: any = null;
-
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
-      try {
-        const loyverseName = getNewLoyverseName(data.familyName.trim(), customerCode);
-        
-        // Attempt 1: Create or Update by matching email/phone
-        let loyverseCustomer = await loyverse.createOrUpdateCustomer({
-          customer_code: customerCode,
-          name: loyverseName,
-          email: data.email?.trim() ? data.email.trim() : undefined,
-          phone_number: data.mainPhone.trim(),
-          note: `Created from Casa Luma customer intake form [${customerCode}]`,
-        });
-
-        // Attempt 2: If Loyverse matched an existing customer but ignored the name change
-        if (loyverseCustomer.name !== loyverseName) {
-          loyverseCustomer = await loyverse.createOrUpdateCustomer({
-            id: loyverseCustomer.id,
-            name: loyverseName,
-            customer_code: customerCode,
-          });
-        }
-
-        await familiesDb.updatePage(
-          familyPage.id,
-          new FamiliesPatchDTO({
-            properties: {
-              loyverseCustomerId: loyverseCustomer.id,
-            },
-          }),
-        );
-        return loyverseCustomer;
-      } catch (e: any) {
-        lastError = e;
-        console.error(`[intake-actions] Loyverse sync attempt ${attempt + 1} failed:`, e.message);
-      }
-    }
-    
-    console.error('[intake-actions] Loyverse sync failed after all attempts:', lastError);
-    return null;
-  };
-
   // Run member creation and Loyverse sync in parallel
-  const [memberPages] = await Promise.all([
+  const [memberPages, loyverseSync] = await Promise.all([
     Promise.all([
       ...(data.kids || []).map((kid) =>
         membersDb.createPage(
@@ -176,8 +191,32 @@ export async function submitIntakeForm(data: IntakeFormData) {
         ),
       ),
     ]),
-    syncToLoyverse(),
+    syncFamilyToLoyverseWithRetry({
+      familyName: data.familyName,
+      customerCode,
+      email: data.email,
+      phone: data.mainPhone,
+    }),
   ]);
+
+  if (loyverseSync.ok) {
+    await familiesDb.updatePage(
+      familyPage.id,
+      new FamiliesPatchDTO({
+        properties: {
+          loyverseCustomerId: loyverseSync.customerId,
+        },
+      }),
+    );
+
+    await notifyAfterSuccessfulLoyverseCreation({
+      familyPageId: familyPage.id,
+      customerCode,
+      loyverseCustomerId: loyverseSync.customerId,
+    });
+  } else {
+    console.error('[intake-actions] Loyverse sync failed after all retry attempts:', loyverseSync.lastError);
+  }
 
   // Ensure Families.Members is populated
   await familiesDb.updatePage(
