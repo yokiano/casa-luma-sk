@@ -24,3 +24,20 @@ export const formatOptional = (value?: string | null) => {
   if (!value) return '—';
   return value;
 };
+
+export const formatDurationMinutes = (value?: number | null) => {
+  if (value === null || value === undefined || Number.isNaN(value)) return '—';
+  const minutes = Math.max(0, Math.round(value));
+  const hoursPart = Math.floor(minutes / 60);
+  const minutesPart = minutes % 60;
+
+  if (hoursPart === 0) {
+    return `${minutesPart}m`;
+  }
+
+  if (minutesPart === 0) {
+    return `${hoursPart}h`;
+  }
+
+  return `${hoursPart}h ${minutesPart}m`;
+};

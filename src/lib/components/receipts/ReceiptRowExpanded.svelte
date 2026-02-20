@@ -1,9 +1,10 @@
 <script lang="ts">
-  import type { LoyverseReceipt } from '$lib/server/loyverse';
-  import { formatAmount, formatDateTime, formatOptional } from './receipt-format';
+  import type { ReceiptWithTools } from './receipt-tools';
+  import { getReceiptToolsMeta } from './receipt-tools';
+  import { formatAmount, formatDateTime, formatDurationMinutes, formatOptional } from './receipt-format';
 
   interface Props {
-    receipt: LoyverseReceipt;
+    receipt: ReceiptWithTools;
   }
 
   let { receipt }: Props = $props();
@@ -16,6 +17,12 @@
   const itemsCount = $derived.by(() => {
     return items.reduce((sum, item) => sum + (item.quantity ?? 0), 0);
   });
+
+  const toolsMeta = $derived.by(() => getReceiptToolsMeta(receipt));
+  const showNotConvertedFlag = $derived.by(
+    () => toolsMeta.hasOneHour && toolsMeta.isNotConverted && Boolean(toolsMeta.orderStartTime)
+  );
+  const showUnassignedCustomer = $derived.by(() => !receipt.customer_id);
 </script>
 
 <article class="rounded-2xl border border-[#d8c9bb] bg-white/90 p-5 shadow-sm">
@@ -26,6 +33,16 @@
       <p class="mt-1 text-sm text-[#7a6550]/80">
         {formatOptional(receipt.receipt_type)} · {itemsCount} items
       </p>
+      {#if showNotConvertedFlag}
+        <p class="mt-2 inline-flex rounded-full bg-red-100 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-red-700">
+          Overdue hour unhandled (over 1h 15m)
+        </p>
+      {/if}
+      {#if showUnassignedCustomer}
+        <p class="mt-2 inline-flex rounded-full border border-[#d8c9bb] bg-[#faf6f1] px-2 py-1 text-xs font-medium uppercase tracking-wide text-[#7a6550]/80">
+          Unassigned customer
+        </p>
+      {/if}
     </div>
     <div class="text-right">
       <p class="text-xs uppercase tracking-wide text-[#7a6550]/70">Total</p>
@@ -47,6 +64,10 @@
       <p class="text-xs uppercase tracking-wide text-[#7a6550]/70">Context</p>
       <div class="mt-2 space-y-1">
         <p><span class="text-[#7a6550]/80">Order:</span> {formatOptional(receipt.order)}</p>
+        <p><span class="text-[#7a6550]/80">Order #:</span> {formatOptional(toolsMeta.orderNumber)}</p>
+        <p><span class="text-[#7a6550]/80">Start hour:</span> {formatOptional(toolsMeta.orderStartTime)}</p>
+        <p><span class="text-[#7a6550]/80">Checkout hour:</span> {formatDateTime(toolsMeta.checkoutAt)}</p>
+        <p><span class="text-[#7a6550]/80">Duration:</span> {formatDurationMinutes(toolsMeta.durationMinutes)}</p>
         <p><span class="text-[#7a6550]/80">Source:</span> {formatOptional(receipt.source)}</p>
         <p><span class="text-[#7a6550]/80">Dining option:</span> {formatOptional(receipt.dining_option)}</p>
         <p><span class="text-[#7a6550]/80">Refund for:</span> {formatOptional(receipt.refund_for)}</p>

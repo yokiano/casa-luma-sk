@@ -3,7 +3,8 @@
   import { scaleBand, scalePoint } from 'd3-scale';
   import { BarChart, LineChart } from 'layerchart';
   import * as Chart from '$lib/components/ui/chart';
-  import { formatAmount, formatOptional } from './receipt-format';
+  import { formatAmount, formatDurationMinutes, formatOptional } from './receipt-format';
+  import { getReceiptToolsMeta } from './receipt-tools';
 
   interface Props {
     receipts: LoyverseReceipt[];
@@ -266,6 +267,26 @@
       rate: ids.length > 0 ? (repeat / ids.length) * 100 : 0
     };
   });
+
+  const unassignedReceiptsCount = $derived.by(
+    () => saleReceipts.filter((receipt) => !receipt.customer_id).length
+  );
+
+  const durationReceipts = $derived.by(() =>
+    saleReceipts
+      .map((receipt) => getReceiptToolsMeta(receipt).durationMinutes)
+      .filter((value): value is number => value !== null)
+  );
+
+  const avgDurationMinutes = $derived.by(() => {
+    if (durationReceipts.length === 0) return null;
+    const total = durationReceipts.reduce((sum, value) => sum + value, 0);
+    return total / durationReceipts.length;
+  });
+
+  const longStayReceiptsCount = $derived.by(
+    () => durationReceipts.filter((value) => value >= 120).length
+  );
 </script>
 
 <section class="space-y-6">
@@ -325,6 +346,16 @@
       <p class="text-[10px] font-medium uppercase tracking-wider text-[#7a6550]/70">Top Item</p>
       <p class="truncate text-sm font-bold text-[#2c2925]" title={topItem.name}>{formatOptional(topItem.name)}</p>
       <p class="text-[10px] text-[#7a6550]/60">{topItem.count} units sold</p>
+    </div>
+    <div class="flex flex-col justify-center rounded-xl border border-[#d8c9bb] bg-white/80 p-3 shadow-sm lg:col-span-2 xl:col-span-1">
+      <p class="text-[10px] font-medium uppercase tracking-wider text-[#7a6550]/70">Avg Duration</p>
+      <p class="text-sm font-bold text-[#2c2925]">{formatDurationMinutes(avgDurationMinutes)}</p>
+      <p class="text-[10px] text-[#7a6550]/60">{durationReceipts.length} receipts with parsed timing</p>
+    </div>
+    <div class="flex flex-col justify-center rounded-xl border border-[#d8c9bb] bg-white/80 p-3 shadow-sm lg:col-span-2 xl:col-span-1">
+      <p class="text-[10px] font-medium uppercase tracking-wider text-[#7a6550]/70">Unassigned Customers</p>
+      <p class="text-xl font-bold text-[#2c2925]">{unassignedReceiptsCount}</p>
+      <p class="text-[10px] text-[#7a6550]/60">{longStayReceiptsCount} receipts are 2h+ duration</p>
     </div>
   </div>
 

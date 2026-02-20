@@ -1,7 +1,14 @@
 <script lang="ts">
-  import type { LoyverseReceipt } from '$lib/server/loyverse';
   import { getReceipts } from '$lib/receipts.remote';
-  import { ReceiptsAnalytics, ReceiptsList, ReceiptsTabs, ReceiptsToolbar } from '$lib/components/receipts';
+  import {
+    ReceiptsAnalytics,
+    ReceiptsList,
+    ReceiptsTabs,
+    ReceiptsToolbar,
+    ReceiptsTools,
+    enrichReceiptsWithTools,
+    type ReceiptWithTools
+  } from '$lib/components/receipts';
 
   const toInputDate = (date: Date) => date.toISOString().slice(0, 10);
 
@@ -17,13 +24,13 @@
 
   let viewMode = $state<'compact' | 'expanded'>('compact');
   let sortOrder = $state<'desc' | 'asc'>('desc');
-  let activeTab = $state<'receipts' | 'analytics'>('receipts');
+  let activeTab = $state<'receipts' | 'analytics' | 'tools'>('receipts');
   let dateFrom = $state(toInputDate(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)));
   let dateTo = $state(toInputDate(new Date()));
   let storeId = $state('');
 
-  let receipts = $state<LoyverseReceipt[]>([]);
-  let analyticsReceipts = $state<LoyverseReceipt[]>([]);
+  let receipts = $state<ReceiptWithTools[]>([]);
+  let analyticsReceipts = $state<ReceiptWithTools[]>([]);
   let analyticsRequestedKey = $state('');
   let analyticsLoading = $state(false);
   let analyticsError = $state<string | null>(null);
@@ -51,7 +58,7 @@
     analyticsReceipts = [];
 
     let nextCursor: string | undefined;
-    const allReceipts: LoyverseReceipt[] = [];
+    const allReceipts: ReceiptWithTools[] = [];
 
     try {
       do {
@@ -63,7 +70,7 @@
           cursor: nextCursor
         });
 
-        allReceipts.push(...(response.receipts ?? []));
+        allReceipts.push(...enrichReceiptsWithTools(response.receipts ?? []));
         nextCursor = response.cursor ?? undefined;
       } while (nextCursor && analyticsRequestedKey === key);
 
@@ -91,7 +98,8 @@
         cursor: reset ? undefined : cursor ?? undefined
       });
 
-      receipts = reset ? response.receipts : receipts.concat(response.receipts);
+      const enriched = enrichReceiptsWithTools(response.receipts ?? []);
+      receipts = reset ? enriched : receipts.concat(enriched);
       cursor = response.cursor;
       hasMore = response.hasMore;
     } catch (error) {
@@ -121,7 +129,7 @@
   };
 
   $effect(() => {
-    if (activeTab !== 'analytics') return;
+    if (activeTab !== 'analytics' && activeTab !== 'tools') return;
     if (analyticsRequestedKey === analyticsKey) return;
     analyticsRequestedKey = analyticsKey;
     loadAnalyticsReceipts(analyticsKey);
@@ -162,6 +170,13 @@
       {#if analyticsLoading}
         <p class="text-xs text-[#7a6550]/70">Loading full analytics dataset...</p>
       {/if}
+    {:else if activeTab === 'tools'}
+      {#if analyticsError}
+        <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {analyticsError}
+        </div>
+      {/if}
+      <ReceiptsTools receipts={analyticsReceipts} isLoading={analyticsLoading} />
     {:else}
       <ReceiptsList
         receipts={sortedReceipts}

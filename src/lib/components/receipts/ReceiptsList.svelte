@@ -1,10 +1,10 @@
 <script lang="ts">
-  import type { LoyverseReceipt } from '$lib/server/loyverse';
+  import type { ReceiptWithTools } from './receipt-tools';
   import ReceiptRowCompact from './ReceiptRowCompact.svelte';
   import ReceiptRowExpanded from './ReceiptRowExpanded.svelte';
 
   interface Props {
-    receipts: LoyverseReceipt[];
+    receipts: ReceiptWithTools[];
     viewMode: 'compact' | 'expanded';
     isLoading?: boolean;
     hasMore?: boolean;

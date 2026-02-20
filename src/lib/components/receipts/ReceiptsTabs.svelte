@@ -1,12 +1,12 @@
 <script lang="ts">
   interface Tab {
-    id: 'receipts' | 'analytics';
+    id: 'receipts' | 'analytics' | 'tools';
     label: string;
     description: string;
   }
 
   interface Props {
-    activeTab: 'receipts' | 'analytics';
+    activeTab: 'receipts' | 'analytics' | 'tools';
     onChange?: (tab: Tab['id']) => void;
   }
 
@@ -22,6 +22,11 @@
       id: 'analytics',
       label: 'Analytics',
       description: 'High-level trends and summaries.'
+    },
+    {
+      id: 'tools',
+      label: 'Tools',
+      description: 'Operational checks and receipt validation.'
     }
   ];
 </script>
