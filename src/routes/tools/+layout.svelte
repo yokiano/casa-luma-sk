@@ -18,6 +18,8 @@
     { href: '/tools/salary-payment', label: 'Payroll', managerOnly: true },
     { href: '/tools/pos-sync', label: 'POS Sync', managerOnly: true },
     { href: '/tools/receipts', label: 'Receipts', managerOnly: true },
+    { href: '/tools/receipts-local', label: 'Receipts DB', managerOnly: true },
+    { href: '/tools/incidents', label: 'Incidents', managerOnly: true },
     { href: '/tools/expense-scan', label: 'Expense Scan', managerOnly: true }
   ];
 
@@ -121,4 +123,3 @@
     {@render children?.()}
   </main>
 </div>
-

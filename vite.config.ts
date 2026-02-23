@@ -10,6 +10,7 @@ export default defineConfig({
 	server: {
 		host: '0.0.0.0',
 		port: Number(process.env.PORT) || 5173,
+		allowedHosts: ["c96c-1-10-165-126.ngrok-free.app"]
 	  },
 
 	optimizeDeps: {

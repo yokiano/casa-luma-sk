@@ -1,82 +1,85 @@
 <script lang="ts">
 	import { BUSINESS_INFO, SOCIAL_LINKS, FOOTER_LINKS } from '$lib/constants';
+	import logoFull from '$lib/assets/logo/logo-no-sun-transparent.png';
 </script>
 
-<footer class="bg-gradient-to-br from-[#F9EDE8] via-[#FFF5F0] to-[#F9EDE8] border-t border-[#dfbc69]/20 mt-20">
-	<div class="max-w-6xl mx-auto px-6 py-16">
-		<div class="grid md:grid-cols-4 gap-12 mb-12">
-			<!-- Brand -->
+<footer class="border-t border-[#F9F7F2]/10 bg-[#2D3A3A] text-[#F9F7F2]">
+	<div class="mx-auto max-w-7xl px-6 py-14 sm:px-8 sm:py-16 lg:px-12">
+		<div class="grid gap-12 lg:grid-cols-[1.2fr_1fr_1fr] lg:gap-10">
 			<div>
-				<h3 class="text-xl font-light text-[#1a1a1a] mb-4">{BUSINESS_INFO.name}</h3>
-				<p class="text-sm text-[#333333] leading-relaxed font-light mb-2">{BUSINESS_INFO.tagline}</p>
-				<p class="text-sm text-[#666666] font-light">{BUSINESS_INFO.location}</p>
+				<p class="mb-5 text-[11px] uppercase tracking-[0.24em] text-[#F9F7F2]/55">Casa Luma</p>
+				<div class="mb-7 inline-flex rounded-2xl bg-[#F9F7F2] px-4 py-3">
+					<img src={logoFull} alt="Casa Luma logo" class="h-20 w-auto object-contain sm:h-24" />
+				</div>
+				<h3 class="max-w-sm text-2xl leading-tight text-[#F9F7F2] sm:text-3xl">
+					A space to play, eat and celebrate together.
+				</h3>
+				<p class="mt-6 max-w-md text-sm leading-relaxed text-[#F9F7F2]/75">{BUSINESS_INFO.tagline}</p>
 			</div>
 
-			<!-- Pages -->
-			<div>
-				<h4 class="text-lg font-light text-[#1a1a1a] mb-6">Pages</h4>
-				<ul class="space-y-3">
-					{#each FOOTER_LINKS as link}
-						<li>
-							<a
-								href={link.href}
-								class="text-sm text-[#333333] font-light hover:text-[#dfbc69] transition-colors duration-200"
-							>
-								{link.label}
-							</a>
-						</li>
-					{/each}
-				</ul>
-			</div>
+			<div class="grid grid-cols-2 gap-8 sm:max-w-sm">
+				<div>
+					<p class="mb-4 text-[11px] uppercase tracking-[0.22em] text-[#F9F7F2]/55">Explore</p>
+					<ul class="space-y-3">
+						{#each FOOTER_LINKS as link}
+							<li>
+								<a
+									href={link.href}
+									class="text-sm text-[#F9F7F2]/80 transition-colors hover:text-[#dfbc69]"
+								>
+									{link.label}
+								</a>
+							</li>
+						{/each}
+					</ul>
+				</div>
 
-			<!-- Contact -->
-			<div>
-				<h4 class="text-lg font-light text-[#1a1a1a] mb-6">Contact</h4>
-				<div class="space-y-2">
-					<p class="text-sm text-[#333333] font-light">{BUSINESS_INFO.email}</p>
-					<p class="text-sm text-[#333333] font-light">{BUSINESS_INFO.phone}</p>
+				<div>
+					<p class="mb-4 text-[11px] uppercase tracking-[0.22em] text-[#F9F7F2]/55">Connect</p>
+					<div class="flex gap-2">
+						<a
+							href={SOCIAL_LINKS.instagram}
+							target="_blank"
+							rel="noopener noreferrer"
+							class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#F9F7F2]/25 text-[10px] tracking-[0.2em] transition-colors hover:border-[#dfbc69] hover:text-[#dfbc69]"
+							aria-label="Instagram"
+						>
+							IG
+						</a>
+						<a
+							href={SOCIAL_LINKS.facebook}
+							target="_blank"
+							rel="noopener noreferrer"
+							class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#F9F7F2]/25 text-[10px] tracking-[0.2em] transition-colors hover:border-[#dfbc69] hover:text-[#dfbc69]"
+							aria-label="Facebook"
+						>
+							FB
+						</a>
+						<a
+							href={SOCIAL_LINKS.googleMaps}
+							target="_blank"
+							rel="noopener noreferrer"
+							class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#F9F7F2]/25 text-[10px] tracking-[0.2em] transition-colors hover:border-[#dfbc69] hover:text-[#dfbc69]"
+							aria-label="Google Maps"
+						>
+							MAP
+						</a>
+					</div>
 				</div>
 			</div>
 
-			<!-- Social -->
 			<div>
-				<h4 class="text-lg font-light text-[#1a1a1a] mb-6">Follow</h4>
-				<div class="flex gap-6">
-					<a
-						href={SOCIAL_LINKS.facebook}
-						target="_blank"
-						rel="noopener noreferrer"
-						class="text-[#666666] hover:text-[#dfbc69] transition-colors duration-200"
-						aria-label="Facebook"
-					>
-						<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-							<path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-						</svg>
-					</a>
-					<a
-						href={SOCIAL_LINKS.instagram}
-						target="_blank"
-						rel="noopener noreferrer"
-						class="text-[#666666] hover:text-[#dfbc69] transition-colors duration-200"
-						aria-label="Instagram"
-					>
-						<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-							<path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
-						</svg>
-					</a>
+				<p class="mb-4 text-[11px] uppercase tracking-[0.22em] text-[#F9F7F2]/55">Contact</p>
+				<div class="space-y-2 text-sm text-[#F9F7F2]/80">
+					<p>{BUSINESS_INFO.location}</p>
+					<p>{BUSINESS_INFO.email}</p>
+					<p>{BUSINESS_INFO.phone}</p>
 				</div>
 			</div>
 		</div>
 
-		<!-- Divider -->
-		<div class="h-px bg-[#dfbc69]/20 mb-8"></div>
-
-		<!-- Footer Bottom -->
-		<div class="text-center">
-			<p class="text-sm text-[#666666] font-light">
-				&copy; {new Date().getFullYear()} {BUSINESS_INFO.name}. All rights reserved.
-			</p>
+		<div class="mt-12 border-t border-[#F9F7F2]/10 pt-7 text-[10px] uppercase tracking-[0.18em] text-[#F9F7F2]/45">
+			&copy; {new Date().getFullYear()} {BUSINESS_INFO.name}. All rights reserved.
 		</div>
 	</div>
 </footer>
-

@@ -13,7 +13,11 @@
 		"test:unit": "vitest",
 		"test": "npm run test:unit -- --run && npm run test:e2e",
 		"test:e2e": "playwright test",
-		"notion:generate": "dotenv -- npx notion-ts-client generate"
+		"notion:generate": "dotenv -- npx notion-ts-client generate",
+		"db:generate": "drizzle-kit generate",
+		"db:migrate": "drizzle-kit migrate",
+		"db:push": "drizzle-kit push",
+		"db:studio": "drizzle-kit studio"
 	},
 	"devDependencies": {
 		"@iconify/svelte": "^5.0.2",
@@ -35,6 +39,7 @@
 		"clsx": "^2.1.1",
 		"cross-env": "^10.1.0",
 		"dotenv-cli": "^11.0.0",
+		"drizzle-kit": "^0.31.9",
 		"layerchart": "2.0.0-next.44",
 		"lucide-svelte": "^0.562.0",
 		"mode-watcher": "^1.1.0",

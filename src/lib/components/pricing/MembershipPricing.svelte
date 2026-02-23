@@ -9,155 +9,131 @@
 </script>
 
 {#if showHeader}
-	<section class="bg-muted py-16 px-4">
-		<div class="max-w-4xl mx-auto text-center">
-			<h1 class="text-4xl md:text-5xl font-serif mb-4 text-foreground">
-				Memberships & Passes
-			</h1>
-			<p class="text-lg md:text-xl text-muted-foreground">
-				Play, learn, and laugh together in our beautiful island home
+	<section class="px-4 pb-8 pt-14 md:pt-20">
+		<div class="mx-auto max-w-5xl text-center">
+			<p class="mb-3 text-xs uppercase tracking-[0.22em] text-[#2D3A3A]/60">Casa Luma Pricing</p>
+			<h1 class="text-5xl font-light leading-[0.95] text-[#2D3A3A] md:text-7xl">Passes & Plans</h1>
+			<p class="mx-auto mt-5 max-w-3xl text-lg text-[#2D3A3A]/75 md:text-xl">
+				Flexible options for quick drop-ins, full play days, and regular family routines.
 			</p>
 		</div>
 	</section>
 {/if}
 
-<!-- Content (Grid Only) -->
-<section class="py-16 px-4 bg-background">
-	<div class="max-w-7xl mx-auto">
-		<div class="text-center mb-12">
-			<h2 class="text-3xl md:text-4xl font-serif mb-3 text-foreground">Open Play Pricing</h2>
-			<p class="text-muted-foreground max-w-2xl mx-auto">
-				Perfect for families who want to make Casa Luma a regular part of their lives
+<section class="px-4 pb-16 pt-8 md:pb-20">
+	<div class="mx-auto max-w-7xl">
+		<div class="mb-12 text-center">
+			<h2 class="text-4xl font-light text-[#2D3A3A] md:text-5xl">Open Play Pricing</h2>
+			<p class="mx-auto mt-3 max-w-2xl text-[#2D3A3A]/75">
+				Simple plans, warm support, and room to choose what fits your family best.
 			</p>
 		</div>
 
-		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+		<div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
 			{#each PRICING_OPTIONS as option}
 				<div
-					class="relative bg-card rounded-2xl p-6 border-2 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 flex flex-col"
-					class:border-primary={option.highlight}
-					class:border-border={!option.highlight}
-					class:shadow-lg={option.highlight}
+					class={`relative flex flex-col overflow-hidden border bg-white/80 p-7 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_45px_rgba(45,58,58,0.14)] ${option.highlight ? 'border-[#dfbc69]' : 'border-[#2D3A3A]/10'}`}
 				>
 					{#if option.highlight}
 						<div
-							class="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary px-4 py-1 rounded-full whitespace-nowrap"
+							class="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full bg-[#dfbc69] px-4 py-1 whitespace-nowrap"
 						>
-							<span class="text-xs font-medium text-primary-foreground">BEST VALUE</span>
+							<span class="text-xs font-semibold tracking-wide text-[#2D3A3A]">POPULAR</span>
 						</div>
 					{/if}
 
-					<!-- Icon Circle -->
-					<div
-						class="w-14 h-14 mx-auto mb-4 bg-secondary/30 rounded-full flex items-center justify-center text-2xl"
-					>
+					<div class="mb-5 text-3xl leading-none">
 						{option.icon || '✨'}
 					</div>
 
-					<!-- Title & Price -->
-					<div class="text-center mb-4">
-						<h3 class="text-xl font-semibold mb-2 text-foreground">{option.name}</h3>
-						<div class="mb-1">
-							<span class="text-3xl font-bold text-primary">{option.price}</span>
-						</div>
-						<p class="text-xs text-muted-foreground">{option.duration}</p>
+					<div class="mb-4">
+						<h3 class="mb-3 text-3xl font-light text-[#2D3A3A]">{option.name}</h3>
+						{#if option.id === 'flexi-play-pass'}
+							<div class="space-y-1 text-[#2D3A3A]/88">
+								<p class="text-xl font-semibold">Standard: ฿1,300</p>
+								<p class="text-xl font-semibold">Resident: ฿1,100</p>
+							</div>
+							<p class="mt-3 text-sm uppercase tracking-[0.14em] text-[#2D3A3A]/65">11 hours | valid 60 days</p>
+						{:else}
+							<p class="text-5xl font-semibold leading-none text-[#E07A5F]">{option.price}</p>
+							<p class="mt-3 text-sm uppercase tracking-[0.14em] text-[#2D3A3A]/65">{option.duration}</p>
+						{/if}
 						{#if option.savings}
 							<div
-								class="mt-2 inline-block bg-accent/10 text-accent px-2 py-0.5 rounded-full text-[10px] font-medium"
+								class="mt-4 inline-block rounded-full bg-[#E07A5F]/12 px-3 py-1 text-xs font-semibold text-[#C96A52]"
 							>
 								{option.savings}
 							</div>
 						{/if}
 					</div>
 
-					<!-- Quick Summary -->
-					<div class="mb-4 text-center text-sm text-muted-foreground italic px-2">
+					<div class="mb-5 text-[#2D3A3A]/72">
 						{option.description}
 					</div>
 
-					<!-- Features List -->
-					<ul class="space-y-2 mb-6 flex-1">
+					<ul class="mb-7 flex-1 space-y-3">
 						{#each option.features as feature}
-							<li class="flex items-start gap-2 text-sm">
-								<span class="text-secondary text-sm shrink-0">✓</span>
-								<span class="text-foreground/80">{feature}</span>
+							<li class="flex items-start gap-2 text-sm text-[#2D3A3A]/80">
+								<span class="mt-0.5 shrink-0 text-[#A8C3A0]">✓</span>
+								<span>{feature}</span>
 							</li>
 						{/each}
 					</ul>
 
-					<!-- CTA -->
-					<button
-						class="w-full py-2.5 px-4 rounded-xl font-medium transition-colors text-sm {option.highlight
-							? 'bg-primary hover:bg-primary/90 text-primary-foreground'
-							: 'bg-secondary hover:bg-secondary/90 text-secondary-foreground'}"
+					<a
+						href="/contact"
+						class="inline-flex w-full items-center justify-center rounded-xl bg-[#2D3A3A] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-[#dfbc69] hover:text-[#2D3A3A]"
 					>
-						Choose Plan
-					</button>
+						Ask about this plan
+					</a>
 				</div>
 			{/each}
 		</div>
 	</div>
 </section>
 
-<!-- Notes & Info Section -->
-<section class="py-12 px-4 bg-muted/30">
-	<div class="max-w-4xl mx-auto">
-		<div class="bg-secondary/10 rounded-2xl p-8 border border-secondary/30">
-			<h3 class="text-xl font-semibold mb-4 text-foreground flex items-center gap-2">
-				<span class="text-2xl">📝</span>
-				Good to Know
-			</h3>
-			<ul class="space-y-3 text-sm text-foreground/80">
-				<li class="flex items-start gap-3">
-					<span class="text-secondary shrink-0 mt-0.5">•</span>
-					<span
-						><strong>Workshops:</strong> Included workshops refer to selected kids sessions in our weekly
-						schedule. Special events and premium workshops may be excluded.</span
-					>
-				</li>
-				<li class="flex items-start gap-3">
-					<span class="text-secondary shrink-0 mt-0.5">•</span>
-					<span
-						><strong>Socks required:</strong> All children and adults must wear socks in play areas.</span
-					>
-				</li>
-				<li class="flex items-start gap-3">
-					<span class="text-secondary shrink-0 mt-0.5">•</span>
-					<span
-						><strong>Re-entry:</strong> Same-day re-entry allowed with wristband or QR verification.</span
-					>
-				</li>
-				<li class="flex items-start gap-3">
-					<span class="text-secondary shrink-0 mt-0.5">•</span>
-					<span
-						><strong>Capacity limits:</strong> During busy times, we may need to limit new entries to
-						ensure everyone's comfort and safety.</span
-					>
-				</li>
-			</ul>
-		</div>
+<section class="px-4 pb-16">
+	<div class="mx-auto max-w-5xl border border-[#2D3A3A]/10 bg-white/70 p-8 md:p-10">
+		<h3 class="mb-5 text-3xl font-light text-[#2D3A3A]">Good to know</h3>
+		<ul class="space-y-3 text-[#2D3A3A]/82">
+			<li class="flex items-start gap-3">
+				<span class="mt-1 text-[#A8C3A0]">•</span>
+				<span><strong>Free adult entry:</strong> Included with all passes shown above.</span>
+			</li>
+			<li class="flex items-start gap-3">
+				<span class="mt-1 text-[#A8C3A0]">•</span>
+				<span><strong>1-hour upgrade:</strong> We automatically move you to Day Pass pricing if you stay longer.</span>
+			</li>
+			<li class="flex items-start gap-3">
+				<span class="mt-1 text-[#A8C3A0]">•</span>
+				<span><strong>Clean play environment:</strong> We clean and reset daily and follow non-sick attendance rules.</span>
+			</li>
+			<li class="flex items-start gap-3">
+				<span class="mt-1 text-[#A8C3A0]">•</span>
+				<span><strong>Supportive staff:</strong> Playground supervisors are present to engage with and guide children.</span>
+			</li>
+		</ul>
 	</div>
 </section>
 
-<!-- CTA Section -->
-<section class="py-16 px-4 bg-muted text-center">
-	<div class="max-w-2xl mx-auto">
-		<h2 class="text-3xl md:text-4xl font-serif mb-4 text-foreground">Ready to Join Us?</h2>
-		<p class="text-muted-foreground mb-8">
-			Come visit us or reach out with any questions. We can't wait to welcome your family!
+<section class="px-4 pb-20 text-center">
+	<div class="mx-auto max-w-2xl">
+		<h2 class="text-4xl font-light text-[#2D3A3A] md:text-5xl">Need help choosing?</h2>
+		<p class="mt-3 text-[#2D3A3A]/75">
+			Tell us your child's age and visit style, and we will recommend the best option.
 		</p>
-		<div class="flex flex-col sm:flex-row gap-4 justify-center">
+		<div class="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
 			<a
 				href="/contact"
-				class="px-8 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full font-medium transition-colors"
+				class="rounded-full bg-[#2D3A3A] px-8 py-3 font-medium text-white transition-colors hover:bg-[#dfbc69] hover:text-[#2D3A3A]"
 			>
-				Contact Us
+				Contact us
 			</a>
 			<a
 				href="/open-play"
-				class="px-8 py-3 bg-secondary hover:bg-secondary/90 text-secondary-foreground rounded-full font-medium transition-colors"
+				class="rounded-full border border-[#2D3A3A]/20 px-8 py-3 font-medium text-[#2D3A3A] transition-colors hover:bg-white"
 			>
-				Learn About Open Play
+				Back to Open Play
 			</a>
 		</div>
 	</div>

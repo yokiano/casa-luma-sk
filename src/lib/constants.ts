@@ -3,11 +3,11 @@
 export const BUSINESS_INFO = {
 	name: 'Casa Luma',
 	tagline: 'A Montessori-inspired play café for children',
-	location: 'Koh Phangan, Thailand',
+	location: '53/7 Moo. 2 Ban Nai Suan Village, Koh Phangan, Thailand',
 	description:
 		'A safe, natural, and engaging environment where children can play, learn, and explore while parents relax and enjoy quality refreshments.',
-	email: 'hello@casaluma.com',
-	phone: '+66 XX XXX XXXX'
+	email: 'info@casalumakpg.com',
+	// phone: '+66 XX XXX XXXX'
 } as const;
 
 export interface ServiceCategory {
@@ -70,30 +70,44 @@ export const SERVICES: ServiceCategory[] = [
 	}
 ] as const;
 
-export const NAV_LINKS = [
-	{ label: 'Home', href: '/' },
-	{ label: 'Open Play', href: '/open-play' },
-	{ label: 'Pricing', href: '/pricing' },
-	// { label: 'Workshops', href: '/workshops3' },
-	{ label: 'Birthday Parties', href: '/birthday-parties' },
-	{ label: 'About', href: '/about' },
-	{ label: 'Contact', href: '/contact' }
+export interface MenuItem {
+	id: string;
+	label: string;
+	href: string;
+	inHeader?: boolean;
+	inFooter?: boolean;
+}
+
+export const SITE_MENU_ITEMS: readonly MenuItem[] = [
+	{ id: 'home', label: 'Home', href: '/', inHeader: true },
+	{ id: 'open-play', label: 'Open Play', href: '/open-play', inHeader: true, inFooter: true },
+	{ id: 'pricing', label: 'Pricing', href: '/pricing', inHeader: true, inFooter: true },
+	{
+		id: 'birthday-parties',
+		label: 'Birthday Parties',
+		href: '/birthday-parties',
+		inHeader: true
+	},
+	{ id: 'workshops', label: 'Workshops', href: '/workshops3', inFooter: true },
+	{ id: 'careers', label: 'Careers', href: '/careers', inFooter: true },
+	{ id: 'about', label: 'About', href: '/about', inHeader: true, inFooter: true },
+	{ id: 'contact', label: 'Contact', href: '/contact', inHeader: true, inFooter: true }
 ] as const;
+
+export const NAV_LINKS = SITE_MENU_ITEMS
+	.filter((item) => item.inHeader)
+	.map(({ label, href }) => ({ label, href }));
 
 export const SOCIAL_LINKS = {
-	facebook: 'https://facebook.com/casaluma',
-	instagram: 'https://instagram.com/casaluma',
-	email: 'mailto:hello@casaluma.com'
+	facebook: 'https://www.facebook.com/profile.php?id=61581858085482',
+	instagram: 'https://www.instagram.com/casaluma.kpg/',
+	email: 'mailto:hello@casaluma.com',
+	googleMaps: 'https://maps.app.goo.gl/iXyfd47yVxyPKk3o8'
 } as const;
 
-export const FOOTER_LINKS = [
-	{ label: 'Open Play', href: '/open-play' },
-	{ label: 'Pricing', href: '/pricing' },
-	{ label: 'Workshops', href: '/workshops3' },
-	{ label: 'Careers', href: '/careers' },
-	{ label: 'About', href: '/about' },
-	{ label: 'Contact', href: '/contact' }
-] as const;
+export const FOOTER_LINKS = SITE_MENU_ITEMS
+	.filter((item) => item.inFooter)
+	.map(({ label, href }) => ({ label, href }));
 
 // Pricing & Memberships
 export interface PricingOption {
@@ -105,83 +119,61 @@ export interface PricingOption {
 	features: string[];
 	highlight?: boolean;
 	savings?: string;
-	icon?: string; // Adding icon back for compatibility if needed
+	icon?: string;
 }
-
-// Dynamic Pricing Calculation
-const PRICING_BASE = 200; // Hourly rate
-const MULTIPLIERS = {
-	DAY: 1.8,
-	WEEK: 3.2,   // 3 days in a week
-	MONTH: 3   // 3 weeks in a month
-};
-
-const OPEN_DAYS_PER_WEEK = 6;
-const WEEKS_PER_MONTH = 4;
-
-const PRICES = {
-	HOUR: PRICING_BASE,
-	DAY: Math.round(PRICING_BASE * MULTIPLIERS.DAY),
-	WEEK: Math.round(PRICING_BASE * MULTIPLIERS.DAY * MULTIPLIERS.WEEK),
-	MONTH: Math.round(PRICING_BASE * MULTIPLIERS.DAY * MULTIPLIERS.WEEK * MULTIPLIERS.MONTH)
-};
-
-// Calculate Savings
-const SAVINGS = {
-	WEEK: (PRICES.DAY * OPEN_DAYS_PER_WEEK) - PRICES.WEEK,
-	MONTH: (PRICES.DAY * OPEN_DAYS_PER_WEEK * WEEKS_PER_MONTH) - PRICES.MONTH
-};
 
 export const PRICING_OPTIONS: PricingOption[] = [
 	{
 		id: '1-hour',
 		name: '1 Hour',
-		price: `฿${PRICES.HOUR}`,
+		price: '฿180',
 		duration: 'Per child / hour',
-		description: 'Perfect for a quick play session.',
-		features: ['Open play access', 'Free adult/nanny entry', 'Extra time charged per 30 mins'],
+		description: 'Perfect for quick play.',
+		savings: 'Auto-upgrades to Day Pass if you stay longer',
+		features: ['Open play access', 'Free adult entry'],
 		icon: '⏱️'
 	},
 	{
 		id: '1-day',
 		name: '1 Day',
-		price: `฿${PRICES.DAY}`,
+		price: '฿350',
 		duration: 'Full day access',
-		description: 'Come and go as you please all day.',
-		features: ['All-day play with re-entry', 'Free adult/nanny entry'],
-		savings: `Stay with us as long as you want!`,
+		description: 'Best for longer play days.',
+		savings: 'Just ฿170 more than 1 Hour',
+		features: ['Play all day', 'Come and go anytime', 'Free adult entry'],
 		icon: '☀️'
 	},
 	{
 		id: '1-week',
 		name: '1 Week',
-		price: `฿${PRICES.WEEK.toLocaleString()}`,
-		duration: 'Valid for 7 days',
-		description: 'Unlimited play for a whole week.',
-		features: [
-			'Unlimited play for 7 days',
-			'Includes selected workshops',
-			'10% off food & drinks',
-			'Free adult/nanny entry'
-		],
-		savings: `Save up to ฿${SAVINGS.WEEK.toLocaleString()}`,
+		price: '฿1,500',
+		duration: 'Valid for 7 consecutive days',
+		description: 'Great for holidays and short stays.',
+		savings: 'Only ฿180 per day',
+		features: ['7 days from purchase', 'Free adult entry'],
 		icon: '📅'
 	},
 	{
 		id: '1-month',
 		name: '1 Month',
-		price: `฿${PRICES.MONTH.toLocaleString()}`,
+		price: '฿3,500',
 		duration: 'Valid for 30 days',
 		description: 'Best value for residents & long stays.',
-		features: [
-			'Unlimited play for 30 days',
-			'Includes selected workshops',
-			'15% off food & drinks',
-			'Free adult/nanny entry'
-		],
+		savings: 'Less than ฿140 per day',
+		features: ['30 days from purchase', 'Free adult entry'],
 		highlight: true,
-		savings: `Save up to ฿${SAVINGS.MONTH.toLocaleString()}`,
 		icon: '🌟'
+	},
+	{
+		id: 'flexi-play-pass',
+		name: 'Flexi Play Pass',
+		price: 'Standard ฿1,300 | Resident ฿1,100',
+		duration: '11 hours of play | Valid for 60 days',
+		description: 'For regular visitors who want flexibility.',
+		savings: 'Only ฿120/hr standard or ฿100/hr resident',
+		highlight: true,
+		features: ['Use anytime', 'Split across visits', 'Free adult entry'],
+		icon: '🎟️'
 	}
 ];
 

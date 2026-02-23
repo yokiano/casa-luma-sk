@@ -2,6 +2,7 @@
 	import { scrollY, innerHeight } from 'svelte/reactivity/window';
 	import InlineImageText from '$lib/components/animations/InlineImageText.svelte';
 	import type { Segment } from '$lib/components/animations/InlineImageText.svelte';
+	import { BrandCtrl } from '$lib/utils/brand-controller.svelte';
 
 	let wrapperEl = $state<HTMLElement | undefined>();
 
@@ -20,26 +21,40 @@
 	let scaleText = $derived(1 + scrollProgress * 0.03);
 	let translateY = $derived(scrollProgress * -25);
 
-	// Structured into fixed rows to prevent dynamic line breaks
+	const playgroundColor = BrandCtrl.getColorByIndex(3, { weight: 500 }).value;
+	const cafeColor = BrandCtrl.getColorByIndex(1, { weight: 700 }).value;
+	const gardenColor = BrandCtrl.getColorByIndex(2, { weight: 600 }).value;
+
 	const lines: Segment[][] = [
 		[
-			{ type: 'text', content: 'With our' },
+			{ type: 'text', content: 'Timeless' },
+			{ type: 'text', content: 'playground', color: playgroundColor },
 			{
 				type: 'image',
-				url: 'https://images.unsplash.com/photo-1544776193-352d25ca82cd?q=80&w=800&auto=format&fit=crop',
-				alt: 'Open Play Space'
+				url: 'https://images.unsplash.com/photo-1472162072942-cd5147eb3902?q=80&w=900&auto=format&fit=crop',
+				alt: 'Indoor playground'
 			},
-			{ type: 'text', content: 'open play space,' }
+			{ type: 'text', content: 'experience,' }
 		],
-		[{ type: 'text', content: 'we nurture everything that makes' }],
 		[
+			{ type: 'text', content: 'Café', color: cafeColor },
 			{
 				type: 'image',
-				url: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=800&auto=format&fit=crop',
-				alt: 'Childhood moments'
+				url: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=900&auto=format&fit=crop',
+				alt: 'Family cafe'
 			},
-			{ type: 'text', content: 'childhood exceptional.' }
-		]
+			{ type: 'text', content: 'that everyones loves,' }
+		],
+		[
+			{ type: 'text', content: 'a touch of' },
+			{ type: 'text', content: 'nature', color: gardenColor },
+			{
+				type: 'image',
+				url: 'https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=900&auto=format&fit=crop',
+				alt: 'Garden'
+			},
+		],
+		[{ type: 'text', content: 'and more...' }]
 	];
 </script>
 
@@ -57,7 +72,7 @@
 			class="max-w-7xl w-full text-center relative z-10 will-change-transform"
 			style:transform="translate3d(0, {translateY}px, 0) scale({scaleText})"
 		>
-			<InlineImageText {lines} {scrollProgress} />
+			<InlineImageText {lines} {scrollProgress} imageStagger={0.28} />
 
 			<div
 				class="mt-20 transition-all duration-1000"
@@ -65,7 +80,7 @@
 				style:transform="translateY({scrollProgress > 0.88 ? 0 : 20}px)"
 			>
 				<p class="text-[10px] md:text-xs text-[#2D3A3A]/40 font-sans tracking-[0.5em] uppercase">
-					Growing together &mdash; since 2024
+					Designed for everyday family moments
 				</p>
 			</div>
 		</div>

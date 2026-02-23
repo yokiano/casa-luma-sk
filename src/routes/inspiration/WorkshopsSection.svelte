@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { scrollY, innerHeight } from 'svelte/reactivity/window';
+	import { innerHeight } from 'svelte/reactivity/window';
 	import Reveal from '$lib/components/animations/Reveal.svelte';
 	import { ArrowRight } from 'lucide-svelte';
 
@@ -20,20 +20,20 @@
 	class="py-32 flex flex-col md:flex-row items-center justify-between px-8 md:px-24 gap-16 overflow-hidden bg-[#F9F7F2]"
 >
 	<Reveal direction="left" class="w-full md:w-1/2 space-y-8" skewX={2}>
-		<span class="text-xs font-sans tracking-[0.3em] uppercase text-[#E07A5F]">Workshops & Activities</span>
+		<span class="text-xs font-sans tracking-[0.3em] uppercase text-[#E07A5F]">Birthday Events</span>
 		<h3 class="text-5xl md:text-7xl font-serif leading-none text-[#2D3A3A]">
-			THE JOY <br />
-			<span class="italic text-[#A8C3A0]">OF LEARNING</span>
+			BIRTHDAY <br />
+			<span class="italic text-[#A8C3A0]">AT CASA LUMA</span>
 		</h3>
 		<p class="text-xl text-[#2D3A3A]/65 max-w-md font-sans leading-relaxed">
-			Our workshops are designed to spark curiosity and creativity. From sensory art to music and
-			movement — we provide the tools for joyful discovery.
+			Host a chic, playful celebration with curated setups, warm hospitality, and room for children
+			to explore freely while the grown-ups enjoy the moment.
 		</p>
 		<a
-			href="/workshops"
+			href="/birthday-parties"
 			class="inline-flex items-center gap-3 border-b border-[#2D3A3A]/40 pb-1 hover:text-[#E07A5F] hover:border-[#E07A5F] transition-all duration-300 uppercase tracking-wider text-sm group"
 		>
-			Discover Workshops
+			Plan your celebration
 			<ArrowRight size={16} class="transition-transform duration-300 group-hover:translate-x-1" />
 		</a>
 	</Reveal>
@@ -45,8 +45,8 @@
 			class="absolute inset-0 overflow-hidden"
 		>
 			<img
-				src="https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?q=80&w=800&auto=format&fit=crop"
-				alt="Child in Montessori workshop"
+				src="https://images.unsplash.com/photo-1464349153735-7db50ed83c84?q=80&w=1000&auto=format&fit=crop"
+				alt="Birthday celebration at Casa Luma"
 				class="absolute inset-0 w-full h-[130%] object-cover will-change-transform"
 				style:transform="translateY({imgParallax}px)"
 			/>
@@ -58,7 +58,7 @@
 		<div class="absolute bottom-8 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-sm px-5 py-2 text-xs font-sans tracking-widest uppercase text-[#2D3A3A] shadow-lg"
 			 style:border-radius="2rem"
 		>
-			Weekly sessions
+			Private events
 		</div>
 	</Reveal>
 </section>

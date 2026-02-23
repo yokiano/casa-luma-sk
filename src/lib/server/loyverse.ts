@@ -182,9 +182,12 @@ export interface LoyverseReceiptTax {
 
 export interface LoyverseReceiptLineItemModifier {
   id?: string;
+  modifier_option_id?: string;
   name?: string;
+  option?: string;
   price?: number;
   quantity?: number;
+  money_amount?: number;
 }
 
 export interface LoyverseReceiptLineItem {
