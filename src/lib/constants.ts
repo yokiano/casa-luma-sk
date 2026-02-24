@@ -2,7 +2,7 @@
 
 export const BUSINESS_INFO = {
 	name: 'Casa Luma',
-	tagline: 'A Montessori-inspired play café for children',
+	// tagline: 'A Montessori-inspired play café for children',
 	location: '53/7 Moo. 2 Ban Nai Suan Village, Koh Phangan, Thailand',
 	description:
 		'A safe, natural, and engaging environment where children can play, learn, and explore while parents relax and enjoy quality refreshments.',

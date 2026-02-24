@@ -4,7 +4,7 @@
 	"version": "0.0.1",
 	"type": "module",
 	"scripts": {
-		"dev": "portless casa vite dev",
+		"dev": "NODE_OPTIONS='--no-network-family-autoselection --dns-result-order=ipv4first' portless casa vite dev",
 		"build": "vite build",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
@@ -15,9 +15,10 @@
 		"test:e2e": "playwright test",
 		"notion:generate": "dotenv -- npx notion-ts-client generate",
 		"db:generate": "drizzle-kit generate",
-		"db:migrate": "drizzle-kit migrate",
-		"db:push": "drizzle-kit push",
-		"db:studio": "drizzle-kit studio"
+		"db:migrate": "NODE_OPTIONS='--no-network-family-autoselection --dns-result-order=ipv4first' drizzle-kit migrate",
+		"db:migrate:neon": "NODE_OPTIONS='--no-network-family-autoselection --dns-result-order=ipv4first' dotenv -- tsx scripts/db-migrate-neon.ts",
+		"db:push": "NODE_OPTIONS='--no-network-family-autoselection --dns-result-order=ipv4first' drizzle-kit push",
+		"db:studio": "NODE_OPTIONS='--no-network-family-autoselection --dns-result-order=ipv4first' drizzle-kit studio"
 	},
 	"devDependencies": {
 		"@iconify/svelte": "^5.0.2",
@@ -64,16 +65,20 @@
 		]
 	},
 	"dependencies": {
+		"@neondatabase/serverless": "^1.0.2",
 		"@notionhq/client": "^5.1.0",
 		"@types/qrcode": "^1.5.6",
 		"canvas-confetti": "^1.9.4",
 		"d3-scale": "^4.0.2",
 		"dotenv": "^16.4.5",
+		"drizzle-orm": "^0.45.1",
 		"mindee": "^4.36.3",
 		"modern-screenshot": "^4.6.6",
+		"postgres": "^3.4.8",
 		"qrcode": "^1.5.4",
 		"sharp": "^0.34.5",
 		"tesseract.js": "^7.0.0",
-		"valibot": "^1.1.0"
+		"valibot": "^1.1.0",
+		"ws": "^8.19.0"
 	}
 }

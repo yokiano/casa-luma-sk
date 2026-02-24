@@ -59,7 +59,7 @@
 		<div class="flex flex-wrap items-baseline justify-center gap-x-[0.22em] md:flex-nowrap">
 			{#each line as segment, sIdx}
 				{#if segment.type === 'text'}
-					<span class="inline-block" style:color={segment.color ?? undefined}>{segment.content}</span>
+					<h3 class="inline-block" style:color={segment.color ?? undefined}>{segment.content}</h3>
 				{:else}
 					{@const imgIdx = getGlobalImageIndex(lIdx, sIdx)}
 					{@const p = easeOut(imageProgress(imgIdx))}

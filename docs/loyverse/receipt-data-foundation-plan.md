@@ -12,7 +12,7 @@ This plan defines a production-ready data foundation for ingesting Loyverse rece
 
 ## Stack Decision
 
-- Database: PostgreSQL (local now, managed cloud later).
+- Database: PostgreSQL on [Neon](https://neon.tech) (`us-east-1`, serverless).
 - Schema and migrations: Drizzle ORM + drizzle-kit.
 - Runtime driver: `postgres` (`postgres.js`).
 - Validation: `valibot` for webhook payload validation.
@@ -22,7 +22,9 @@ Why this stack:
 - Strong transactional guarantees for webhook processing.
 - Easy normalization of nested receipt payloads.
 - Type-safe queries and reproducible migration files.
-- Smooth path from local Docker to Neon/Supabase/RDS.
+- Neon provides serverless Postgres with zero-ops, Vercel-friendly connection pooling, and scale-to-zero.
+
+Previously ran on local Docker Postgres; migrated to Neon in Feb 2025. See `docs/database.md` for connection details, migration commands, and known issues.
 
 ## High-Level Architecture
 
@@ -67,9 +69,12 @@ Design notes:
 
 ## Environment Variables
 
-Add to local `.env` (and `.env.example` placeholders):
+Database connection strings are provided by Neon — see `docs/database.md` for the full list.
 
-- `DATABASE_URL=postgres://app:app@localhost:5432/casa_luma`
+Key vars in `.env`:
+
+- `DATABASE_URL` — pooled Neon endpoint (app runtime)
+- `DATABASE_URL_UNPOOLED` — direct Neon endpoint (migrations, drizzle-kit)
 - `LOYVERSE_WEBHOOK_SECRET=` (or tokenized path strategy)
 
 ## Command Runbook
@@ -169,10 +174,11 @@ Initial indexes to prioritize:
 
 ## Cloud Migration Path
 
-- Keep schema/migrations identical across environments.
-- Move `DATABASE_URL` to managed Postgres when ready.
-- Recommended easy options: Neon or Supabase.
-- Advanced ops option: AWS RDS.
+**Completed** — migrated to Neon (Feb 2025).
+
+- Schema and migrations are identical across local and cloud environments.
+- `DATABASE_URL` points to Neon's pooled endpoint; `DATABASE_URL_UNPOOLED` to the direct endpoint.
+- See `docs/database.md` for full setup, commands, and troubleshooting.
 
 ## Immediate Next Implementation Steps
 
