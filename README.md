@@ -77,7 +77,3 @@ Receipt webhook payload shape supports either:
 
 Severe webhook incidents are persisted to `reported_errors` and sent to Telegram when configured.
 If `INCIDENT_REPORT_BASE_URL` is set, Telegram incident alerts include a direct link to `/tools/incidents/:id`.
-
-Temporary local receipts viewer:
-
-- `/tools/receipts-local`

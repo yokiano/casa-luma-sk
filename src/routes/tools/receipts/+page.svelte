@@ -142,7 +142,7 @@
   <header class="space-y-2">
     <h2 class="text-2xl font-semibold text-[#2c2925]">Receipts</h2>
     <p class="text-sm text-[#7a6550]/80">
-      Review Loyverse receipts with full line item details, payment splits, and timestamps.
+      Review receipts stored in Neon with full line item details, payment splits, and timestamps.
     </p>
   </header>
 

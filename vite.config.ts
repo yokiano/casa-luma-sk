@@ -10,7 +10,7 @@ export default defineConfig({
 	server: {
 		host: '0.0.0.0',
 		port: Number(process.env.PORT) || 5173,
-		allowedHosts: ["c96c-1-10-165-126.ngrok-free.app"]
+		allowedHosts: [".ngrok-free.app"]
 	  },
 
 	optimizeDeps: {
@@ -27,23 +27,19 @@ export default defineConfig({
 		projects: [
 			{
 				extends: './vite.config.ts',
-
 				test: {
 					name: 'client',
 					environment: 'browser',
-
 					browser: {
 						enabled: true,
 						provider: 'playwright',
 						instances: [{ browser: 'chromium' }]
 					},
-
 					include: ['src/**/*.svelte.{test,spec}.{js,ts}'],
 					exclude: ['src/lib/server/**'],
 					setupFiles: ['./vitest-setup-client.ts']
 				}
 			},
-
 			{
 				extends: './vite.config.ts',
 

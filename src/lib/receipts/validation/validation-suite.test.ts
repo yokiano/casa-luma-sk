@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { LoyverseReceipt } from '$lib/server/loyverse';
+import type { LoyverseReceipt } from '$lib/receipts/types';
 import {
   createAlwaysFailValidationRule,
   createDefaultReceiptValidationSuite,

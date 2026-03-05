@@ -1,4 +1,4 @@
-import type { LoyverseReceipt } from '$lib/server/loyverse';
+import type { LoyverseReceipt } from '$lib/receipts/types';
 
 export const ONE_HOUR_ITEM_ID = 'e034b61e-88e0-43bc-a72b-eec3a301a7b2';
 export const ONE_HOUR_TO_DAY_ITEM_ID = 'c86ad6d4-f8ff-4a43-bd9d-e4988d98c0c5';

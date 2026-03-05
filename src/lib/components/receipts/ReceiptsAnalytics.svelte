@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { LoyverseReceipt } from '$lib/server/loyverse';
+  import type { LoyverseReceipt } from '$lib/receipts/types';
   import { scaleBand, scalePoint } from 'd3-scale';
   import { BarChart, LineChart } from 'layerchart';
   import * as Chart from '$lib/components/ui/chart';

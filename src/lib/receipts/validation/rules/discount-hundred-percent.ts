@@ -1,4 +1,4 @@
-import type { LoyverseReceiptDiscount } from '$lib/server/loyverse';
+import type { LoyverseReceiptDiscount } from '$lib/receipts/types';
 import type { ReceiptValidationRule } from '../types';
 
 export interface HundredPercentDiscountRuleOptions {

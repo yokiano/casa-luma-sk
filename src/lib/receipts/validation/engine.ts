@@ -1,4 +1,4 @@
-import type { LoyverseReceipt } from '$lib/server/loyverse';
+import type { LoyverseReceipt } from '$lib/receipts/types';
 import type {
   ReceiptValidationContext,
   ReceiptValidationFinding,
