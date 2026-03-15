@@ -84,6 +84,7 @@ export class MenuItemsPropertiesResponseDTO {
       thaiName: this.__props['Thai Name'],
       recommended: this.__props['Recommended'],
       thaiDescription: this.__props['Thai Description'],
+      addOns: this.__props['Add-ons'],
       createdTime: this.__props['Created time'],
     }
   }
@@ -232,6 +233,11 @@ export class MenuItemsPropertiesResponseDTO {
       rich_text: this.__props['Thai Description']?.rich_text,
     }
   }
+
+  get addOnsIds() {
+    return (this.__props['Add-ons']?.relation as unknown as Array<{ id: string }>).map((item) => item.id)  
+  }
+
 
   get createdTime() {
     return this.__props['Created time']?.created_time

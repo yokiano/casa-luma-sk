@@ -73,6 +73,7 @@ export class FamiliesPropertiesResponseDTO {
       howDidYouHearAboutUs: this.__props['How did you hear about us?'],
       familyName: this.__props['Family Name'],
       customerNumber: this.__props['Customer Code'],
+      createdTime: this.__props['Created time'],
     }
   }
 
@@ -144,5 +145,9 @@ export class FamiliesPropertiesResponseDTO {
       links: this.__props['Customer Code']?.rich_text ? this.__props['Customer Code'].rich_text.filter((item) => item.href?.length).map((item) => item.href) : [],
       rich_text: this.__props['Customer Code']?.rich_text,
     }
+  }
+
+  get createdTime() {
+    return this.__props['Created time']?.created_time
   }
 }

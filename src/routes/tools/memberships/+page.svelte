@@ -3,7 +3,7 @@
 	import { toast } from 'svelte-sonner';
 	import { getMemberships, deleteMembership, getFamilyDetails } from '$lib/memberships.remote';
 	import MembershipDialog from './MembershipDialog.svelte';
-	import { ChevronDown, ChevronUp, MoreVertical, Pencil, Trash2, Loader2 } from 'lucide-svelte';
+	import { ChevronDown, ChevronUp, MoreVertical, Pencil, Trash2, Loader2, ArrowUpDown, CalendarDays } from 'lucide-svelte';
 
 	type FamilySummary = {
 		id: string;
@@ -38,6 +38,30 @@
 	let expandedMemberships = $state<Set<string>>(new Set());
 	let loadingFamilyDetails = $state<Set<string>>(new Set());
 
+	// Sorting state
+	let sortBy = $state<'endDate' | 'createdTime' | 'familyName'>('endDate');
+	let sortOrder = $state<'asc' | 'desc'>('asc');
+
+	const sortedMemberships = $derived(
+		[...memberships].sort((a, b) => {
+			let aVal: string, bVal: string;
+			if (sortBy === 'endDate') {
+				aVal = a.endDate ?? '9999-12-31';
+				bVal = b.endDate ?? '9999-12-31';
+			} else if (sortBy === 'createdTime') {
+				aVal = a.createdTime;
+				bVal = b.createdTime;
+			} else {
+				aVal = a.family?.familyName ?? '';
+				bVal = b.family?.familyName ?? '';
+			}
+
+			if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1;
+			if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
+			return 0;
+		})
+	);
+
 	// Actions menu state
 	let openMenuId = $state<string | null>(null);
 
@@ -50,6 +74,25 @@
 		const date = new Date(value);
 		if (Number.isNaN(date.getTime())) return value;
 		return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+	};
+
+	const getFlexiPassDate = () => {
+		const date = new Date();
+		date.setDate(date.getDate() + 60);
+		return date.toISOString().split('T')[0];
+	};
+
+	let flexiPassDate = $state(getFlexiPassDate());
+
+	const handleCalculateFlexiPass = async () => {
+		flexiPassDate = getFlexiPassDate();
+
+		try {
+			await navigator.clipboard.writeText(flexiPassDate);
+			toast.success(`Flexi pass end date: ${flexiPassDate} copied.`);
+		} catch {
+			toast.success(`Flexi pass end date: ${flexiPassDate}`);
+		}
 	};
 
 	const runSearch = async (query: string) => {
@@ -224,8 +267,9 @@
 
 	<div class="flex flex-col gap-3 rounded-3xl border border-[#e3d7cc] bg-white/80 p-4 sm:flex-row sm:items-center">
 		<div class="flex-1">
-			<label class="text-xs font-semibold uppercase tracking-wide text-[#7a6550]">Search</label>
+			<label for="search-input" class="text-xs font-semibold uppercase tracking-wide text-[#7a6550]">Search</label>
 			<input
+				id="search-input"
 				type="text"
 				placeholder="Family name, customer code, or phone number"
 				class="mt-2 h-11 w-full rounded-2xl border border-[#d9d0c7] bg-white px-4 text-sm focus:border-[#7a6550] focus:outline-none focus:ring-2 focus:ring-[#cdb69f]/40"
@@ -233,13 +277,56 @@
 				oninput={(event) => handleSearchInput((event.target as HTMLInputElement).value)}
 			/>
 		</div>
-		<div class="text-sm text-[#7a6550]/70">
-			{#if activeSearch}
-				Showing results for "{activeSearch}"
-			{:else}
-				Showing the most recent memberships
-			{/if}
+		<div class="sm:w-56">
+			<label for="sort-select" class="text-xs font-semibold uppercase tracking-wide text-[#7a6550]">Sort By</label>
+			<div class="mt-2 flex gap-1">
+				<select
+					id="sort-select"
+					class="h-11 flex-1 rounded-2xl border border-[#d9d0c7] bg-white px-3 text-sm focus:border-[#7a6550] focus:outline-none focus:ring-2 focus:ring-[#cdb69f]/40"
+					value={sortBy}
+					onchange={(e) => (sortBy = (e.target as HTMLSelectElement).value as any)}
+				>
+					<option value="endDate">Validity (End Date)</option>
+					<option value="createdTime">Creation Date</option>
+					<option value="familyName">Family Name</option>
+				</select>
+				<button
+					type="button"
+					class="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#d9d0c7] bg-white text-[#7a6550] hover:bg-[#fdfbf9]"
+					onclick={() => (sortOrder = sortOrder === 'asc' ? 'desc' : 'asc')}
+					title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+				>
+					<ArrowUpDown class="h-4 w-4" />
+				</button>
+			</div>
 		</div>
+	</div>
+
+	<div class="flex flex-col gap-3 rounded-3xl border border-[#e3d7cc] bg-[#faf6f2] p-4 sm:flex-row sm:items-center sm:justify-between">
+		<div>
+			<p class="text-xs font-semibold uppercase tracking-wide text-[#7a6550]">Flexi Pass</p>
+			<p class="mt-1 text-sm text-[#5c4a3d]">60 days from today: <span class="font-semibold">{flexiPassDate}</span></p>
+		</div>
+		<button
+			type="button"
+			class="inline-flex items-center justify-center gap-2 rounded-2xl border border-[#d9d0c7] bg-white px-4 py-2 text-sm font-medium text-[#7a6550] transition hover:bg-[#fdfbf9]"
+			onclick={handleCalculateFlexiPass}
+		>
+			<CalendarDays class="h-4 w-4" />
+			<span>Calculate Flexi 60 Days</span>
+		</button>
+	</div>
+
+	<div class="text-sm text-[#7a6550]/70 px-4">
+		{#if activeSearch}
+			Showing results for "{activeSearch}"
+		{:else}
+			Showing all memberships sorted by {sortBy === 'endDate'
+				? 'validity'
+				: sortBy === 'createdTime'
+					? 'creation date'
+					: 'family name'}
+		{/if}
 	</div>
 
 	{#if isLoading}
@@ -252,7 +339,7 @@
 		</div>
 	{:else}
 		<div class="grid gap-3">
-			{#each memberships as membership (membership.id)}
+			{#each sortedMemberships as membership (membership.id)}
 				{@const isExpanded = expandedMemberships.has(membership.id)}
 				{@const isMenuOpen = openMenuId === membership.id}
 				<div class="rounded-3xl border border-[#e3d7cc] bg-white/90 shadow-sm">

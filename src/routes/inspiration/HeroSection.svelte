@@ -1,12 +1,31 @@
 <script lang="ts">
 	import { scrollY } from 'svelte/reactivity/window';
 
+	type HeroImage = {
+		src: string;
+		alt: string;
+	};
+
+	let {
+		heroImage = null
+	}: {
+		heroImage?: HeroImage | null;
+	} = $props();
+
 	// Derived parallax values using reactive scrollY
 	let heroParallax = $derived((scrollY.current ?? 0) * 0.5);
 	let heroOpacity = $derived(Math.max(0, 1 - (scrollY.current ?? 0) / 600));
 	let shapeRotate = $derived((scrollY.current ?? 0) * 0.1);
 	let shapeY = $derived((scrollY.current ?? 0) * -0.2);
 	let scrollIndicatorH = $derived(Math.max(0, 64 - (scrollY.current ?? 0) * 0.3));
+
+	const fallbackHeroImage = {
+		src: 'https://images.unsplash.com/photo-1544776193-352d25ca82cd?q=80&w=800&auto=format&fit=crop',
+		alt: 'Child in natural play space'
+	};
+
+	const heroImageSrc = $derived(heroImage?.src || fallbackHeroImage.src);
+	const heroImageAlt = $derived(heroImage?.alt || fallbackHeroImage.alt);
 </script>
 
 <section class="relative h-screen flex flex-col items-center justify-center overflow-hidden">
@@ -48,8 +67,8 @@
 		style:transform="translateY({(scrollY.current ?? 0) * -0.38}px) rotate({(scrollY.current ?? 0) * 0.04}deg)"
 	>
 		<img
-			src="https://images.unsplash.com/photo-1544776193-352d25ca82cd?q=80&w=800&auto=format&fit=crop"
-			alt="Child in natural play space"
+			src={heroImageSrc}
+			alt={heroImageAlt}
 			class="w-full h-full object-cover"
 		/>
 	</div>

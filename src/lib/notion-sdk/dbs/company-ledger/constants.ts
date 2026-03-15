@@ -18,7 +18,8 @@ export const COMPANY_LEDGER_PROP_VALUES = {
   "Cafe",
   "Garden",
   "Store",
-  "Management"
+  "Management",
+  "Breakfast Service"
 ] as const,
 "owner": [
   "Roza",

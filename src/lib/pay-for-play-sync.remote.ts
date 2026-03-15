@@ -44,12 +44,6 @@ function comparePayForPlayItems(
     diffs.push(`Category mismatch: "${notionCategory}" vs "${loyverseCategory || 'Uncategorized'}"`);
   }
 
-  // Compare Image Presence
-  const notionImage = notionItem.properties.image?.urls?.[0];
-  if (notionImage && !loyverseItem.image_url) {
-    diffs.push('Image missing in Loyverse');
-  }
-
   return diffs;
 }
 
@@ -138,10 +132,9 @@ export const getPayForPlaySyncStatus = query(async () => {
 export const syncPayForPlayItems = command(
   v.object({
     itemIds: v.optional(v.array(v.string())),
-    deleteOrphans: v.optional(v.boolean()),
-    forceImageSync: v.optional(v.boolean())
+    deleteOrphans: v.optional(v.boolean())
   }),
-  async ({ itemIds, deleteOrphans, forceImageSync }) => {
+  async ({ itemIds, deleteOrphans }) => {
     const notionDb = new PayForPlayItemsDatabase({ notionSecret: NOTION_API_KEY });
     const report: SyncReport = { created: 0, updated: 0, linked: 0, deleted: 0, errors: [], itemResults: [] };
 
@@ -190,8 +183,6 @@ export const syncPayForPlayItems = command(
           const categoryName = nItem.properties.category?.name || 'Uncategorized';
           const categoryId = await resolveCategoryId(categoryName);
           const price = nItem.properties.price ?? 0;
-          const imageUrl = nItem.properties.image?.urls?.[0];
-
           let targetLoyverseItem: any;
           let isNew = false;
 
@@ -205,7 +196,7 @@ export const syncPayForPlayItems = command(
 
           if (!isNew && targetLoyverseItem) {
             const diffs = comparePayForPlayItems(nItem, targetLoyverseItem, loyverseCategories);
-            if (diffs.length === 0 && (!forceImageSync || !imageUrl)) {
+            if (diffs.length === 0) {
               report.itemResults.push({
                 notionId: nItem.id,
                 loyverseId: targetLoyverseItem.id,
@@ -241,16 +232,6 @@ export const syncPayForPlayItems = command(
             finalLid = targetLoyverseItem.id;
             await loyverse.updateItem(finalLid, payload);
             report.updated++;
-          }
-
-          // Upload image if available
-          if (imageUrl) {
-            try {
-              await loyverse.uploadImage(finalLid, imageUrl);
-            } catch (imgErr: any) {
-              console.warn(`[Image Sync] Warning: Could not upload image for pay for play item "${name}": ${imgErr.message}`);
-              report.errors.push(`Image upload failed for "${name}" (Item synced anyway)`);
-            }
           }
 
           report.itemResults.push({ 

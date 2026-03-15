@@ -32,7 +32,8 @@ export const FAMILIES_PROPS_TO_IDS = {
   "dietaryPreferenceFamily": "klPk",
   "howDidYouHearAboutUs": "mKsK",
   "familyName": "title",
-  "customerNumber": "hO%3Eb"
+  "customerNumber": "hO%3Eb",
+  "createdTime": "qK%3Df"
 } as const
 export const FAMILIES_IDS_TO_PROPS = {
   "AA%5B%5B": "mainEmail",
@@ -46,7 +47,8 @@ export const FAMILIES_IDS_TO_PROPS = {
   "klPk": "dietaryPreferenceFamily",
   "mKsK": "howDidYouHearAboutUs",
   "title": "familyName",
-  "hO%3Eb": "customerNumber"
+  "hO%3Eb": "customerNumber",
+  "qK%3Df": "createdTime"
 } as const
 export const FAMILIES_PROPS_TO_TYPES = {
   "mainEmail": "email",
@@ -60,7 +62,8 @@ export const FAMILIES_PROPS_TO_TYPES = {
   "dietaryPreferenceFamily": "select",
   "howDidYouHearAboutUs": "select",
   "familyName": "title",
-  "customerNumber": "rich_text"
+  "customerNumber": "rich_text",
+  "createdTime": "created_time"
 } as const
 
   export type FamiliesDTOProperties = keyof typeof FAMILIES_PROPS_TO_IDS

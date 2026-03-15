@@ -29,6 +29,7 @@ export type MenuItemsPropertiesPatch = {
   thaiName?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   recommended?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'checkbox' }>['checkbox']
   thaiDescription?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
+  addOns?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'relation' }>['relation']
 }
 
   
@@ -357,6 +358,13 @@ export class MenuItemsPatchDTO {
                     annotations: props.thaiDescription.annotations
                   },
                 ]
+      }
+    }
+
+    if (props?.addOns !== undefined) {
+      this.__data.properties['owUh'] = {
+        type: 'relation',
+        relation: props.addOns,
       }
     }
   }

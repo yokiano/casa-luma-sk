@@ -3,6 +3,7 @@ import {
 DatabaseObjectResponse,
 StringRequest,
 CheckboxPropertyItemObjectResponse,
+CreatedTimePropertyItemObjectResponse,
 EmailPropertyItemObjectResponse,
 PhoneNumberPropertyItemObjectResponse,
 RelationPropertyItemObjectResponse,
@@ -14,6 +15,7 @@ QueryDatabaseBodyParameters,
 TimestampCreatedTimeFilter,
 TimestampLastEditedTimeFilter,
 CheckboxPropertyFilter,
+DatePropertyFilter,
 RelationPropertyFilter,
 TextPropertyFilter
 } from '../../core/types/notion-api.types'
@@ -32,7 +34,8 @@ export interface FamiliesResponse extends WithOptional<Omit<DatabaseObjectRespon
     "Dietary Preference (Family)": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'None', color: 'gray' } | { id: StringRequest, name: 'Vegetarian', color: 'green' } | { id: StringRequest, name: 'Vegan', color: 'green' } | { id: StringRequest, name: 'Gluten Free', color: 'yellow' } | { id: StringRequest, name: 'Other', color: 'default' }},
     "How did you hear about us?": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'Instagram', color: 'pink' } | { id: StringRequest, name: 'Facebook', color: 'blue' } | { id: StringRequest, name: 'Google', color: 'yellow' } | { id: StringRequest, name: 'Friend', color: 'green' } | { id: StringRequest, name: 'Walk-in', color: 'orange' } | { id: StringRequest, name: 'Other', color: 'default' }},
     "Family Name": TitlePropertyItemObjectResponse,
-    "Customer Code": RichTextPropertyItemObjectResponse
+    "Customer Code": RichTextPropertyItemObjectResponse,
+    "Created time": CreatedTimePropertyItemObjectResponse
   }
 }
 
@@ -84,8 +87,9 @@ type FamiliesHowDidYouHearAboutUsPropertyFilter =
 
 type FamiliesFamilyNamePropertyFilter = TextPropertyFilter
 type FamiliesCustomerNumberPropertyFilter = TextPropertyFilter
+type FamiliesCreatedTimePropertyFilter = DatePropertyFilter
 
-export type FamiliesPropertyFilter = { mainEmail: FamiliesMainEmailPropertyFilter } | { livesInKohPhangan: FamiliesLivesInKohPhanganPropertyFilter } | { loyverseCustomerId: FamiliesLoyverseCustomerIdPropertyFilter } | { status: FamiliesStatusPropertyFilter } | { nationality: FamiliesNationalityPropertyFilter } | { members: FamiliesMembersPropertyFilter } | { mainPhone: FamiliesMainPhonePropertyFilter } | { specialNotes: FamiliesSpecialNotesPropertyFilter } | { dietaryPreferenceFamily: FamiliesDietaryPreferenceFamilyPropertyFilter } | { howDidYouHearAboutUs: FamiliesHowDidYouHearAboutUsPropertyFilter } | { familyName: FamiliesFamilyNamePropertyFilter } | { customerNumber: FamiliesCustomerNumberPropertyFilter }
+export type FamiliesPropertyFilter = { mainEmail: FamiliesMainEmailPropertyFilter } | { livesInKohPhangan: FamiliesLivesInKohPhanganPropertyFilter } | { loyverseCustomerId: FamiliesLoyverseCustomerIdPropertyFilter } | { status: FamiliesStatusPropertyFilter } | { nationality: FamiliesNationalityPropertyFilter } | { members: FamiliesMembersPropertyFilter } | { mainPhone: FamiliesMainPhonePropertyFilter } | { specialNotes: FamiliesSpecialNotesPropertyFilter } | { dietaryPreferenceFamily: FamiliesDietaryPreferenceFamilyPropertyFilter } | { howDidYouHearAboutUs: FamiliesHowDidYouHearAboutUsPropertyFilter } | { familyName: FamiliesFamilyNamePropertyFilter } | { customerNumber: FamiliesCustomerNumberPropertyFilter } | { createdTime: FamiliesCreatedTimePropertyFilter }
 
 export type FamiliesQuery = Omit<QueryDatabaseBodyParameters, 'filter' | 'sorts'> & {
   sorts?: Array<

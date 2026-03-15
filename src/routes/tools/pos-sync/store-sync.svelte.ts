@@ -12,8 +12,6 @@ export class StoreSyncState {
   // Options
   deleteOrphans = $state(false);
   hideSynced = $state(false);
-  forceImageSync = $state(false);
-
   // Computed: Filtered items
   filteredItems = $derived(this.items.filter(i => {
     if (this.hideSynced && i.status === 'SYNCED') return false;
@@ -71,8 +69,7 @@ export class StoreSyncState {
 
     try {
       const report = await syncStoreItems({ 
-        deleteOrphans: this.deleteOrphans,
-        forceImageSync: this.forceImageSync
+        deleteOrphans: this.deleteOrphans
       });
       this.applyReport(report);
       await this.fetchStatus();
@@ -99,8 +96,7 @@ export class StoreSyncState {
 
     try {
       const report = await syncStoreItems({ 
-        itemIds,
-        forceImageSync: this.forceImageSync
+        itemIds
       });
       this.applyReport(report);
       await this.fetchStatus();

@@ -3,7 +3,10 @@ export const SHIFTS_PROP_VALUES = {
   "Opening (08:30 - 17:00)",
   "Closing (10:30 - 19:00)",
   "Custom",
-  "No-Show"
+  "Part time 14:00-18:00",
+  "No-Show",
+  "ALL Day 8:40-18:00",
+  "Part time 08:30-13:00"
 ] as const,
 "status": [
   "Planned",
@@ -19,7 +22,8 @@ export const SHIFTS_PROP_VALUES = {
   "Roza",
   "Karni",
   "Ohad",
-  "Yarden"
+  "Yarden",
+  "kwan"
 ] as const,
 }
 

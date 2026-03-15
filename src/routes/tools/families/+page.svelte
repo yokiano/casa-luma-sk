@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { toast } from 'svelte-sonner';
-	import { searchFamilies } from '$lib/tools/families/families.remote';
+	import { searchFamilies, syncFamilyToLoyverse } from '$lib/tools/families/families.remote';
 	import type { FamilySummary } from '$lib/tools/families/families.server';
 	import { Search, Users, Phone, Mail, Hash, User, Baby, Heart, Info, Loader2 } from 'lucide-svelte';
 
@@ -9,6 +9,7 @@
 	let isLoading = $state(false);
 	let hasSearched = $state(false);
 	let searchTimeout: ReturnType<typeof setTimeout> | null = null;
+	let syncingFamilyIds = $state<Record<string, boolean>>({});
 
 	const runSearch = async (query: string) => {
 		if (!query) {
@@ -52,6 +53,40 @@
 		if (type?.toLowerCase().includes('child') || type?.toLowerCase().includes('kid')) return Baby;
 		if (type?.toLowerCase().includes('parent') || type?.toLowerCase().includes('mother') || type?.toLowerCase().includes('father')) return Heart;
 		return User;
+	};
+
+	const handleSyncToLoyverse = async (family: FamilySummary) => {
+		if (family.loyverseCustomerId || syncingFamilyIds[family.id]) return;
+
+		syncingFamilyIds = { ...syncingFamilyIds, [family.id]: true };
+
+		try {
+			const result = await syncFamilyToLoyverse({ familyId: family.id });
+			families = families.map((item) =>
+				item.id === family.id
+					? {
+						...item,
+						customerCode: result.customerCode ?? item.customerCode,
+						loyverseCustomerId: result.loyverseCustomerId,
+						mainPhone: result.mainPhone ?? item.mainPhone,
+						mainEmail: result.mainEmail ?? item.mainEmail,
+						status: result.status ?? item.status
+					}
+					: item
+			);
+
+			toast.success(
+				result.alreadySynced
+					? `${result.familyName} is already linked to Loyverse.`
+					: `${result.familyName} synced to Loyverse.`
+			);
+		} catch (error) {
+			console.error('families: sync to Loyverse failed', error);
+			toast.error(error instanceof Error ? error.message : 'Failed to sync family to Loyverse.');
+		} finally {
+			const { [family.id]: _, ...rest } = syncingFamilyIds;
+			syncingFamilyIds = rest;
+		}
 	};
 </script>
 
@@ -105,12 +140,37 @@
 					<div class="group flex flex-col rounded-3xl border border-[#e3d7cc] bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-md">
 						<!-- Family Header -->
 						<div class="p-6 pb-4">
-							<div class="mb-2 flex items-start justify-between gap-2">
-								<h2 class="text-xl font-semibold text-[#2c2925] line-clamp-1">{family.familyName}</h2>
-								{#if family.customerCode}
-									<span class="shrink-0 rounded-lg bg-[#f0e6db] px-2 py-1 text-xs font-bold tracking-tight text-[#7a6550]">
-										{family.customerCode}
-									</span>
+							<div class="mb-2 flex items-start justify-between gap-3">
+								<div class="min-w-0">
+									<h2 class="text-xl font-semibold text-[#2c2925] line-clamp-1">{family.familyName}</h2>
+									<div class="mt-2 flex flex-wrap items-center gap-2">
+										{#if family.customerCode}
+											<span class="shrink-0 rounded-lg bg-[#f0e6db] px-2 py-1 text-xs font-bold tracking-tight text-[#7a6550]">
+												{family.customerCode}
+											</span>
+										{/if}
+										{#if family.loyverseCustomerId}
+											<span class="shrink-0 rounded-lg bg-[#edf5ec] px-2 py-1 text-xs font-bold tracking-tight text-[#4c7650]">
+												Loyverse synced
+											</span>
+										{/if}
+									</div>
+								</div>
+								{#if !family.loyverseCustomerId}
+									<button
+										type="button"
+										class="inline-flex shrink-0 items-center gap-2 rounded-xl border border-[#d8c7b8] bg-[#faf6f2] px-3 py-2 text-xs font-semibold uppercase tracking-wide text-[#7a6550] transition hover:border-[#b99d85] hover:bg-[#f4ece4] disabled:cursor-not-allowed disabled:opacity-60"
+										onclick={() => handleSyncToLoyverse(family)}
+										disabled={syncingFamilyIds[family.id]}
+									>
+										{#if syncingFamilyIds[family.id]}
+											<Loader2 size={14} class="animate-spin" />
+											<span>Syncing...</span>
+										{:else}
+											<Hash size={14} />
+											<span>Sync to Loyverse</span>
+										{/if}
+									</button>
 								{/if}
 							</div>
 							

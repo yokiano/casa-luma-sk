@@ -11,9 +11,64 @@
     {
       "name": "Job Prospects",
       "id": "505310d2-281e-44f1-9392-034539d209cf"
+    },
+    {
+      "name": "📄 Templates Library",
+      "id": "f7b23692-5454-44de-b671-f741a9276c55"
+    },
+    {
+      "name": "Owner Shifts",
+      "id": "e1ed09bb-3e20-4ff4-96a6-bd01ca74447a"
+    },
+    {
+      "name": "Branding Assets",
+      "id": "36b36604-dae8-440a-813d-802610ac868a"
     }
   ],
   "databases": {
+    "9b7b4439-a166-4f34-9ea8-da91c8e21add": {
+      "_name": "Website Images",
+      "varName": "websiteImages",
+      "pathName": "website-images",
+      "properties": {
+        "%3Bfir": {
+          "_name": "Section",
+          "_type": "select",
+          "varName": "section",
+          "readOnly": false
+        },
+        "Rjej": {
+          "_name": "Active",
+          "_type": "checkbox",
+          "varName": "active",
+          "readOnly": false
+        },
+        "VKLn": {
+          "_name": "Alt Text",
+          "_type": "rich_text",
+          "varName": "altText",
+          "readOnly": false
+        },
+        "%5Bd%5C%5B": {
+          "_name": "Image",
+          "_type": "files",
+          "varName": "image",
+          "readOnly": false
+        },
+        "title": {
+          "_name": "Name",
+          "_type": "title",
+          "varName": "name",
+          "readOnly": false
+        },
+        "C%7BuL": {
+          "_name": "slug",
+          "_type": "rich_text",
+          "varName": "slug",
+          "readOnly": false
+        }
+      }
+    },
     "283fc77d-b4f3-80c1-813f-ef4b9bb08f8f": {
       "_name": "Procurement",
       "varName": "procurement",
@@ -306,6 +361,12 @@
           "_name": "Thai Description",
           "_type": "rich_text",
           "varName": "thaiDescription",
+          "readOnly": false
+        },
+        "owUh": {
+          "_name": "Add-ons",
+          "_type": "relation",
+          "varName": "addOns",
           "readOnly": false
         },
         "avHW": {
@@ -1189,31 +1250,6 @@
         }
       }
     },
-    "bfcd6bd8-b292-405e-8fde-6e099d0fd7af": {
-      "_name": "Team Calendar",
-      "varName": "teamCalendar",
-      "pathName": "team-calendar",
-      "properties": {
-        "%3Bxs%5D": {
-          "_name": "Date",
-          "_type": "date",
-          "varName": "date",
-          "readOnly": false
-        },
-        "MzYJ": {
-          "_name": "Description",
-          "_type": "rich_text",
-          "varName": "description",
-          "readOnly": false
-        },
-        "title": {
-          "_name": "Event Name",
-          "_type": "title",
-          "varName": "eventName",
-          "readOnly": false
-        }
-      }
-    },
     "ad6d2ea9-e12c-4665-87d9-f3cd2e1d3479": {
       "_name": "POS Modifiers",
       "varName": "posModifiers",
@@ -1673,6 +1709,12 @@
           "_type": "rich_text",
           "varName": "customerNumber",
           "readOnly": false
+        },
+        "qK%3Df": {
+          "_name": "Created time",
+          "_type": "created_time",
+          "varName": "createdTime",
+          "readOnly": true
         }
       }
     },

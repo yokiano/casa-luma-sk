@@ -14,6 +14,7 @@ export type FamilySummary = {
 	id: string;
 	familyName: string;
 	customerCode: string | null;
+	loyverseCustomerId: string | null;
 	mainPhone: string | null;
 	mainEmail: string | null;
 	status: string | null;
@@ -31,6 +32,7 @@ export const toFamilySummary = (dto: FamiliesResponseDTO, members: FamilyMemberS
 		id: dto.id,
 		familyName: dto.properties.familyName?.text ?? 'Untitled Family',
 		customerCode: dto.properties.customerNumber?.text ?? null,
+		loyverseCustomerId: dto.properties.loyverseCustomerId?.text ?? null,
 		mainPhone: dto.properties.mainPhone ?? null,
 		mainEmail: dto.properties.mainEmail ?? null,
 		status: dto.properties.status?.name ?? null,
@@ -148,6 +150,13 @@ export const fetchFamiliesByIds = async (familyIds: string[]): Promise<Map<strin
 export const fetchFamilyById = async (id: string): Promise<FamilySummary | null> => {
 	const families = await fetchFamiliesByIds([id]);
 	return families.get(id) ?? null;
+};
+
+export const upsertFamilyCache = (summary: FamilySummary) => {
+	familyCache.set(summary.id, {
+		summary,
+		timestamp: Date.now()
+	});
 };
 
 export const searchFamiliesData = async (search: string) => {

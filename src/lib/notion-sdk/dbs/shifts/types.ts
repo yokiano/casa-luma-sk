@@ -23,11 +23,11 @@ import { SHIFTS_PROPS_TO_IDS } from './constants'
 export interface ShiftsResponse extends WithOptional<Omit<DatabaseObjectResponse, 'properties'>, 'title'| 'description'| 'is_inline'| 'url'| 'public_url'> {
   properties: {
     "Employee": RelationPropertyItemObjectResponse,
-    "Type": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'Opening (08:30 - 17:00)', color: 'yellow' } | { id: StringRequest, name: 'Closing (10:30 - 19:00)', color: 'blue' } | { id: StringRequest, name: 'Custom', color: 'gray' } | { id: StringRequest, name: 'No-Show', color: 'red' }},
+    "Type": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'Opening (08:30 - 17:00)', color: 'yellow' } | { id: StringRequest, name: 'Closing (10:30 - 19:00)', color: 'blue' } | { id: StringRequest, name: 'Custom', color: 'gray' } | { id: StringRequest, name: 'Part time 14:00-18:00', color: 'default' } | { id: StringRequest, name: 'No-Show', color: 'red' } | { id: StringRequest, name: 'ALL Day 8:40-18:00', color: 'brown' } | { id: StringRequest, name: 'Part time 08:30-13:00', color: 'green' }},
     "Status": Omit<StatusPropertyItemObjectResponse, 'status'> & { status: { id: StringRequest, name: 'Planned', color: 'gray' } | { id: StringRequest, name: 'Confirmed', color: 'blue' } | { id: StringRequest, name: 'Completed', color: 'green' } | { id: StringRequest, name: 'Cancelled', color: 'red' } | { id: StringRequest, name: 'Sick Day (Paid)', color: 'pink' } | { id: StringRequest, name: 'Sick Day (Unpaid)', color: 'red' } | { id: StringRequest, name: 'Day Off (Paid)', color: 'green' } | { id: StringRequest, name: 'Day Off (Unpaid)', color: 'orange' }},
     "Shift Time": DatePropertyItemObjectResponse,
     "Shift Note": TitlePropertyItemObjectResponse,
-    "OT Approver": Omit<MultiSelectPropertyItemObjectResponse, 'multi_select'> & { multi_select: [{ id: StringRequest, name: 'Roza', color: 'orange' } | { id: StringRequest, name: 'Karni', color: 'gray' } | { id: StringRequest, name: 'Ohad', color: 'red' } | { id: StringRequest, name: 'Yarden', color: 'yellow' }]},
+    "OT Approver": Omit<MultiSelectPropertyItemObjectResponse, 'multi_select'> & { multi_select: [{ id: StringRequest, name: 'Roza', color: 'orange' } | { id: StringRequest, name: 'Karni', color: 'gray' } | { id: StringRequest, name: 'Ohad', color: 'red' } | { id: StringRequest, name: 'Yarden', color: 'yellow' } | { id: StringRequest, name: 'kwan', color: 'pink' }]},
     "OT": NumberPropertyItemObjectResponse,
     "Role": RelationPropertyItemObjectResponse
   }

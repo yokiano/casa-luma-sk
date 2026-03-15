@@ -2,6 +2,7 @@ import { NOTION_API_KEY } from '$env/static/private';
 import {
   FamiliesDatabase,
   FamiliesPatchDTO,
+  FamiliesResponseDTO,
   type FamiliesDietaryPreferenceFamilyPropertyType,
   type FamiliesHowDidYouHearAboutUsPropertyType,
 } from '$lib/notion-sdk/dbs/families';
@@ -64,6 +65,34 @@ function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function normalizeLoyversePhoneNumber(input: string): string {
+  const trimmed = (input ?? '').trim();
+  if (!trimmed) return '';
+
+  const compact = trimmed.replace(/[\s().-]/g, '');
+
+  if (compact.startsWith('+')) {
+    const normalized = `+${compact.slice(1).replace(/\D/g, '')}`;
+    return normalized.length > 1 ? normalized : '';
+  }
+
+  if (compact.startsWith('00')) {
+    const normalized = `+${compact.slice(2).replace(/\D/g, '')}`;
+    return normalized.length > 1 ? normalized : '';
+  }
+
+  return compact.replace(/\D/g, '');
+}
+
+function isProbablyValidLoyversePhoneNumber(phone: string): boolean {
+  const digitsOnly = phone.startsWith('+') ? phone.slice(1) : phone;
+  return /^\d{6,15}$/.test(digitsOnly);
+}
+
+function isLoyversePhoneValidationError(error: unknown): boolean {
+  return error instanceof Error && error.message.includes("object.phone_number");
+}
+
 async function notifyAfterSuccessfulLoyverseCreation(_payload: {
   familyPageId: string;
   customerCode?: string;
@@ -81,18 +110,26 @@ async function syncFamilyToLoyverseWithRetry(params: {
   const maxAttempts = 6;
   const baseDelayMs = 800;
   let lastError: unknown = null;
+  const normalizedPhone = normalizeLoyversePhoneNumber(params.phone);
+
+  if (!isProbablyValidLoyversePhoneNumber(normalizedPhone)) {
+    return {
+      ok: false,
+      lastError: new Error(`Invalid phone number for Loyverse: "${params.phone}"`),
+    };
+  }
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       const loyverseName = getNewLoyverseName(params.familyName.trim(), params.customerCode);
 
-      let loyverseCustomer = await loyverse.createOrUpdateCustomer({
-        customer_code: params.customerCode,
-        name: loyverseName,
-        email: params.email?.trim() ? params.email.trim() : undefined,
-        phone_number: params.phone.trim(),
-        note: `Created from Casa Luma customer intake form [${params.customerCode}]`,
-      });
+        let loyverseCustomer = await loyverse.createOrUpdateCustomer({
+          customer_code: params.customerCode,
+          name: loyverseName,
+          email: params.email?.trim() ? params.email.trim() : undefined,
+          phone_number: normalizedPhone,
+          note: `Created from Casa Luma customer intake form [${params.customerCode}]`,
+        });
 
       if (loyverseCustomer.name !== loyverseName) {
         loyverseCustomer = await loyverse.createOrUpdateCustomer({
@@ -105,6 +142,13 @@ async function syncFamilyToLoyverseWithRetry(params: {
       return { ok: true, customerId: loyverseCustomer.id };
     } catch (error) {
       lastError = error;
+      if (isLoyversePhoneValidationError(error)) {
+        return {
+          ok: false,
+          lastError: new Error(`Invalid phone number for Loyverse: "${params.phone}" -> "${normalizedPhone}"`),
+        };
+      }
+
       const waitMs = baseDelayMs * 2 ** (attempt - 1);
       console.error(`[intake-actions] Loyverse sync attempt ${attempt}/${maxAttempts} failed:`, error);
 
@@ -115,6 +159,87 @@ async function syncFamilyToLoyverseWithRetry(params: {
   }
 
   return { ok: false, lastError };
+}
+
+export async function syncExistingFamilyToLoyverse(familyPageId: string) {
+  const familiesDb = new FamiliesDatabase({ notionSecret: NOTION_API_KEY });
+  const familyPage = await familiesDb.getPage(familyPageId);
+  const family = new FamiliesResponseDTO(familyPage as never);
+
+  const familyName = family.properties.familyName.text?.trim();
+  const mainPhone = family.properties.mainPhone?.trim();
+  const mainEmail = family.properties.mainEmail?.trim();
+  const existingCustomerCode = family.properties.customerNumber.text?.trim();
+  const existingLoyverseCustomerId = family.properties.loyverseCustomerId.text?.trim();
+
+  if (existingLoyverseCustomerId) {
+    return {
+      success: true,
+      alreadySynced: true,
+      familyId: family.id,
+      familyName: familyName ?? 'Untitled Family',
+      customerCode: existingCustomerCode || undefined,
+      loyverseCustomerId: existingLoyverseCustomerId,
+      mainPhone: mainPhone || null,
+      mainEmail: mainEmail || null,
+      status: family.properties.status?.name ?? null,
+    };
+  }
+
+  if (!familyName) {
+    throw new Error('Family name is required before syncing to Loyverse');
+  }
+
+  if (!mainPhone) {
+    throw new Error('Main phone is required before syncing to Loyverse');
+  }
+
+  const customerCode =
+    existingCustomerCode ||
+    (await assignFamilyCustomerCode({
+      familiesDb,
+      familyPageId: family.id,
+      familyName,
+    }));
+
+  const loyverseSync = await syncFamilyToLoyverseWithRetry({
+    familyName,
+    customerCode,
+    email: mainEmail,
+    phone: mainPhone,
+  });
+
+  if (!loyverseSync.ok) {
+    console.error('[intake-actions] Loyverse sync failed after all retry attempts:', loyverseSync.lastError);
+    throw new Error('Failed to sync customer to Loyverse');
+  }
+
+  await familiesDb.updatePage(
+    family.id,
+    new FamiliesPatchDTO({
+      properties: {
+        loyverseCustomerId: loyverseSync.customerId,
+      },
+    }),
+  );
+
+  await notifyAfterSuccessfulLoyverseCreation({
+    familyPageId: family.id,
+    customerCode,
+    loyverseCustomerId: loyverseSync.customerId,
+  });
+
+  return {
+    success: true,
+    alreadySynced: false,
+    familyId: family.id,
+    familyName,
+    customerCode,
+    loyverseCustomerId: loyverseSync.customerId,
+    mainPhone,
+    mainEmail: mainEmail || null,
+    status: family.properties.status?.name ?? null,
+  };
 }
 
 export async function submitIntakeForm(data: IntakeFormData) {

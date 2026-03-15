@@ -5,6 +5,9 @@
 	import CafeSection from './CafeSection.svelte';
 	import WorkshopsSection from './WorkshopsSection.svelte';
 	import ActivitiesSection from './ActivitiesSection.svelte';
+	import type { PageData } from './$types';
+
+	let { data }: { data: PageData } = $props();
 </script>
 
 <svelte:head>
@@ -14,7 +17,7 @@
 <div class="min-h-screen bg-[#F9F7F2] text-[#2D3A3A] selection:bg-[#E07A5F] selection:text-white">
 
 	<!-- Page sections -->
-	<HeroSection />
+	<HeroSection heroImage={data.heroImage} />
 	<InlineTextSection />
 	<PlaygroundSection />
 	<CafeSection />

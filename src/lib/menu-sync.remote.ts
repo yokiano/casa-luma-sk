@@ -180,12 +180,6 @@ function compareItems(
     diffs.push(`Category mismatch: "${notionCategory}" vs "${loyverseCategory || 'Uncategorized'}"`);
   }
 
-  // Compare Image Presence
-  const notionImage = notionItem.properties.image?.urls?.[0];
-  if (notionImage && !loyverseItem.image_url) {
-    diffs.push('Image missing in Loyverse');
-  }
-
   // Compare Modifiers
   const notionModifierPageIds = notionItem.properties.modifiersIds || [];
   // Map Notion IDs to expected Loyverse IDs
@@ -328,10 +322,9 @@ export const getMenuSyncStatus = query(async () => {
 export const syncMenuItems = command(
   v.object({
     itemIds: v.optional(v.array(v.string())), // Optional list of Notion IDs to sync.
-    deleteOrphans: v.optional(v.boolean()), // If true, delete Loyverse items not in Notion
-    forceImageSync: v.optional(v.boolean()) // If true, re-upload images even if item is synced
+    deleteOrphans: v.optional(v.boolean()) // If true, delete Loyverse items not in Notion
   }),
-  async ({ itemIds, deleteOrphans, forceImageSync }) => {
+  async ({ itemIds, deleteOrphans }) => {
     const notionDb = new MenuItemsDatabase({ notionSecret: NOTION_API_KEY });
     const modifiersDb = new PosModifiersDatabase({ notionSecret: NOTION_API_KEY });
     const report: SyncReport = { created: 0, updated: 0, linked: 0, deleted: 0, errors: [], itemResults: [] };
@@ -417,8 +410,6 @@ export const syncMenuItems = command(
           const name = nItem.properties.name.text || 'Untitled';
           const description = nItem.properties.description.text || '';
           const categoryName = nItem.properties.category?.name || 'Uncategorized';
-          const imageUrl = nItem.properties.image?.urls?.[0];
-          
           const hasVariants = nItem.properties.hasVariants ?? false;
           
           const categoryId = await resolveCategoryId(categoryName);
@@ -454,7 +445,7 @@ export const syncMenuItems = command(
           // Optimization: Skip if already synced
           if (!isNew && targetLoyverseItem) {
             const diffs = compareItems(nItem, targetLoyverseItem, loyverseCategories, notionModifiersMap);
-            if (diffs.length === 0 && (!forceImageSync || !imageUrl)) {
+            if (diffs.length === 0) {
               report.itemResults.push({
                 notionId: nItem.id,
                 loyverseId: targetLoyverseItem.id,
@@ -536,16 +527,6 @@ export const syncMenuItems = command(
             // Create in Loyverse
             const newItem = await loyverse.createItem(payload);
 
-            // Upload Image if exists
-            if (imageUrl) {
-              try {
-                await loyverse.uploadImage(newItem.id, imageUrl);
-              } catch (imgErr: any) {
-                console.warn(`[Image Sync] Warning: Could not upload image for new item "${name}": ${imgErr.message}`);
-                report.errors.push(`Image upload failed for "${name}" (Item created/updated anyway)`);
-              }
-            }
-            
             // Update Notion with new ID
             await notionDb.updatePage(nItem.id, new MenuItemsPatchDTO({
               properties: {
@@ -577,16 +558,7 @@ export const syncMenuItems = command(
                 const newItem = await loyverse.createItem(payload);
                 finalLid = newItem.id;
                 
-                // 3. Upload image if needed
-                if (imageUrl) {
-                  try {
-                    await loyverse.uploadImage(newItem.id, imageUrl);
-                  } catch (imgErr) {
-                    console.warn(`Failed to upload image for recreated item ${name}:`, imgErr);
-                  }
-                }
-
-                // 4. Update Notion with new ID
+                // 3. Update Notion with new ID
                 await notionDb.updatePage(nItem.id, new MenuItemsPatchDTO({
                   properties: {
                     loyverseId: newItem.id
@@ -609,15 +581,6 @@ export const syncMenuItems = command(
               }
             }
 
-            // Upload Image if exists
-            if (imageUrl) {
-              try {
-                await loyverse.uploadImage(finalLid, imageUrl);
-              } catch (imgErr: any) {
-                 console.warn(`[Image Sync] Warning: Could not upload image for item "${name}": ${imgErr.message}`);
-              }
-            }
-            
             // Ensure Notion has the ID
             if (notionLoyverseId !== finalLid) {
                await notionDb.updatePage(nItem.id, new MenuItemsPatchDTO({

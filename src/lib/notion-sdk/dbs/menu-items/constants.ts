@@ -91,6 +91,7 @@ export const MENU_ITEMS_PROPS_TO_IDS = {
   "thaiName": "K%7DaB",
   "recommended": "APh%5C",
   "thaiDescription": "OoM%7D",
+  "addOns": "owUh",
   "createdTime": "avHW"
 } as const
 export const MENU_ITEMS_IDS_TO_PROPS = {
@@ -117,6 +118,7 @@ export const MENU_ITEMS_IDS_TO_PROPS = {
   "K%7DaB": "thaiName",
   "APh%5C": "recommended",
   "OoM%7D": "thaiDescription",
+  "owUh": "addOns",
   "avHW": "createdTime"
 } as const
 export const MENU_ITEMS_PROPS_TO_TYPES = {
@@ -143,6 +145,7 @@ export const MENU_ITEMS_PROPS_TO_TYPES = {
   "thaiName": "rich_text",
   "recommended": "checkbox",
   "thaiDescription": "rich_text",
+  "addOns": "relation",
   "createdTime": "created_time"
 } as const
 
