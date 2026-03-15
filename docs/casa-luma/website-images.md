@@ -1,6 +1,6 @@
 # Website Images in Notion
 
-Casa Luma website images are managed from the `Website Images` Notion database.
+Casa Luma website images are managed from the `Website Images` Notion database and loaded once in the root layout.
 
 ## How it works
 
@@ -8,7 +8,7 @@ Casa Luma website images are managed from the `Website Images` Notion database.
 - Upload the image file to the `Image` property.
 - Set `Active` to checked for images that should be available on the website.
 - Use the `slug` property as the stable code key.
-- Optional grouping can be done with the `Section` property.
+- `Section` can still exist in Notion for organization, but the code uses `slug` as the source of truth.
 - `Alt Text` is used for accessibility. If it is empty, the code falls back to the record `Name`.
 
 ## Required Notion fields
@@ -22,10 +22,12 @@ Casa Luma website images are managed from the `Website Images` Notion database.
 
 ## Code helpers
 
-The shared helpers live in `src/lib/server/website-images.ts`.
+The shared helpers live in `src/lib/server/website-images.ts` and the app-wide state lives in `src/lib/state/website-media.svelte.ts`.
 
-- `getWebsiteImagesMap(section?)`: fetches all active images and returns a map keyed by slug.
-- `getWebsiteImageBySlug(slug, section?)`: fetches the active image map and returns one image by slug.
+- `getWebsiteImagesMap()`: fetches all active images and returns a map keyed by slug.
+- `getWebsiteImageBySlug(slug)`: returns one image by slug when direct server access is needed.
+- `WebsiteMediaState`: encapsulates the reactive image map for Svelte components.
+- `setWebsiteMediaContext()` / `getWebsiteMediaContext()`: provide app-wide access through Svelte context.
 
 Returned image objects include:
 
@@ -39,14 +41,16 @@ Returned image objects include:
 
 ## Usage pattern
 
-Use a slug constant in the route or server loader, then pass the resolved image to the component.
+The root layout loads all active website images once in `src/routes/+layout.server.ts` and injects them into a shared context in `src/routes/+layout.svelte`.
 
-Example from the inspiration page:
+Components then resolve images locally by slug.
+
+Example pattern in a component:
 
 ```ts
-const INSPIRATION_HERO_IMAGE_SLUG = 'home-page-hero-image';
+const websiteMedia = getWebsiteMediaContext();
 
-const heroImage = await getWebsiteImageBySlug(INSPIRATION_HERO_IMAGE_SLUG, 'Hero');
+const heroImage = $derived(websiteMedia.get('home-page-hero-image'));
 ```
 
 ## Recommended workflow
@@ -59,6 +63,6 @@ const heroImage = await getWebsiteImageBySlug(INSPIRATION_HERO_IMAGE_SLUG, 'Hero
 
 ## Notes
 
-- Notion file URLs expire, so images are resolved server-side from live Notion data.
+- Notion file URLs expire, so images are resolved server-side from live Notion data in the layout load.
 - Prefer using `slug` for code references instead of the record title.
-- Slugs should be lowercase kebab-case and unique across the database.
+- Slugs should be lowercase kebab-case and unique across the whole database.

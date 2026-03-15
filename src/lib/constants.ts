@@ -105,6 +105,82 @@ export const SOCIAL_LINKS = {
 	googleMaps: 'https://maps.app.goo.gl/iXyfd47yVxyPKk3o8'
 } as const;
 
+export interface GoogleReviewHighlight {
+	id: string;
+	author: string;
+	rating: 1 | 2 | 3 | 4 | 5;
+	quote: string;
+	reviewUrl?: string;
+	reviewId?: string;
+}
+
+export const GOOGLE_REVIEW_HIGHLIGHTS: GoogleReviewHighlight[] = [
+	{
+		id: 'review-ronnie-katz',
+		author: 'Ronnie Katz',
+		rating: 5,
+		quote:
+			'Amazing place for kids and for adults! They thought of everything — you have an outdoor area, swimming pool, area for babies and for toddlers, craft room and board games for the older kids. The place has a calm and inviting vibe. Besides that there are many areas for the parents to hang out, great coffee and food! For me it\'s the best place for the kiddies in Phangan.',
+		reviewUrl: 'https://maps.app.goo.gl/B8QPqpq9PYKzaXqG8'
+	},
+	{
+		id: 'review-raz-vicerabin',
+		author: 'Raz Vicerabin',
+		rating: 5,
+		quote:
+			'Perfect place! We came to Koh Phangan for two weeks with our two-and-a-half-year-old daughter, and from the very first moment we arrived, she didn\'t look back. She found a whole world of games, drawings, and other kids to play with. She absolutely loved it — we ended up coming back five times in just two weeks! It\'s also a fantastic place for parents. The food is great, the coffee is excellent, and there are wonderful vegan-friendly options. The swimming pool is fantastic — clean, fun, and perfect for kids. Highly recommended for families visiting Koh Phangan!',
+		reviewUrl: 'https://maps.app.goo.gl/t4FKX7kxqU7PBW9W6'
+	},
+	{
+		id: 'review-snapy-camera',
+		author: 'Snapy Camera',
+		rating: 5,
+		quote:
+			'I came here with my kids and it was such a great experience. I was able to sit and get some work done while the kids were super happy playing, running around, and enjoying the pool in a safe and relaxed environment. We spent almost half a day here and honestly, it was a pleasure. The food and coffee are amazing, really high quality, and as a parent this feels like the perfect place to spend the day. Highly recommended.',
+		reviewUrl: 'https://maps.app.goo.gl/Djw1v2AEY13oyb118'
+	},
+	{
+		id: 'review-katalina-matus',
+		author: 'Katalina Matus',
+		rating: 5,
+		quote:
+			'Spectacular and impressive space! Everything is thought through — it\'s just exactly what you wish to have when you have a young child on this island. The staff and owners are extremely helpful and friendly; they organized an amazing birthday party for us. The swimming pool and the garden are just top. Tropical paradise.',
+		reviewUrl: 'https://maps.app.goo.gl/H4JyQWKxdPLy36bk9'
+	},
+	{
+		id: 'review-descomplicadospt',
+		author: 'Descomplicadospt',
+		rating: 5,
+		quote:
+			'We loved our experience at Casa Luma. It is a family-friendly space with an indoor play area, outdoor playground, swimming pool, working space, restaurant and café — perfect for spending a few relaxed hours with children. Everything is beautifully designed and very well cared for, the place is truly stunning. We spent a lovely afternoon here and felt very welcome. The owners are extremely kind and friendly. This is a wonderful project with so much potential.',
+		reviewUrl: 'https://maps.app.goo.gl/JeXcp17hbbn4ojqQ9'
+	},
+	{
+		id: 'review-anna-galantsan',
+		author: 'Anna Galantsan',
+		rating: 5,
+		quote:
+			'This is the perfect place for children and their parents. The island has many cafes and restaurants, but nowhere quite like this — a genuinely special spot to relax with kids. Excellent service, the café food is beyond words. There are remote work desks with monitors so you can keep an eye on the children while working. A swimming pool, spacious play areas for all ages, tables on the terrace and in the garden. The atmosphere is so wonderful you don\'t want to leave. Finally found the perfect place to bring the kids. 10 out of 10.',
+		reviewUrl: 'https://maps.app.goo.gl/Mmu6iCvXHUAWzCa48'
+	},
+	{
+		id: 'review-alexander-lieb',
+		author: 'Alexander Lieb',
+		rating: 5,
+		quote:
+			'Casa Luma is a lovely place for both kids and parents. While the kids can play, you have time to relax or work and enjoy the great food! Totally recommended for families!',
+		reviewUrl: 'https://maps.app.goo.gl/8WdZSAss7mHu1Zem6'
+	},
+	{
+		id: 'review-omri-danzi',
+		author: 'Omri Danzi',
+		rating: 5,
+		quote:
+			'The best playground in the world. Nature, fun and games. Great for all the family. Highly recommended.',
+		reviewUrl: 'https://maps.app.goo.gl/y2anoZBrgWkwGHcT8'
+	}
+];
+
 export const FOOTER_LINKS = SITE_MENU_ITEMS
 	.filter((item) => item.inFooter)
 	.map(({ label, href }) => ({ label, href }));

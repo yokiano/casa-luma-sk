@@ -1,16 +1,10 @@
 <script lang="ts">
+	import { getWebsiteMediaContext } from '$lib/context/website-media';
+	import WebsiteMediaImage from '$lib/components/media/WebsiteMediaImage.svelte';
 	import { scrollY } from 'svelte/reactivity/window';
 
-	type HeroImage = {
-		src: string;
-		alt: string;
-	};
-
-	let {
-		heroImage = null
-	}: {
-		heroImage?: HeroImage | null;
-	} = $props();
+	const websiteMedia = getWebsiteMediaContext();
+	const heroImage = $derived(websiteMedia.get('home-page-hero-image'));
 
 	// Derived parallax values using reactive scrollY
 	let heroParallax = $derived((scrollY.current ?? 0) * 0.5);
@@ -66,11 +60,11 @@
 		style:border-radius="40% 60% 55% 45% / 45% 45% 55% 55%"
 		style:transform="translateY({(scrollY.current ?? 0) * -0.38}px) rotate({(scrollY.current ?? 0) * 0.04}deg)"
 	>
-		<img
-			src={heroImageSrc}
-			alt={heroImageAlt}
-			class="w-full h-full object-cover"
-		/>
+		{#if heroImage}
+			<WebsiteMediaImage slug="home-page-hero-image" alt={heroImageAlt} class="h-full w-full" imageClass="w-full h-full object-cover" showPagination={false} />
+		{:else}
+			<img src={heroImageSrc} alt={heroImageAlt} class="w-full h-full object-cover" />
+		{/if}
 	</div>
 
 	<!-- Scroll indicator — shrinks as user scrolls down -->

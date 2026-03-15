@@ -1,8 +1,11 @@
 <script lang="ts">
+	import { getWebsiteMediaContext } from '$lib/context/website-media';
 	import { scrollY, innerHeight } from 'svelte/reactivity/window';
 	import InlineImageText from '$lib/components/animations/InlineImageText.svelte';
 	import type { Segment } from '$lib/components/animations/InlineImageText.svelte';
 	import { BrandCtrl } from '$lib/utils/brand-controller.svelte';
+
+	const websiteMedia = getWebsiteMediaContext();
 
 	let wrapperEl = $state<HTMLElement | undefined>();
 
@@ -25,37 +28,58 @@
 	const cafeColor = BrandCtrl.getColorByIndex(1, { weight: 700 }).value;
 	const gardenColor = BrandCtrl.getColorByIndex(2, { weight: 600 }).value;
 
-	const lines: Segment[][] = [
-		[
-			{ type: 'text', content: 'Timeless' },
-			{ type: 'text', content: 'playground', color: playgroundColor },
-			{
-				type: 'image',
-				url: 'https://images.unsplash.com/photo-1472162072942-cd5147eb3902?q=80&w=900&auto=format&fit=crop',
-				alt: 'Indoor playground'
-			},
-			{ type: 'text', content: 'experience,' }
-		],
-		[
-			{ type: 'text', content: 'Café', color: cafeColor },
-			{
-				type: 'image',
-				url: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=900&auto=format&fit=crop',
-				alt: 'Family cafe'
-			},
-			{ type: 'text', content: 'that everyones loves,' }
-		],
-		[
-			{ type: 'text', content: 'a touch of' },
-			{ type: 'text', content: 'nature', color: gardenColor },
-			{
-				type: 'image',
-				url: 'https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=900&auto=format&fit=crop',
-				alt: 'Garden'
-			},
-		],
-		[{ type: 'text', content: 'and more...' }]
-	];
+	const fallbackInlineImages = {
+		playground: {
+			src: 'https://images.unsplash.com/photo-1472162072942-cd5147eb3902?q=80&w=900&auto=format&fit=crop',
+			alt: 'Indoor playground'
+		},
+		cafe: {
+			src: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=900&auto=format&fit=crop',
+			alt: 'Family cafe'
+		},
+		nature: {
+			src: 'https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=900&auto=format&fit=crop',
+			alt: 'Garden'
+		}
+	};
+
+	const lines = $derived.by<Segment[][]>(() => {
+		const playgroundImage = websiteMedia.get('home-inline-playground-image');
+		const cafeImage = websiteMedia.get('home-inline-cafe-image');
+		const natureImage = websiteMedia.get('home-inline-nature-image');
+
+		return [
+			[
+				{ type: 'text', content: 'Timeless' },
+				{ type: 'text', content: 'playground', color: playgroundColor },
+				{
+					type: 'image',
+					url: playgroundImage?.src || fallbackInlineImages.playground.src,
+					alt: playgroundImage?.alt || fallbackInlineImages.playground.alt
+				},
+				{ type: 'text', content: 'experience,' }
+			],
+			[
+				{ type: 'text', content: 'Café', color: cafeColor },
+				{
+					type: 'image',
+					url: cafeImage?.src || fallbackInlineImages.cafe.src,
+					alt: cafeImage?.alt || fallbackInlineImages.cafe.alt
+				},
+				{ type: 'text', content: 'that everyones loves,' }
+			],
+			[
+				{ type: 'text', content: 'a touch of' },
+				{ type: 'text', content: 'nature', color: gardenColor },
+				{
+					type: 'image',
+					url: natureImage?.src || fallbackInlineImages.nature.src,
+					alt: natureImage?.alt || fallbackInlineImages.nature.alt
+				}
+			],
+			[{ type: 'text', content: 'and more...' }]
+		];
+	});
 </script>
 
 <div bind:this={wrapperEl} class="relative w-full" style="height: 250vh;">

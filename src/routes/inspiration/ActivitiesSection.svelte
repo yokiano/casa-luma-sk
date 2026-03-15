@@ -1,10 +1,10 @@
 <script lang="ts">
 	import Reveal from '$lib/components/animations/Reveal.svelte';
 	import PaperCard from '$lib/components/ui/PaperCard.svelte';
+	import { getWebsiteMediaContext } from '$lib/context/website-media';
 	import { BrandCtrl } from '$lib/utils/brand-controller.svelte';
-	import { ArrowRight } from 'lucide-svelte';
 
-	const events = [
+	const events = $derived.by(() => [
 		{
 			date: 'MARCH 2026',
 			title: 'Sensory Art Workshop',
@@ -26,7 +26,7 @@
 			description: 'Practical tools for building a Montessori-inspired home environment.',
 			image: 'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?q=80&w=400&auto=format&fit=crop'
 		}
-	];
+	]);
 
 	// Use sage green for the paper card header
 	const headerColor = BrandCtrl.getColorByIndex(2, { weight: 400 }).value; // Sage

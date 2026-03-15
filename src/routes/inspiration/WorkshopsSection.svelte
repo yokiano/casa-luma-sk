@@ -1,24 +1,15 @@
 <script lang="ts">
-	import { innerHeight } from 'svelte/reactivity/window';
 	import Reveal from '$lib/components/animations/Reveal.svelte';
+	import WebsiteMediaImage from '$lib/components/media/WebsiteMediaImage.svelte';
+	import { getWebsiteMediaContext } from '$lib/context/website-media';
 	import { ArrowRight } from 'lucide-svelte';
 
-	let sectionEl = $state<HTMLElement>();
-
-	// Image parallax: moves at different rate from text
-	let imgParallax = $derived.by(() => {
-		if (!sectionEl) return 0;
-		const rect = sectionEl.getBoundingClientRect();
-		const vh = innerHeight.current ?? window.innerHeight;
-		const center = rect.top + rect.height / 2 - vh / 2;
-		return center * -0.12;
-	});
+	const websiteMedia = getWebsiteMediaContext();
+	const hasImage = $derived(websiteMedia.has('home-birthday-image'));
 </script>
 
-<section
-	bind:this={sectionEl}
-	class="py-32 flex flex-col md:flex-row items-center justify-between px-8 md:px-24 gap-16 overflow-hidden bg-[#F9F7F2]"
->
+<section class="bg-[#F9F7F2] px-8 py-32 md:px-24">
+	<div class="mx-auto flex w-full max-w-7xl flex-col items-center justify-between gap-16 md:flex-row">
 	<Reveal direction="left" class="w-full md:w-1/2 space-y-8" skewX={2}>
 		<span class="text-xs font-sans tracking-[0.3em] uppercase text-[#E07A5F]">Birthday Events</span>
 		<h3 class="text-5xl md:text-7xl font-serif leading-none text-[#2D3A3A]">
@@ -38,27 +29,23 @@
 		</a>
 	</Reveal>
 
-	<!-- Vertical image with inner parallax -->
-	<Reveal direction="up" delay={150} class="w-full md:w-5/12 relative h-[580px] overflow-hidden shadow-2xl" skewX={1}>
-		<div
-			style:border-radius="8rem 8rem 2rem 2rem"
-			class="absolute inset-0 overflow-hidden"
-		>
-			<img
-				src="https://images.unsplash.com/photo-1464349153735-7db50ed83c84?q=80&w=1000&auto=format&fit=crop"
-				alt="Birthday celebration at Casa Luma"
-				class="absolute inset-0 w-full h-[130%] object-cover will-change-transform"
-				style:transform="translateY({imgParallax}px)"
-			/>
-			<!-- Subtle tint overlay -->
-			<div class="absolute inset-0 bg-[#A8C3A0]/10 pointer-events-none"></div>
+	<Reveal direction="up" delay={150} class="w-full md:w-5/12">
+		<div class="relative h-[520px] overflow-hidden rounded-[2rem] border border-[#2D3A3A]/8 bg-white shadow-[0_24px_60px_rgb(45_58_58_/_0.16)]">
+			{#if hasImage}
+				<WebsiteMediaImage slug="home-birthday-image" class="h-full w-full bg-[#F7F0E6]" imageClass="h-full w-full object-contain" showPagination={false} />
+			{:else}
+				<div class="flex h-full w-full items-center justify-center bg-[linear-gradient(160deg,#dbe4d2,#f7efe3_60%,#e6c9ba)] px-8 text-center text-sm uppercase tracking-[0.25em] text-[#2D3A3A]/55">
+					Upload `home-birthday-image`
+				</div>
+			{/if}
+			<div class="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#2D3A3A]/8 to-transparent"></div>
 		</div>
 
-		<!-- Small floating label -->
-		<div class="absolute bottom-8 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-sm px-5 py-2 text-xs font-sans tracking-widest uppercase text-[#2D3A3A] shadow-lg"
-			 style:border-radius="2rem"
+		<div
+			class="mx-auto mt-6 w-fit rounded-full bg-white/90 px-5 py-2 text-xs font-sans tracking-widest uppercase text-[#2D3A3A] shadow-lg"
 		>
 			Private events
 		</div>
 	</Reveal>
+	</div>
 </section>
