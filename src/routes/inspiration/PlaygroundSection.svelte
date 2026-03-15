@@ -36,7 +36,7 @@
 			{:else}
 				<div class="flex h-full w-full items-center justify-center bg-[linear-gradient(135deg,#dfe8d7,#f5ecda_58%,#f1d7c9)] px-8 text-center text-sm uppercase tracking-[0.25em] text-[#2D3A3A]/55">
 					Upload `home-playground-image`
-				</div>
+				</div>4
 			{/if}
 		</Reveal>
 	</div>

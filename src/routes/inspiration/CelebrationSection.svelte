@@ -39,7 +39,7 @@
 				href="/birthdays"
 				class="mt-10 inline-flex items-center gap-4 rounded-full border border-white/80 px-8 py-4 text-sm uppercase tracking-widest text-white transition-colors duration-300 hover:bg-white hover:text-[#2D3A3A]"
 			>
-				Plan a Party <ArrowRight size={16} />
+				Plan a Birthday <ArrowRight size={16} />
 			</a>
 		</Reveal>
 	</div>

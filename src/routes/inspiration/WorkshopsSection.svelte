@@ -11,9 +11,9 @@
 <section class="bg-[#F9F7F2] px-8 py-32 md:px-24">
 	<div class="mx-auto flex w-full max-w-7xl flex-col items-center justify-between gap-16 md:flex-row">
 	<Reveal direction="left" class="w-full md:w-1/2 space-y-8" skewX={2}>
-		<span class="text-xs font-sans tracking-[0.3em] uppercase text-[#E07A5F]">Birthday Events</span>
+		<span class="text-xs font-sans tracking-[0.3em] uppercase text-[#E07A5F]">Birthdays</span>
 		<h3 class="text-5xl md:text-7xl font-serif leading-none text-[#2D3A3A]">
-			BIRTHDAY <br />
+			BIRTHDAYS <br />
 			<span class="italic text-[#A8C3A0]">AT CASA LUMA</span>
 		</h3>
 		<p class="text-xl text-[#2D3A3A]/65 max-w-md font-sans leading-relaxed">
@@ -21,10 +21,10 @@
 			to explore freely while the grown-ups enjoy the moment.
 		</p>
 		<a
-			href="/birthday-parties"
+			href="/birthdays"
 			class="inline-flex items-center gap-3 border-b border-[#2D3A3A]/40 pb-1 hover:text-[#E07A5F] hover:border-[#E07A5F] transition-all duration-300 uppercase tracking-wider text-sm group"
 		>
-			Plan your celebration
+			Plan a birthday
 			<ArrowRight size={16} class="transition-transform duration-300 group-hover:translate-x-1" />
 		</a>
 	</Reveal>

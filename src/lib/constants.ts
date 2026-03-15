@@ -61,11 +61,11 @@ export const SERVICES: ServiceCategory[] = [
 		imageUrl: 'https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=1200&q=80'
 	},
 	{
-		id: 'birthday-parties',
-		title: 'Birthday Parties',
-		description: 'Magical birthday celebrations in our beautiful space',
-		href: '/birthday-parties',
-		imagePlaceholder: 'Happy children at a birthday party',
+		id: 'birthdays',
+		title: 'Birthdays',
+		description: 'Beautiful birthday celebrations in our warm, playful space',
+		href: '/birthdays',
+		imagePlaceholder: 'Happy children celebrating a birthday',
 		imageUrl: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=1200&q=80'
 	}
 ] as const;
@@ -83,9 +83,9 @@ export const SITE_MENU_ITEMS: readonly MenuItem[] = [
 	{ id: 'open-play', label: 'Open Play', href: '/open-play', inHeader: true, inFooter: true },
 	{ id: 'pricing', label: 'Pricing', href: '/pricing', inHeader: true, inFooter: true },
 	{
-		id: 'birthday-parties',
-		label: 'Birthday Parties',
-		href: '/birthday-parties',
+		id: 'birthdays',
+		label: 'Birthdays',
+		href: '/birthdays',
 		inHeader: true
 	},
 	{ id: 'workshops', label: 'Workshops', href: '/workshops3', inFooter: true },
