@@ -11,7 +11,7 @@
 	const imageY = $derived((scrollY.current ?? 0) * -0.08);
 </script>
 
-<section class="relative isolate overflow-hidden bg-[#2D3A3A] px-6 py-28 sm:px-10 lg:px-20">
+<section class="relative isolate overflow-hidden bg-foreground px-6 py-28 sm:px-10 lg:px-20">
 	<div class="absolute inset-0">
 		{#if hasImage}
 			<div class="absolute inset-0" style:transform="translateY({imageY}px)">
@@ -37,7 +37,7 @@
 		<Reveal direction="up" delay={240} skewX={0}>
 			<a
 				href="/birthdays"
-				class="mt-10 inline-flex items-center gap-4 rounded-full border border-white/80 px-8 py-4 text-sm uppercase tracking-widest text-white transition-colors duration-300 hover:bg-white hover:text-[#2D3A3A]"
+				class="mt-10 inline-flex items-center gap-4 rounded-full border border-white/80 px-8 py-4 text-sm uppercase tracking-widest text-white transition-colors duration-300 hover:bg-white hover:text-foreground"
 			>
 				Plan a Birthday <ArrowRight size={16} />
 			</a>

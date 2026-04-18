@@ -20,6 +20,7 @@ describe('Expense Scan Regression Tests', () => {
       }
       
       if (testCase.expected.recipientName !== undefined) {
+        expect(parsed.recipientName).toBeTruthy();
         // Use contain for recipient name as OCR can be noisy at the end of the line
         expect(parsed.recipientName).toContain(testCase.expected.recipientName);
       }

@@ -115,5 +115,67 @@ Issued by K BIZ
       amount: 2409.25,
       recipientName: 'บ ร ิ ษั ท ซี พ ี แอ ็ ก ช์ ต ร ้ า จ ํ า ก ั ด (ม ห า ชน )'
     }
+  },
+  {
+    id: 'kbank-transfer-kbiz-new-layout',
+    name: 'K-Bank Transfer KBIZ New Layout',
+    rawText: `
+Transfer Completed KBIZ
+16 Apr 26 17:03
+From
+FAMI HOUSE CO.,LTD++
+Kasikornbank
+XXX-X-X6683-X
+To
+Buppha Chabunrueang
+Government Savings Bank
+XXX-X-X4232-XXX
+Amount
+2,692.00 Bant
+Fee
+0.00 Baht
+Received Date 16 Apr 26
+(Transfer money to the account immediately with effect)
+Transaction No. TRTS260416535217759
+Memo Fruit shop
+`,
+    expected: {
+      transactionId: 'TRTS260416535217759',
+      date: '16/04/2026 17:03',
+      amount: 2692,
+      recipientName: 'Buppha Chabunrueang',
+      memo: 'Fruit shop'
+    }
+  },
+  {
+    id: 'kbank-bill-payment-kbiz-new-layout',
+    name: 'K-Bank Bill Payment KBIZ New Layout',
+    rawText: `
+Bill Payment
+& Completed KBIZ
+17 Apr 26 14:16
+From
+(¥) FAMI HOUSE CO.,LTD++
+Kasikornbank
+XXX-X-X6683-X
+To
+บ ล ู เพ ย - ล า ชา ด า เพ ย
+Biller ID: 010753600031501
+Amount
+11,783.38 Bant
+Fee
+0.00 Baht
+Transaction ID KB000002211500
+Reference No.2 APIC17764101980494T2
+Transaction No. BILS260417542489468
+Memo Lazada
+`,
+    expected: {
+      transactionId: 'BILS260417542489468',
+      date: '17/04/2026 14:16',
+      amount: 11783.38,
+      recipientName: 'บ ล ู เพ ย - ล า ชา ด า เพ ย',
+      memo: 'Lazada'
+    }
   }
 ];

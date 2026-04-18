@@ -1,15 +1,15 @@
 # Expense Scanning & Notion Sync Mechanism
 
-The Expense Scan tool allows staff to upload bank transfer slips and bill payment receipts, automatically extract transaction details using OCR, and sync them directly to the **Expenses Tracker** database in Notion.
+The Expense Scan tool allows staff to upload bank transfer slips and bill payment receipts, extract transaction details with OCR in the browser, and sync them to the `CompanyLedgerDatabase` in Notion.
 
 ## How It Works
 
 The system follows a 4-step process:
 
 1.  **Image Upload**: The user drops one or more image files (JPG/PNG) into the UI.
-2.  **OCR Processing**: The browser sends the image to the server via a `remote` command. The server uses **Tesseract.js** to perform Optical Character Recognition, supporting both English and Thai.
-3.  **Parsing**: The raw OCR text is passed through a chain of specialized **Parsers** that identify the slip type (e.g., K-Bank Transfer vs. K-Bank Bill Payment) and extract key fields using Regex and line-by-line analysis.
-4.  **Notion Sync**: After the user verifies and completes the metadata (Category, Department), the data is sent to the **Expenses Tracker** database. The system automatically checks for duplicate `Reference Number`s to prevent double-entry.
+2.  **OCR Processing**: OCR runs in the browser with **Tesseract.js**, using `eng` and `tha`.
+3.  **Parsing**: The raw OCR text is passed through a chain of specialized parsers that identify the slip type and extract key fields using regex and line-by-line analysis.
+4.  **Notion Sync**: After the user verifies and completes the metadata (Category, Department), the data is sent to `CompanyLedgerDatabase`. The system checks duplicate `Reference Number`s to prevent double-entry.
 
 ---
 
@@ -25,13 +25,15 @@ To speed up data entry for recurring expenses (like salaries or utility bills), 
 
 ## Technical Architecture
 
-### 1. OCR Service (`src/lib/server/ocr.service.ts`)
-Uses `tesseract.js` with `eng+tha` languages. It converts the image to text and then calls the `ExpenseScanParser`.
+### 1. OCR (`src/lib/expense-scan/ocr.ts`)
+Uses `tesseract.js` with `eng` and `tha`. It converts the image to text in the browser and then calls `expenseScanParser`.
 
-### 2. Parsing Logic (`src/lib/server/expense-scan/`)
--   `parser.ts`: The orchestrator that holds an array of available parsers.
+### 2. Parsing Logic (`src/lib/expense-scan/`)
+-   `parser.ts`: The orchestrator that holds the parser chain.
 -   `types.ts`: Defines the `ParsedExpense` interface and the `ExpenseParser` contract.
--   `parsers/`: Directory containing specific implementations for different slip types.
+-   `parsers/`: Directory containing both current KBIZ-layout parsers and legacy parsers for older OCR formats.
+-   `test-cases.ts`: Regression fixtures for known OCR outputs.
+-   `regression.test.ts`: Regression coverage for parser behavior.
 
 ### 3. Data Schema
 The parsers aim to extract the following fields:
@@ -47,7 +49,7 @@ The parsers aim to extract the following fields:
 
 If you encounter a new slip format that isn't being recognized:
 
-1.  **Create a new file** in `src/lib/server/expense-scan/parsers/` (e.g., `my-bank-parser.ts`).
+1.  **Create a new file** in `src/lib/expense-scan/parsers/` (e.g., `my-bank-parser.ts`).
 2.  **Implement the `ExpenseParser` interface**:
     ```typescript
     export class MyBankParser implements ExpenseParser {
@@ -70,17 +72,17 @@ If you encounter a new slip format that isn't being recognized:
       }
     }
     ```
-3.  **Register the parser** in `src/lib/server/expense-scan/parser.ts` by adding it to the `parsers` array.
+3.  **Register the parser** in `src/lib/expense-scan/parser.ts` by adding it to the `parsers` array.
 
 ---
 
 ## Notion Integration
 
 ### Database
-The tool syncs to the **Expenses Tracker** database (ID: `2b5fc77db4f380658975e282f1aab7d2`).
+The tool syncs through `src/lib/expense-submit.remote.ts`, which writes to `CompanyLedgerDatabase`.
 
 ### Duplicate Prevention
-Before creating a new page in Notion, the `submitExpenseSlip` command queries the database for an existing entry with the same `Reference Number`. If found, it throws an error to prevent duplicates.
+Before creating a new page in Notion, `submitExpenseSlip` queries for an existing row with the same `Reference Number`. If found, it throws an error to prevent duplicates.
 
 ### Field Mapping
 | Slip Field | Notion Property |
