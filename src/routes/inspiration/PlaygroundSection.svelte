@@ -20,6 +20,7 @@
 				Three distinct rooms - Main Hall, Game Room, and Art Room - so every child can find their
 				own way to play.
 			</p>
+			<!-- TODO: Uncomment when open play page is ready
 			<a
 				href="/open-play"
 				class="inline-flex items-center gap-3 border-b border-foreground/35 pb-1 text-xs uppercase tracking-[0.2em] text-foreground transition-all hover:border-accent hover:text-accent"
@@ -27,6 +28,7 @@
 				Explore open play
 				<ArrowRight size={14} />
 			</a>
+			-->
 		</Reveal>
 
 		<Reveal direction="up" delay={120} class="relative h-[24rem] overflow-hidden shadow-[0_20px_50px_foreground/18] sm:h-[28rem]">

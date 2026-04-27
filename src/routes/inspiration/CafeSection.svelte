@@ -31,6 +31,7 @@
 				From specialty coffee to nourishing dishes, our cafe lets parents slow down and recharge
 				without missing the joy around them.
 			</p>
+			<!-- TODO: Uncomment when cafe page is ready
 			<a
 				href="/cafe"
 				class="inline-flex items-center gap-3 border-b border-foreground/35 pb-1 text-xs uppercase tracking-[0.2em] text-foreground transition-all hover:border-accent hover:text-accent"
@@ -38,6 +39,7 @@
 				See the cafe
 				<ArrowRight size={14} />
 			</a>
+			-->
 		</Reveal>
 	</div>
 </section>

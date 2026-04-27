@@ -20,6 +20,7 @@
 			Host a chic, playful celebration with curated setups, warm hospitality, and room for children
 			to explore freely while the grown-ups enjoy the moment.
 		</p>
+		<!-- TODO: Uncomment when birthdays page is ready
 		<a
 			href="/birthdays"
 			class="inline-flex items-center gap-3 border-b border-foreground/40 pb-1 hover:text-accent hover:border-accent transition-all duration-300 uppercase tracking-wider text-sm group"
@@ -27,6 +28,7 @@
 			Plan a birthday
 			<ArrowRight size={16} class="transition-transform duration-300 group-hover:translate-x-1" />
 		</a>
+		-->
 	</Reveal>
 
 	<Reveal direction="up" delay={150} class="w-full md:w-5/12">

@@ -76,22 +76,28 @@
 		return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 	};
 
-	const getFlexiPassDate = () => {
+	const getFlexiPassDate = (days: number) => {
 		const date = new Date();
-		date.setDate(date.getDate() + 60);
+		date.setDate(date.getDate() + days);
 		return date.toISOString().split('T')[0];
 	};
 
-	let flexiPassDate = $state(getFlexiPassDate());
+	let flexiPass30Date = $state(getFlexiPassDate(30));
+	let flexiPass60Date = $state(getFlexiPassDate(60));
 
-	const handleCalculateFlexiPass = async () => {
-		flexiPassDate = getFlexiPassDate();
+	const handleCalculateFlexiPass = async (days: number) => {
+		const value = getFlexiPassDate(days);
+		if (days === 30) {
+			flexiPass30Date = value;
+		} else {
+			flexiPass60Date = value;
+		}
 
 		try {
-			await navigator.clipboard.writeText(flexiPassDate);
-			toast.success(`Flexi pass end date: ${flexiPassDate} copied.`);
+			await navigator.clipboard.writeText(value);
+			toast.success(`Flexi pass ${days} day end date: ${value} copied.`);
 		} catch {
-			toast.success(`Flexi pass end date: ${flexiPassDate}`);
+			toast.success(`Flexi pass ${days} day end date: ${value}`);
 		}
 	};
 
@@ -302,19 +308,36 @@
 		</div>
 	</div>
 
-	<div class="flex flex-col gap-3 rounded-3xl border border-[#e3d7cc] bg-[#faf6f2] p-4 sm:flex-row sm:items-center sm:justify-between">
+	<div class="flex flex-col gap-4 rounded-3xl border border-[#e3d7cc] bg-[#faf6f2] p-4">
 		<div>
 			<p class="text-xs font-semibold uppercase tracking-wide text-[#7a6550]">Flexi Pass</p>
-			<p class="mt-1 text-sm text-[#5c4a3d]">60 days from today: <span class="font-semibold">{flexiPassDate}</span></p>
 		</div>
-		<button
-			type="button"
-			class="inline-flex items-center justify-center gap-2 rounded-2xl border border-[#d9d0c7] bg-white px-4 py-2 text-sm font-medium text-[#7a6550] transition hover:bg-[#fdfbf9]"
-			onclick={handleCalculateFlexiPass}
-		>
-			<CalendarDays class="h-4 w-4" />
-			<span>Calculate Flexi 60 Days</span>
-		</button>
+		<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+			<div>
+				<p class="text-sm text-[#5c4a3d]">30 days from today: <span class="font-semibold">{flexiPass30Date}</span></p>
+			</div>
+			<button
+				type="button"
+				class="inline-flex items-center justify-center gap-2 rounded-2xl border border-[#d9d0c7] bg-white px-4 py-2 text-sm font-medium text-[#7a6550] transition hover:bg-[#fdfbf9]"
+				onclick={() => handleCalculateFlexiPass(30)}
+			>
+				<CalendarDays class="h-4 w-4" />
+				<span>Calculate Flexi 30 Days</span>
+			</button>
+		</div>
+		<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+			<div>
+				<p class="text-sm text-[#5c4a3d]">60 days from today: <span class="font-semibold">{flexiPass60Date}</span></p>
+			</div>
+			<button
+				type="button"
+				class="inline-flex items-center justify-center gap-2 rounded-2xl border border-[#d9d0c7] bg-white px-4 py-2 text-sm font-medium text-[#7a6550] transition hover:bg-[#fdfbf9]"
+				onclick={() => handleCalculateFlexiPass(60)}
+			>
+				<CalendarDays class="h-4 w-4" />
+				<span>Calculate Flexi 60 Days</span>
+			</button>
+		</div>
 	</div>
 
 	<div class="text-sm text-[#7a6550]/70 px-4">
