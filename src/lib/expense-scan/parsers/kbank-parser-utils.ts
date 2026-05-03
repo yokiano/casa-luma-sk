@@ -9,7 +9,7 @@ export function extractAmount(rawText: string): number | null {
   const patterns = [
     /Total\s+([\d,]+\.\d{2})/i,
     /Amount\s*\(Baht\)\s+([\d,]+\.\d{2})/i,
-    /Amount\s*(?:\(\s*Baht\s*\))?\s*([\d,]+\.\d{2})\s+Ba(?:ht|nt)\b/i,
+    /Amount\s*(?:\(\s*Baht\s*\))?\s*([\d,]+\.\d{2})\s+(?:Ba(?:ht|nt)|sant)\b/i,
     /To\s+([\d,]+\.\d{2})/i
   ];
 

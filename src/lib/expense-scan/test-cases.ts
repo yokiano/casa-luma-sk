@@ -177,5 +177,35 @@ Memo Lazada
       recipientName: 'บ ล ู เพ ย - ล า ชา ด า เพ ย',
       memo: 'Lazada'
     }
+  },
+  {
+    id: 'kbank-bill-payment-kbiz-sant-ocr',
+    name: 'K-Bank Bill Payment KBIZ Sant OCR',
+    rawText: `Bill Payment
+& Completed KBIZ
+26 Apr 26 12:45
+From
+(¥) FAMI HOUSE CO.,LTD++
+Kasikornbank
+XXX-X-X6683-X
+To
+เด ล อ ิ ต า ล ี
+Biller ID: 010753600031501
+Amount
+530.00 sant
+Fee
+0.00 Baht
+Transaction ID KB000002042297
+Reference No.2 KPS004KB000002042297
+Transaction No. BILS260426618522123
+Memo Italy
+`,
+    expected: {
+      transactionId: 'BILS260426618522123',
+      date: '26/04/2026 12:45',
+      amount: 530.00,
+      recipientName: 'เด ล อ ิ ต า ล ี',
+      memo: 'Italy'
+    }
   }
 ];
