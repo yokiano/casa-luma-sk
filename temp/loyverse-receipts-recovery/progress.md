@@ -41,8 +41,8 @@ Created: 2026-05-05
 - [x] Implement reconciliation report mode/script: `scripts/reconcile-loyverse-receipts.ts`, package script `receipts:reconcile`.
 - [x] Run small-window read-only reconciliation.
 - [x] Run dry-run backfill for full requested range 2026-01-01 through 2026-05-05.
-- [ ] Run real backfill for confirmed missing/stale receipts.
-- [ ] Run post-backfill reconciliation report.
+- [x] Run real backfill for confirmed missing/stale receipts.
+- [x] Run post-backfill reconciliation report.
 
 ### 4. `/tools/receipts` route
 
@@ -93,6 +93,33 @@ Command used same merchant/date scope with `--dry-run`.
 Result: fetched 4,242, processed/dry-run eligible 4,242, duplicate 0, stale 0, skipped 0, failed 0.
 
 No DB writes were performed by this dry-run.
+
+### 2026-05-05 — real backfill, 2026-01-01 through 2026-05-05
+
+Ran real backfill for merchant `8b53e5cb-f55c-4495-bcee-eb97bece308e`. The foreground attempt timed out after importing some receipts; because ingestion is idempotent, resumed safely. Later background run completed with 2 transient failures. Deleted only unprocessed synthetic `receipt.backfill.import` rows for the failed receipt numbers and imported those exact receipt numbers individually.
+
+Final DB status:
+
+- Main merchant receipts: 4,242
+- Backfill events processed: 4,242
+- Unprocessed events: 0
+- Child rows populated:
+  - `receipt_line_items`: 17,043
+  - `receipt_line_modifiers`: 5,521
+  - `receipt_discounts`: 285
+  - `receipt_line_discounts`: 878
+  - `receipt_taxes`: 1
+  - `receipt_line_taxes`: 1
+  - `receipt_payments`: 4,259
+
+### 2026-05-05 — final post-backfill reconciliation, 2026-01-01 through 2026-05-05
+
+Report files:
+
+- `temp/loyverse-receipts-recovery/reconciliation-2026-05-05T16-44-08-624Z.md`
+- `temp/loyverse-receipts-recovery/reconciliation-2026-05-05T16-44-08-624Z.json`
+
+Summary: 4,242 Loyverse receipts, 4,242 Neon receipts, 0 missing, 0 stale, 0 mismatches, 0 extra.
 
 ### 2026-05-05 — `pnpm receipts:reconcile -- --help`
 

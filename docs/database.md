@@ -71,6 +71,54 @@ pnpm receipts:backfill -- --date-from <iso> --date-to <iso> --dry-run
 pnpm receipts:backfill -- --date-from <iso> --date-to <iso>
 ```
 
+## Receipt analytics optimization notes
+
+The receipts tool analytics tab should use database-side aggregation, not full receipt hydration.
+
+Current optimized path:
+
+```text
+src/routes/tools/receipts/+page.svelte
+  -> getReceiptAnalytics()
+  -> src/lib/receipts.remote.ts
+  -> queryReceiptAnalyticsFromDb()
+  -> src/lib/server/db/receipt-analytics.ts
+  -> Neon/Postgres aggregate queries
+```
+
+Why: loading long date ranges as fully shaped receipts pulls receipts plus line items, modifiers, discounts, taxes, and payments into the browser, then performs many repeated client-side passes for each metric/chart. For multi-month ranges this is slow and can block rendering. Analytics-style screens should push `sum`, `count`, `group by`, top-N, and trend calculations into Postgres and return only compact chart data.
+
+Implementation added in this optimization session:
+
+- `getReceiptAnalytics` remote function for summary/chart data.
+- `queryReceiptAnalyticsFromDb` for Neon-side aggregation.
+- Shared analytics DTO types in `src/lib/receipts/analytics.ts`.
+- `ReceiptsAnalytics.svelte` now accepts precomputed `analytics` data, with a receipt-array fallback for compatibility.
+- The analytics tab shows a live elapsed-time indicator while Neon calculates and a final “calculated in …” timing.
+- The tools tab still needs detailed receipt payloads, so it keeps paginated loading but now shows receipt/page progress.
+
+Indexes added to support receipt analytics and pagination:
+
+```sql
+CREATE INDEX IF NOT EXISTS "receipts_created_at_idx" ON "receipts" ("created_at");
+CREATE INDEX IF NOT EXISTS "receipts_store_created_at_idx" ON "receipts" ("store_id", "created_at");
+CREATE INDEX IF NOT EXISTS "receipts_updated_receipt_key_idx" ON "receipts" ("updated_from_event_at", "receipt_key");
+```
+
+Migration file:
+
+```text
+drizzle/0002_receipt_analytics_indexes.sql
+```
+
+Apply to Neon with:
+
+```bash
+pnpm db:migrate:neon
+```
+
+Future analytics work should prefer adding fields to `ReceiptAnalytics` and SQL aggregates in `receipt-analytics.ts` instead of expanding the analytics tab to fetch all receipt details.
+
 ## Vercel / production checklist
 
 Set these in Vercel before relying on receipt ingestion:

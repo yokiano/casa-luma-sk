@@ -94,6 +94,9 @@ export const receipts = pgTable(
   (table) => [
     uniqueIndex('receipts_merchant_receipt_uidx').on(table.merchantId, table.receiptNumber),
     index('receipts_receipt_date_idx').on(table.receiptDate),
+    index('receipts_created_at_idx').on(table.createdAt),
+    index('receipts_store_created_at_idx').on(table.storeId, table.createdAt),
+    index('receipts_updated_receipt_key_idx').on(table.updatedFromEventAt, table.receiptKey),
     index('receipts_store_id_idx').on(table.storeId)
   ]
 );

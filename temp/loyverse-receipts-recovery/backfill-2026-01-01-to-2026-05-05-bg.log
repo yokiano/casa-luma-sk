@@ -1153,3 +1153,159 @@
     failed: 2
   }
 }
+[backfill] progress {
+  page: 16,
+  pageProgress: '50/250',
+  counters: {
+    fetched: 4000,
+    processed: 1037,
+    duplicate: 2761,
+    stale: 0,
+    skipped: 0,
+    failed: 2
+  }
+}
+[backfill] progress {
+  page: 16,
+  pageProgress: '100/250',
+  counters: {
+    fetched: 4000,
+    processed: 1087,
+    duplicate: 2761,
+    stale: 0,
+    skipped: 0,
+    failed: 2
+  }
+}
+[backfill] progress {
+  page: 16,
+  pageProgress: '150/250',
+  counters: {
+    fetched: 4000,
+    processed: 1137,
+    duplicate: 2761,
+    stale: 0,
+    skipped: 0,
+    failed: 2
+  }
+}
+[backfill] progress {
+  page: 16,
+  pageProgress: '200/250',
+  counters: {
+    fetched: 4000,
+    processed: 1187,
+    duplicate: 2761,
+    stale: 0,
+    skipped: 0,
+    failed: 2
+  }
+}
+[backfill] progress {
+  page: 16,
+  pageProgress: '250/250',
+  counters: {
+    fetched: 4000,
+    processed: 1237,
+    duplicate: 2761,
+    stale: 0,
+    skipped: 0,
+    failed: 2
+  }
+}
+[backfill] page done {
+  page: 16,
+  pageCount: 250,
+  cursor: 'CIDQ6ra3MxCYoNbU3zNCBKKnjgJIxv3bgCFg-gFwBw==',
+  elapsedMs: 1022618,
+  counters: {
+    fetched: 4000,
+    processed: 1237,
+    duplicate: 2761,
+    stale: 0,
+    skipped: 0,
+    failed: 2
+  }
+}
+[backfill] progress {
+  page: 17,
+  pageProgress: '50/242',
+  counters: {
+    fetched: 4242,
+    processed: 1287,
+    duplicate: 2761,
+    stale: 0,
+    skipped: 0,
+    failed: 2
+  }
+}
+[backfill] progress {
+  page: 17,
+  pageProgress: '100/242',
+  counters: {
+    fetched: 4242,
+    processed: 1337,
+    duplicate: 2761,
+    stale: 0,
+    skipped: 0,
+    failed: 2
+  }
+}
+[backfill] progress {
+  page: 17,
+  pageProgress: '150/242',
+  counters: {
+    fetched: 4242,
+    processed: 1387,
+    duplicate: 2761,
+    stale: 0,
+    skipped: 0,
+    failed: 2
+  }
+}
+[backfill] progress {
+  page: 17,
+  pageProgress: '200/242',
+  counters: {
+    fetched: 4242,
+    processed: 1437,
+    duplicate: 2761,
+    stale: 0,
+    skipped: 0,
+    failed: 2
+  }
+}
+[backfill] progress {
+  page: 17,
+  pageProgress: '242/242',
+  counters: {
+    fetched: 4242,
+    processed: 1479,
+    duplicate: 2761,
+    stale: 0,
+    skipped: 0,
+    failed: 2
+  }
+}
+[backfill] page done {
+  page: 17,
+  pageCount: 242,
+  cursor: null,
+  elapsedMs: 1057441,
+  counters: {
+    fetched: 4242,
+    processed: 1479,
+    duplicate: 2761,
+    stale: 0,
+    skipped: 0,
+    failed: 2
+  }
+}
+[backfill] complete {
+  fetched: 4242,
+  processed: 1479,
+  duplicate: 2761,
+  stale: 0,
+  skipped: 0,
+  failed: 2
+}

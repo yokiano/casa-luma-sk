@@ -116,7 +116,9 @@ Important behavior:
 ## Recommended next actions
 
 1. Set `LOYVERSE_MERCHANT_ID` locally/Vercel or keep passing `--merchant-id`; local env currently lacks it.
-2. Full requested reconciliation range `2026-01-01T00:00:00Z` through `2026-05-05T23:59:59Z` found 4,242 Loyverse receipts and 904 Neon receipts: 3,338 missing, 0 stale, 0 mismatches, 0 extra.
+2. Full requested reconciliation range `2026-01-01T00:00:00Z` through `2026-05-05T23:59:59Z` initially found 4,242 Loyverse receipts and 904 Neon receipts: 3,338 missing, 0 stale, 0 mismatches, 0 extra.
 3. Full requested backfill dry-run for the same scope fetched/validated 4,242 receipts with 0 skipped/failed.
-4. Next step is the real backfill for the same scope, then post-check reconciliation.
-5. Optionally fix `ReceiptsAnalytics.svelte` type errors before any deploy that requires clean `pnpm check`.
+4. Real backfill completed. Final post-check reconciliation found 4,242 Loyverse receipts and 4,242 Neon receipts: 0 missing, 0 stale, 0 mismatches, 0 extra.
+5. `webhook_events` has 4,242 processed `receipt.backfill.import` events and 0 unprocessed events.
+6. Dependent receipt tables were populated by the shared ingestion core.
+7. Optionally fix `ReceiptsAnalytics.svelte` type errors before any deploy that requires clean `pnpm check`.

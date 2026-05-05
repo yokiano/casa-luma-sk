@@ -15,6 +15,13 @@
       "when": 1771667089510,
       "tag": "0001_black_avengers",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1771670000000,
+      "tag": "0002_receipt_analytics_indexes",
+      "breakpoints": true
     }
   ]
 }
