@@ -13,6 +13,7 @@ export type SignagePropertiesPatch = {
   status?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'status' }>['status']
   name?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   linkToFile?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
+  file?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'files' }>['files']
 }
 
   
@@ -139,6 +140,13 @@ export class SignagePatchDTO {
                     annotations: props.linkToFile.annotations
                   },
                 ]
+      }
+    }
+
+    if (props?.file !== undefined) {
+      this.__data.properties['chdb'] = {
+        type: 'files',
+        files: props.file,
       }
     }
   }

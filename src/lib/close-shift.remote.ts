@@ -5,24 +5,54 @@ import { NOTION_API_KEY } from '$env/static/private';
 import { EndOfShiftReportsDatabase } from '$lib/notion-sdk/dbs/end-of-shift-reports/db';
 import { EndOfShiftReportsPatchDTO } from '$lib/notion-sdk/dbs/end-of-shift-reports/patch.dto';
 
+const moneyField = (label: string) =>
+  v.optional(
+    v.pipe(
+      v.number(`${label} must be a number.`),
+      v.finite(`${label} must be a valid number.`),
+      v.minValue(0, `${label} cannot be negative.`)
+    ),
+    0
+  );
+
+const countField = (label: string) =>
+  v.optional(
+    v.pipe(
+      v.number(`${label} count must be a number.`),
+      v.finite(`${label} count must be a valid number.`),
+      v.integer(`${label} count must be a whole number.`),
+      v.minValue(0, `${label} count cannot be negative.`)
+    ),
+    0
+  );
+
+const getErrorMessage = (e: unknown) => {
+  if (e instanceof Error && e.message) return e.message;
+  if (typeof e === 'object' && e !== null && 'message' in e && typeof e.message === 'string') {
+    return e.message;
+  }
+  return 'Unknown error';
+};
+
 // Define the validation schema for the close shift data
 const CloseShiftSchema = v.object({
-  expectedCash: v.number(),
+  expectedCash: moneyField('Expected cash'),
   billCounts: v.object({
-    '1000': v.number(),
-    '500': v.number(),
-    '100': v.number(),
-    '50': v.number(),
-    '20': v.number(),
-    '10': v.number(),
-    '5': v.number(),
-    '2': v.number(),
-    '1': v.number()
+    '1000': countField('1000 baht bill'),
+    '500': countField('500 baht bill'),
+    '100': countField('100 baht bill'),
+    '50': countField('50 baht bill'),
+    '20': countField('20 baht bill'),
+    '10': countField('10 baht coin'),
+    '5': countField('5 baht coin'),
+    '2': countField('2 baht coin'),
+    '1': countField('1 baht coin')
   }),
   paymentMethods: v.object({
-    scan: v.number(),
-    card: v.number()
+    scan: moneyField('Scan / transfer total'),
+    card: moneyField('Credit card total')
   }),
+  cashIn: moneyField('Cash In'),
   closerId: v.string(),
   closerPersonId: v.optional(v.string()),
   closerName: v.string(),
@@ -75,6 +105,9 @@ export const submitCloseShift = command(
             scanPayments: data.paymentMethods.scan,
             cardPayments: data.paymentMethods.card,
             
+            // Cash In
+            cashIn: data.cashIn,
+            
             // Notes
             notes: `Closed by: ${data.closerName}${closedByPersonId ? '' : ' (User ID not found)'}\n\n${data.notes}`
           }
@@ -84,7 +117,9 @@ export const submitCloseShift = command(
       return { success: true, id: response.id };
     } catch (e) {
       console.error('Failed to submit close shift report:', e);
-      throw error(500, { message: 'Failed to submit report to Notion' });
+      throw error(500, {
+        message: `Failed to submit report to Notion. ${getErrorMessage(e)}`
+      });
     }
   }
 );

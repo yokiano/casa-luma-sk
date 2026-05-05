@@ -61,7 +61,9 @@ export interface EmployeesResponse extends WithOptional<Omit<DatabaseObjectRespo
     "Scan QR": FilesPropertyItemObjectResponse,
     "Salary Calculation": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'Monthly', color: 'orange' } | { id: StringRequest, name: 'Daily', color: 'blue' }},
     "OT Rate (THB/hr)": FormulaPropertyItemObjectResponse,
-    "Role": RelationPropertyItemObjectResponse
+    "Role": RelationPropertyItemObjectResponse,
+    "Full Name THai": RichTextPropertyItemObjectResponse,
+    "ID Copy": FilesPropertyItemObjectResponse
   }
 }
 
@@ -177,8 +179,10 @@ type EmployeesSalaryCalculationPropertyFilter =
 
 type EmployeesOtRateThBhrPropertyFilter = FormulaPropertyFilter
 type EmployeesRolePropertyFilter = RelationPropertyFilter
+type EmployeesFullNameTHaiPropertyFilter = TextPropertyFilter
+type EmployeesIdCopyPropertyFilter = ExistencePropertyFilter
 
-export type EmployeesPropertyFilter = { visaExpiry: EmployeesVisaExpiryPropertyFilter } | { workPermitExpiry: EmployeesWorkPermitExpiryPropertyFilter } | { photo: EmployeesPhotoPropertyFilter } | { salaryThb: EmployeesSalaryThbPropertyFilter } | { languages: EmployeesLanguagesPropertyFilter } | { employmentType: EmployeesEmploymentTypePropertyFilter } | { department: EmployeesDepartmentPropertyFilter } | { endDate: EmployeesEndDatePropertyFilter } | { nationality: EmployeesNationalityPropertyFilter } | { whatsAppLine: EmployeesWhatsAppLinePropertyFilter } | { workPermitNumber: EmployeesWorkPermitNumberPropertyFilter } | { email: EmployeesEmailPropertyFilter } | { paymentFrequency: EmployeesPaymentFrequencyPropertyFilter } | { fullName: EmployeesFullNamePropertyFilter } | { documents: EmployeesDocumentsPropertyFilter } | { address: EmployeesAddressPropertyFilter } | { notes: EmployeesNotesPropertyFilter } | { bankAccountDetails: EmployeesBankAccountDetailsPropertyFilter } | { phone: EmployeesPhonePropertyFilter } | { hometown: EmployeesHometownPropertyFilter } | { employmentStatus: EmployeesEmploymentStatusPropertyFilter } | { reportsTo: EmployeesReportsToPropertyFilter } | { startDate: EmployeesStartDatePropertyFilter } | { nickname: EmployeesNicknamePropertyFilter } | { taxId: EmployeesTaxIdPropertyFilter } | { idPassportNo: EmployeesIdPassportNoPropertyFilter } | { dateOfBirth: EmployeesDateOfBirthPropertyFilter } | { workPermitScan: EmployeesWorkPermitScanPropertyFilter } | { scanQr: EmployeesScanQrPropertyFilter } | { salaryCalculation: EmployeesSalaryCalculationPropertyFilter } | { otRateThBhr: EmployeesOtRateThBhrPropertyFilter } | { role: EmployeesRolePropertyFilter }
+export type EmployeesPropertyFilter = { visaExpiry: EmployeesVisaExpiryPropertyFilter } | { workPermitExpiry: EmployeesWorkPermitExpiryPropertyFilter } | { photo: EmployeesPhotoPropertyFilter } | { salaryThb: EmployeesSalaryThbPropertyFilter } | { languages: EmployeesLanguagesPropertyFilter } | { employmentType: EmployeesEmploymentTypePropertyFilter } | { department: EmployeesDepartmentPropertyFilter } | { endDate: EmployeesEndDatePropertyFilter } | { nationality: EmployeesNationalityPropertyFilter } | { whatsAppLine: EmployeesWhatsAppLinePropertyFilter } | { workPermitNumber: EmployeesWorkPermitNumberPropertyFilter } | { email: EmployeesEmailPropertyFilter } | { paymentFrequency: EmployeesPaymentFrequencyPropertyFilter } | { fullName: EmployeesFullNamePropertyFilter } | { documents: EmployeesDocumentsPropertyFilter } | { address: EmployeesAddressPropertyFilter } | { notes: EmployeesNotesPropertyFilter } | { bankAccountDetails: EmployeesBankAccountDetailsPropertyFilter } | { phone: EmployeesPhonePropertyFilter } | { hometown: EmployeesHometownPropertyFilter } | { employmentStatus: EmployeesEmploymentStatusPropertyFilter } | { reportsTo: EmployeesReportsToPropertyFilter } | { startDate: EmployeesStartDatePropertyFilter } | { nickname: EmployeesNicknamePropertyFilter } | { taxId: EmployeesTaxIdPropertyFilter } | { idPassportNo: EmployeesIdPassportNoPropertyFilter } | { dateOfBirth: EmployeesDateOfBirthPropertyFilter } | { workPermitScan: EmployeesWorkPermitScanPropertyFilter } | { scanQr: EmployeesScanQrPropertyFilter } | { salaryCalculation: EmployeesSalaryCalculationPropertyFilter } | { otRateThBhr: EmployeesOtRateThBhrPropertyFilter } | { role: EmployeesRolePropertyFilter } | { fullNameTHai: EmployeesFullNameTHaiPropertyFilter } | { idCopy: EmployeesIdCopyPropertyFilter }
 
 export type EmployeesQuery = Omit<QueryDatabaseBodyParameters, 'filter' | 'sorts'> & {
   sorts?: Array<

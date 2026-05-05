@@ -42,7 +42,8 @@ export interface EndOfShiftReportsResponse extends WithOptional<Omit<DatabaseObj
     "Coin 5 Baht 1": NumberPropertyItemObjectResponse,
     "Bill 100 Baht 1": NumberPropertyItemObjectResponse,
     "Coin 2 Baht 1": NumberPropertyItemObjectResponse,
-    "All Income": FormulaPropertyItemObjectResponse
+    "All Income": FormulaPropertyItemObjectResponse,
+    "Cash In": NumberPropertyItemObjectResponse
   }
 }
 
@@ -69,8 +70,9 @@ type EndOfShiftReportsCoin_5Baht_1PropertyFilter = NumberPropertyFilter
 type EndOfShiftReportsBill_100Baht_1PropertyFilter = NumberPropertyFilter
 type EndOfShiftReportsCoin_2Baht_1PropertyFilter = NumberPropertyFilter
 type EndOfShiftReportsAllIncomePropertyFilter = FormulaPropertyFilter
+type EndOfShiftReportsCashInPropertyFilter = NumberPropertyFilter
 
-export type EndOfShiftReportsPropertyFilter = { cardPayments: EndOfShiftReportsCardPaymentsPropertyFilter } | { notes: EndOfShiftReportsNotesPropertyFilter } | { expectedCash: EndOfShiftReportsExpectedCashPropertyFilter } | { closedBy: EndOfShiftReportsClosedByPropertyFilter } | { posSummary: EndOfShiftReportsPosSummaryPropertyFilter } | { scanPayments: EndOfShiftReportsScanPaymentsPropertyFilter } | { date: EndOfShiftReportsDatePropertyFilter } | { shiftDate: EndOfShiftReportsShiftDatePropertyFilter } | { actualCash_1: EndOfShiftReportsActualCash_1PropertyFilter } | { cashDifference_1: EndOfShiftReportsCashDifference_1PropertyFilter } | { bill_1000Baht_1: EndOfShiftReportsBill_1000Baht_1PropertyFilter } | { coin_1Baht_1: EndOfShiftReportsCoin_1Baht_1PropertyFilter } | { bill_500Baht_1: EndOfShiftReportsBill_500Baht_1PropertyFilter } | { bill_20Baht_1: EndOfShiftReportsBill_20Baht_1PropertyFilter } | { bill_50Baht_1: EndOfShiftReportsBill_50Baht_1PropertyFilter } | { coin_10Baht_1: EndOfShiftReportsCoin_10Baht_1PropertyFilter } | { coin_5Baht_1: EndOfShiftReportsCoin_5Baht_1PropertyFilter } | { bill_100Baht_1: EndOfShiftReportsBill_100Baht_1PropertyFilter } | { coin_2Baht_1: EndOfShiftReportsCoin_2Baht_1PropertyFilter } | { allIncome: EndOfShiftReportsAllIncomePropertyFilter }
+export type EndOfShiftReportsPropertyFilter = { cardPayments: EndOfShiftReportsCardPaymentsPropertyFilter } | { notes: EndOfShiftReportsNotesPropertyFilter } | { expectedCash: EndOfShiftReportsExpectedCashPropertyFilter } | { closedBy: EndOfShiftReportsClosedByPropertyFilter } | { posSummary: EndOfShiftReportsPosSummaryPropertyFilter } | { scanPayments: EndOfShiftReportsScanPaymentsPropertyFilter } | { date: EndOfShiftReportsDatePropertyFilter } | { shiftDate: EndOfShiftReportsShiftDatePropertyFilter } | { actualCash_1: EndOfShiftReportsActualCash_1PropertyFilter } | { cashDifference_1: EndOfShiftReportsCashDifference_1PropertyFilter } | { bill_1000Baht_1: EndOfShiftReportsBill_1000Baht_1PropertyFilter } | { coin_1Baht_1: EndOfShiftReportsCoin_1Baht_1PropertyFilter } | { bill_500Baht_1: EndOfShiftReportsBill_500Baht_1PropertyFilter } | { bill_20Baht_1: EndOfShiftReportsBill_20Baht_1PropertyFilter } | { bill_50Baht_1: EndOfShiftReportsBill_50Baht_1PropertyFilter } | { coin_10Baht_1: EndOfShiftReportsCoin_10Baht_1PropertyFilter } | { coin_5Baht_1: EndOfShiftReportsCoin_5Baht_1PropertyFilter } | { bill_100Baht_1: EndOfShiftReportsBill_100Baht_1PropertyFilter } | { coin_2Baht_1: EndOfShiftReportsCoin_2Baht_1PropertyFilter } | { allIncome: EndOfShiftReportsAllIncomePropertyFilter } | { cashIn: EndOfShiftReportsCashInPropertyFilter }
 
 export type EndOfShiftReportsQuery = Omit<QueryDatabaseBodyParameters, 'filter' | 'sorts'> & {
   sorts?: Array<

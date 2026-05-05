@@ -77,7 +77,9 @@ export const EMPLOYEES_PROPS_TO_IDS = {
   "scanQr": "y%5EAY",
   "salaryCalculation": "UqIQ",
   "otRateThBhr": "pe~h",
-  "role": "o%5DfK"
+  "role": "o%5DfK",
+  "fullNameTHai": "Qpur",
+  "idCopy": "ieEB"
 } as const
 export const EMPLOYEES_IDS_TO_PROPS = {
   "%3CK%5BF": "visaExpiry",
@@ -111,7 +113,9 @@ export const EMPLOYEES_IDS_TO_PROPS = {
   "y%5EAY": "scanQr",
   "UqIQ": "salaryCalculation",
   "pe~h": "otRateThBhr",
-  "o%5DfK": "role"
+  "o%5DfK": "role",
+  "Qpur": "fullNameTHai",
+  "ieEB": "idCopy"
 } as const
 export const EMPLOYEES_PROPS_TO_TYPES = {
   "visaExpiry": "date",
@@ -145,7 +149,9 @@ export const EMPLOYEES_PROPS_TO_TYPES = {
   "scanQr": "files",
   "salaryCalculation": "select",
   "otRateThBhr": "formula",
-  "role": "relation"
+  "role": "relation",
+  "fullNameTHai": "rich_text",
+  "idCopy": "files"
 } as const
 
   export type EmployeesDTOProperties = keyof typeof EMPLOYEES_PROPS_TO_IDS

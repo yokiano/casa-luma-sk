@@ -5,12 +5,14 @@ export const handle: Handle = async ({ event, resolve }) => {
 	// Initialize role
 	event.locals.role = undefined;
 
-	// Bypass CSRF check for the customer webhook endpoint
-	if (event.url.pathname.startsWith('/api/customer')) {
+	// Bypass CSRF checks for external webhook endpoints.
+	if (
+		event.url.pathname.startsWith('/api/customer') ||
+		event.url.pathname.startsWith('/api/webhooks/receipt')
+	) {
 		// SvelteKit's CSRF protection expects the Origin header to match the request URL.
-		// Webhooks from external services (like Loyverse) often don't include an Origin header 
-		// or have a different one. Since we will validate the webhook signature manually 
-		// in the endpoint, we can safely bypass this framework-level check.
+		// Webhooks from external services (like Loyverse) often don't include an Origin header
+		// or have a different one. The endpoints validate their own webhook tokens/signatures.
 		event.request.headers.set('origin', event.url.origin);
 	}
 

@@ -19,7 +19,8 @@
 		"db:migrate:neon": "NODE_OPTIONS='--no-network-family-autoselection --dns-result-order=ipv4first' dotenv -- tsx scripts/db-migrate-neon.ts",
 		"db:push": "NODE_OPTIONS='--no-network-family-autoselection --dns-result-order=ipv4first' drizzle-kit push",
 		"db:studio": "NODE_OPTIONS='--no-network-family-autoselection --dns-result-order=ipv4first' drizzle-kit studio",
-		"receipts:backfill": "NODE_OPTIONS='--no-network-family-autoselection --dns-result-order=ipv4first' tsx scripts/backfill-loyverse-receipts.ts"
+		"receipts:backfill": "NODE_OPTIONS='--no-network-family-autoselection --dns-result-order=ipv4first' tsx scripts/backfill-loyverse-receipts.ts",
+		"receipts:reconcile": "NODE_OPTIONS='--no-network-family-autoselection --dns-result-order=ipv4first' tsx scripts/reconcile-loyverse-receipts.ts"
 	},
 	"devDependencies": {
 		"@iconify/svelte": "^5.0.2",

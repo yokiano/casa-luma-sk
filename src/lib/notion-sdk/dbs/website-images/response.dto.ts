@@ -61,7 +61,7 @@ export class WebsiteImagesPropertiesResponseDTO {
   constructor(props: WebsiteImagesResponse['properties']) {
     this.__props = props
     this.__data = {
-      section: this.__props['Section'],
+      section: this.__props['Page'],
       active: this.__props['Active'],
       altText: this.__props['Alt Text'],
       image: this.__props['Image'],
@@ -72,7 +72,7 @@ export class WebsiteImagesPropertiesResponseDTO {
 
 
   get section() {
-    return this.__props['Section']?.select
+    return this.__props['Page']?.select
   }
 
   get active() {

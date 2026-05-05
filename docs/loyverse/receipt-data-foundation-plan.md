@@ -1,189 +1,98 @@
-# Loyverse Receipt Data Foundation Plan
+# Loyverse Receipt Data Foundation
 
-This plan defines a production-ready data foundation for ingesting Loyverse receipt webhooks with type safety, reproducibility, and analytics readiness.
+This document now describes the current receipt ingestion architecture and operating runbook. The original plan has mostly been implemented: receipt webhooks and backfill both write normalized Postgres/Neon tables, and `/tools/receipts` reads those tables.
 
-## Goals
+## Current architecture
 
-- Keep every webhook payload for audit, replay, and backfills.
-- Normalize key entities for search, joins, and reporting.
-- Enforce idempotent processing and safe retries.
-- Use code-first schema and migrations in TypeScript.
-- Keep local and cloud environments aligned.
+1. Loyverse sends closed receipt webhooks to `POST /api/webhooks/receipt`.
+2. `src/routes/api/webhooks/receipt/+server.ts` validates the optional `x-webhook-token` header against `LOYVERSE_WEBHOOK_SECRET`, accepts a single receipt under `items` or a batch under `receipts[]`, and calls ingestion.
+3. `src/lib/server/db/ingest-receipt-webhook.ts` delegates to `src/lib/server/db/ingest-receipt-core.ts` using the app DB client.
+4. `ingest-receipt-core.ts` writes the raw event to `webhook_events`, then upserts `receipts` and replaces child rows in one transaction.
+5. `/tools/receipts` calls `src/lib/receipts.remote.ts`, which calls `queryReceiptsFromDb()` in `src/lib/server/db/receipt-queries.ts` and reconstructs Loyverse-shaped receipt objects from Neon/Postgres.
 
-## Stack Decision
+Backfills use the same ingestion core through `scripts/backfill-loyverse-receipts.ts`, with synthetic event type `receipt.backfill.import`.
 
-- Database: PostgreSQL on [Neon](https://neon.tech) (`us-east-1`, serverless).
-- Schema and migrations: Drizzle ORM + drizzle-kit.
-- Runtime driver: `postgres` (`postgres.js`).
-- Validation: `valibot` for webhook payload validation.
+## Database model
 
-Why this stack:
+Schema is currently in one file: `src/lib/server/db/schema.ts`.
 
-- Strong transactional guarantees for webhook processing.
-- Easy normalization of nested receipt payloads.
-- Type-safe queries and reproducible migration files.
-- Neon provides serverless Postgres with zero-ops, Vercel-friendly connection pooling, and scale-to-zero.
+Tables:
 
-Previously ran on local Docker Postgres; migrated to Neon in Feb 2025. See `docs/database.md` for connection details, migration commands, and known issues.
+- `webhook_events`: raw payload, dedupe key, processing status, errors.
+- `receipts`: one row per merchant/receipt number.
+- `receipt_line_items`
+- `receipt_line_modifiers`
+- `receipt_discounts`
+- `receipt_line_discounts`
+- `receipt_taxes`
+- `receipt_line_taxes`
+- `receipt_payments`
+- `reported_errors`: validation/incident pipeline.
 
-## High-Level Architecture
+Migrations live in `drizzle/`:
 
-1. Loyverse webhook -> SvelteKit endpoint (`src/routes/api/webhooks/receipt/+server.ts`).
-2. Validate + deduplicate event.
-3. Insert raw event (`webhook_events`) as append-only record.
-4. Upsert receipt header and replace child rows in one transaction.
-5. Return `2xx` quickly.
+- `0000_ancient_bromley.sql`: receipt/webhook schema.
+- `0001_black_avengers.sql`: reported errors table.
 
-## Data Model (Hybrid)
+Current monetary columns use `doublePrecision`. Do not assume fixed-precision `numeric` unless a future migration changes this deliberately.
 
-Keep both raw and normalized data:
+## Idempotency and update behavior
 
-- `webhook_events`: raw JSONB payload, dedupe key, processing metadata.
-- `receipts`: one row per receipt.
-- `receipt_line_items`: one row per line item.
-- `receipt_line_modifiers`: one row per line modifier.
-- `receipt_discounts`: receipt-level discounts.
-- `receipt_line_discounts`: line-level discounts.
-- `receipt_taxes`: receipt-level taxes.
-- `receipt_line_taxes`: line-level taxes.
-- `receipt_payments`: payments per receipt (`payment_details` as JSONB).
+- Business receipt key: `${merchant_id}:${receipt_number}`.
+- `webhook_events.dedupe_key` is a SHA-256 hash over merchant id, event type, event timestamp, receipt number, receipt `updated_at`, and total.
+- Duplicate raw events are acknowledged and skipped.
+- If an existing receipt has `updated_from_event_at` newer than the incoming event timestamp, the incoming event is marked processed but treated as stale.
+- Otherwise the receipt header is upserted and child rows are deleted/reinserted for that receipt.
 
-Design notes:
+## Validation and incidents
 
-- Natural business key: `(merchant_id, receipt_number)`.
-- Event-order guard: only apply updates if incoming event timestamp is newer.
-- Keep monetary columns numeric with fixed precision.
+The webhook route runs receipt validation and incident reporting after a receipt is successfully processed. Shape checks are currently hand-written in the route/core; valibot is only used for receipt query input validation.
 
-## Idempotency and Safety
+Backfill currently ingests only; it does not run the webhook validation/incident step. If validation parity is required for historical imports, add it explicitly before relying on backfill for incident coverage.
 
-- Build deterministic `dedupe_key` from stable event fields.
-- Unique index on `webhook_events.dedupe_key`.
-- Processing transaction pattern:
-  1. Insert event row (`ON CONFLICT DO NOTHING`).
-  2. If conflict, acknowledge and stop.
-  3. Upsert `receipts` header.
-  4. Delete and reinsert child rows for that receipt.
-  5. Mark event processed.
-- Verify webhook signature/secret when available.
-- Always acknowledge quickly; avoid long synchronous processing.
+## Environment variables
 
-## Environment Variables
+Required for production runtime:
 
-Database connection strings are provided by Neon — see `docs/database.md` for the full list.
+- `DATABASE_URL` — Neon pooled connection string.
+- `LOYVERSE_WEBHOOK_SECRET` — optional but recommended; Loyverse must send matching `x-webhook-token` if set.
 
-Key vars in `.env`:
+Required for migrations/tools:
 
-- `DATABASE_URL` — pooled Neon endpoint (app runtime)
-- `DATABASE_URL_UNPOOLED` — direct Neon endpoint (migrations, drizzle-kit)
-- `LOYVERSE_WEBHOOK_SECRET=` (or tokenized path strategy)
+- `DATABASE_URL_UNPOOLED` — Neon direct connection string for Drizzle migrations.
+- `LOYVERSE_ACCESS_TOKEN` — required for backfill/reconciliation scripts.
+- `LOYVERSE_MERCHANT_ID` — required for backfill/reconciliation unless `--merchant-id` is passed.
+- `LOYVERSE_STORE_ID` — optional default store id; spelling must be exactly this.
 
-## Command Runbook
+See `.env.example` and `docs/database.md`.
 
-### A) WSL / Project Terminal
-
-Install DB tooling:
+## Commands
 
 ```bash
-pnpm add drizzle-orm postgres
-pnpm add -D drizzle-kit
+pnpm db:generate
+pnpm db:migrate
+pnpm db:studio
+
+pnpm receipts:reconcile -- --date-from 2026-04-28T00:00:00Z --date-to 2026-05-05T23:59:59Z --json
+pnpm receipts:backfill -- --date-from 2026-04-28T00:00:00Z --date-to 2026-05-05T23:59:59Z --dry-run
+pnpm receipts:backfill -- --date-from 2026-04-28T00:00:00Z --date-to 2026-05-05T23:59:59Z
 ```
 
-Verify:
+## Operational checklist
 
-```bash
-pnpm list --depth 0
-```
+Before enabling production ingestion/backfill:
 
-Expected next scripts in `package.json`:
+1. Confirm Vercel has `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `LOYVERSE_WEBHOOK_SECRET`, and any alerting vars.
+2. Confirm Loyverse webhook URL points to `https://<deployment>/api/webhooks/receipt` and sends `x-webhook-token` if a secret is configured.
+3. Run `pnpm db:migrate` against Neon.
+4. Run reconciliation for a small date window.
+5. Run backfill dry-run for that same window.
+6. Run real backfill only after the reconciliation report looks correct.
+7. Re-run reconciliation and manually check `/tools/receipts`.
 
-```json
-{
-  "scripts": {
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
-    "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio"
-  }
-}
-```
+## Remaining gaps
 
-### B) Docker Host Side (Docker Desktop)
-
-If Docker is not available in WSL, enable WSL integration in Docker Desktop first.
-
-Create and run local PostgreSQL:
-
-```bash
-docker volume create casa_luma_pgdata
-docker run --name casa-luma-postgres \
-  -e POSTGRES_USER=app \
-  -e POSTGRES_PASSWORD=app \
-  -e POSTGRES_DB=casa_luma \
-  -p 5432:5432 \
-  -v casa_luma_pgdata:/var/lib/postgresql/data \
-  -d postgres:16
-```
-
-Sanity checks:
-
-```bash
-docker ps
-docker logs casa-luma-postgres
-docker exec -it casa-luma-postgres psql -U app -d casa_luma -c "select version();"
-```
-
-## Repository Structure (Target)
-
-```text
-src/lib/server/db/
-  client.ts
-  schema/
-    webhook-events.ts
-    receipts.ts
-    receipt-line-items.ts
-    receipt-modifiers.ts
-    receipt-discounts.ts
-    receipt-taxes.ts
-    receipt-payments.ts
-drizzle.config.ts
-drizzle/
-```
-
-## Migration Workflow
-
-1. Edit schema files in `src/lib/server/db/schema/*`.
-2. Generate migration: `pnpm db:generate`.
-3. Apply migration: `pnpm db:migrate`.
-4. Commit schema + migration files together.
-
-## Analytics Readiness (Phase 2)
-
-After ingestion is stable, add analytics views/materialized views:
-
-- `fact_receipt_lines`
-- `fact_receipt_payments`
-- `daily_store_sales`
-
-Initial indexes to prioritize:
-
-- `receipts(merchant_id, receipt_number)` unique.
-- `webhook_events(dedupe_key)` unique.
-- `receipts(receipt_date)`.
-- `receipt_line_items(item_id)`.
-- `receipt_payments(type)`.
-
-## Cloud Migration Path
-
-**Completed** — migrated to Neon (Feb 2025).
-
-- Schema and migrations are identical across local and cloud environments.
-- `DATABASE_URL` points to Neon's pooled endpoint; `DATABASE_URL_UNPOOLED` to the direct endpoint.
-- See `docs/database.md` for full setup, commands, and troubleshooting.
-
-## Immediate Next Implementation Steps
-
-1. Install Drizzle + Postgres packages.
-2. Add `drizzle.config.ts` and DB scripts in `package.json`.
-3. Define schema files and create first migration.
-4. Implement transactional ingestion in the webhook route.
-5. Add basic reconciliation query (events received vs processed).
+- Full historical reconciliation/backfill has not been run in this recovery project.
+- Backfill validation parity is not implemented.
+- Receipt UI type issues may still appear in repo-wide `pnpm check` alongside unrelated errors.
+- Analytics views/materialized views are still future work.

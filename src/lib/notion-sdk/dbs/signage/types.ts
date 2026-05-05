@@ -2,6 +2,7 @@ import { WithOptional, Join, PathsToStringProps } from '../../core/types/helper.
 import {
 DatabaseObjectResponse,
 StringRequest,
+FilesPropertyItemObjectResponse,
 RichTextPropertyItemObjectResponse,
 SelectPropertyItemObjectResponse,
 StatusPropertyItemObjectResponse,
@@ -22,7 +23,8 @@ export interface SignageResponse extends WithOptional<Omit<DatabaseObjectRespons
     "Sign ID": RichTextPropertyItemObjectResponse,
     "Status": Omit<StatusPropertyItemObjectResponse, 'status'> & { status: { id: StringRequest, name: 'Idea', color: 'gray' } | { id: StringRequest, name: 'Printed', color: 'green' } | { id: StringRequest, name: 'Installed', color: 'purple' } | { id: StringRequest, name: 'Draft', color: 'blue' } | { id: StringRequest, name: 'Ready to Print', color: 'yellow' }},
     "Name": TitlePropertyItemObjectResponse,
-    "Link to file": RichTextPropertyItemObjectResponse
+    "Link to file": RichTextPropertyItemObjectResponse,
+    "File": FilesPropertyItemObjectResponse
   }
 }
 
@@ -69,8 +71,9 @@ type SignageStatusPropertyFilter =
 
 type SignageNamePropertyFilter = TextPropertyFilter
 type SignageLinkToFilePropertyFilter = TextPropertyFilter
+type SignageFilePropertyFilter = ExistencePropertyFilter
 
-export type SignagePropertyFilter = { location: SignageLocationPropertyFilter } | { type: SignageTypePropertyFilter } | { copy: SignageCopyPropertyFilter } | { signId: SignageSignIdPropertyFilter } | { status: SignageStatusPropertyFilter } | { name: SignageNamePropertyFilter } | { linkToFile: SignageLinkToFilePropertyFilter }
+export type SignagePropertyFilter = { location: SignageLocationPropertyFilter } | { type: SignageTypePropertyFilter } | { copy: SignageCopyPropertyFilter } | { signId: SignageSignIdPropertyFilter } | { status: SignageStatusPropertyFilter } | { name: SignageNamePropertyFilter } | { linkToFile: SignageLinkToFilePropertyFilter } | { file: SignageFilePropertyFilter }
 
 export type SignageQuery = Omit<QueryDatabaseBodyParameters, 'filter' | 'sorts'> & {
   sorts?: Array<

@@ -1,0 +1,1155 @@
+
+> casa-luma-sk@0.0.1 receipts:backfill /home/yardenavirav/dev/casa-luma-sk/casa-luma-sk
+> NODE_OPTIONS='--no-network-family-autoselection --dns-result-order=ipv4first' tsx scripts/backfill-loyverse-receipts.ts -- --merchant-id 8b53e5cb-f55c-4495-bcee-eb97bece308e --date-from 2026-01-01T00:00:00Z --date-to 2026-05-05T23:59:59Z --concurrency 2
+
+[backfill] starting {
+  merchantId: '8b53e5cb-f55c-4495-bcee-eb97bece308e',
+  dateFrom: '2026-01-01T00:00:00Z',
+  dateTo: '2026-05-05T23:59:59Z',
+  storeId: null,
+  receiptNumber: null,
+  dryRun: false,
+  max: null,
+  concurrency: 2
+}
+[backfill] progress {
+  page: 1,
+  pageProgress: '50/250',
+  counters: {
+    fetched: 250,
+    processed: 0,
+    duplicate: 50,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 1,
+  pageProgress: '100/250',
+  counters: {
+    fetched: 250,
+    processed: 0,
+    duplicate: 100,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 1,
+  pageProgress: '150/250',
+  counters: {
+    fetched: 250,
+    processed: 0,
+    duplicate: 150,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 1,
+  pageProgress: '200/250',
+  counters: {
+    fetched: 250,
+    processed: 0,
+    duplicate: 200,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 1,
+  pageProgress: '250/250',
+  counters: {
+    fetched: 250,
+    processed: 0,
+    duplicate: 250,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] page done {
+  page: 1,
+  pageCount: 250,
+  cursor: 'CIDQ6ra3MxCYoNbU3zNCBKKnjgJIjJbYpiRg-gFwBw==',
+  elapsedMs: 77063,
+  counters: {
+    fetched: 250,
+    processed: 0,
+    duplicate: 250,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 2,
+  pageProgress: '50/250',
+  counters: {
+    fetched: 500,
+    processed: 0,
+    duplicate: 300,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 2,
+  pageProgress: '100/250',
+  counters: {
+    fetched: 500,
+    processed: 0,
+    duplicate: 350,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 2,
+  pageProgress: '150/250',
+  counters: {
+    fetched: 500,
+    processed: 0,
+    duplicate: 400,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 2,
+  pageProgress: '200/250',
+  counters: {
+    fetched: 500,
+    processed: 0,
+    duplicate: 450,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 2,
+  pageProgress: '250/250',
+  counters: {
+    fetched: 500,
+    processed: 0,
+    duplicate: 500,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] page done {
+  page: 2,
+  pageCount: 250,
+  cursor: 'CIDQ6ra3MxCYoNbU3zNCBKKnjgJIyPm-jSRg-gFwBw==',
+  elapsedMs: 78810,
+  counters: {
+    fetched: 500,
+    processed: 0,
+    duplicate: 500,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 3,
+  pageProgress: '50/250',
+  counters: {
+    fetched: 750,
+    processed: 0,
+    duplicate: 550,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 3,
+  pageProgress: '100/250',
+  counters: {
+    fetched: 750,
+    processed: 0,
+    duplicate: 600,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 3,
+  pageProgress: '150/250',
+  counters: {
+    fetched: 750,
+    processed: 0,
+    duplicate: 650,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 3,
+  pageProgress: '200/250',
+  counters: {
+    fetched: 750,
+    processed: 0,
+    duplicate: 700,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 3,
+  pageProgress: '250/250',
+  counters: {
+    fetched: 750,
+    processed: 0,
+    duplicate: 750,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] page done {
+  page: 3,
+  pageCount: 250,
+  cursor: 'CIDQ6ra3MxCYoNbU3zNCBKKnjgJI7ZCU-CNg-gFwBw==',
+  elapsedMs: 77482,
+  counters: {
+    fetched: 750,
+    processed: 0,
+    duplicate: 750,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 4,
+  pageProgress: '50/250',
+  counters: {
+    fetched: 1000,
+    processed: 0,
+    duplicate: 800,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 4,
+  pageProgress: '100/250',
+  counters: {
+    fetched: 1000,
+    processed: 0,
+    duplicate: 850,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 4,
+  pageProgress: '150/250',
+  counters: {
+    fetched: 1000,
+    processed: 0,
+    duplicate: 900,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 4,
+  pageProgress: '200/250',
+  counters: {
+    fetched: 1000,
+    processed: 0,
+    duplicate: 950,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 4,
+  pageProgress: '250/250',
+  counters: {
+    fetched: 1000,
+    processed: 0,
+    duplicate: 1000,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] page done {
+  page: 4,
+  pageCount: 250,
+  cursor: 'CIDQ6ra3MxCYoNbU3zNCBKKnjgJItdP_3yNg-gFwBw==',
+  elapsedMs: 72951,
+  counters: {
+    fetched: 1000,
+    processed: 0,
+    duplicate: 1000,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 5,
+  pageProgress: '50/250',
+  counters: {
+    fetched: 1250,
+    processed: 0,
+    duplicate: 1050,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 5,
+  pageProgress: '100/250',
+  counters: {
+    fetched: 1250,
+    processed: 0,
+    duplicate: 1100,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 5,
+  pageProgress: '150/250',
+  counters: {
+    fetched: 1250,
+    processed: 0,
+    duplicate: 1150,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 5,
+  pageProgress: '200/250',
+  counters: {
+    fetched: 1250,
+    processed: 1,
+    duplicate: 1199,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 5,
+  pageProgress: '250/250',
+  counters: {
+    fetched: 1250,
+    processed: 1,
+    duplicate: 1249,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] page done {
+  page: 5,
+  pageCount: 250,
+  cursor: 'CIDQ6ra3MxCYoNbU3zNCBKKnjgJIjIaXzCNg-gFwBw==',
+  elapsedMs: 82664,
+  counters: {
+    fetched: 1250,
+    processed: 1,
+    duplicate: 1249,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 6,
+  pageProgress: '50/250',
+  counters: {
+    fetched: 1500,
+    processed: 1,
+    duplicate: 1299,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 6,
+  pageProgress: '100/250',
+  counters: {
+    fetched: 1500,
+    processed: 1,
+    duplicate: 1349,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 6,
+  pageProgress: '150/250',
+  counters: {
+    fetched: 1500,
+    processed: 1,
+    duplicate: 1399,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 6,
+  pageProgress: '200/250',
+  counters: {
+    fetched: 1500,
+    processed: 1,
+    duplicate: 1449,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 6,
+  pageProgress: '250/250',
+  counters: {
+    fetched: 1500,
+    processed: 1,
+    duplicate: 1499,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] page done {
+  page: 6,
+  pageCount: 250,
+  cursor: 'CIDQ6ra3MxCYoNbU3zNCBKKnjgJIlKb9siNg-gFwBw==',
+  elapsedMs: 76552,
+  counters: {
+    fetched: 1500,
+    processed: 1,
+    duplicate: 1499,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 7,
+  pageProgress: '50/250',
+  counters: {
+    fetched: 1750,
+    processed: 1,
+    duplicate: 1549,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 7,
+  pageProgress: '100/250',
+  counters: {
+    fetched: 1750,
+    processed: 1,
+    duplicate: 1599,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 7,
+  pageProgress: '150/250',
+  counters: {
+    fetched: 1750,
+    processed: 1,
+    duplicate: 1649,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 7,
+  pageProgress: '200/250',
+  counters: {
+    fetched: 1750,
+    processed: 1,
+    duplicate: 1699,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 7,
+  pageProgress: '250/250',
+  counters: {
+    fetched: 1750,
+    processed: 1,
+    duplicate: 1749,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] page done {
+  page: 7,
+  pageCount: 250,
+  cursor: 'CIDQ6ra3MxCYoNbU3zNCBKKnjgJItPvykyNg-gFwBw==',
+  elapsedMs: 75779,
+  counters: {
+    fetched: 1750,
+    processed: 1,
+    duplicate: 1749,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 8,
+  pageProgress: '50/250',
+  counters: {
+    fetched: 2000,
+    processed: 1,
+    duplicate: 1799,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 8,
+  pageProgress: '100/250',
+  counters: {
+    fetched: 2000,
+    processed: 1,
+    duplicate: 1849,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 8,
+  pageProgress: '150/250',
+  counters: {
+    fetched: 2000,
+    processed: 43,
+    duplicate: 1857,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 8,
+  pageProgress: '200/250',
+  counters: {
+    fetched: 2000,
+    processed: 93,
+    duplicate: 1857,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 8,
+  pageProgress: '250/250',
+  counters: {
+    fetched: 2000,
+    processed: 143,
+    duplicate: 1857,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] page done {
+  page: 8,
+  pageCount: 250,
+  cursor: 'CIDQ6ra3MxCYoNbU3zNCBKKnjgJI0qaF-SJg-gFwBw==',
+  elapsedMs: 614153,
+  counters: {
+    fetched: 2000,
+    processed: 143,
+    duplicate: 1857,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 9,
+  pageProgress: '50/250',
+  counters: {
+    fetched: 2250,
+    processed: 193,
+    duplicate: 1857,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 9,
+  pageProgress: '100/250',
+  counters: {
+    fetched: 2250,
+    processed: 243,
+    duplicate: 1857,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 9,
+  pageProgress: '150/250',
+  counters: {
+    fetched: 2250,
+    processed: 293,
+    duplicate: 1857,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 9,
+  pageProgress: '200/250',
+  counters: {
+    fetched: 2250,
+    processed: 343,
+    duplicate: 1857,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 9,
+  pageProgress: '250/250',
+  counters: {
+    fetched: 2250,
+    processed: 393,
+    duplicate: 1857,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] page done {
+  page: 9,
+  pageCount: 250,
+  cursor: 'CIDQ6ra3MxCYoNbU3zNCBKKnjgJIx_uj4SJg-gFwBw==',
+  elapsedMs: 1017601,
+  counters: {
+    fetched: 2250,
+    processed: 393,
+    duplicate: 1857,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 10,
+  pageProgress: '50/250',
+  counters: {
+    fetched: 2500,
+    processed: 443,
+    duplicate: 1857,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 10,
+  pageProgress: '100/250',
+  counters: {
+    fetched: 2500,
+    processed: 493,
+    duplicate: 1857,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 10,
+  pageProgress: '150/250',
+  counters: {
+    fetched: 2500,
+    processed: 543,
+    duplicate: 1857,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 10,
+  pageProgress: '200/250',
+  counters: {
+    fetched: 2500,
+    processed: 593,
+    duplicate: 1857,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] progress {
+  page: 10,
+  pageProgress: '250/250',
+  counters: {
+    fetched: 2500,
+    processed: 643,
+    duplicate: 1857,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] page done {
+  page: 10,
+  pageCount: 250,
+  cursor: 'CIDQ6ra3MxCYoNbU3zNCBKKnjgJI-8jhxSJg-gFwBw==',
+  elapsedMs: 1010228,
+  counters: {
+    fetched: 2500,
+    processed: 643,
+    duplicate: 1857,
+    stale: 0,
+    skipped: 0,
+    failed: 0
+  }
+}
+[backfill] failed receipt {
+  receiptNumber: '1-1721',
+  error: 'write CONNECTION_CLOSED ep-fancy-bird-ai9diy30-pooler.c-4.us-east-1.aws.neon.tech:5432',
+  rawError: Error: write CONNECTION_CLOSED ep-fancy-bird-ai9diy30-pooler.c-4.us-east-1.aws.neon.tech:5432
+      at TLSSocket.closed (file:///home/yardenavirav/dev/casa-luma-sk/casa-luma-sk/node_modules/.pnpm/postgres@3.4.8/node_modules/postgres/src/connection.js:457:32)
+      at TLSSocket.emit (node:events:536:35)
+      at node:net:351:12
+      at Socket.done (node:_tls_wrap:650:7)
+      at Object.onceWrapper (node:events:639:26)
+      at Socket.emit (node:events:536:35)
+      at TCP.<anonymous> (node:net:351:12) {
+    code: 'CONNECTION_CLOSED',
+    errno: 'CONNECTION_CLOSED',
+    address: [ 'ep-fancy-bird-ai9diy30-pooler.c-4.us-east-1.aws.neon.tech' ],
+    port: [ 5432 ]
+  }
+}
+[backfill] failed receipt {
+  receiptNumber: '1-1720',
+  error: 'read ETIMEDOUT',
+  rawError: Error: read ETIMEDOUT
+      at TLSWrap.onStreamRead (node:internal/stream_base_commons:216:20)
+      at cachedError (file:///home/yardenavirav/dev/casa-luma-sk/casa-luma-sk/node_modules/.pnpm/postgres@3.4.8/node_modules/postgres/src/query.js:170:23)
+      at new Query (file:///home/yardenavirav/dev/casa-luma-sk/casa-luma-sk/node_modules/.pnpm/postgres@3.4.8/node_modules/postgres/src/query.js:36:24)
+      at sql (file:///home/yardenavirav/dev/casa-luma-sk/casa-luma-sk/node_modules/.pnpm/postgres@3.4.8/node_modules/postgres/src/index.js:112:11)
+      at scope (file:///home/yardenavirav/dev/casa-luma-sk/casa-luma-sk/node_modules/.pnpm/postgres@3.4.8/node_modules/postgres/src/index.js:278:22) {
+    errno: -110,
+    code: 'ETIMEDOUT',
+    syscall: 'read'
+  }
+}
+[backfill] progress {
+  page: 11,
+  pageProgress: '50/250',
+  counters: {
+    fetched: 2750,
+    processed: 691,
+    duplicate: 1857,
+    stale: 0,
+    skipped: 0,
+    failed: 2
+  }
+}
+[backfill] progress {
+  page: 11,
+  pageProgress: '100/250',
+  counters: {
+    fetched: 2750,
+    processed: 741,
+    duplicate: 1857,
+    stale: 0,
+    skipped: 0,
+    failed: 2
+  }
+}
+[backfill] progress {
+  page: 11,
+  pageProgress: '150/250',
+  counters: {
+    fetched: 2750,
+    processed: 791,
+    duplicate: 1857,
+    stale: 0,
+    skipped: 0,
+    failed: 2
+  }
+}
+[backfill] progress {
+  page: 11,
+  pageProgress: '200/250',
+  counters: {
+    fetched: 2750,
+    processed: 824,
+    duplicate: 1874,
+    stale: 0,
+    skipped: 0,
+    failed: 2
+  }
+}
+[backfill] progress {
+  page: 11,
+  pageProgress: '250/250',
+  counters: {
+    fetched: 2750,
+    processed: 824,
+    duplicate: 1924,
+    stale: 0,
+    skipped: 0,
+    failed: 2
+  }
+}
+[backfill] page done {
+  page: 11,
+  pageCount: 250,
+  cursor: 'CIDQ6ra3MxCYoNbU3zNCBKKnjgJI_eS6qCJg-gFwBw==',
+  elapsedMs: 27440244,
+  counters: {
+    fetched: 2750,
+    processed: 824,
+    duplicate: 1924,
+    stale: 0,
+    skipped: 0,
+    failed: 2
+  }
+}
+[backfill] progress {
+  page: 12,
+  pageProgress: '50/250',
+  counters: {
+    fetched: 3000,
+    processed: 825,
+    duplicate: 1973,
+    stale: 0,
+    skipped: 0,
+    failed: 2
+  }
+}
+[backfill] progress {
+  page: 12,
+  pageProgress: '100/250',
+  counters: {
+    fetched: 3000,
+    processed: 826,
+    duplicate: 2022,
+    stale: 0,
+    skipped: 0,
+    failed: 2
+  }
+}
+[backfill] progress {
+  page: 12,
+  pageProgress: '150/250',
+  counters: {
+    fetched: 3000,
+    processed: 826,
+    duplicate: 2072,
+    stale: 0,
+    skipped: 0,
+    failed: 2
+  }
+}
+[backfill] progress {
+  page: 12,
+  pageProgress: '200/250',
+  counters: {
+    fetched: 3000,
+    processed: 826,
+    duplicate: 2122,
+    stale: 0,
+    skipped: 0,
+    failed: 2
+  }
+}
+[backfill] progress {
+  page: 12,
+  pageProgress: '250/250',
+  counters: {
+    fetched: 3000,
+    processed: 826,
+    duplicate: 2172,
+    stale: 0,
+    skipped: 0,
+    failed: 2
+  }
+}
+[backfill] page done {
+  page: 12,
+  pageCount: 250,
+  cursor: 'CIDQ6ra3MxCYoNbU3zNCBKKnjgJI8smRiCJg-gFwBw==',
+  elapsedMs: 93269,
+  counters: {
+    fetched: 3000,
+    processed: 826,
+    duplicate: 2172,
+    stale: 0,
+    skipped: 0,
+    failed: 2
+  }
+}
+[backfill] progress {
+  page: 13,
+  pageProgress: '50/250',
+  counters: {
+    fetched: 3250,
+    processed: 826,
+    duplicate: 2222,
+    stale: 0,
+    skipped: 0,
+    failed: 2
+  }
+}
+[backfill] progress {
+  page: 13,
+  pageProgress: '100/250',
+  counters: {
+    fetched: 3250,
+    processed: 826,
+    duplicate: 2272,
+    stale: 0,
+    skipped: 0,
+    failed: 2
+  }
+}
+[backfill] progress {
+  page: 13,
+  pageProgress: '150/250',
+  counters: {
+    fetched: 3250,
+    processed: 826,
+    duplicate: 2322,
+    stale: 0,
+    skipped: 0,
+    failed: 2
+  }
+}
+[backfill] progress {
+  page: 13,
+  pageProgress: '200/250',
+  counters: {
+    fetched: 3250,
+    processed: 826,
+    duplicate: 2372,
+    stale: 0,
+    skipped: 0,
+    failed: 2
+  }
+}
+[backfill] progress {
+  page: 13,
+  pageProgress: '250/250',
+  counters: {
+    fetched: 3250,
+    processed: 826,
+    duplicate: 2422,
+    stale: 0,
+    skipped: 0,
+    failed: 2
+  }
+}
+[backfill] page done {
+  page: 13,
+  pageCount: 250,
+  cursor: 'CIDQ6ra3MxCYoNbU3zNCBKKnjgJI9qe-4iFg-gFwBw==',
+  elapsedMs: 77612,
+  counters: {
+    fetched: 3250,
+    processed: 826,
+    duplicate: 2422,
+    stale: 0,
+    skipped: 0,
+    failed: 2
+  }
+}
+[backfill] progress {
+  page: 14,
+  pageProgress: '50/250',
+  counters: {
+    fetched: 3500,
+    processed: 826,
+    duplicate: 2472,
+    stale: 0,
+    skipped: 0,
+    failed: 2
+  }
+}
+[backfill] progress {
+  page: 14,
+  pageProgress: '100/250',
+  counters: {
+    fetched: 3500,
+    processed: 826,
+    duplicate: 2522,
+    stale: 0,
+    skipped: 0,
+    failed: 2
+  }
+}
+[backfill] progress {
+  page: 14,
+  pageProgress: '150/250',
+  counters: {
+    fetched: 3500,
+    processed: 826,
+    duplicate: 2572,
+    stale: 0,
+    skipped: 0,
+    failed: 2
+  }
+}
+[backfill] progress {
+  page: 14,
+  pageProgress: '200/250',
+  counters: {
+    fetched: 3500,
+    processed: 826,
+    duplicate: 2622,
+    stale: 0,
+    skipped: 0,
+    failed: 2
+  }
+}
+[backfill] progress {
+  page: 14,
+  pageProgress: '250/250',
+  counters: {
+    fetched: 3500,
+    processed: 838,
+    duplicate: 2660,
+    stale: 0,
+    skipped: 0,
+    failed: 2
+  }
+}
+[backfill] page done {
+  page: 14,
+  pageCount: 250,
+  cursor: 'CIDQ6ra3MxCYoNbU3zNCBKKnjgJIi-eSvyFg-gFwBw==',
+  elapsedMs: 130052,
+  counters: {
+    fetched: 3500,
+    processed: 838,
+    duplicate: 2660,
+    stale: 0,
+    skipped: 0,
+    failed: 2
+  }
+}
+[backfill] progress {
+  page: 15,
+  pageProgress: '50/250',
+  counters: {
+    fetched: 3750,
+    processed: 838,
+    duplicate: 2710,
+    stale: 0,
+    skipped: 0,
+    failed: 2
+  }
+}
+[backfill] progress {
+  page: 15,
+  pageProgress: '100/250',
+  counters: {
+    fetched: 3750,
+    processed: 838,
+    duplicate: 2760,
+    stale: 0,
+    skipped: 0,
+    failed: 2
+  }
+}
+[backfill] progress {
+  page: 15,
+  pageProgress: '150/250',
+  counters: {
+    fetched: 3750,
+    processed: 887,
+    duplicate: 2761,
+    stale: 0,
+    skipped: 0,
+    failed: 2
+  }
+}
+[backfill] progress {
+  page: 15,
+  pageProgress: '200/250',
+  counters: {
+    fetched: 3750,
+    processed: 937,
+    duplicate: 2761,
+    stale: 0,
+    skipped: 0,
+    failed: 2
+  }
+}
+[backfill] progress {
+  page: 15,
+  pageProgress: '250/250',
+  counters: {
+    fetched: 3750,
+    processed: 987,
+    duplicate: 2761,
+    stale: 0,
+    skipped: 0,
+    failed: 2
+  }
+}
+[backfill] page done {
+  page: 15,
+  pageCount: 250,
+  cursor: 'CIDQ6ra3MxCYoNbU3zNCBKKnjgJI36O3oyFg-gFwBw==',
+  elapsedMs: 638048,
+  counters: {
+    fetched: 3750,
+    processed: 987,
+    duplicate: 2761,
+    stale: 0,
+    skipped: 0,
+    failed: 2
+  }
+}

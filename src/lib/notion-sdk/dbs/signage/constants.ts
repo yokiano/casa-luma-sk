@@ -31,7 +31,8 @@ export const SIGNAGE_PROPS_TO_IDS = {
   "signId": "Q%3FI%5D",
   "status": "U%3A%3F%3A",
   "name": "title",
-  "linkToFile": "vWoE"
+  "linkToFile": "vWoE",
+  "file": "chdb"
 } as const
 export const SIGNAGE_IDS_TO_PROPS = {
   "%40Gj%7C": "location",
@@ -40,7 +41,8 @@ export const SIGNAGE_IDS_TO_PROPS = {
   "Q%3FI%5D": "signId",
   "U%3A%3F%3A": "status",
   "title": "name",
-  "vWoE": "linkToFile"
+  "vWoE": "linkToFile",
+  "chdb": "file"
 } as const
 export const SIGNAGE_PROPS_TO_TYPES = {
   "location": "select",
@@ -49,7 +51,8 @@ export const SIGNAGE_PROPS_TO_TYPES = {
   "signId": "rich_text",
   "status": "status",
   "name": "title",
-  "linkToFile": "rich_text"
+  "linkToFile": "rich_text",
+  "file": "files"
 } as const
 
   export type SignageDTOProperties = keyof typeof SIGNAGE_PROPS_TO_IDS

@@ -1,8 +1,9 @@
 <script lang="ts">
 	type CloseShiftStateLike = {
 		actualCash: number;
-		billCounts: Record<string, number>;
+		billCounts: Record<string, number | undefined>;
 		clearBillCounts(): void;
+		normalizeBillCount(denom: string): void;
 	};
 
 	type Props = {
@@ -37,7 +38,7 @@
 	</div>
 
 	<div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-		{#each denominations as denom}
+		{#each denominations as denom (denom)}
 			<div class="bg-gray-50 p-3 rounded-xl border border-gray-200 hover:border-[#5c4a3d]/30 transition-all flex flex-col gap-2 relative">
 				{#if (shiftState.billCounts[denom] ?? 0) > 0}
 					<button
@@ -56,8 +57,10 @@
 					type="number"
 					inputmode="numeric"
 					min="0"
+					step="1"
 					placeholder="0"
 					bind:value={shiftState.billCounts[denom]}
+					onblur={() => shiftState.normalizeBillCount(denom)}
 					class="w-full bg-white border border-gray-300 rounded-lg py-2 px-1 text-center text-xl font-medium focus:outline-none focus:ring-2 focus:ring-[#5c4a3d]/20 focus:border-[#5c4a3d]"
 					onfocus={(e) => e.currentTarget.select()}
 				/>

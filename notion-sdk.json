@@ -32,7 +32,7 @@
       "pathName": "website-images",
       "properties": {
         "%3Bfir": {
-          "_name": "Section",
+          "_name": "Page",
           "_type": "select",
           "varName": "section",
           "readOnly": false
@@ -823,6 +823,12 @@
           "_type": "rich_text",
           "varName": "linkToFile",
           "readOnly": false
+        },
+        "chdb": {
+          "_name": "File",
+          "_type": "files",
+          "varName": "file",
+          "readOnly": false
         }
       }
     },
@@ -1191,6 +1197,18 @@
           "_name": "Role",
           "_type": "relation",
           "varName": "role",
+          "readOnly": false
+        },
+        "Qpur": {
+          "_name": "Full Name THai",
+          "_type": "rich_text",
+          "varName": "fullNameTHai",
+          "readOnly": false
+        },
+        "ieEB": {
+          "_name": "ID Copy",
+          "_type": "files",
+          "varName": "idCopy",
           "readOnly": false
         }
       }
@@ -1562,6 +1580,12 @@
           "_name": "All Income",
           "_type": "formula",
           "varName": "allIncome",
+          "readOnly": false
+        },
+        "~%7Beh": {
+          "_name": "Cash In",
+          "_type": "number",
+          "varName": "cashIn",
           "readOnly": false
         }
       }

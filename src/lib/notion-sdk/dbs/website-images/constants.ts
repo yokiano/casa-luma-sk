@@ -1,10 +1,10 @@
 export const WEBSITE_IMAGES_PROP_VALUES = {
 "section": [
-  "Hero",
-  "Gallery",
+  "Home",
+  "Workshops",
   "About",
-  "Menu",
-  "Events",
+  "Cafe",
+  "Birthday",
   "Other"
 ] as const,
 }

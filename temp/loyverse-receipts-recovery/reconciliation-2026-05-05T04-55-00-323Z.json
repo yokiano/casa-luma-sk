@@ -1,0 +1,24 @@
+{
+  "generatedAt": "2026-05-05T04:55:00.322Z",
+  "scope": {
+    "merchantId": "8b53e5cb-f55c-4495-bcee-eb97bece308e",
+    "dateFrom": "2026-02-24T00:00:00Z",
+    "dateTo": "2026-02-24T23:59:59Z",
+    "storeId": null,
+    "receiptNumber": null,
+    "max": null
+  },
+  "summary": {
+    "loyverseFetched": 28,
+    "loyverseUniqueReceiptNumbers": 28,
+    "dbFetched": 28,
+    "missingInDb": 0,
+    "staleInDb": 0,
+    "mismatches": 0,
+    "extraInDb": 0
+  },
+  "missingInDb": [],
+  "staleInDb": [],
+  "mismatches": [],
+  "extraInDb": []
+}

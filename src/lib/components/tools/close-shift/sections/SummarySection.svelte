@@ -1,8 +1,10 @@
 <script lang="ts">
 	import FileDropZone from "$lib/components/ui/FileDropZone.svelte";
 
+	const formatCurrency = (value: number | undefined) => (value ?? 0).toLocaleString();
+
 	type CloseShiftStateLike = {
-		expectedCash: number;
+		expectedCash: number | undefined;
 		actualCash: number;
 		difference: number;
 		notes: string;
@@ -33,7 +35,7 @@
 		<div class="flex justify-between items-center text-sm">
 			<span class="text-muted-foreground">Expected Cash</span>
 			<span class="font-medium"
-				>฿{shiftState.expectedCash.toLocaleString()}</span
+				>฿{formatCurrency(shiftState.expectedCash)}</span
 			>
 		</div>
 		<div class="flex justify-between items-center text-sm">

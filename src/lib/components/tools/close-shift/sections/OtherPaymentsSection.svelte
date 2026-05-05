@@ -1,9 +1,10 @@
 <script lang="ts">
 	type CloseShiftStateLike = {
 		paymentMethods: {
-			scan: number;
-			card: number;
+			scan: number | undefined;
+			card: number | undefined;
 		};
+		normalizePaymentMethod(method: 'scan' | 'card'): void;
 	};
 
 	type Props = {
@@ -28,8 +29,10 @@
 					id="scanPayments"
 					type="number"
 					inputmode="decimal"
+					min="0"
 					step="0.01"
 					bind:value={shiftState.paymentMethods.scan}
+					onblur={() => shiftState.normalizePaymentMethod('scan')}
 					class="w-full rounded-xl border border-input bg-background pl-8 pr-3 py-3 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 				/>
 			</div>
@@ -43,8 +46,10 @@
 					id="cardPayments"
 					type="number"
 					inputmode="decimal"
+					min="0"
 					step="0.01"
 					bind:value={shiftState.paymentMethods.card}
+					onblur={() => shiftState.normalizePaymentMethod('card')}
 					class="w-full rounded-xl border border-input bg-background pl-8 pr-3 py-3 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 				/>
 			</div>

@@ -1,0 +1,52 @@
+{
+  "generatedAt": "2026-05-05T04:54:07.558Z",
+  "scope": {
+    "merchantId": "8b53e5cb-f55c-4495-bcee-eb97bece308e",
+    "dateFrom": "2026-02-24T00:00:00Z",
+    "dateTo": "2026-02-24T23:59:59Z",
+    "storeId": null,
+    "receiptNumber": null,
+    "max": 25
+  },
+  "summary": {
+    "loyverseFetched": 25,
+    "loyverseUniqueReceiptNumbers": 25,
+    "dbFetched": 28,
+    "missingInDb": 0,
+    "staleInDb": 0,
+    "mismatches": 0,
+    "extraInDb": 3
+  },
+  "missingInDb": [],
+  "staleInDb": [],
+  "mismatches": [],
+  "extraInDb": [
+    {
+      "receiptNumber": "1-1537",
+      "receiptKey": "8b53e5cb-f55c-4495-bcee-eb97bece308e:1-1537",
+      "createdAt": "2026-02-24T03:36:34.000Z",
+      "updatedFromEventAt": "2026-02-24T03:36:39.257Z",
+      "receiptDate": "2026-02-24T03:34:52.000Z",
+      "storeId": "ebb8a666-d639-4d6b-9e34-60c3684459bd",
+      "totalMoney": 220
+    },
+    {
+      "receiptNumber": "1-1539",
+      "receiptKey": "8b53e5cb-f55c-4495-bcee-eb97bece308e:1-1539",
+      "createdAt": "2026-02-24T04:09:59.000Z",
+      "updatedFromEventAt": "2026-02-24T04:10:04.629Z",
+      "receiptDate": "2026-02-24T04:09:48.000Z",
+      "storeId": "ebb8a666-d639-4d6b-9e34-60c3684459bd",
+      "totalMoney": 120
+    },
+    {
+      "receiptNumber": "1-1538",
+      "receiptKey": "8b53e5cb-f55c-4495-bcee-eb97bece308e:1-1538",
+      "createdAt": "2026-02-24T04:00:01.000Z",
+      "updatedFromEventAt": "2026-02-24T04:00:11.673Z",
+      "receiptDate": "2026-02-24T03:59:44.000Z",
+      "storeId": "ebb8a666-d639-4d6b-9e34-60c3684459bd",
+      "totalMoney": 955
+    }
+  ]
+}

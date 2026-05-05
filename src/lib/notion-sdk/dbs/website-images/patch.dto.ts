@@ -6,7 +6,7 @@ RichTextItemRequest
 type TypeFromRecord<Obj, Type> = Obj extends Record<string, infer T> ? Extract<T, Type> : never
 
 export type WebsiteImagesPropertiesPatch = {
-  section?: WebsiteImagesResponse['properties']['Section']['select']['name']
+  section?: WebsiteImagesResponse['properties']['Page']['select']['name']
   active?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'checkbox' }>['checkbox']
   altText?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   image?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'files' }>['files']

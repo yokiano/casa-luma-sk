@@ -93,6 +93,8 @@ export class EmployeesPropertiesResponseDTO {
       salaryCalculation: this.__props['Salary Calculation'],
       otRateThBhr: this.__props['OT Rate (THB/hr)'],
       role: this.__props['Role'],
+      fullNameTHai: this.__props['Full Name THai'],
+      idCopy: this.__props['ID Copy'],
     }
   }
 
@@ -285,6 +287,23 @@ export class EmployeesPropertiesResponseDTO {
 
   get roleIds() {
     return (this.__props['Role']?.relation as unknown as Array<{ id: string }>).map((item) => item.id)  
+  }
+
+
+  get fullNameTHai() {
+    return {
+      text: this.__props['Full Name THai']?.rich_text ? this.__props['Full Name THai'].rich_text.reduce((acc, item) => acc + item.plain_text, '') : undefined,
+      links: this.__props['Full Name THai']?.rich_text ? this.__props['Full Name THai'].rich_text.filter((item) => item.href?.length).map((item) => item.href) : [],
+      rich_text: this.__props['Full Name THai']?.rich_text,
+    }
+  }
+
+  get idCopy() {
+    return {
+      urls: this.__props['ID Copy'].files.map((item) => 
+        item.type === 'external' ? item.external.url : item.type === 'file' ? item.file.url : undefined
+      ),
+    }
   }
 
 }

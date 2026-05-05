@@ -1,84 +1,98 @@
 # Database
 
-## Current Setup
+## Current setup
 
-- **Provider**: [Neon](https://neon.tech) (serverless Postgres, `us-east-1`)
-- **Schema & migrations**: Drizzle ORM + drizzle-kit (code-first)
-- **Runtime driver**: `postgres` (postgres.js) via `drizzle-orm/postgres-js`
-- **Migration driver**: drizzle-kit's built-in postgres driver (same config)
+- **Primary provider**: [Neon](https://neon.tech) serverless Postgres (`us-east-1`).
+- **Schema & migrations**: Drizzle ORM + drizzle-kit.
+- **Runtime driver**: `postgres` via `drizzle-orm/postgres-js`.
+- **Local fallback**: Docker Postgres is supported for offline/local work only.
 
-The app previously ran on a local Docker Postgres container. We migrated to Neon in Feb 2025 for zero-ops hosting and Vercel-friendly serverless connections.
+The app previously ran on local Docker Postgres and migrated to Neon in Feb 2025.
 
-## Connection Strings
+## Connection strings
 
-All connection strings live in `.env`. Neon provides two endpoints:
+| Variable | Use case |
+|---|---|
+| `DATABASE_URL` | Primary runtime URL. In production this should be Neon pooled/pgbouncer. |
+| `POSTGRES_URL` | Runtime alias/fallback. |
+| `DATABASE_URL_UNPOOLED` | Direct Neon URL for migrations, schema changes, and scripts that need a non-pooler endpoint. |
+| `POSTGRES_URL_NON_POOLING` | Direct URL alias/fallback. |
 
-| Variable | Endpoint | Use case |
-|---|---|---|
-| `DATABASE_URL` | Pooler (`-pooler.` hostname) | App runtime queries (pgbouncer, lower latency) |
-| `DATABASE_URL_UNPOOLED` | Direct (no `-pooler.`) | Migrations, schema changes, `drizzle-kit studio` |
+Runtime client: `src/lib/server/db/client.ts`.
 
-The runtime client (`src/lib/server/db/client.ts`) uses `DATABASE_URL` with `prepare: false` (required for pgbouncer compatibility).
+Runtime fallback order:
 
-Migrations and drizzle-kit commands use `DATABASE_URL_UNPOOLED` (falls back through several env var names — see `drizzle.config.ts`).
+1. `DATABASE_URL`
+2. `POSTGRES_URL`
+3. `DATABASE_URL_UNPOOLED`
+4. `POSTGRES_URL_NON_POOLING`
+5. `postgres://app:app@localhost:5432/casa_luma`
+
+The runtime client sets `prepare: false` for pgbouncer compatibility.
+
+Migration config: `drizzle.config.ts`. It prefers unpooled/direct URLs.
+
+## Schema location
+
+Current schema lives in a single TypeScript file:
+
+```text
+src/lib/server/db/schema.ts
+```
+
+Migration SQL files live in:
+
+```text
+drizzle/
+```
+
+Workflow:
+
+1. Edit `src/lib/server/db/schema.ts`.
+2. Run `pnpm db:generate`.
+3. Run `pnpm db:migrate`.
+4. Commit schema and migration files together.
 
 ## Commands
 
 ```bash
-pnpm db:generate    # Generate migration files from schema changes
-pnpm db:migrate     # Apply pending migrations
-pnpm db:push        # Push schema directly (no migration files, dev only)
-pnpm db:studio      # Open Drizzle Studio (browser-based DB viewer)
-pnpm db:migrate:neon  # Migration via @neondatabase/serverless driver (alternative path)
+pnpm db:generate       # Generate migration files from schema changes
+pnpm db:migrate        # Apply pending migrations with drizzle-kit
+pnpm db:push           # Push schema directly; dev only
+pnpm db:studio         # Open Drizzle Studio
+pnpm db:migrate:neon   # Alternative migration path via @neondatabase/serverless
 ```
 
-## Schema Location
+Receipt-specific tools:
 
-All schema files live under `src/lib/server/db/schema/`. The barrel export is `src/lib/server/db/schema.ts`.
-
-After editing schema files:
-
-1. `pnpm db:generate` — creates a new migration SQL file in `drizzle/`.
-2. `pnpm db:migrate` — applies it against the database.
-3. Commit both the schema change and the generated migration file together.
-
-## Known Issues
-
-### Node.js Happy Eyeballs timeout (WSL2 / high-latency networks)
-
-**Symptoms**: Every DB command fails with `AggregateError [ETIMEDOUT]` on the first query (`CREATE SCHEMA IF NOT EXISTS "drizzle"` or any other). The error lists multiple IPv4 and IPv6 addresses all timing out.
-
-**Root cause**: Node.js 20+ enables "Happy Eyeballs" (RFC 8305) by default via `autoSelectFamily`. This algorithm tries each resolved address for only **250ms** before abandoning it and moving to the next. In environments where:
-
-- IPv6 is unreachable (WSL2 has no IPv6 connectivity)
-- IPv4 TCP handshake takes >250ms (e.g. connecting from Southeast Asia to US-East-1)
-
-...every attempt is abandoned before completing, and the entire connection fails.
-
-**Proof**: Forcing `family: 4` (IPv4 only) connects in ~300ms. Default Happy Eyeballs times out at ~800ms having tried and abandoned all addresses.
-
-**Fix**: The `package.json` scripts include `NODE_OPTIONS` flags that disable this:
-
-```
-NODE_OPTIONS='--no-network-family-autoselection --dns-result-order=ipv4first'
+```bash
+pnpm receipts:reconcile -- --date-from <iso> --date-to <iso> --json
+pnpm receipts:backfill -- --date-from <iso> --date-to <iso> --dry-run
+pnpm receipts:backfill -- --date-from <iso> --date-to <iso>
 ```
 
-- `--no-network-family-autoselection` disables Happy Eyeballs, falls back to sequential address resolution with the full connect timeout.
-- `--dns-result-order=ipv4first` ensures IPv4 is tried before unreachable IPv6 addresses.
+## Vercel / production checklist
 
-These flags are applied to `dev`, `db:migrate`, `db:push`, `db:studio`, and `db:migrate:neon` scripts.
+Set these in Vercel before relying on receipt ingestion:
 
-**Production impact**: None. On Vercel, the app connects to Neon within the same AWS region with sub-millisecond latency. Happy Eyeballs works fine there. The flags in `package.json` only affect local development.
+- `DATABASE_URL` — Neon pooled runtime URL.
+- `DATABASE_URL_UNPOOLED` — Neon direct URL for migrations/tools.
+- `LOYVERSE_WEBHOOK_SECRET` — optional but recommended; must match Loyverse `x-webhook-token`.
+- `LOYVERSE_ACCESS_TOKEN` — needed only where backfill/reconciliation scripts are run.
+- `LOYVERSE_MERCHANT_ID` — needed for backfill/reconciliation unless passed on CLI.
+- Telegram alert vars if incident notifications should be enabled.
 
-**References**:
+Do not use the typo `LOYV4ERSE_STORE_ID`; code and docs expect `LOYVERSE_STORE_ID`.
 
-- [r1ch.net — Node v20 Happy Eyeballs bug](https://r1ch.net/blog/node-v20-aggregateeerror-etimedout-happy-eyeballs)
-- [Node.js issue #54359](https://github.com/nodejs/node/issues/54359)
-- [Node.js net docs — `setDefaultAutoSelectFamilyAttemptTimeout`](https://nodejs.org/api/net.html#netsetdefaultautoselectfamilyattempttimeoutvalue)
+## Local development without Neon
 
-## Local Development Without Neon
+Use local Postgres only when you explicitly want offline/local DB work:
 
-If you need a fully local database (offline work, no Neon access):
+```bash
+docker compose up -d postgres
+```
+
+or manually:
 
 ```bash
 docker volume create casa_luma_pgdata
@@ -91,4 +105,20 @@ docker run --name casa-luma-postgres \
   -d postgres:16
 ```
 
-Then set `DATABASE_URL=postgres://app:app@localhost:5432/casa_luma` in `.env` (comment out the Neon URLs).
+Then set:
+
+```bash
+DATABASE_URL=postgres://app:app@localhost:5432/casa_luma
+```
+
+Note: `drizzle.config.ts` currently sets SSL for migrations, which is appropriate for Neon and may need adjustment before running migrations against local Docker Postgres.
+
+## Known issue: Node.js Happy Eyeballs timeout
+
+Local DB commands include:
+
+```bash
+NODE_OPTIONS='--no-network-family-autoselection --dns-result-order=ipv4first'
+```
+
+This avoids WSL2/high-latency connection failures where Node.js abandons IPv4/IPv6 connection attempts too quickly. Production on Vercel is not expected to need this workaround.

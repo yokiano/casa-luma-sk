@@ -5,7 +5,10 @@
 		closerId: string;
 		closerPersonId: string | undefined;
 		closerName: string;
-		expectedCash: number;
+		expectedCash: number | undefined;
+		cashIn: number | undefined;
+		normalizeExpectedCash(): void;
+		normalizeCashIn(): void;
 	};
 
 	type Props = {
@@ -41,7 +44,7 @@
 				class="w-full rounded-xl border border-input bg-background px-3 py-3 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 			>
 				<option value="">Select closer (optional)...</option>
-				{#each managers as manager}
+				{#each managers as manager (manager.id)}
 					<option value={manager.id}>{manager.name}</option>
 				{/each}
 			</select>
@@ -55,8 +58,29 @@
 					id="expectedCash"
 					type="number"
 					inputmode="decimal"
+					min="0"
 					step="0.01"
 					bind:value={shiftState.expectedCash}
+					onblur={() => shiftState.normalizeExpectedCash()}
+					placeholder="0.00"
+					class="w-full rounded-xl border border-input bg-background pl-8 pr-3 py-3 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+				/>
+			</div>
+		</div>
+
+		<div class="space-y-2">
+			<label for="cashIn" class="text-sm font-medium">Cash In (Opening + Extra Change)</label>
+			<p class="text-xs text-muted-foreground">All cash in drawer NOT considered as income (e.g. 5,000 opening cash).</p>
+			<div class="relative">
+				<span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">฿</span>
+				<input
+					id="cashIn"
+					type="number"
+					inputmode="decimal"
+					min="0"
+					step="0.01"
+					bind:value={shiftState.cashIn}
+					onblur={() => shiftState.normalizeCashIn()}
 					placeholder="0.00"
 					class="w-full rounded-xl border border-input bg-background pl-8 pr-3 py-3 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 				/>

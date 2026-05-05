@@ -18,7 +18,7 @@ import { WEBSITE_IMAGES_PROPS_TO_IDS } from './constants'
 
 export interface WebsiteImagesResponse extends WithOptional<Omit<DatabaseObjectResponse, 'properties'>, 'title'| 'description'| 'is_inline'| 'url'| 'public_url'> {
   properties: {
-    "Section": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'Hero', color: 'blue' } | { id: StringRequest, name: 'Gallery', color: 'green' } | { id: StringRequest, name: 'About', color: 'purple' } | { id: StringRequest, name: 'Menu', color: 'orange' } | { id: StringRequest, name: 'Events', color: 'pink' } | { id: StringRequest, name: 'Other', color: 'gray' }},
+    "Page": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'Home', color: 'blue' } | { id: StringRequest, name: 'Workshops', color: 'green' } | { id: StringRequest, name: 'About', color: 'purple' } | { id: StringRequest, name: 'Cafe', color: 'orange' } | { id: StringRequest, name: 'Birthday', color: 'pink' } | { id: StringRequest, name: 'Other', color: 'gray' }},
     "Active": CheckboxPropertyItemObjectResponse,
     "Alt Text": RichTextPropertyItemObjectResponse,
     "Image": FilesPropertyItemObjectResponse,
@@ -31,7 +31,7 @@ export type WebsiteImagesResponseProperties = keyof WebsiteImagesResponse['prope
 export type WebsiteImagesPath = Join<PathsToStringProps<WebsiteImagesResponse>>
 
 
-export type WebsiteImagesSectionPropertyType = WebsiteImagesResponse['properties']['Section']['select']['name']
+export type WebsiteImagesSectionPropertyType = WebsiteImagesResponse['properties']['Page']['select']['name']
 
 type WebsiteImagesSectionPropertyFilter =
   | {

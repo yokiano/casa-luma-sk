@@ -38,6 +38,8 @@ export type EmployeesPropertiesPatch = {
   salaryCalculation?: EmployeesResponse['properties']['Salary Calculation']['select']['name']
   otRateThBhr?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'formula' }>['formula']
   role?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'relation' }>['relation']
+  fullNameTHai?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
+  idCopy?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'files' }>['files']
 }
 
   
@@ -429,6 +431,35 @@ export class EmployeesPatchDTO {
       this.__data.properties['o%5DfK'] = {
         type: 'relation',
         relation: props.role,
+      }
+    }
+
+    if (props?.fullNameTHai !== undefined) {
+      this.__data.properties['Qpur'] = {
+        type: 'rich_text',
+        rich_text: typeof props.fullNameTHai === 'string' 
+          ? [{ type: 'text', text: { content: props.fullNameTHai } }]
+          : Array.isArray(props.fullNameTHai)
+            ? props.fullNameTHai
+            : props.fullNameTHai === null
+              ? []
+              : [
+                  {
+                    type: 'text',
+                    text: {
+                      content: props.fullNameTHai.text,
+                      link: props.fullNameTHai?.url ? { url: props.fullNameTHai.url } : undefined
+                    },
+                    annotations: props.fullNameTHai.annotations
+                  },
+                ]
+      }
+    }
+
+    if (props?.idCopy !== undefined) {
+      this.__data.properties['ieEB'] = {
+        type: 'files',
+        files: props.idCopy,
       }
     }
   }

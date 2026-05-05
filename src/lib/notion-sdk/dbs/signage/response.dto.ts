@@ -68,6 +68,7 @@ export class SignagePropertiesResponseDTO {
       status: this.__props['Status'],
       name: this.__props['Name'],
       linkToFile: this.__props['Link to file'],
+      file: this.__props['File'],
     }
   }
 
@@ -115,4 +116,13 @@ export class SignagePropertiesResponseDTO {
       rich_text: this.__props['Link to file']?.rich_text,
     }
   }
+
+  get file() {
+    return {
+      urls: this.__props['File'].files.map((item) => 
+        item.type === 'external' ? item.external.url : item.type === 'file' ? item.file.url : undefined
+      ),
+    }
+  }
+
 }
