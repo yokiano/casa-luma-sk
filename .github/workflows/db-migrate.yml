@@ -35,7 +35,4 @@ jobs:
       - name: Run Drizzle migrations
         run: pnpm db:migrate
         env:
-          DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
-          POSTGRES_URL_NON_POOLING: ${{ secrets.POSTGRES_URL_NON_POOLING }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL_UNPOOLED || secrets.POSTGRES_URL_NON_POOLING || secrets.DATABASE_URL || secrets.POSTGRES_URL }}
