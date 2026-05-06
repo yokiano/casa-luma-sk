@@ -2,7 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { env } from '$env/dynamic/private';
 import { sql } from 'drizzle-orm';
-import { db } from '$lib/server/db/client';
+import { db, getDatabaseEnvKey } from '$lib/server/db/client';
 import { queryReceiptsFromDb } from '$lib/server/db/receipt-queries';
 
 const CONNECTION_ENV_ORDER = [
@@ -135,7 +135,7 @@ const rowsOf = async <T extends Row>(query: ReturnType<typeof sql>): Promise<T[]
 };
 
 export const GET: RequestHandler = async ({ url }) => {
-  const selectedEnvKey = CONNECTION_ENV_ORDER.find((key) => env[key]?.trim()) ?? null;
+  const selectedEnvKey = getDatabaseEnvKey();
   const dateTo = url.searchParams.get('dateTo') ?? new Date().toISOString();
   const dateFrom =
     url.searchParams.get('dateFrom') ?? new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();

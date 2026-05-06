@@ -39,6 +39,32 @@ const toIsoString = (value: Date | null) => {
   return value.toISOString();
 };
 
+const serializeQueryError = (error: unknown, depth = 0): unknown => {
+  if (depth > 4) return '[max-depth]';
+
+  if (error instanceof Error) {
+    const maybePostgresError = error as Error & {
+      code?: unknown;
+      detail?: unknown;
+      hint?: unknown;
+      severity?: unknown;
+      cause?: unknown;
+    };
+
+    return {
+      name: error.name,
+      message: error.message,
+      code: maybePostgresError.code,
+      severity: maybePostgresError.severity,
+      detail: maybePostgresError.detail,
+      hint: maybePostgresError.hint,
+      cause: maybePostgresError.cause ? serializeQueryError(maybePostgresError.cause, depth + 1) : undefined
+    };
+  }
+
+  return error;
+};
+
 const parseCursor = (cursor?: string): CursorPayload | null => {
   if (!cursor) return null;
   try {
@@ -208,12 +234,29 @@ export const queryReceiptsFromDb = async ({
 
   const whereClause = filters.length ? and(...filters) : undefined;
 
-  const rows = await db
-    .select()
-    .from(receipts)
-    .where(whereClause)
-    .orderBy(desc(receipts.updatedFromEventAt), desc(receipts.receiptKey))
-    .limit(pageSize + 1);
+  let rows: (typeof receipts.$inferSelect)[];
+
+  try {
+    rows = await db
+      .select()
+      .from(receipts)
+      .where(whereClause)
+      .orderBy(desc(receipts.updatedFromEventAt), desc(receipts.receiptKey))
+      .limit(pageSize + 1);
+  } catch (error) {
+    console.error('[receipts] failed to query receipts', {
+      dateFrom,
+      dateTo,
+      storeId: storeId ?? null,
+      limit: pageSize,
+      cursorPresent: Boolean(cursor),
+      error: serializeQueryError(error)
+    });
+
+    throw new Error('Receipt database query failed. Check the server logs for the underlying Postgres connection/query error.', {
+      cause: error
+    });
+  }
 
   const hasMore = rows.length > pageSize;
   const selectedRows = hasMore ? rows.slice(0, pageSize) : rows;
