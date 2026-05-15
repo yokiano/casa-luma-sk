@@ -28,6 +28,7 @@
     const paymentRevenue = new Map<string, number>();
     const itemCounts = new Map<string, number>();
     const itemRevenue = new Map<string, number>();
+    const categoryRevenue = new Map<string, number>();
     const customerIds = new Set<string>();
 
     let receiptCount = 0;
@@ -105,8 +106,10 @@
 
       for (const item of receipt.line_items ?? []) {
         const name = item.item_name || 'Unknown item';
+        const revenue = item.total_money ?? 0;
         itemCounts.set(name, (itemCounts.get(name) ?? 0) + (item.quantity ?? 0));
-        itemRevenue.set(name, (itemRevenue.get(name) ?? 0) + (item.total_money ?? 0));
+        itemRevenue.set(name, (itemRevenue.get(name) ?? 0) + revenue);
+        categoryRevenue.set('Uncategorized', (categoryRevenue.get('Uncategorized') ?? 0) + revenue);
       }
     }
 
@@ -193,6 +196,10 @@
         .map(([label, revenue]) => ({ label, revenue }))
         .sort((a, b) => b.revenue - a.revenue)
         .slice(0, 20),
+      topCategoriesByRevenue: Array.from(categoryRevenue.entries())
+        .map(([label, revenue]) => ({ label, revenue }))
+        .sort((a, b) => b.revenue - a.revenue)
+        .slice(0, 20),
       paymentTypeRevenue: Array.from(paymentRevenue.entries())
         .map(([label, revenue]) => ({ label, revenue }))
         .sort((a, b) => b.revenue - a.revenue)
@@ -244,7 +251,22 @@
   });
 
   const receiptsByHour = $derived(computedAnalytics.receiptsByHour);
+  type RevenueBreakdownMode = 'items' | 'categories';
+  const revenueBreakdownOptions: { key: RevenueBreakdownMode; label: string }[] = [
+    { key: 'items', label: 'All items' },
+    { key: 'categories', label: 'Categories' }
+  ];
+  let revenueBreakdownMode = $state<RevenueBreakdownMode>('items');
   const topItemsByRevenue = $derived(computedAnalytics.topItemsByRevenue);
+  const topCategoriesByRevenue = $derived(computedAnalytics.topCategoriesByRevenue ?? []);
+  const selectedRevenueBreakdown = $derived(
+    revenueBreakdownMode === 'categories' ? topCategoriesByRevenue : topItemsByRevenue
+  );
+  const revenueBreakdownTitle = $derived(revenueBreakdownMode === 'categories' ? 'Top Categories by Revenue' : 'Top 20 Items by Revenue');
+  const revenueBreakdownSubtitle = $derived(
+    revenueBreakdownMode === 'categories' ? 'Highest grossing menu categories' : 'Highest grossing items'
+  );
+  const revenueBreakdownPaddingLeft = $derived(revenueBreakdownMode === 'categories' ? 90 : 120);
   const paymentTypeRevenue = $derived(computedAnalytics.paymentTypeRevenue);
   const revenueByDayOfWeek = $derived(computedAnalytics.revenueByDayOfWeek);
 </script>
@@ -378,9 +400,26 @@
       />
 
       <div class="flex flex-col space-y-3 rounded-2xl border border-[#d8c9bb] bg-white/85 p-5 shadow-sm md:col-span-2">
-        <div>
-          <p class="text-xs uppercase tracking-wide text-[#7a6550]/70">Top 20 Items by Revenue</p>
-          <p class="mt-1 text-xs text-[#7a6550]/70">Highest grossing items</p>
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p class="text-xs uppercase tracking-wide text-[#7a6550]/70">{revenueBreakdownTitle}</p>
+            <p class="mt-1 text-xs text-[#7a6550]/70">{revenueBreakdownSubtitle}</p>
+          </div>
+          <div class="inline-flex rounded-full border border-[#d8c9bb] bg-white/70 p-1">
+            {#each revenueBreakdownOptions as option}
+              <button
+                type="button"
+                class={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                  revenueBreakdownMode === option.key
+                    ? 'bg-[#7a6550] text-white shadow-sm'
+                    : 'text-[#7a6550] hover:bg-[#f4ede6]'
+                }`}
+                onclick={() => (revenueBreakdownMode = option.key)}
+              >
+                {option.label}
+              </button>
+            {/each}
+          </div>
         </div>
         <Chart.Container
           config={{
@@ -389,7 +428,7 @@
           class="aspect-auto h-[500px] w-full"
         >
           <BarChart
-            data={topItemsByRevenue}
+            data={selectedRevenueBreakdown}
             x="revenue"
             y="label"
             yScale={scaleBand().padding(0.35)}
@@ -399,7 +438,7 @@
               class: 'text-[9px] fill-[#7a6550]/60',
               format: (v: number) => (v > 0 ? formatAmount(v) : '')
             }}
-            padding={{ left: 120, right: 60, top: 0, bottom: 20 }}
+            padding={{ left: revenueBreakdownPaddingLeft, right: 60, top: 0, bottom: 20 }}
             axis="y"
             props={{
               xAxis: { ticks: 4, format: (v: number) => formatAmount(v) },

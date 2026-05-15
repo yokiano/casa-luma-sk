@@ -55,14 +55,15 @@
 
 <div class="space-y-4">
 	<div class="space-y-2">
-		<label class="text-sm font-medium text-[#5c4a3d]">Family</label>
+		<span class="text-sm font-medium text-[#5c4a3d]">Family</span>
 		<FamilySearchSelect bind:value={selectedFamily} />
 	</div>
 
 	<div class="grid gap-4 sm:grid-cols-2">
 		<div class="space-y-2">
-			<label class="text-sm font-medium text-[#5c4a3d]">Membership Type</label>
+			<label for="membership-type" class="text-sm font-medium text-[#5c4a3d]">Membership Type</label>
 			<select
+				id="membership-type"
 				class="h-11 w-full rounded-2xl border border-[#d9d0c7] bg-white px-4 text-sm focus:border-[#7a6550] focus:outline-none focus:ring-2 focus:ring-[#cdb69f]/40"
 				bind:value={membershipType}
 			>
@@ -72,8 +73,9 @@
 			</select>
 		</div>
 		<div class="space-y-2">
-			<label class="text-sm font-medium text-[#5c4a3d]">Number of Kids</label>
+			<label for="number-of-kids" class="text-sm font-medium text-[#5c4a3d]">Number of Kids</label>
 			<input
+				id="number-of-kids"
 				type="number"
 				min="1"
 				max="20"
@@ -85,8 +87,9 @@
 
 	<div class="grid gap-4 sm:grid-cols-2">
 		<div class="space-y-2">
-			<label class="text-sm font-medium text-[#5c4a3d]">Start Date</label>
+			<label for="membership-start-date" class="text-sm font-medium text-[#5c4a3d]">Start Date</label>
 			<input
+				id="membership-start-date"
 				type="date"
 				class="h-11 w-full rounded-2xl border border-[#d9d0c7] bg-white px-4 text-sm focus:border-[#7a6550] focus:outline-none focus:ring-2 focus:ring-[#cdb69f]/40"
 				bind:value={startDate}
@@ -94,7 +97,7 @@
 		</div>
 		<div class="space-y-2">
 			<div class="flex items-center justify-between">
-				<label class="text-sm font-medium text-[#5c4a3d]">End Date</label>
+				<span class="text-sm font-medium text-[#5c4a3d]">End Date</span>
 				{#if endDateOverridden}
 					<button
 						type="button"
@@ -134,8 +137,9 @@
 	</div>
 
 	<div class="space-y-2">
-		<label class="text-sm font-medium text-[#5c4a3d]">Notes</label>
+		<label for="membership-notes" class="text-sm font-medium text-[#5c4a3d]">Notes</label>
 		<textarea
+			id="membership-notes"
 			class="min-h-[100px] w-full rounded-2xl border border-[#d9d0c7] bg-white px-4 py-3 text-sm focus:border-[#7a6550] focus:outline-none focus:ring-2 focus:ring-[#cdb69f]/40"
 			placeholder="Optional notes for the team..."
 			bind:value={notes}

@@ -167,15 +167,6 @@
 		box-shadow: 0 0 0 6px color-mix(in srgb, var(--chip-color) 35%, transparent);
 	}
 
-	.chip__icon {
-		width: 1.1rem;
-		height: 1.1rem;
-		opacity: 0.7;
-	}
-
-	.chip--active .chip__icon {
-		opacity: 1;
-	}
 
 	.chip__label {
 		white-space: nowrap;

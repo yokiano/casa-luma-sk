@@ -1,5 +1,6 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
+import { env } from '$env/dynamic/private';
 import * as schema from './schema';
 
 const CONNECTION_ENV_ORDER = [
@@ -9,13 +10,16 @@ const CONNECTION_ENV_ORDER = [
   'POSTGRES_URL_NON_POOLING'
 ] as const;
 
-const getSelectedDatabaseEnvKey = () => CONNECTION_ENV_ORDER.find((key) => process.env[key]?.trim()) ?? null;
+const getRuntimeEnvValue = (key: (typeof CONNECTION_ENV_ORDER)[number]) =>
+  env[key]?.trim() || process.env[key]?.trim() || undefined;
+
+const getSelectedDatabaseEnvKey = () => CONNECTION_ENV_ORDER.find((key) => getRuntimeEnvValue(key)) ?? null;
 
 export const getDatabaseEnvKey = () => getSelectedDatabaseEnvKey();
 
 const getConnectionString = () => {
   const selectedDatabaseEnvKey = getSelectedDatabaseEnvKey();
-  const connectionString = selectedDatabaseEnvKey ? process.env[selectedDatabaseEnvKey]?.trim() : undefined;
+  const connectionString = selectedDatabaseEnvKey ? getRuntimeEnvValue(selectedDatabaseEnvKey) : undefined;
 
   if (!connectionString) {
     throw new Error(

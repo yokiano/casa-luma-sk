@@ -66,7 +66,7 @@
 </script>
 
 <svelte:head>
-	<title>Payroll | Fami House Co., Ltd.</title>
+	<title>Payroll | Casa Luma Co., Ltd.</title>
 </svelte:head>
 
 <div class="flex gap-8 print:block">

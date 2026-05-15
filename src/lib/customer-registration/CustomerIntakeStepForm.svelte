@@ -289,7 +289,6 @@
       bind:value={formState.familyName}
       placeholder="e.g. Smith"
       class="w-full text-3xl sm:text-6xl font-bold bg-transparent border-none focus:ring-0 placeholder:text-muted-foreground/20 text-center sm:text-left"
-      autofocus
     />
     <div class="h-px w-full bg-gradient-to-r from-primary to-transparent opacity-30"></div>
   </div>
@@ -303,7 +302,6 @@
         bind:value={formState.mainPhone}
         placeholder="+66..."
         class="w-full text-3xl sm:text-6xl font-bold bg-transparent border-none focus:ring-0 placeholder:text-muted-foreground/20 text-center sm:text-left"
-        autofocus
       />
       {#if checkingPhone}
         <div class="absolute right-0 top-1/2 -translate-y-1/2">

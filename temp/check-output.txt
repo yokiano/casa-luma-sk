@@ -1,0 +1,195 @@
+
+> casa-luma-sk@0.0.1 check /home/yardenavirav/dev/casa-luma-sk/casa-luma-sk
+> svelte-kit sync && svelte-check --tsconfig ./tsconfig.json
+
+Loading svelte-check in workspace: /home/yardenavirav/dev/casa-luma-sk/casa-luma-sk
+Getting Svelte diagnostics...
+
+/home/yardenavirav/dev/casa-luma-sk/casa-luma-sk/src/lib/notion-sdk/dbs/employees/patch.dto.ts:424:7
+Error: Type '{ type: "formula"; formula: never; }' is not assignable to type 'string | number | boolean | DateRequest | RichTextItemRequest[] | { title: RichTextItemRequest[]; type?: "title" | undefined; } | ... 21 more ... | null'.
+  Types of property 'type' are incompatible.
+    Type '"formula"' is not assignable to type '"number" | "title" | "select" | "checkbox" | "rich_text" | "files" | "date" | "url" | "multi_select" | "status" | "email" | "phone_number" | "people" | "relation" | undefined'. 
+    if (props?.otRateThBhr !== undefined) {
+      this.__data.properties['pe~h'] = {
+        type: 'formula',
+
+/home/yardenavirav/dev/casa-luma-sk/casa-luma-sk/src/lib/notion-sdk/dbs/memberships/patch.dto.ts:46:7
+Error: Type '{ type: "formula"; formula: never; }' is not assignable to type 'string | number | boolean | DateRequest | RichTextItemRequest[] | { title: RichTextItemRequest[]; type?: "title" | undefined; } | ... 21 more ... | null'.
+  Types of property 'type' are incompatible.
+    Type '"formula"' is not assignable to type '"number" | "title" | "select" | "checkbox" | "rich_text" | "files" | "date" | "url" | "multi_select" | "status" | "email" | "phone_number" | "people" | "relation" | undefined'. 
+    if (props?.hasSiblingDiscount !== undefined) {
+      this.__data.properties['NbGe'] = {
+        type: 'formula',
+
+/home/yardenavirav/dev/casa-luma-sk/casa-luma-sk/src/lib/notion-sdk/dbs/memberships/patch.dto.ts:53:7
+Error: Type '{ type: "formula"; formula: never; }' is not assignable to type 'string | number | boolean | DateRequest | RichTextItemRequest[] | { title: RichTextItemRequest[]; type?: "title" | undefined; } | ... 21 more ... | null'.
+  Types of property 'type' are incompatible.
+    Type '"formula"' is not assignable to type '"number" | "title" | "select" | "checkbox" | "rich_text" | "files" | "date" | "url" | "multi_select" | "status" | "email" | "phone_number" | "people" | "relation" | undefined'. 
+    if (props?.status !== undefined) {
+      this.__data.properties['%5CdlW'] = {
+        type: 'formula',
+
+/home/yardenavirav/dev/casa-luma-sk/casa-luma-sk/src/lib/server/memberships.ts:62:3
+Error: Property 'loyverseCustomerId' is missing in type '{ id: string; familyName: string; customerCode: null; mainPhone: null; mainEmail: null; status: null; members: never[]; }' but required in type 'FamilySummary'. 
+	if (!family && familyId) {
+		family = {
+			id: familyId,
+
+/home/yardenavirav/dev/casa-luma-sk/casa-luma-sk/src/lib/category-sync.remote.ts:123:23
+Error: Argument of type 'string[]' is not assignable to parameter of type 'Enum'.
+  Index signature for type 'string' is missing in type 'string[]'. 
+      name: v.string(),
+      action: v.enum_(['CREATE', 'DELETE'])
+    }))
+
+/home/yardenavirav/dev/casa-luma-sk/casa-luma-sk/src/lib/category-sync.remote.ts:145:75
+Error: Type '"SKIP"' is not assignable to type '"SUCCESS" | "ERROR"'. 
+          } else {
+            report.results.push({ name: catToSync.name, action: 'DELETE', status: 'SKIP', message: 'Category not found in Loyverse' });
+          }
+
+/home/yardenavirav/dev/casa-luma-sk/casa-luma-sk/src/lib/category-sync.remote.ts:150:58
+Error: Property 'toLowerCase' does not exist on type 'EnumValues<Enum>'.
+  Property 'toLowerCase' does not exist on type 'number'. 
+        console.error(`Error syncing category ${catToSync.name}:`, err);
+        report.errors.push(`Failed to ${catToSync.action.toLowerCase()} category "${catToSync.name}": ${err.message}`);
+        report.results.push({ name: catToSync.name, action: catToSync.action, status: 'ERROR', message: err.message });
+
+/home/yardenavirav/dev/casa-luma-sk/casa-luma-sk/src/lib/category-sync.remote.ts:151:53
+Error: Type 'EnumValues<Enum>' is not assignable to type '"DELETE" | "CREATE" | "SKIP"'.
+  Type 'string' is not assignable to type '"DELETE" | "CREATE" | "SKIP"'. 
+        report.errors.push(`Failed to ${catToSync.action.toLowerCase()} category "${catToSync.name}": ${err.message}`);
+        report.results.push({ name: catToSync.name, action: catToSync.action, status: 'ERROR', message: err.message });
+      }
+
+/home/yardenavirav/dev/casa-luma-sk/casa-luma-sk/src/lib/notion-sdk/dbs/end-of-shift-reports/patch.dto.ts:137:7
+Error: Type '{ type: "formula"; formula: never; }' is not assignable to type 'string | number | boolean | DateRequest | RichTextItemRequest[] | { title: RichTextItemRequest[]; type?: "title" | undefined; } | ... 21 more ... | null'.
+  Types of property 'type' are incompatible.
+    Type '"formula"' is not assignable to type '"number" | "title" | "select" | "checkbox" | "rich_text" | "files" | "date" | "url" | "multi_select" | "status" | "email" | "phone_number" | "people" | "relation" | undefined'. 
+    if (props?.actualCash_1 !== undefined) {
+      this.__data.properties['%3FaIt'] = {
+        type: 'formula',
+
+/home/yardenavirav/dev/casa-luma-sk/casa-luma-sk/src/lib/notion-sdk/dbs/end-of-shift-reports/patch.dto.ts:144:7
+Error: Type '{ type: "formula"; formula: never; }' is not assignable to type 'string | number | boolean | DateRequest | RichTextItemRequest[] | { title: RichTextItemRequest[]; type?: "title" | undefined; } | ... 21 more ... | null'.
+  Types of property 'type' are incompatible.
+    Type '"formula"' is not assignable to type '"number" | "title" | "select" | "checkbox" | "rich_text" | "files" | "date" | "url" | "multi_select" | "status" | "email" | "phone_number" | "people" | "relation" | undefined'. 
+    if (props?.cashDifference_1 !== undefined) {
+      this.__data.properties['BQkU'] = {
+        type: 'formula',
+
+/home/yardenavirav/dev/casa-luma-sk/casa-luma-sk/src/lib/notion-sdk/dbs/end-of-shift-reports/patch.dto.ts:214:7
+Error: Type '{ type: "formula"; formula: never; }' is not assignable to type 'string | number | boolean | DateRequest | RichTextItemRequest[] | { title: RichTextItemRequest[]; type?: "title" | undefined; } | ... 21 more ... | null'.
+  Types of property 'type' are incompatible.
+    Type '"formula"' is not assignable to type '"number" | "title" | "select" | "checkbox" | "rich_text" | "files" | "date" | "url" | "multi_select" | "status" | "email" | "phone_number" | "people" | "relation" | undefined'. 
+    if (props?.allIncome !== undefined) {
+      this.__data.properties['%3DHVV'] = {
+        type: 'formula',
+
+/home/yardenavirav/dev/casa-luma-sk/casa-luma-sk/src/lib/server/notion/procurementMeta.ts:149:18
+Error: Argument of type 'string | null | undefined' is not assignable to parameter of type 'string | undefined'.
+  Type 'null' is not assignable to type 'string | undefined'. 
+        const option = optionsById.get(optionId);
+        pushName(option?.name);
+      }
+
+/home/yardenavirav/dev/casa-luma-sk/casa-luma-sk/src/lib/server/notion/procurementMeta.ts:154:16
+Error: Argument of type 'string | null | undefined' is not assignable to parameter of type 'string | undefined'.
+  Type 'null' is not assignable to type 'string | undefined'. 
+    for (const option of options) {
+      pushName(option?.name);
+    }
+
+/home/yardenavirav/dev/casa-luma-sk/casa-luma-sk/src/routes/tools/salary-payment/SalaryPaymentState.svelte.ts:134:4
+Error: Type '{ employee: SalaryEmployee; shifts: { id: string; date: string | undefined; type: "Opening (08:30 - 17:00)" | "Closing (10:30 - 19:00)" | "Custom" | "Part time 14:00-18:00" | "No-Show" | "ALL Day 8:40-18:00" | "Part time 08:30-13:00"; status: "Planned" | ... 6 more ... | "Day Off (Unpaid)"; ot: number | null; }[]; a...' is not assignable to type '{ employee: SalaryEmployee; shifts: SalaryShift[]; adjustments: SalaryAdjustment[]; }'.
+  Types of property 'shifts' are incompatible.
+    Type '{ id: string; date: string | undefined; type: "Opening (08:30 - 17:00)" | "Closing (10:30 - 19:00)" | "Custom" | "Part time 14:00-18:00" | "No-Show" | "ALL Day 8:40-18:00" | "Part time 08:30-13:00"; status: "Planned" | ... 6 more ... | "Day Off (Unpaid)"; ot: number | null; }[]' is not assignable to type 'SalaryShift[]'.
+      Type '{ id: string; date: string | undefined; type: "Opening (08:30 - 17:00)" | "Closing (10:30 - 19:00)" | "Custom" | "Part time 14:00-18:00" | "No-Show" | "ALL Day 8:40-18:00" | "Part time 08:30-13:00"; status: "Planned" | ... 6 more ... | "Day Off (Unpaid)"; ot: number | null; }' is not assignable to type 'SalaryShift'.
+        Types of property 'ot' are incompatible.
+          Type 'number | null' is not assignable to type 'number | undefined'.
+            Type 'null' is not assignable to type 'number | undefined'. 
+			});
+			this.salaryData = data;
+		} catch (e: any) {
+
+/home/yardenavirav/dev/casa-luma-sk/casa-luma-sk/src/lib/components/expense-scan/AdvancedOcrTools.svelte:3:17
+Error: Module '"./SlipCard.svelte"' has no exported member 'ScannedSlip'. Did you mean to use 'import ScannedSlip from "./SlipCard.svelte"' instead? (ts)
+  import { toast } from 'svelte-sonner';
+  import type { ScannedSlip } from './SlipCard.svelte';
+
+/home/yardenavirav/dev/casa-luma-sk/casa-luma-sk/src/lib/components/graphics/GraphicRenderer.svelte:75:5
+Error: Object literal may only specify known properties, and 'cacheBust' does not exist in type 'Options'. (ts)
+			const dataUrl = await domToPng(renderContainer, {
+				cacheBust: true,
+				pixelRatio: 2
+
+/home/yardenavirav/dev/casa-luma-sk/casa-luma-sk/src/lib/components/home/Hero.svelte:12:19
+Error: Property 'tagline' does not exist on type '{ readonly name: "Casa Luma"; readonly location: "53/7 Moo. 2 Ban Nai Suan Village, Koh Phangan, Thailand"; readonly description: "A safe, natural, and engaging environment where children can play, learn, and explore while parents relax and enjoy quality refreshments."; readonly email: "info@casalumakpg.com"; }'. (ts)
+		<p class="text-lg sm:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+			{BUSINESS_INFO.tagline}
+		</p>
+
+/home/yardenavirav/dev/casa-luma-sk/casa-luma-sk/src/lib/components/layout/Footer.svelte:17:87
+Error: Property 'tagline' does not exist on type '{ readonly name: "Casa Luma"; readonly location: "53/7 Moo. 2 Ban Nai Suan Village, Koh Phangan, Thailand"; readonly description: "A safe, natural, and engaging environment where children can play, learn, and explore while parents relax and enjoy quality refreshments."; readonly email: "info@casalumakpg.com"; }'. (ts)
+				</h3>
+				<p class="mt-6 max-w-md text-sm leading-relaxed text-[#F9F7F2]/75">{BUSINESS_INFO.tagline}</p>
+			</div>
+
+/home/yardenavirav/dev/casa-luma-sk/casa-luma-sk/src/lib/components/layout/Footer.svelte:76:24
+Error: Property 'phone' does not exist on type '{ readonly name: "Casa Luma"; readonly location: "53/7 Moo. 2 Ban Nai Suan Village, Koh Phangan, Thailand"; readonly description: "A safe, natural, and engaging environment where children can play, learn, and explore while parents relax and enjoy quality refreshments."; readonly email: "info@casalumakpg.com"; }'. (ts)
+					<p>{BUSINESS_INFO.email}</p>
+					<p>{BUSINESS_INFO.phone}</p>
+				</div>
+
+/home/yardenavirav/dev/casa-luma-sk/casa-luma-sk/src/lib/components/menu/MenuItemIcons.svelte:29:3
+Error: Object literal may only specify known properties, and '"title"' does not exist in type 'Properties<IconProps, { default: {}; }>'. (ts)
+		role={title ? 'img' : 'presentation'}
+		title={title}
+	/>
+
+/home/yardenavirav/dev/casa-luma-sk/casa-luma-sk/src/routes/careers/+page.svelte:92:13
+Error: 'opening.properties.expectedSalary' is possibly 'null'. (ts)
+							</div>
+							{#if opening.properties.expectedSalary > 0}
+								<div class="text-right">
+
+/home/yardenavirav/dev/casa-luma-sk/casa-luma-sk/src/routes/careers/+page.svelte:96:25
+Error: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'. (ts)
+									<p class="text-lg font-medium text-slate-900">
+										{formatSalary(opening.properties.expectedSalary)}
+									</p>
+
+/home/yardenavirav/dev/casa-luma-sk/casa-luma-sk/src/routes/careers/+page.svelte:138:14
+Error: 'opening.properties.openPositions' is possibly 'null'. (ts)
+								{/if}
+								{#if opening.properties.openPositions > 0}
+									<span>{opening.properties.openPositions} {opening.properties.openPositions === 1 ? 'position' : 'positions'} open</span>
+
+/home/yardenavirav/dev/casa-luma-sk/casa-luma-sk/src/routes/print/checklist/[id]/+page.svelte:21:25
+Error: Type '{ id: string; name: string | undefined; department: "General" | "Open Play" | "Restaurant" | "Management"; when: "Opening" | "Closing" | "During shift" | "Daily" | "Weekly" | "Monthly" | "As needed" | "Employee Onboarding"; blocks: BlockObjectResponseWithChildren[]; }' is not assignable to type '{ name: string; department?: string | undefined; when?: string | undefined; blocks: any[]; }'.
+  Types of property 'name' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'. (ts)
+<div class="print:block bg-white min-h-screen"> 
+    <ChecklistPrintView sop={data.sop} />
+</div>
+
+/home/yardenavirav/dev/casa-luma-sk/casa-luma-sk/src/routes/tools/checklist/+page.svelte:105:41
+Error: Type '{ id: string; name: string | undefined; department: "General" | "Open Play" | "Restaurant" | "Management"; when: "Opening" | "Closing" | "During shift" | "Daily" | "Weekly" | "Monthly" | "As needed" | "Employee Onboarding"; blocks: BlockObjectResponseWithChildren[]; }' is not assignable to type '{ name: string; department?: string | undefined; when?: string | undefined; blocks: any[]; }'.
+  Types of property 'name' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'. (ts)
+                <div class="shadow-xl">
+                    <ChecklistPrintView sop={data.selectedSop} />
+                </div>
+
+/home/yardenavirav/dev/casa-luma-sk/casa-luma-sk/src/routes/tools/memberships/MembershipDialog.svelte:126:22
+Error: Cannot find name 'calculateEndDate'. Did you mean 'calculatedEndDate'? (ts)
+		// creating a dependency that would cause this effect to re-run when local state changes
+		const calculated = calculateEndDate(startDate, membershipType) ?? '';
+		endDateOverridden = existingEndDate !== '' && existingEndDate !== calculated;
+
+====================================
+svelte-check found 26 errors and 0 warnings in 16 files
+ ELIFECYCLE  Command failed with exit code 1.

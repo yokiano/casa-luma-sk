@@ -43,7 +43,7 @@
     <div class="grid grid-cols-2 gap-x-4 gap-y-2">
       <div>
         <div class="flex items-end gap-1.5">
-          <label class="text-xs font-medium whitespace-nowrap">Family Name <span class="text-red-500">*</span></label>
+          <span class="text-xs font-medium whitespace-nowrap">Family Name <span class="text-red-500">*</span></span>
           <div class="flex-1 border-b border-gray-400 min-h-[1.25rem]"></div>
         </div>
         <p class="text-[10px] text-gray-500 -mt-1 ml-1 italic">Only the family (last) name</p>
@@ -51,7 +51,7 @@
 
       <div>
         <div class="flex items-end gap-1.5">
-          <label class="text-xs font-medium whitespace-nowrap">Main Phone <span class="text-red-500">*</span></label>
+          <span class="text-xs font-medium whitespace-nowrap">Main Phone <span class="text-red-500">*</span></span>
           <div class="flex-1 border-b border-gray-400 min-h-[1.25rem]"></div>
         </div>
         <p class="text-[10px] text-gray-500 -mt-1 ml-1 italic">Primary contact for safety and emergency. We will never send any message or call you without reason.</p>
@@ -59,7 +59,7 @@
 
       <div class="col-span-2">
         <div class="flex items-end gap-1.5">
-          <label class="text-xs font-medium whitespace-nowrap">Main Email</label>
+          <span class="text-xs font-medium whitespace-nowrap">Main Email</span>
           <span class="text-[10px] text-gray-400 uppercase">(optional)</span>
           <div class="flex-1 border-b border-gray-400 min-h-[1.25rem]"></div>
         </div>
@@ -151,13 +151,13 @@
     <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
       <div class="col-span-2">
         <div class="flex items-end gap-1.5">
-          <label class="font-medium whitespace-nowrap text-xs">Nationality:</label>
+          <span class="font-medium whitespace-nowrap text-xs">Nationality:</span>
           <div class="flex-1 border-b border-gray-400 min-h-[1.25rem]"></div>
         </div>
       </div>
 
       <div>
-        <label class="font-medium block mb-1 text-xs">Dietary:</label>
+        <span class="font-medium block mb-1 text-xs">Dietary:</span>
         <div class="space-y-0.5 text-[10px]">
           <div class="flex items-center gap-1">
             <span class="inline-block w-3 h-3 border border-gray-400"></span> None
@@ -169,19 +169,19 @@
           </div>
         </div>
         <div class="flex items-end gap-1 mt-1">
-          <label class="text-[10px] text-gray-600">Other:</label>
+          <span class="text-[10px] text-gray-600">Other:</span>
           <div class="flex-1 border-b border-gray-400 min-h-[1rem]"></div>
         </div>
       </div>
 
       <div>
-        <label class="font-medium block mb-1 text-xs">Live in Phangan?</label>
+        <span class="font-medium block mb-1 text-xs">Live in Phangan?</span>
         <div class="flex gap-4 text-[10px]">
           <span class="inline-block w-3 h-3 border border-gray-400"></span> Yes
           <span class="inline-block w-3 h-3 border border-gray-400 ml-2"></span> No
         </div>
         
-        <label class="font-medium block mb-1 mt-2 text-xs">How did you hear about us?</label>
+        <span class="font-medium block mb-1 mt-2 text-xs">How did you hear about us?</span>
         <div class="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[10px]">
           <div class="flex items-center gap-1">
             <span class="inline-block w-3 h-3 border border-gray-400"></span> Instagram
@@ -205,7 +205,7 @@
       </div>
 
       <div class="col-span-2">
-        <label class="font-medium block mb-0.5 text-xs">Special Notes / Requirements</label>
+        <span class="font-medium block mb-0.5 text-xs">Special Notes / Requirements</span>
         <p class="text-[10px] text-gray-500 mb-1 italic">Allergies, accessibility needs, or other notes</p>
         <div class="border border-gray-300 min-h-[2.5rem] p-1.5"></div>
       </div>

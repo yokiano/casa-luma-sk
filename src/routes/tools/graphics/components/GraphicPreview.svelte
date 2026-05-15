@@ -132,7 +132,7 @@
     <!-- History Bar -->
     {#if gState.history.length > 0}
         <div class="space-y-2">
-            <label class="text-sm font-medium">History</label>
+            <span class="text-sm font-medium">History</span>
             <div class="flex gap-2 overflow-x-auto pb-2">
                 {#each gState.history as item}
                     <button 

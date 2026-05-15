@@ -43,7 +43,8 @@ export interface ReceiptAnalytics {
   timeSeries: Record<ReceiptAnalyticsGranularity, ReceiptAnalyticsTimeSeriesPoint[]>;
   revenueByDay: { label: string; revenue: number }[];
   receiptsByHour: { label: string; count: number }[];
-  topItemsByRevenue: { label: string; revenue: number }[];
+  topItemsByRevenue: { label: string; revenue: number; itemId?: string | null }[];
+  topCategoriesByRevenue: { label: string; revenue: number }[];
   paymentTypeRevenue: { label: string; revenue: number }[];
   avgTicketByDay: { label: string; avg: number }[];
   revenueByDayOfWeek: { label: string; revenue: number }[];

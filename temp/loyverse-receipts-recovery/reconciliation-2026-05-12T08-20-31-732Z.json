@@ -1,0 +1,217 @@
+{
+  "generatedAt": "2026-05-12T08:20:31.731Z",
+  "scope": {
+    "merchantId": "8b53e5cb-f55c-4495-bcee-eb97bece308e",
+    "dateFrom": "2026-05-12T00:00:00Z",
+    "dateTo": "2026-05-13T00:00:00Z",
+    "storeId": null,
+    "receiptNumber": null,
+    "max": null
+  },
+  "summary": {
+    "loyverseFetched": 24,
+    "loyverseUniqueReceiptNumbers": 24,
+    "dbFetched": 0,
+    "missingInDb": 24,
+    "staleInDb": 0,
+    "mismatches": 0,
+    "extraInDb": 0
+  },
+  "missingInDb": [
+    {
+      "receiptNumber": "1-4431",
+      "createdAt": "2026-05-12T07:50:46.000Z",
+      "updatedAt": "2026-05-12T07:50:46.000Z",
+      "receiptDate": "2026-05-12T07:50:26.000Z",
+      "storeId": "ebb8a666-d639-4d6b-9e34-60c3684459bd",
+      "totalMoney": 600
+    },
+    {
+      "receiptNumber": "1-4430",
+      "createdAt": "2026-05-12T07:36:37.000Z",
+      "updatedAt": "2026-05-12T07:36:37.000Z",
+      "receiptDate": "2026-05-12T07:36:36.000Z",
+      "storeId": "ebb8a666-d639-4d6b-9e34-60c3684459bd",
+      "totalMoney": 1585
+    },
+    {
+      "receiptNumber": "1-4429",
+      "createdAt": "2026-05-12T07:34:25.000Z",
+      "updatedAt": "2026-05-12T07:34:25.000Z",
+      "receiptDate": "2026-05-12T07:34:08.000Z",
+      "storeId": "ebb8a666-d639-4d6b-9e34-60c3684459bd",
+      "totalMoney": 350
+    },
+    {
+      "receiptNumber": "1-4428",
+      "createdAt": "2026-05-12T07:26:16.000Z",
+      "updatedAt": "2026-05-12T07:26:16.000Z",
+      "receiptDate": "2026-05-12T07:25:34.000Z",
+      "storeId": "ebb8a666-d639-4d6b-9e34-60c3684459bd",
+      "totalMoney": 410
+    },
+    {
+      "receiptNumber": "1-4427",
+      "createdAt": "2026-05-12T07:19:13.000Z",
+      "updatedAt": "2026-05-12T07:19:13.000Z",
+      "receiptDate": "2026-05-12T07:19:12.000Z",
+      "storeId": "ebb8a666-d639-4d6b-9e34-60c3684459bd",
+      "totalMoney": 2000
+    },
+    {
+      "receiptNumber": "1-4426",
+      "createdAt": "2026-05-12T07:15:25.000Z",
+      "updatedAt": "2026-05-12T07:15:25.000Z",
+      "receiptDate": "2026-05-12T07:15:09.000Z",
+      "storeId": "ebb8a666-d639-4d6b-9e34-60c3684459bd",
+      "totalMoney": 1100
+    },
+    {
+      "receiptNumber": "1-4425",
+      "createdAt": "2026-05-12T06:51:18.000Z",
+      "updatedAt": "2026-05-12T06:51:18.000Z",
+      "receiptDate": "2026-05-12T06:51:02.000Z",
+      "storeId": "ebb8a666-d639-4d6b-9e34-60c3684459bd",
+      "totalMoney": 610
+    },
+    {
+      "receiptNumber": "1-4424",
+      "createdAt": "2026-05-12T06:24:19.000Z",
+      "updatedAt": "2026-05-12T06:24:19.000Z",
+      "receiptDate": "2026-05-12T06:24:10.000Z",
+      "storeId": "ebb8a666-d639-4d6b-9e34-60c3684459bd",
+      "totalMoney": 250
+    },
+    {
+      "receiptNumber": "1-4423",
+      "createdAt": "2026-05-12T06:21:11.000Z",
+      "updatedAt": "2026-05-12T06:21:11.000Z",
+      "receiptDate": "2026-05-12T06:20:48.000Z",
+      "storeId": "ebb8a666-d639-4d6b-9e34-60c3684459bd",
+      "totalMoney": 60
+    },
+    {
+      "receiptNumber": "1-4422",
+      "createdAt": "2026-05-12T05:42:01.000Z",
+      "updatedAt": "2026-05-12T05:42:01.000Z",
+      "receiptDate": "2026-05-12T05:41:59.000Z",
+      "storeId": "ebb8a666-d639-4d6b-9e34-60c3684459bd",
+      "totalMoney": 570
+    },
+    {
+      "receiptNumber": "1-4421",
+      "createdAt": "2026-05-12T05:24:54.000Z",
+      "updatedAt": "2026-05-12T05:24:54.000Z",
+      "receiptDate": "2026-05-12T05:24:45.000Z",
+      "storeId": "ebb8a666-d639-4d6b-9e34-60c3684459bd",
+      "totalMoney": 100
+    },
+    {
+      "receiptNumber": "1-4420",
+      "createdAt": "2026-05-12T05:23:57.000Z",
+      "updatedAt": "2026-05-12T05:23:57.000Z",
+      "receiptDate": "2026-05-12T05:23:48.000Z",
+      "storeId": "ebb8a666-d639-4d6b-9e34-60c3684459bd",
+      "totalMoney": 750
+    },
+    {
+      "receiptNumber": "1-4419",
+      "createdAt": "2026-05-12T05:22:01.000Z",
+      "updatedAt": "2026-05-12T05:22:01.000Z",
+      "receiptDate": "2026-05-12T05:21:51.000Z",
+      "storeId": "ebb8a666-d639-4d6b-9e34-60c3684459bd",
+      "totalMoney": 180
+    },
+    {
+      "receiptNumber": "1-4418",
+      "createdAt": "2026-05-12T05:21:28.000Z",
+      "updatedAt": "2026-05-12T05:21:28.000Z",
+      "receiptDate": "2026-05-12T05:21:23.000Z",
+      "storeId": "ebb8a666-d639-4d6b-9e34-60c3684459bd",
+      "totalMoney": 180
+    },
+    {
+      "receiptNumber": "1-4417",
+      "createdAt": "2026-05-12T05:20:09.000Z",
+      "updatedAt": "2026-05-12T05:20:09.000Z",
+      "receiptDate": "2026-05-12T05:20:02.000Z",
+      "storeId": "ebb8a666-d639-4d6b-9e34-60c3684459bd",
+      "totalMoney": 85
+    },
+    {
+      "receiptNumber": "1-4416",
+      "createdAt": "2026-05-12T05:19:45.000Z",
+      "updatedAt": "2026-05-12T05:19:45.000Z",
+      "receiptDate": "2026-05-12T05:19:27.000Z",
+      "storeId": "ebb8a666-d639-4d6b-9e34-60c3684459bd",
+      "totalMoney": 5210
+    },
+    {
+      "receiptNumber": "1-4415",
+      "createdAt": "2026-05-12T05:10:48.000Z",
+      "updatedAt": "2026-05-12T05:10:48.000Z",
+      "receiptDate": "2026-05-12T05:10:39.000Z",
+      "storeId": "ebb8a666-d639-4d6b-9e34-60c3684459bd",
+      "totalMoney": 900
+    },
+    {
+      "receiptNumber": "1-4414",
+      "createdAt": "2026-05-12T05:08:38.000Z",
+      "updatedAt": "2026-05-12T05:08:38.000Z",
+      "receiptDate": "2026-05-12T05:08:19.000Z",
+      "storeId": "ebb8a666-d639-4d6b-9e34-60c3684459bd",
+      "totalMoney": 1195
+    },
+    {
+      "receiptNumber": "1-4413",
+      "createdAt": "2026-05-12T04:45:42.000Z",
+      "updatedAt": "2026-05-12T04:45:42.000Z",
+      "receiptDate": "2026-05-12T04:45:18.000Z",
+      "storeId": "ebb8a666-d639-4d6b-9e34-60c3684459bd",
+      "totalMoney": 280
+    },
+    {
+      "receiptNumber": "1-4412",
+      "createdAt": "2026-05-12T04:45:14.000Z",
+      "updatedAt": "2026-05-12T04:45:14.000Z",
+      "receiptDate": "2026-05-12T04:45:05.000Z",
+      "storeId": "ebb8a666-d639-4d6b-9e34-60c3684459bd",
+      "totalMoney": 350
+    },
+    {
+      "receiptNumber": "1-4411",
+      "createdAt": "2026-05-12T04:39:18.000Z",
+      "updatedAt": "2026-05-12T04:39:18.000Z",
+      "receiptDate": "2026-05-12T04:39:01.000Z",
+      "storeId": "ebb8a666-d639-4d6b-9e34-60c3684459bd",
+      "totalMoney": 95
+    },
+    {
+      "receiptNumber": "1-4410",
+      "createdAt": "2026-05-12T04:00:02.000Z",
+      "updatedAt": "2026-05-12T04:00:02.000Z",
+      "receiptDate": "2026-05-12T03:59:46.000Z",
+      "storeId": "ebb8a666-d639-4d6b-9e34-60c3684459bd",
+      "totalMoney": 35
+    },
+    {
+      "receiptNumber": "1-4409",
+      "createdAt": "2026-05-12T03:53:00.000Z",
+      "updatedAt": "2026-05-12T03:53:00.000Z",
+      "receiptDate": "2026-05-12T03:52:42.000Z",
+      "storeId": "ebb8a666-d639-4d6b-9e34-60c3684459bd",
+      "totalMoney": 100
+    },
+    {
+      "receiptNumber": "1-4408",
+      "createdAt": "2026-05-12T03:10:25.000Z",
+      "updatedAt": "2026-05-12T03:10:25.000Z",
+      "receiptDate": "2026-05-12T03:10:11.000Z",
+      "storeId": "ebb8a666-d639-4d6b-9e34-60c3684459bd",
+      "totalMoney": 110
+    }
+  ],
+  "staleInDb": [],
+  "mismatches": [],
+  "extraInDb": []
+}

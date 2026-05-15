@@ -189,10 +189,10 @@
                     <span class="font-bold text-gray-900">האתר שלי</span>
                 </div>
                 <nav class="hidden md:flex items-center gap-6 text-sm">
-                    <a href="#" class="text-gray-600 hover:text-blue-600 transition-colors">דף הבית</a>
-                    <a href="#" class="text-gray-600 hover:text-blue-600 transition-colors">אודות</a>
-                    <a href="#" class="text-blue-600 font-medium">מדריך החברות</a>
-                    <a href="#" class="text-gray-600 hover:text-blue-600 transition-colors">צור קשר</a>
+                    <a href="/" class="text-gray-600 hover:text-blue-600 transition-colors">דף הבית</a>
+                    <a href="/" class="text-gray-600 hover:text-blue-600 transition-colors">אודות</a>
+                    <a href="/" class="text-blue-600 font-medium">מדריך החברות</a>
+                    <a href="/" class="text-gray-600 hover:text-blue-600 transition-colors">צור קשר</a>
                 </nav>
                 <button class="bg-blue-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
                     התחבר
@@ -329,9 +329,9 @@
                     <span class="text-white font-bold">האתר שלי</span>
                 </div>
                 <div class="flex gap-6 text-sm">
-                    <a href="#" class="hover:text-white transition-colors">דף הבית</a>
-                    <a href="#" class="hover:text-white transition-colors">מדריך החברות</a>
-                    <a href="#" class="hover:text-white transition-colors">צור קשר</a>
+                    <a href="/" class="hover:text-white transition-colors">דף הבית</a>
+                    <a href="/" class="hover:text-white transition-colors">מדריך החברות</a>
+                    <a href="/" class="hover:text-white transition-colors">צור קשר</a>
                 </div>
                 <p class="text-sm">© 2025 האתר שלי. כל הזכויות שמורות.</p>
             </div>

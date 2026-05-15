@@ -255,10 +255,6 @@ const formatPrice = (value: number) => priceFormatter.format(value);
 		text-transform: capitalize;
 	}
 
-	.card__icon {
-		width: 16px;
-		height: 16px;
-	}
 
 	.card__allergens {
 		display: flex;

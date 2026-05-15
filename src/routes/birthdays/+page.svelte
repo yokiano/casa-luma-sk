@@ -20,7 +20,18 @@
 		'Warm cafe hospitality so the celebration feels held, not hectic.'
 	];
 
-	const packageColumns = [
+	type PackageColumn = {
+		label: string;
+		price: string;
+		extraKids: string;
+		indoorPlayground: string;
+	};
+
+	type PackageRow =
+		| { label: string; key: keyof Omit<PackageColumn, 'label'> }
+		| { label: string; value: string };
+
+	const packageColumns: PackageColumn[] = [
 		{
 			label: 'Mon-Sat',
 			price: '12,000 THB',
@@ -35,7 +46,7 @@
 		}
 	];
 
-	const packageRows = [
+	const packageRows: PackageRow[] = [
 		{ label: 'Price', key: 'price' },
 		{ label: 'Up to', value: '15 kids' },
 		{ label: 'Venue areas', value: 'Garden & Pool' },
@@ -46,7 +57,7 @@
 		{ label: 'Music', value: 'Included' },
 		{ label: 'Extra kids', key: 'extraKids' },
 		{ label: 'Indoor playground', key: 'indoorPlayground' }
-	] as const;
+	];
 
 	const miniOffer = [
 		'Dedicated table provided',
@@ -263,8 +274,8 @@
 						{#each packageRows as row}
 							<div class="grid grid-cols-[1.05fr_0.95fr_0.95fr] border-t border-foreground/8 px-5 py-3.5 text-sm text-foreground/78">
 								<div class="font-medium text-foreground">{row.label}</div>
-								<div>{row.key ? packageColumns[0][row.key] : row.value}</div>
-								<div>{row.key ? packageColumns[1][row.key] : row.value}</div>
+								<div>{'key' in row ? packageColumns[0][row.key] : row.value}</div>
+								<div>{'key' in row ? packageColumns[1][row.key] : row.value}</div>
 							</div>
 						{/each}
 					</div>

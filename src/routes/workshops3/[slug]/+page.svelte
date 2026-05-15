@@ -129,7 +129,7 @@
 						<span class="text-2xl">📍</span>
 						<div>
 							<p class="text-sm font-medium text-gray-500">Location</p>
-							<p class="text-gray-900">{event.location}</p>
+							<p class="text-gray-900">{workshopEvent.location}</p>
 						</div>
 					</div>
 
@@ -137,7 +137,7 @@
 						<span class="text-2xl">👤</span>
 						<div>
 							<p class="text-sm font-medium text-gray-500">Instructor</p>
-							<p class="text-gray-900">{event.instructor}</p>
+							<p class="text-gray-900">{workshopEvent.instructor}</p>
 						</div>
 					</div>
 
@@ -145,7 +145,7 @@
 						<span class="text-2xl">🗣️</span>
 						<div>
 							<p class="text-sm font-medium text-gray-500">Language</p>
-							<p class="text-gray-900">{event.language}</p>
+							<p class="text-gray-900">{workshopEvent.language}</p>
 						</div>
 					</div>
 
@@ -153,7 +153,7 @@
 						<span class="text-2xl">👥</span>
 						<div>
 							<p class="text-sm font-medium text-gray-500">Capacity</p>
-							<p class="text-gray-900">{event.capacity} people</p>
+							<p class="text-gray-900">{workshopEvent.capacity} people</p>
 						</div>
 					</div>
 				</div>
@@ -161,9 +161,9 @@
 				<!-- Availability Badge -->
 				<div class="mb-8">
 					<AvailabilityBadge
-						availableSpots={event.availableSpots}
-						capacity={event.capacity}
-						registrationStatus={event.registrationStatus}
+						availableSpots={workshopEvent.availableSpots}
+						capacity={workshopEvent.capacity}
+						registrationStatus={workshopEvent.registrationStatus}
 					/>
 				</div>
 
@@ -171,24 +171,24 @@
 				<div class="mb-8">
 					<h2 class="mb-4 text-2xl font-bold text-gray-900">About This Event</h2>
 					<div class="prose prose-amber max-w-none">
-						<p class="whitespace-pre-wrap text-gray-700">{event.description}</p>
+						<p class="whitespace-pre-wrap text-gray-700">{workshopEvent.description}</p>
 					</div>
 				</div>
 
 				<!-- Requirements -->
-				{#if event.requirements}
+				{#if workshopEvent.requirements}
 					<div class="mb-8 rounded-lg bg-blue-50 border border-blue-200 p-6">
 						<h3 class="mb-2 text-lg font-semibold text-blue-900">What to Bring</h3>
-						<p class="whitespace-pre-wrap text-blue-800">{event.requirements}</p>
+						<p class="whitespace-pre-wrap text-blue-800">{workshopEvent.requirements}</p>
 					</div>
 				{/if}
 
 				<!-- Tags -->
-				{#if event.tags && event.tags.length > 0}
+				{#if workshopEvent.tags && workshopEvent.tags.length > 0}
 					<div class="mb-8">
 						<h3 class="mb-3 text-lg font-semibold text-gray-900">Topics</h3>
 						<div class="flex flex-wrap gap-2">
-							{#each event.tags as tag}
+							{#each workshopEvent.tags as tag}
 								<span class="rounded-full bg-amber-100 px-4 py-2 text-sm font-medium text-amber-800">
 									{tag}
 								</span>
@@ -198,11 +198,11 @@
 				{/if}
 
 				<!-- Gallery -->
-				{#if event.gallery && event.gallery.length > 0}
+				{#if workshopEvent.gallery && workshopEvent.gallery.length > 0}
 					<div class="mb-8">
 						<h3 class="mb-4 text-2xl font-bold text-gray-900">Gallery</h3>
 						<div class="grid gap-4 sm:grid-cols-2">
-							{#each event.gallery as image}
+							{#each workshopEvent.gallery as image}
 								<div class="overflow-hidden rounded-lg shadow-md">
 									<img src={image} alt="Event gallery" class="h-auto w-full object-cover" />
 								</div>
@@ -215,7 +215,7 @@
 			<!-- Sidebar - RSVP Form -->
 			<div class="lg:col-span-1">
 				<div class="sticky top-8">
-					<RSVPForm {event} />
+					<RSVPForm event={workshopEvent} />
 				</div>
 			</div>
 		</div>

@@ -142,7 +142,7 @@ export const GET: RequestHandler = async ({ url }) => {
   const storeId = url.searchParams.get('storeId') ?? undefined;
 
   const envSummary = Object.fromEntries(
-    CONNECTION_ENV_ORDER.map((key) => [key, describeDatabaseUrl(env[key])])
+    CONNECTION_ENV_ORDER.map((key) => [key, describeDatabaseUrl(env[key] || process.env[key])])
   );
 
   const checks = await Promise.all([

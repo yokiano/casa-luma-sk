@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm';
 import { db } from './client';
 import type { ReceiptAnalytics, ReceiptAnalyticsGranularity, ReceiptAnalyticsTimeSeriesPoint } from '$lib/receipts/analytics';
 import { NOT_CONVERTED_DURATION_THRESHOLD_MINUTES } from '$lib/receipts/receipt-tools';
+import { loyverse, type LoyverseItem } from '$lib/server/loyverse';
 
 interface ReceiptAnalyticsQueryInput {
   dateFrom?: string;
@@ -19,6 +20,42 @@ type DailyTimeSeriesRow = {
 };
 
 const dayOfWeekNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+let loyverseCategoryCache:
+  | {
+      loadedAt: number;
+      categoryByItemId: Map<string, string>;
+      categoryByVariantId: Map<string, string>;
+    }
+  | null = null;
+
+const getLoyverseCategoryMaps = async () => {
+  const ttlMs = 10 * 60 * 1000;
+  if (loyverseCategoryCache && Date.now() - loyverseCategoryCache.loadedAt < ttlMs) return loyverseCategoryCache;
+
+  try {
+    const [items, categories] = await Promise.all([loyverse.getAllItems(), loyverse.getAllCategories()]);
+    const categoryNames = new Map(categories.map((category) => [category.id, category.name]));
+    const categoryByItemId = new Map<string, string>();
+    const categoryByVariantId = new Map<string, string>();
+
+    for (const item of items as LoyverseItem[]) {
+      const category = item.category_id ? (categoryNames.get(item.category_id) ?? 'Uncategorized') : 'Uncategorized';
+      categoryByItemId.set(item.id, category);
+      for (const variant of item.variants ?? []) categoryByVariantId.set(variant.variant_id, category);
+    }
+
+    loyverseCategoryCache = { loadedAt: Date.now(), categoryByItemId, categoryByVariantId };
+    return loyverseCategoryCache;
+  } catch (error) {
+    console.error('Failed to load Loyverse categories for receipt analytics:', error);
+    return {
+      loadedAt: Date.now(),
+      categoryByItemId: new Map<string, string>(),
+      categoryByVariantId: new Map<string, string>()
+    };
+  }
+};
 
 const toDate = (value?: string): Date | null => {
   if (!value) return null;
@@ -122,8 +159,19 @@ export const queryReceiptAnalyticsFromDb = async ({
   const to = toDate(dateTo);
   const filterSql = () => baseFilterSql(from, to, storeId);
 
-  const [summaryRows, topPaymentRows, peakHourRows, topItemRows, timeSeriesRows, hourRows, itemRevenueRows, paymentRevenueRows, dowRows] =
-    await Promise.all([
+  const [
+    summaryRows,
+    topPaymentRows,
+    peakHourRows,
+    topItemRows,
+    timeSeriesRows,
+    hourRows,
+    itemRevenueRows,
+    allItemRevenueRows,
+    paymentRevenueRows,
+    dowRows,
+    categoryMaps
+  ] = await Promise.all([
       rowsOf<{
         receipt_count: number;
         sale_count: number;
@@ -237,14 +285,22 @@ export const queryReceiptAnalyticsFromDb = async ({
         ) hourly
         group by hourly.hour
       `),
-      rowsOf<{ label: string; revenue: number }>(sql`
-        select coalesce(li.item_name, 'Unknown') as label, coalesce(sum(li.total_money), 0)::float as revenue
+      rowsOf<{ item_id: string | null; variant_id: string | null; label: string; revenue: number }>(sql`
+        select null::text as item_id, null::text as variant_id, coalesce(li.item_name, 'Unknown') as label, coalesce(sum(li.total_money), 0)::float as revenue
         from receipt_line_items li
         join receipts r on r.receipt_key = li.receipt_key
         where ${filterSql()} and r.receipt_type is distinct from 'REFUND'
         group by coalesce(li.item_name, 'Unknown')
         order by coalesce(sum(li.total_money), 0) desc
         limit 20
+      `),
+      rowsOf<{ item_id: string | null; variant_id: string | null; label: string; revenue: number }>(sql`
+        select li.item_id, li.variant_id, coalesce(li.item_name, 'Unknown') as label, coalesce(sum(li.total_money), 0)::float as revenue
+        from receipt_line_items li
+        join receipts r on r.receipt_key = li.receipt_key
+        where ${filterSql()} and r.receipt_type is distinct from 'REFUND'
+        group by li.item_id, li.variant_id, coalesce(li.item_name, 'Unknown')
+        order by coalesce(sum(li.total_money), 0) desc
       `),
       rowsOf<{ label: string; revenue: number }>(sql`
         select coalesce(p.name, p.type, 'Unknown') as label, coalesce(sum(p.money_amount), 0)::float as revenue
@@ -263,7 +319,8 @@ export const queryReceiptAnalyticsFromDb = async ({
           where ${filterSql()} and r.receipt_type is distinct from 'REFUND' and coalesce(r.receipt_date, r.created_at) is not null
         ) daily
         group by daily.dow
-      `)
+      `),
+      getLoyverseCategoryMaps()
     ]);
 
   const summary = summaryRows[0];
@@ -280,6 +337,18 @@ export const queryReceiptAnalyticsFromDb = async ({
   for (const row of dowRows) dow[num(row.dow)].revenue = num(row.revenue);
 
   const timeSeries = buildTimeSeries(timeSeriesRows);
+  const categoryRevenue = new Map<string, number>();
+  for (const row of allItemRevenueRows) {
+    const category =
+      (row.item_id ? categoryMaps.categoryByItemId.get(row.item_id) : undefined) ??
+      (row.variant_id ? categoryMaps.categoryByVariantId.get(row.variant_id) : undefined) ??
+      'Uncategorized';
+    categoryRevenue.set(category, (categoryRevenue.get(category) ?? 0) + num(row.revenue));
+  }
+  const topCategoriesByRevenue = Array.from(categoryRevenue.entries())
+    .map(([label, revenue]) => ({ label, revenue }))
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, 20);
 
   return {
     summary: {
@@ -308,7 +377,12 @@ export const queryReceiptAnalyticsFromDb = async ({
     timeSeries,
     revenueByDay: timeSeries.day.map((row) => ({ label: row.label, revenue: row.revenue })),
     receiptsByHour: hours,
-    topItemsByRevenue: itemRevenueRows.map((row) => ({ label: str(row.label, 'Unknown'), revenue: num(row.revenue) })),
+    topItemsByRevenue: itemRevenueRows.map((row) => ({
+      label: str(row.label, 'Unknown'),
+      revenue: num(row.revenue),
+      itemId: row.item_id
+    })),
+    topCategoriesByRevenue,
     paymentTypeRevenue: paymentRevenueRows.map((row) => ({ label: str(row.label, 'Unknown'), revenue: num(row.revenue) })),
     avgTicketByDay: timeSeries.day.map((row) => ({ label: row.label, avg: row.avgTicket })),
     revenueByDayOfWeek: dow

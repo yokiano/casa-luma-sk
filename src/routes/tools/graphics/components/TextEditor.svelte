@@ -115,7 +115,7 @@
 
     <!-- Colors -->
     <div class="space-y-2">
-        <label class="text-sm font-medium">Text Color</label>
+        <span class="text-sm font-medium">Text Color</span>
         <div class="flex flex-wrap gap-2">
             {#each colors as color}
                 <button
