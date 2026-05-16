@@ -5,6 +5,9 @@ export type RecipeSummary = {
 	imageUrl?: string;
 	cogs?: number;
 	menuItemIds: string[];
+	hasIngredientLines: boolean;
+	hasInstructions: boolean;
+	isComplete: boolean;
 	lastEditedTime: string;
 };
 
@@ -46,6 +49,7 @@ export type MenuItemSummary = MenuItemContext & {
 	recipeNames: string[];
 	primaryRecipeId?: string;
 	recipeCogs?: number;
+	recipeStatus: 'complete' | 'incomplete' | 'missing';
 };
 
 export type MenuCategoryGroup = {

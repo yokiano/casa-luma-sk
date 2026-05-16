@@ -10,7 +10,7 @@
 	let search = $state('');
 	let activeGrandCategory = $state('All');
 	let activeCategoryKey = $state('All');
-	let coverageFilter = $state<'all' | 'missing'>('all');
+	let coverageFilter = $state<'all' | 'needsWork'>('all');
 	let menuGroups = $state<MenuGrandCategoryGroup[]>([]);
 	let selectedRecipe = $state<RecipeDetail | null>(null);
 	let isLoadingList = $state(true);
@@ -25,9 +25,10 @@
 	const money = new Intl.NumberFormat('en-TH', { style: 'currency', currency: 'THB', maximumFractionDigits: 0 });
 	const number = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
 
+	const notionIdKey = (id: string) => id.replaceAll('-', '').toLowerCase();
 	const allMenuItems = $derived(menuGroups.flatMap((grand) => grand.categories.flatMap((category) => category.items)));
 	const selectedMenuItem = $derived(
-		selectedMenuItemId ? (allMenuItems.find((item) => item.id === selectedMenuItemId) ?? null) : null
+		selectedMenuItemId ? (allMenuItems.find((item) => notionIdKey(item.id) === notionIdKey(selectedMenuItemId)) ?? null) : null
 	);
 	const selectedRecipeId = $derived(legacyRecipeId ?? selectedMenuItem?.primaryRecipeId ?? null);
 
@@ -57,7 +58,7 @@
 					)
 					.flatMap((category) => category.items)
 			)
-			.filter((item) => coverageFilter === 'all' || !item.primaryRecipeId)
+			.filter((item) => coverageFilter === 'all' || item.recipeStatus !== 'complete')
 			.filter((item) => {
 				if (!term) return true;
 				return [item.name, item.thaiName, item.category, item.grandCategory, item.status, ...item.recipeNames]
@@ -77,6 +78,16 @@
 			new Set([...(selectedRecipe?.menuItems?.flatMap((item) => item.dietaryOptions) ?? []), ...(selectedMenuItem?.dietaryOptions ?? [])])
 		)
 	);
+
+	const recipeStatusLabel = (item: MenuItemSummary) =>
+		item.recipeStatus === 'complete' ? 'recipe' : item.recipeStatus === 'incomplete' ? 'incomplete' : 'missing';
+
+	const recipeStatusClass = (item: MenuItemSummary) =>
+		item.recipeStatus === 'complete'
+			? 'bg-emerald-50 text-emerald-700'
+			: item.recipeStatus === 'incomplete'
+				? 'bg-orange-50 text-orange-700'
+				: 'bg-amber-50 text-amber-700';
 
 	async function loadMenuIndex() {
 		isLoadingList = true;
@@ -184,7 +195,7 @@
 								class={`rounded-xl border px-2.5 py-2 text-left transition ${activeGrandCategory === 'All' ? 'border-[#9a7656] bg-white shadow-sm' : 'border-transparent bg-white/60 hover:bg-white'}`}
 							>
 								<p class="text-sm font-bold text-[#2c2925]">All</p>
-								<p class="text-[10px] font-semibold text-[#a37752]">{allMenuItems.filter((item) => item.primaryRecipeId).length}/{allMenuItems.length} recipes</p>
+								<p class="text-[10px] font-semibold text-[#a37752]">{allMenuItems.filter((item) => item.recipeStatus === 'complete').length}/{allMenuItems.length} recipes</p>
 							</button>
 							{#each menuGroups as grand (grand.grandCategory)}
 								<button
@@ -232,10 +243,10 @@
 							</button>
 							<button
 								type="button"
-								onclick={() => (coverageFilter = 'missing')}
-								class={`rounded-full px-3 py-1.5 ${coverageFilter === 'missing' ? 'bg-amber-600 text-white' : 'text-[#7a6550] hover:bg-[#f6f1eb]'}`}
+								onclick={() => (coverageFilter = 'needsWork')}
+								class={`rounded-full px-3 py-1.5 ${coverageFilter === 'needsWork' ? 'bg-amber-600 text-white' : 'text-[#7a6550] hover:bg-[#f6f1eb]'}`}
 							>
-								Missing only
+								Needs work
 							</button>
 						</div>
 					</section>
@@ -256,7 +267,7 @@
 									<a
 										href={`/tools/recipes?menuItemId=${item.id}${item.primaryRecipeId ? `&id=${item.primaryRecipeId}` : ''}`}
 										class={`block rounded-xl border p-2 transition ${
-											selectedMenuItemId === item.id || selectedRecipeId === item.primaryRecipeId
+											(selectedMenuItemId && notionIdKey(selectedMenuItemId) === notionIdKey(item.id)) || selectedRecipeId === item.primaryRecipeId
 												? 'border-[#9a7656] bg-[#f6f1eb] shadow-sm'
 												: 'border-transparent bg-white/70 hover:border-[#dfd2c6] hover:bg-white'
 										}`}
@@ -270,7 +281,7 @@
 											<div class="min-w-0 flex-1">
 												<div class="flex items-start justify-between gap-2">
 													<p class="truncate text-sm font-semibold text-[#2c2925]">{item.name}</p>
-													<span class={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${item.primaryRecipeId ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>{item.primaryRecipeId ? 'recipe' : 'missing'}</span>
+													<span class={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${recipeStatusClass(item)}`}>{recipeStatusLabel(item)}</span>
 												</div>
 												{#if item.thaiName}<p class="truncate text-xs text-[#7a6550]">{item.thaiName}</p>{/if}
 												<div class="mt-0.5 flex flex-wrap gap-1 text-[11px] font-medium text-[#a37752]">
@@ -321,6 +332,13 @@
 							{#if selectedRecipe.thaiName}<p class="text-xl text-[#7a6550]">{selectedRecipe.thaiName}</p>{/if}
 
 							<div class="mt-3 flex flex-wrap gap-2 text-xs">
+								{#if selectedRecipe.isComplete}
+									<span class="rounded-full bg-emerald-50 px-3 py-1.5 font-bold text-emerald-700">Complete recipe</span>
+								{:else}
+									<span class="rounded-full bg-orange-50 px-3 py-1.5 font-bold text-orange-700">Incomplete recipe</span>
+									{#if !selectedRecipe.hasIngredientLines}<span class="rounded-full bg-amber-50 px-3 py-1.5 font-bold text-amber-700">Missing ingredients</span>{/if}
+									{#if !selectedRecipe.hasInstructions}<span class="rounded-full bg-amber-50 px-3 py-1.5 font-bold text-amber-700">Missing instructions</span>{/if}
+								{/if}
 								{#if selectedRecipe.cogs !== undefined}<span class="rounded-full bg-[#fbf4e7] px-3 py-1.5 font-semibold text-[#8a5a19]">COGS {money.format(selectedRecipe.cogs)}</span>{/if}
 								{#each selectedRecipe.menuItems as item (item.id)}
 									{#if item.price !== undefined}<span class="rounded-full bg-[#eef7ed] px-3 py-1.5 font-semibold text-[#467241]">{item.name}: {money.format(item.price)}</span>{/if}
@@ -334,29 +352,33 @@
 					<div class="grid gap-5 border-t border-[#eee4da] p-4 md:grid-cols-[minmax(280px,0.85fr)_minmax(0,1.15fr)] md:p-5">
 						<section>
 							<h2 class="text-lg font-semibold text-[#2c2925]">Ingredients</h2>
-							<div class="mt-3 overflow-hidden rounded-2xl border border-[#e4d8cc]">
-								{#each selectedRecipe.ingredientLines as line (line.id)}
-									<div class="grid grid-cols-[70px_38px_minmax(0,1fr)] gap-2 border-b border-[#eee4da] bg-white p-2.5 last:border-b-0">
-										<div class="text-right">
-											<p class="font-bold leading-tight text-[#2c2925]">{line.amount !== undefined ? number.format(line.amount) : '—'}</p>
-											<p class="text-[10px] font-semibold uppercase text-[#a37752]">{line.unit ?? line.ingredient?.unit ?? ''}</p>
-										</div>
-										{#if line.ingredient?.imageUrl}
-											<img src={line.ingredient.imageUrl} alt="" class="h-9 w-9 rounded-lg object-cover" />
-										{:else}
-											<div class="flex h-9 w-9 items-center justify-center rounded-lg bg-[#f1e8df] text-sm">•</div>
-										{/if}
-										<div class="min-w-0">
-											<p class="truncate text-sm font-semibold text-[#2c2925]">{line.ingredient?.name ?? line.name}</p>
-											{#if line.ingredient?.thaiName}<p class="truncate text-xs text-[#7a6550]">{line.ingredient.thaiName}</p>{/if}
-											<div class="flex flex-wrap gap-1 text-[11px] text-[#7a6550]">
-												{#if line.lineCost !== undefined}<span>{money.format(line.lineCost)}</span>{/if}
-												{#each (line.ingredient?.department ?? []) as department}<span>• {department}</span>{/each}
+							{#if selectedRecipe.ingredientLines.length === 0}
+								<p class="mt-3 rounded-2xl border border-dashed border-[#d8c8b8] p-4 text-sm text-[#7a6550]">No ingredient lines found.</p>
+							{:else}
+								<div class="mt-3 overflow-hidden rounded-2xl border border-[#e4d8cc]">
+									{#each selectedRecipe.ingredientLines as line (line.id)}
+										<div class="grid grid-cols-[70px_38px_minmax(0,1fr)] gap-2 border-b border-[#eee4da] bg-white p-2.5 last:border-b-0">
+											<div class="text-right">
+												<p class="font-bold leading-tight text-[#2c2925]">{line.amount !== undefined ? number.format(line.amount) : '—'}</p>
+												<p class="text-[10px] font-semibold uppercase text-[#a37752]">{line.unit ?? line.ingredient?.unit ?? ''}</p>
+											</div>
+											{#if line.ingredient?.imageUrl}
+												<img src={line.ingredient.imageUrl} alt="" class="h-9 w-9 rounded-lg object-cover" />
+											{:else}
+												<div class="flex h-9 w-9 items-center justify-center rounded-lg bg-[#f1e8df] text-sm">•</div>
+											{/if}
+											<div class="min-w-0">
+												<p class="truncate text-sm font-semibold text-[#2c2925]">{line.ingredient?.name ?? line.name}</p>
+												{#if line.ingredient?.thaiName}<p class="truncate text-xs text-[#7a6550]">{line.ingredient.thaiName}</p>{/if}
+												<div class="flex flex-wrap gap-1 text-[11px] text-[#7a6550]">
+													{#if line.lineCost !== undefined}<span>{money.format(line.lineCost)}</span>{/if}
+													{#each (line.ingredient?.department ?? []) as department}<span>• {department}</span>{/each}
+												</div>
 											</div>
 										</div>
-									</div>
-								{/each}
-							</div>
+									{/each}
+								</div>
+							{/if}
 						</section>
 
 						<section>

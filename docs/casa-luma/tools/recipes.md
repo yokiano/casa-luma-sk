@@ -15,7 +15,7 @@ This staff tool presents the Notion `Recipes` database as a kitchen recipe book.
 
 The route `+page.server.ts` intentionally returns immediately so Notion latency does not block the page mount. Recipe data loads after mount through SvelteKit remote functions:
 
-- `getRecipeMenuIndex()` loads Menu Items and Recipes in parallel. Menu Items drive the navigation tree, while Recipes are used to mark which menu items already have linked recipe records and to show the recipe COGS badge.
+- `getRecipeMenuIndex()` loads active Menu Items and Recipes in parallel. Active Menu Items drive the navigation tree, while Recipes are used to mark recipe coverage. A recipe only counts as complete when it has both recipe line items and instructions; linked records missing either are shown as incomplete/needs work.
 - `getRecipeSummaries()` remains available for recipe-only summary consumers.
 - `getRecipeDetail({ recipeId })` expands one selected recipe at a time.
 
@@ -38,7 +38,7 @@ The recipe card is designed for kitchen readability:
 - Compact ingredient table with exact amount, unit, ingredient name, Thai name, department, line cost, and ingredient thumbnails when available.
 - Instruction section combining the Recipe `Instructions` property and actual Notion page body blocks.
 - Linked menu item context grouped by category with only relevant operational fields.
-- Missing-recipe state for menu items that exist in the Menu Items database but are not linked from any Recipe yet.
+- Missing/incomplete recipe states for active menu items that are not linked from any Recipe yet, or whose linked recipe is missing ingredient lines or instructions.
 - Standalone recipe image card with a warm placeholder when Notion has no image.
 
 ## Implementation files

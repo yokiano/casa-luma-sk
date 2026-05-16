@@ -78,6 +78,7 @@ const fileUrl = (file: any): string | undefined => {
 };
 
 const imageFromFiles = (files?: { urls: Array<string | undefined> }) => files?.urls.find(Boolean);
+const notionIdKey = (id: string) => id.replaceAll('-', '').toLowerCase();
 
 const blockToInstruction = (block: BlockObjectResponseWithChildren): InstructionBlock | null => {
 	const data = (block as any)[(block as any).type] ?? {};
@@ -136,6 +137,7 @@ const fetchAllMenuItemDtos = async (db: MenuItemsDatabase): Promise<MenuItemsRes
 		const response = await db.query({
 			page_size: 100,
 			start_cursor: cursor,
+			filter: { status: { equals: 'Active' } },
 			sorts: [
 				{ property: 'grandCategory', direction: 'ascending' },
 				{ property: 'category', direction: 'ascending' },
@@ -150,15 +152,22 @@ const fetchAllMenuItemDtos = async (db: MenuItemsDatabase): Promise<MenuItemsRes
 	return results.map((item) => new MenuItemsResponseDTO(item));
 };
 
-const toSummary = (recipe: RecipesResponseDTO, calculatedCogs?: number): RecipeSummary => ({
-	id: recipe.id,
-	name: recipe.properties.name.text ?? 'Untitled recipe',
-	thaiName: recipe.properties.thaiName.text,
-	imageUrl: imageFromFiles(recipe.properties.image),
-	cogs: chooseCogs(recipe, calculatedCogs),
-	menuItemIds: recipe.properties.menuItemIds,
-	lastEditedTime: recipe.lastEditedTime
-});
+const toSummary = (recipe: RecipesResponseDTO, calculatedCogs?: number, hasInstructionsOverride?: boolean): RecipeSummary => {
+	const hasIngredientLines = recipe.properties.recipeLinesIds.length > 0;
+	const hasInstructions = hasInstructionsOverride ?? Boolean(recipe.properties.instructions.text?.trim());
+	return {
+		id: recipe.id,
+		name: recipe.properties.name.text ?? 'Untitled recipe',
+		thaiName: recipe.properties.thaiName.text,
+		imageUrl: imageFromFiles(recipe.properties.image),
+		cogs: chooseCogs(recipe, calculatedCogs),
+		menuItemIds: recipe.properties.menuItemIds,
+		hasIngredientLines,
+		hasInstructions,
+		isComplete: hasIngredientLines && hasInstructions,
+		lastEditedTime: recipe.lastEditedTime
+	};
+};
 
 const toMenuItemContext = (menuItem: MenuItemsResponseDTO): MenuItemContext => ({
 	id: menuItem.id,
@@ -210,7 +219,7 @@ const groupMenuIndex = (items: MenuItemSummary[]): MenuGrandCategoryGroup[] => {
 		const categories: MenuCategoryGroup[] = Array.from(categoryGroups, ([category, groupedItems]) => ({
 			category,
 			items: groupedItems,
-			recipeCount: groupedItems.filter((item) => item.primaryRecipeId).length
+			recipeCount: groupedItems.filter((item) => item.recipeStatus === 'complete').length
 		}));
 		const totalItems = categories.reduce((sum, group) => sum + group.items.length, 0);
 		const recipeCount = categories.reduce((sum, group) => sum + group.recipeCount, 0);
@@ -218,14 +227,30 @@ const groupMenuIndex = (items: MenuItemSummary[]): MenuGrandCategoryGroup[] => {
 	});
 };
 
-const getRecipeSummariesFromDtos = (recipes: RecipesResponseDTO[], allRecipeLines: RecipeLinesResponseDTO[]): RecipeSummary[] => {
+const getInstructionCompleteness = async (recipesDb: RecipesDatabase, recipes: RecipesResponseDTO[]): Promise<Map<string, boolean>> => {
+	const entries = await Promise.all(
+		recipes.map(async (recipe) => {
+			if (recipe.properties.instructions.text?.trim()) return [recipe.id, true] as const;
+			const blocks = await recipesDb.getPageBlocks(recipe.id);
+			return [recipe.id, blocks.map(blockToInstruction).some(Boolean)] as const;
+		})
+	);
+	return new Map(entries);
+};
+
+const getRecipeSummariesFromDtos = (
+	recipes: RecipesResponseDTO[],
+	allRecipeLines: RecipeLinesResponseDTO[],
+	instructionsByRecipeId = new Map<string, boolean>()
+): RecipeSummary[] => {
 	const lineCostsById = new Map(allRecipeLines.map((line) => [line.id, lineCostNumber(line)]));
 	return recipes.map((recipe) =>
 		toSummary(
 			recipe,
 			recipe.properties.recipeLinesIds.length
 				? recipe.properties.recipeLinesIds.reduce((sum, id) => sum + (lineCostsById.get(id) ?? 0), 0)
-				: undefined
+				: undefined,
+			instructionsByRecipeId.get(recipe.id)
 		)
 	);
 };
@@ -238,7 +263,8 @@ export const getRecipeSummariesData = async (): Promise<RecipeSummary[]> => {
 		fetchAllRecipeLineDtos(recipeLinesDb)
 	]);
 
-	return getRecipeSummariesFromDtos(recipes, allRecipeLines);
+	const instructionsByRecipeId = await getInstructionCompleteness(recipesDb, recipes);
+	return getRecipeSummariesFromDtos(recipes, allRecipeLines, instructionsByRecipeId);
 };
 
 export const getRecipeMenuIndexData = async (): Promise<RecipeMenuIndex> => {
@@ -250,24 +276,31 @@ export const getRecipeMenuIndexData = async (): Promise<RecipeMenuIndex> => {
 		fetchAllRecipeLineDtos(recipeLinesDb),
 		fetchAllMenuItemDtos(menuItemsDb)
 	]);
-	const recipes = getRecipeSummariesFromDtos(recipeDtos, allRecipeLines);
+	const instructionsByRecipeId = await getInstructionCompleteness(recipesDb, recipeDtos);
+	const recipes = getRecipeSummariesFromDtos(recipeDtos, allRecipeLines, instructionsByRecipeId);
 	const recipesByMenuItemId = new Map<string, RecipeSummary[]>();
 
 	for (const recipe of recipes) {
 		for (const menuItemId of recipe.menuItemIds) {
-			recipesByMenuItemId.set(menuItemId, [...(recipesByMenuItemId.get(menuItemId) ?? []), recipe]);
+			const key = notionIdKey(menuItemId);
+			recipesByMenuItemId.set(key, [...(recipesByMenuItemId.get(key) ?? []), recipe]);
 		}
 	}
 
 	const menuItems: MenuItemSummary[] = menuItemDtos.map((dto) => {
-		const linkedRecipes = recipesByMenuItemId.get(dto.id) ?? [];
-		const primaryRecipe = linkedRecipes[0];
+		const linkedRecipes = recipesByMenuItemId.get(notionIdKey(dto.id)) ?? [];
+		const primaryRecipe = linkedRecipes.find((recipe) => recipe.isComplete) ?? linkedRecipes[0];
 		return {
 			...toMenuItemContext(dto),
 			recipeIds: linkedRecipes.map((recipe) => recipe.id),
 			recipeNames: linkedRecipes.map((recipe) => recipe.name),
 			primaryRecipeId: primaryRecipe?.id,
-			recipeCogs: primaryRecipe?.cogs
+			recipeCogs: primaryRecipe?.cogs,
+			recipeStatus: linkedRecipes.some((recipe) => recipe.isComplete)
+				? 'complete'
+				: linkedRecipes.length
+					? 'incomplete'
+					: 'missing'
 		};
 	});
 
@@ -295,9 +328,11 @@ export const getRecipeDetailData = async (recipeId: string): Promise<RecipeDetai
 	);
 	const ingredientsById = new Map(ingredientEntries);
 
-	const menuItems: MenuItemContext[] = await Promise.all(
-		selectedDto.properties.menuItemIds.map(async (id) => toMenuItemContext(new MenuItemsResponseDTO(await menuItemsDb.getPage(id))))
-	);
+	const menuItems: MenuItemContext[] = (
+		await Promise.all(
+			selectedDto.properties.menuItemIds.map(async (id) => toMenuItemContext(new MenuItemsResponseDTO(await menuItemsDb.getPage(id))))
+		)
+	).filter((item) => item.status === 'Active');
 
 	const ingredientLines: IngredientLine[] = lineDtos.map((line) => {
 		const ingredient = line.properties.ingredientIds[0]
@@ -324,11 +359,17 @@ export const getRecipeDetailData = async (recipeId: string): Promise<RecipeDetai
 	});
 
 	const blocks = await recipesDb.getPageBlocks(selectedDto.id);
+	const instructionBlocks = blocks.map(blockToInstruction).filter(Boolean) as InstructionBlock[];
+	const hasInstructions = Boolean(selectedDto.properties.instructions.text?.trim()) || instructionBlocks.length > 0;
+	const hasIngredientLines = ingredientLines.length > 0;
 
 	return {
 		...selectedSummary,
+		hasIngredientLines,
+		hasInstructions,
+		isComplete: hasIngredientLines && hasInstructions,
 		instructionsText: selectedDto.properties.instructions.text,
-		instructionBlocks: blocks.map(blockToInstruction).filter(Boolean) as InstructionBlock[],
+		instructionBlocks,
 		ingredientLines,
 		menuItems,
 		menuItemGroups: groupMenuItems(menuItems)
