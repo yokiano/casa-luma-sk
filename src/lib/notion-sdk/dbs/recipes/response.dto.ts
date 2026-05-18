@@ -68,6 +68,7 @@ export class RecipesPropertiesResponseDTO {
       menuItem: this.__props['Menu Item'],
       image: this.__props['Image'],
       name: this.__props['Name'],
+      thaiInstructions: this.__props['Thai Instructions'],
     }
   }
 
@@ -116,6 +117,14 @@ export class RecipesPropertiesResponseDTO {
       text: this.__props['Name']?.title ? this.__props['Name'].title.reduce((acc, item) => acc + item.plain_text, '') : undefined,
       links: this.__props['Name']?.title ? this.__props['Name'].title.filter((item) => item.href?.length).map((item) => item.href) : [],
       title: this.__props['Name']?.title,
+    }
+  }
+
+  get thaiInstructions() {
+    return {
+      text: this.__props['Thai Instructions']?.rich_text ? this.__props['Thai Instructions'].rich_text.reduce((acc, item) => acc + item.plain_text, '') : undefined,
+      links: this.__props['Thai Instructions']?.rich_text ? this.__props['Thai Instructions'].rich_text.filter((item) => item.href?.length).map((item) => item.href) : [],
+      rich_text: this.__props['Thai Instructions']?.rich_text,
     }
   }
 }

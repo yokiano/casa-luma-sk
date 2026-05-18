@@ -25,7 +25,8 @@ export interface RecipesResponse extends WithOptional<Omit<DatabaseObjectRespons
     "Instructions": RichTextPropertyItemObjectResponse,
     "Menu Item": RelationPropertyItemObjectResponse,
     "Image": FilesPropertyItemObjectResponse,
-    "Name": TitlePropertyItemObjectResponse
+    "Name": TitlePropertyItemObjectResponse,
+    "Thai Instructions": RichTextPropertyItemObjectResponse
   }
 }
 
@@ -39,8 +40,9 @@ type RecipesInstructionsPropertyFilter = TextPropertyFilter
 type RecipesMenuItemPropertyFilter = RelationPropertyFilter
 type RecipesImagePropertyFilter = ExistencePropertyFilter
 type RecipesNamePropertyFilter = TextPropertyFilter
+type RecipesThaiInstructionsPropertyFilter = TextPropertyFilter
 
-export type RecipesPropertyFilter = { recipeLines: RecipesRecipeLinesPropertyFilter } | { cogs: RecipesCogsPropertyFilter } | { thaiName: RecipesThaiNamePropertyFilter } | { instructions: RecipesInstructionsPropertyFilter } | { menuItem: RecipesMenuItemPropertyFilter } | { image: RecipesImagePropertyFilter } | { name: RecipesNamePropertyFilter }
+export type RecipesPropertyFilter = { recipeLines: RecipesRecipeLinesPropertyFilter } | { cogs: RecipesCogsPropertyFilter } | { thaiName: RecipesThaiNamePropertyFilter } | { instructions: RecipesInstructionsPropertyFilter } | { menuItem: RecipesMenuItemPropertyFilter } | { image: RecipesImagePropertyFilter } | { name: RecipesNamePropertyFilter } | { thaiInstructions: RecipesThaiInstructionsPropertyFilter }
 
 export type RecipesQuery = Omit<QueryDatabaseBodyParameters, 'filter' | 'sorts'> & {
   sorts?: Array<

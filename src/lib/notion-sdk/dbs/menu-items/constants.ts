@@ -63,6 +63,7 @@ export const MENU_ITEMS_PROP_VALUES = {
 ] as const,
 "status": [
   "Active",
+  "not sold",
   "Archived"
 ] as const,
 }

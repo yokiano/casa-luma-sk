@@ -2088,12 +2088,6 @@
           "varName": "cogs",
           "readOnly": false
         },
-        "K%3E%3AU": {
-          "_name": "Thai Name",
-          "_type": "rich_text",
-          "varName": "thaiName",
-          "readOnly": false
-        },
         "Uqli": {
           "_name": "Instructions",
           "_type": "rich_text",
@@ -2116,6 +2110,12 @@
           "_name": "Name",
           "_type": "title",
           "varName": "name",
+          "readOnly": false
+        },
+        "%7B%3CQ%3C": {
+          "_name": "Thai Instructions",
+          "_type": "rich_text",
+          "varName": "thaiInstructions",
           "readOnly": false
         }
       }

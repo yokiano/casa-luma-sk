@@ -37,7 +37,7 @@ export interface MenuItemsResponse extends WithOptional<Omit<DatabaseObjectRespo
     "Name": TitlePropertyItemObjectResponse,
     "LoyverseID": RichTextPropertyItemObjectResponse,
     "Grand Category": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'Food', color: 'yellow' } | { id: StringRequest, name: 'Drinks', color: 'green' } | { id: StringRequest, name: 'Kids', color: 'pink' } | { id: StringRequest, name: 'Desserts', color: 'default' }},
-    "Status": Omit<StatusPropertyItemObjectResponse, 'status'> & { status: { id: StringRequest, name: 'Active', color: 'green' } | { id: StringRequest, name: 'Archived', color: 'gray' }},
+    "Status": Omit<StatusPropertyItemObjectResponse, 'status'> & { status: { id: StringRequest, name: 'Active', color: 'green' } | { id: StringRequest, name: 'not sold', color: 'yellow' } | { id: StringRequest, name: 'Archived', color: 'gray' }},
     "Variant option 1 name": RichTextPropertyItemObjectResponse,
     "Variants JSON": RichTextPropertyItemObjectResponse,
     "Loyverse Handle": RichTextPropertyItemObjectResponse,

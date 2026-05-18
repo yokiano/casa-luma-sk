@@ -32,13 +32,12 @@ This avoids loading every ingredient/menu item for every recipe up front, keeps 
 
 The recipe card is designed for kitchen readability:
 
-- Sticky searchable menu browser with a separate “menu map”: Grand Category tiles, Category chips, and an item list. This avoids deep expand/collapse navigation while still showing recipe coverage counts.
-- Header with recipe image, English/Thai title, derived COGS, menu price, and Notion link.
-- Safety/context strip for allergens and dietary options from linked menu items.
-- Compact ingredient table with exact amount, unit, ingredient name, Thai name, department, line cost, and ingredient thumbnails when available.
-- Instruction section combining the Recipe `Instructions` property and actual Notion page body blocks.
-- Linked menu item context grouped by category with only relevant operational fields.
+- Sticky searchable menu browser with a collapsible “menu map”: Grand Category tiles, Category chips, and an item list. This keeps navigation available while allowing more horizontal space for instructions.
+- Header with recipe image, English/Thai title, derived COGS, menu price, allergen/dietary badges, and the linked menu item context box.
+- Sub-header ingredient pane with exact amount, unit, ingredient name, Thai name, department, line cost, and ingredient thumbnails when available.
+- Main instruction pane with side-by-side English `Instructions` and `Thai Instructions` fields, plus page body blocks.
 - Missing/incomplete recipe states for active menu items that are not linked from any Recipe yet, or whose linked recipe is missing ingredient lines or instructions.
+- Server-side Thai/English translation actions powered by Replicate, with double-arrow draft buttons and explicit per-language “Apply to Notion” buttons so only the selected recipe record is updated.
 - Standalone recipe image card with a warm placeholder when Notion has no image.
 
 ## Implementation files
@@ -47,5 +46,6 @@ The recipe card is designed for kitchen readability:
 - `src/routes/tools/recipes/+page.server.ts` — immediate non-blocking route data.
 - `src/lib/tools/recipes/recipes.server.ts` — Notion loading/expansion and block normalization.
 - `src/lib/tools/recipes/recipes.remote.ts` — remote functions used by the UI.
+- `src/lib/tools/recipes/recipes.translation.ts` — Replicate prompt, glossary, output-normalization, and Notion rich-text chunk helpers.
 - `src/routes/tools/recipes/+page.svelte` — searchable list and compact recipe detail UI.
 - `src/routes/tools/recipes/InstructionBlock.svelte` — Notion block renderer for recipe instructions.

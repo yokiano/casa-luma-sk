@@ -1,5 +1,6 @@
-import { NOTION_API_KEY } from '$env/static/private';
-import { RecipesDatabase, RecipesResponseDTO, type RecipesQueryResponse } from '$lib/notion-sdk/dbs/recipes';
+import { env } from '$env/dynamic/private';
+import { error } from '@sveltejs/kit';
+import { RecipesDatabase, RecipesPatchDTO, RecipesResponseDTO, type RecipesQueryResponse } from '$lib/notion-sdk/dbs/recipes';
 import { RecipeLinesDatabase, RecipeLinesResponseDTO, type RecipeLinesQueryResponse } from '$lib/notion-sdk/dbs/recipe-lines';
 import { IngredientsDatabase, IngredientsResponseDTO } from '$lib/notion-sdk/dbs/ingredients';
 import { MenuItemsDatabase, MenuItemsResponseDTO, type MenuItemsQueryResponse } from '$lib/notion-sdk/dbs/menu-items';
@@ -16,6 +17,14 @@ import type {
 	RecipeMenuIndex,
 	RecipeSummary
 } from './recipes.types';
+import {
+	buildRecipeTranslationPrompt,
+	normalizeReplicateOutput,
+	RECIPE_TRANSLATION_SYSTEM_PROMPT,
+	richTextChunks,
+	type InstructionLanguage,
+	type TranslationDirection
+} from './recipes.translation';
 
 const textFromRichText = (items?: Array<{ plain_text?: string }>) =>
 	items?.map((item) => item.plain_text ?? '').join('').trim() || undefined;
@@ -310,6 +319,96 @@ export const getRecipeMenuIndexData = async (): Promise<RecipeMenuIndex> => {
 	};
 };
 
+const NOTION_API_KEY = env.NOTION_API_KEY ?? '';
+const REPLICATE_MODEL = env.REPLICATE_TRANSLATION_MODEL || 'meta/meta-llama-3-8b-instruct';
+const REPLICATE_API_URL = 'https://api.replicate.com/v1';
+
+const createRichText = (text: string) => richTextChunks(text).map((content) => ({ type: 'text' as const, text: { content } }));
+
+const getReplicatePredictionOutput = async (prediction: any) => {
+	let current = prediction;
+	for (let i = 0; i < 20; i += 1) {
+		if (current.status === 'succeeded') return normalizeReplicateOutput(current.output);
+		if (current.status === 'failed' || current.status === 'canceled' || current.status === 'aborted') {
+			throw error(502, { message: current.error || 'Replicate translation failed' });
+		}
+		await new Promise((resolve) => setTimeout(resolve, 1000));
+		const response = await fetch(`${REPLICATE_API_URL}/predictions/${current.id}`, {
+			headers: { Authorization: `Bearer ${env.REPLICATE_API_KEY}` }
+		});
+		if (!response.ok) throw error(502, { message: 'Could not poll Replicate translation' });
+		current = await response.json();
+	}
+	throw error(504, { message: 'Replicate translation timed out' });
+};
+
+const runReplicateTranslation = async (prompt: string) => {
+	if (!env.REPLICATE_API_KEY) throw error(500, { message: 'REPLICATE_API_KEY is not configured' });
+	const response = await fetch(`${REPLICATE_API_URL}/models/${REPLICATE_MODEL}/predictions`, {
+		method: 'POST',
+		headers: {
+			Authorization: `Bearer ${env.REPLICATE_API_KEY}`,
+			'Content-Type': 'application/json',
+			Prefer: 'wait=60'
+		},
+		body: JSON.stringify({
+			input: {
+				prompt,
+				system_prompt: RECIPE_TRANSLATION_SYSTEM_PROMPT,
+				temperature: 0.1,
+				max_new_tokens: 4096,
+				prompt_template:
+					'<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n{system_prompt}<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n{prompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n'
+			}
+		})
+	});
+	if (!response.ok) {
+		const message = await response.text().catch(() => '');
+		console.error('recipes: Replicate translation request failed', { status: response.status, model: REPLICATE_MODEL, message });
+		throw error(502, {
+			message: `Could not start Replicate translation with ${REPLICATE_MODEL}. ${message || `HTTP ${response.status}`}`
+		});
+	}
+	const prediction = await response.json();
+	const translatedText = await getReplicatePredictionOutput(prediction);
+	if (!translatedText) throw error(502, { message: 'Replicate returned an empty translation' });
+	return translatedText;
+};
+
+export const translateRecipeInstructionsData = async (recipeId: string, direction: TranslationDirection, sourceTextOverride?: string) => {
+	const detail = await getRecipeDetailData(recipeId);
+	if (!detail) throw error(404, { message: 'Recipe not found' });
+
+	const sourceText = sourceTextOverride ?? (direction === 'english-to-thai' ? detail.instructionsText : detail.thaiInstructionsText);
+	if (!sourceText?.trim()) {
+		throw error(400, { message: direction === 'english-to-thai' ? 'No English instructions to translate' : 'No Thai instructions to translate' });
+	}
+
+	const translatedText = await runReplicateTranslation(
+		buildRecipeTranslationPrompt({
+			direction,
+			text: sourceText,
+			recipeName: detail.name,
+			thaiRecipeName: detail.thaiName,
+			ingredientLines: detail.ingredientLines,
+			menuItems: detail.menuItems
+		})
+	);
+
+	return { recipeId, direction, translatedText };
+};
+
+export const updateRecipeInstructionsData = async (recipeId: string, language: InstructionLanguage, text: string) => {
+	const db = new RecipesDatabase({ notionSecret: NOTION_API_KEY });
+	await db.updatePage(
+		recipeId,
+		new RecipesPatchDTO({
+			properties: language === 'english' ? { instructions: createRichText(text) } : { thaiInstructions: createRichText(text) }
+		})
+	);
+	return { success: true, recipeId, language };
+};
+
 export const getRecipeDetailData = async (recipeId: string): Promise<RecipeDetail | null> => {
 	const recipesDb = new RecipesDatabase({ notionSecret: NOTION_API_KEY });
 	const recipeLinesDb = new RecipeLinesDatabase({ notionSecret: NOTION_API_KEY });
@@ -369,6 +468,7 @@ export const getRecipeDetailData = async (recipeId: string): Promise<RecipeDetai
 		hasInstructions,
 		isComplete: hasIngredientLines && hasInstructions,
 		instructionsText: selectedDto.properties.instructions.text,
+		thaiInstructionsText: selectedDto.properties.thaiInstructions.text,
 		instructionBlocks,
 		ingredientLines,
 		menuItems,

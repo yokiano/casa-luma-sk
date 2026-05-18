@@ -12,6 +12,7 @@ export type RecipesPropertiesPatch = {
   menuItem?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'relation' }>['relation']
   image?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'files' }>['files']
   name?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
+  thaiInstructions?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
 }
 
   
@@ -114,6 +115,28 @@ export class RecipesPatchDTO {
                       link: props.name?.url ? { url: props.name.url } : undefined
                     },
                     annotations: props.name.annotations
+                  },
+                ]
+      }
+    }
+
+    if (props?.thaiInstructions !== undefined) {
+      this.__data.properties['%7B%3CQ%3C'] = {
+        type: 'rich_text',
+        rich_text: typeof props.thaiInstructions === 'string' 
+          ? [{ type: 'text', text: { content: props.thaiInstructions } }]
+          : Array.isArray(props.thaiInstructions)
+            ? props.thaiInstructions
+            : props.thaiInstructions === null
+              ? []
+              : [
+                  {
+                    type: 'text',
+                    text: {
+                      content: props.thaiInstructions.text,
+                      link: props.thaiInstructions?.url ? { url: props.thaiInstructions.url } : undefined
+                    },
+                    annotations: props.thaiInstructions.annotations
                   },
                 ]
       }

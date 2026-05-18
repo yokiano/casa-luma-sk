@@ -8,7 +8,8 @@ export const RECIPES_PROPS_TO_IDS = {
   "instructions": "Uqli",
   "menuItem": "_nNq",
   "image": "ruvh",
-  "name": "title"
+  "name": "title",
+  "thaiInstructions": "%7B%3CQ%3C"
 } as const
 export const RECIPES_IDS_TO_PROPS = {
   "%3EAo%5D": "recipeLines",
@@ -17,7 +18,8 @@ export const RECIPES_IDS_TO_PROPS = {
   "Uqli": "instructions",
   "_nNq": "menuItem",
   "ruvh": "image",
-  "title": "name"
+  "title": "name",
+  "%7B%3CQ%3C": "thaiInstructions"
 } as const
 export const RECIPES_PROPS_TO_TYPES = {
   "recipeLines": "relation",
@@ -26,7 +28,8 @@ export const RECIPES_PROPS_TO_TYPES = {
   "instructions": "rich_text",
   "menuItem": "relation",
   "image": "files",
-  "name": "title"
+  "name": "title",
+  "thaiInstructions": "rich_text"
 } as const
 
   export type RecipesDTOProperties = keyof typeof RECIPES_PROPS_TO_IDS

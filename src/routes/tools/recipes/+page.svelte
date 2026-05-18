@@ -1,9 +1,11 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
+	import { toast } from 'svelte-sonner';
+	import { LoaderCircle } from 'lucide-svelte';
 	import type { PageData } from './$types';
 	import InstructionBlock from './InstructionBlock.svelte';
-	import { getRecipeDetail, getRecipeMenuIndex } from '$lib/tools/recipes/recipes.remote';
+	import { getRecipeDetail, getRecipeMenuIndex, translateRecipeInstructions, updateRecipeInstructions } from '$lib/tools/recipes/recipes.remote';
 	import type { MenuGrandCategoryGroup, MenuItemSummary, RecipeDetail } from '$lib/tools/recipes/recipes.types';
 
 	let { data }: { data: PageData } = $props();
@@ -11,12 +13,19 @@
 	let activeGrandCategory = $state('All');
 	let activeCategoryKey = $state('All');
 	let coverageFilter = $state<'all' | 'needsWork'>('all');
+	let isMenuBrowserCollapsed = $state(false);
 	let menuGroups = $state<MenuGrandCategoryGroup[]>([]);
 	let selectedRecipe = $state<RecipeDetail | null>(null);
 	let isLoadingList = $state(true);
 	let isLoadingDetail = $state(false);
 	let listError = $state<string | null>(null);
 	let detailError = $state<string | null>(null);
+	let englishInstructionsDraft = $state('');
+	let thaiInstructionsDraft = $state('');
+	let translationMessage = $state<string | null>(null);
+	let translationError = $state<string | null>(null);
+	let isTranslating = $state<'english-to-thai' | 'thai-to-english' | null>(null);
+	let isSavingInstructions = $state<'english' | 'thai' | null>(null);
 	let recipeCount = $state(0);
 	let detailRequestId = 0;
 
@@ -82,12 +91,25 @@
 	const recipeStatusLabel = (item: MenuItemSummary) =>
 		item.recipeStatus === 'complete' ? 'recipe' : item.recipeStatus === 'incomplete' ? 'incomplete' : 'missing';
 
+	const instructionsDirty = $derived(
+		Boolean(
+			selectedRecipe &&
+				(englishInstructionsDraft !== (selectedRecipe.instructionsText ?? '') || thaiInstructionsDraft !== (selectedRecipe.thaiInstructionsText ?? ''))
+		)
+	);
+
 	const recipeStatusClass = (item: MenuItemSummary) =>
 		item.recipeStatus === 'complete'
 			? 'bg-emerald-50 text-emerald-700'
 			: item.recipeStatus === 'incomplete'
 				? 'bg-orange-50 text-orange-700'
 				: 'bg-amber-50 text-amber-700';
+
+	const getErrorMessage = (error: unknown, fallback: string) => {
+		if (error instanceof Error && error.message) return error.message;
+		if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') return error.message;
+		return fallback;
+	};
 
 	async function loadMenuIndex() {
 		isLoadingList = true;
@@ -116,12 +138,78 @@
 		detailError = null;
 		try {
 			const detail = await getRecipeDetail({ recipeId });
-			if (requestId === detailRequestId) selectedRecipe = detail;
+			if (requestId === detailRequestId) {
+				selectedRecipe = detail;
+				englishInstructionsDraft = detail?.instructionsText ?? '';
+				thaiInstructionsDraft = detail?.thaiInstructionsText ?? '';
+				translationMessage = null;
+				translationError = null;
+			}
 		} catch (error) {
 			console.error('recipes: failed to load detail', error);
 			if (requestId === detailRequestId) detailError = 'Could not load this recipe.';
 		} finally {
 			if (requestId === detailRequestId) isLoadingDetail = false;
+		}
+	}
+
+	async function translateInstructions(direction: 'english-to-thai' | 'thai-to-english') {
+		if (!selectedRecipe) return;
+		const targetLanguage = direction === 'english-to-thai' ? 'Thai' : 'English';
+		const toastId = toast.loading(`Translating to ${targetLanguage}…`, {
+			description: 'Replicate is drafting kitchen-safe instructions. This can take up to a minute.'
+		});
+		isTranslating = direction;
+		translationError = null;
+		translationMessage = `Translating to ${targetLanguage}…`;
+		try {
+			const sourceText = direction === 'english-to-thai' ? englishInstructionsDraft : thaiInstructionsDraft;
+			const { translatedText } = await translateRecipeInstructions({ recipeId: selectedRecipe.id, direction, text: sourceText });
+			if (direction === 'english-to-thai') {
+				thaiInstructionsDraft = translatedText;
+			} else {
+				englishInstructionsDraft = translatedText;
+			}
+			translationMessage = 'Translation drafted. Review it, then apply to Notion.';
+			toast.success('Translation drafted', { id: toastId, description: `Review the ${targetLanguage} draft, then apply it to Notion.` });
+		} catch (error) {
+			console.error('recipes: failed to translate instructions', error);
+			const message = getErrorMessage(error, 'Could not translate instructions.');
+			translationError = message;
+			translationMessage = null;
+			toast.error('Translation failed', { id: toastId, description: message });
+		} finally {
+			isTranslating = null;
+		}
+	}
+
+	async function saveInstructions(language: 'english' | 'thai') {
+		if (!selectedRecipe) return;
+		const toastId = toast.loading(`Saving ${language === 'english' ? 'English' : 'Thai'} instructions…`, {
+			description: 'Updating this recipe record in Notion.'
+		});
+		isSavingInstructions = language;
+		translationError = null;
+		translationMessage = null;
+		try {
+			const text = language === 'english' ? englishInstructionsDraft : thaiInstructionsDraft;
+			await updateRecipeInstructions({ recipeId: selectedRecipe.id, language, text });
+			selectedRecipe = {
+				...selectedRecipe,
+				instructionsText: language === 'english' ? text : selectedRecipe.instructionsText,
+				thaiInstructionsText: language === 'thai' ? text : selectedRecipe.thaiInstructionsText,
+				hasInstructions: Boolean((language === 'english' ? text : selectedRecipe.instructionsText)?.trim()) || selectedRecipe.instructionBlocks.length > 0,
+				isComplete: selectedRecipe.hasIngredientLines && (Boolean((language === 'english' ? text : selectedRecipe.instructionsText)?.trim()) || selectedRecipe.instructionBlocks.length > 0)
+			};
+			translationMessage = `Saved ${language === 'english' ? 'English' : 'Thai'} instructions to Notion.`;
+			toast.success('Saved to Notion', { id: toastId, description: `${language === 'english' ? 'English' : 'Thai'} instructions were updated.` });
+		} catch (error) {
+			console.error('recipes: failed to save instructions', error);
+			const message = getErrorMessage(error, 'Could not save instructions to Notion.');
+			translationError = message;
+			toast.error('Save failed', { id: toastId, description: message });
+		} finally {
+			isSavingInstructions = null;
 		}
 	}
 
@@ -152,15 +240,36 @@
 		</div>
 	</section>
 
-	<div class="grid gap-4 lg:grid-cols-[340px_minmax(0,1fr)]">
+	<div class={`grid gap-4 ${isMenuBrowserCollapsed ? 'lg:grid-cols-[72px_minmax(0,1fr)]' : 'lg:grid-cols-[340px_minmax(0,1fr)]'}`}>
 		<aside class="rounded-3xl border border-[#dfd2c6] bg-white/80 p-3 shadow-sm lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-hidden">
-			<input
-				bind:value={search}
-				placeholder="Search menu, Thai, category, recipe…"
-				class="w-full rounded-2xl border border-[#d8c8b8] bg-white px-3 py-2.5 text-sm outline-none transition focus:border-[#9a7656] focus:ring-2 focus:ring-[#9a7656]/15"
-			/>
+			<div class="flex items-center justify-between gap-2">
+				{#if !isMenuBrowserCollapsed}
+					<p class="px-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[#a37752]">Menu browser</p>
+				{/if}
+				<button
+					type="button"
+					onclick={() => (isMenuBrowserCollapsed = !isMenuBrowserCollapsed)}
+					class="rounded-full bg-[#f6f1eb] px-3 py-2 text-xs font-bold text-[#7a6550] shadow-sm hover:bg-[#efe5dc]"
+					aria-label={isMenuBrowserCollapsed ? 'Expand menu browser' : 'Collapse menu browser'}
+					title={isMenuBrowserCollapsed ? 'Expand menu browser' : 'Collapse menu browser'}
+				>
+					{isMenuBrowserCollapsed ? '☰' : 'Hide'}
+				</button>
+			</div>
 
-			<div class="mt-3 space-y-3 overflow-y-auto pr-1 lg:max-h-[calc(100vh-8rem)]">
+			{#if isMenuBrowserCollapsed}
+				<div class="mt-4 flex flex-col items-center gap-3 text-center">
+					<div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#f6f1eb] text-xl">🍽️</div>
+					<p class="text-[11px] font-bold uppercase tracking-[0.18em] text-[#a37752] [writing-mode:vertical-rl]">Menu</p>
+				</div>
+			{:else}
+				<input
+					bind:value={search}
+					placeholder="Search menu, Thai, category, recipe…"
+					class="mt-3 w-full rounded-2xl border border-[#d8c8b8] bg-white px-3 py-2.5 text-sm outline-none transition focus:border-[#9a7656] focus:ring-2 focus:ring-[#9a7656]/15"
+				/>
+
+				<div class="mt-3 space-y-3 overflow-y-auto pr-1 lg:max-h-[calc(100vh-10rem)]">
 				{#if isLoadingList}
 					{#each Array(8) as _}
 						<div class="h-16 animate-pulse rounded-2xl bg-[#f1e8df]"></div>
@@ -298,6 +407,7 @@
 					</section>
 				{/if}
 			</div>
+			{/if}
 		</aside>
 
 		<section class="min-h-[60vh]">
@@ -313,7 +423,7 @@
 				<div class="rounded-3xl border border-red-200 bg-red-50 p-6 text-red-800">{detailError}</div>
 			{:else if selectedRecipe}
 				<article class="overflow-hidden rounded-3xl border border-[#dfd2c6] bg-white shadow-sm">
-					<header class="grid gap-4 p-4 md:grid-cols-[160px_minmax(0,1fr)] md:p-5">
+					<header class="grid gap-4 p-4 md:grid-cols-[160px_minmax(0,1fr)] xl:grid-cols-[170px_minmax(0,1fr)_360px] md:p-5">
 						<div class="rounded-2xl bg-[#f6f1eb] p-2">
 							{#if heroImage}
 								<img src={heroImage} alt={selectedRecipe.name} class="h-36 w-full rounded-xl object-cover md:h-40" />
@@ -347,78 +457,121 @@
 								{#each dietaryOptions as option}<span class="rounded-full bg-emerald-50 px-3 py-1.5 font-bold text-emerald-700">{option}</span>{/each}
 							</div>
 						</div>
-					</header>
 
-					<div class="grid gap-5 border-t border-[#eee4da] p-4 md:grid-cols-[minmax(280px,0.85fr)_minmax(0,1.15fr)] md:p-5">
-						<section>
-							<h2 class="text-lg font-semibold text-[#2c2925]">Ingredients</h2>
-							{#if selectedRecipe.ingredientLines.length === 0}
-								<p class="mt-3 rounded-2xl border border-dashed border-[#d8c8b8] p-4 text-sm text-[#7a6550]">No ingredient lines found.</p>
-							{:else}
-								<div class="mt-3 overflow-hidden rounded-2xl border border-[#e4d8cc]">
-									{#each selectedRecipe.ingredientLines as line (line.id)}
-										<div class="grid grid-cols-[70px_38px_minmax(0,1fr)] gap-2 border-b border-[#eee4da] bg-white p-2.5 last:border-b-0">
-											<div class="text-right">
-												<p class="font-bold leading-tight text-[#2c2925]">{line.amount !== undefined ? number.format(line.amount) : '—'}</p>
-												<p class="text-[10px] font-semibold uppercase text-[#a37752]">{line.unit ?? line.ingredient?.unit ?? ''}</p>
-											</div>
-											{#if line.ingredient?.imageUrl}
-												<img src={line.ingredient.imageUrl} alt="" class="h-9 w-9 rounded-lg object-cover" />
-											{:else}
-												<div class="flex h-9 w-9 items-center justify-center rounded-lg bg-[#f1e8df] text-sm">•</div>
-											{/if}
-											<div class="min-w-0">
-												<p class="truncate text-sm font-semibold text-[#2c2925]">{line.ingredient?.name ?? line.name}</p>
-												{#if line.ingredient?.thaiName}<p class="truncate text-xs text-[#7a6550]">{line.ingredient.thaiName}</p>{/if}
-												<div class="flex flex-wrap gap-1 text-[11px] text-[#7a6550]">
-													{#if line.lineCost !== undefined}<span>{money.format(line.lineCost)}</span>{/if}
-													{#each (line.ingredient?.department ?? []) as department}<span>• {department}</span>{/each}
-												</div>
+						{#if selectedRecipe.menuItemGroups.length}
+							<section class="rounded-2xl border border-[#e4d8cc] bg-[#fbf8f5] p-3 md:col-span-2 xl:col-span-1">
+								<h2 class="text-sm font-bold uppercase tracking-wide text-[#a37752]">Menu items</h2>
+								<div class="mt-2 max-h-44 space-y-2 overflow-y-auto pr-1">
+									{#each selectedRecipe.menuItemGroups as group (group.category)}
+										<div class="rounded-xl bg-white p-2.5 shadow-sm">
+											<p class="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-[#a37752]">{group.category}</p>
+											<div class="space-y-1.5">
+												{#each group.items as item (item.id)}
+													<div class="border-t border-[#f1e8df] pt-1.5 first:border-t-0 first:pt-0">
+														<div class="flex justify-between gap-3">
+															<div class="min-w-0"><p class="truncate text-sm font-semibold text-[#2c2925]">{item.name}</p>{#if item.thaiName}<p class="truncate text-xs text-[#7a6550]">{item.thaiName}</p>{/if}</div>
+															{#if item.price !== undefined}<p class="shrink-0 text-sm font-bold text-[#467241]">{money.format(item.price)}</p>{/if}
+														</div>
+														{#if item.description}<p class="mt-1 line-clamp-2 text-xs leading-5 text-[#5c4a3d]">{item.description}</p>{/if}
+													</div>
+												{/each}
 											</div>
 										</div>
 									{/each}
 								</div>
-							{/if}
-						</section>
+							</section>
+						{/if}
+					</header>
 
-						<section>
-							<h2 class="text-lg font-semibold text-[#2c2925]">Instructions</h2>
-							{#if selectedRecipe.instructionsText}
-								<div class="mt-3 rounded-2xl bg-[#f6f1eb] p-4 text-sm leading-6 text-[#3f352d] whitespace-pre-wrap">{selectedRecipe.instructionsText}</div>
-							{/if}
-							{#if selectedRecipe.instructionBlocks.length}
-								<div class="mt-4 space-y-3 text-sm">
-									{#each selectedRecipe.instructionBlocks as block (block.id)}<InstructionBlock {block} />{/each}
-								</div>
-							{:else if !selectedRecipe.instructionsText}
-								<p class="mt-3 rounded-2xl border border-dashed border-[#d8c8b8] p-4 text-sm text-[#7a6550]">No instruction content found.</p>
-							{/if}
-						</section>
-					</div>
-
-					{#if selectedRecipe.menuItemGroups.length}
-						<section class="border-t border-[#eee4da] bg-[#fbf8f5] p-4 md:p-5">
-							<h2 class="text-lg font-semibold text-[#2c2925]">Menu items</h2>
-							<div class="mt-3 grid gap-3 md:grid-cols-2">
-								{#each selectedRecipe.menuItemGroups as group (group.category)}
-									<div class="rounded-2xl border border-[#e4d8cc] bg-white p-3">
-										<p class="mb-2 text-xs font-bold uppercase tracking-wide text-[#a37752]">{group.category}</p>
-										<div class="space-y-2">
-											{#each group.items as item (item.id)}
-												<div class="border-t border-[#f1e8df] pt-2 first:border-t-0 first:pt-0">
-													<div class="flex justify-between gap-3">
-														<div><p class="text-sm font-semibold text-[#2c2925]">{item.name}</p>{#if item.thaiName}<p class="text-xs text-[#7a6550]">{item.thaiName}</p>{/if}</div>
-														{#if item.price !== undefined}<p class="text-sm font-bold text-[#467241]">{money.format(item.price)}</p>{/if}
-													</div>
-													{#if item.description}<p class="mt-1 line-clamp-2 text-xs leading-5 text-[#5c4a3d]">{item.description}</p>{/if}
-												</div>
-											{/each}
+					<section class="border-t border-[#eee4da] bg-[#fbf8f5] p-4 md:p-5">
+						<div class="flex flex-wrap items-center justify-between gap-2">
+							<h2 class="text-lg font-semibold text-[#2c2925]">Ingredients</h2>
+							{#if selectedRecipe.ingredientLines.length}<p class="text-xs font-semibold text-[#7a6550]">{selectedRecipe.ingredientLines.length} lines</p>{/if}
+						</div>
+						{#if selectedRecipe.ingredientLines.length === 0}
+							<p class="mt-3 rounded-2xl border border-dashed border-[#d8c8b8] bg-white p-4 text-sm text-[#7a6550]">No ingredient lines found.</p>
+						{:else}
+							<div class="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+								{#each selectedRecipe.ingredientLines as line (line.id)}
+									<div class="grid grid-cols-[64px_34px_minmax(0,1fr)] gap-2 rounded-2xl border border-[#e4d8cc] bg-white p-2.5">
+										<div class="text-right">
+											<p class="font-bold leading-tight text-[#2c2925]">{line.amount !== undefined ? number.format(line.amount) : '—'}</p>
+											<p class="text-[10px] font-semibold uppercase text-[#a37752]">{line.unit ?? line.ingredient?.unit ?? ''}</p>
+										</div>
+										{#if line.ingredient?.imageUrl}
+											<img src={line.ingredient.imageUrl} alt="" class="h-8 w-8 rounded-lg object-cover" />
+										{:else}
+											<div class="flex h-8 w-8 items-center justify-center rounded-lg bg-[#f1e8df] text-sm">•</div>
+										{/if}
+										<div class="min-w-0">
+											<p class="truncate text-sm font-semibold text-[#2c2925]">{line.ingredient?.name ?? line.name}</p>
+											{#if line.ingredient?.thaiName}<p class="truncate text-xs text-[#7a6550]">{line.ingredient.thaiName}</p>{/if}
+											<div class="flex flex-wrap gap-1 text-[11px] text-[#7a6550]">
+												{#if line.lineCost !== undefined}<span>{money.format(line.lineCost)}</span>{/if}
+												{#each (line.ingredient?.department ?? []) as department}<span>• {department}</span>{/each}
+											</div>
 										</div>
 									</div>
 								{/each}
 							</div>
-						</section>
-					{/if}
+						{/if}
+					</section>
+
+					<section class="border-t border-[#eee4da] p-4 md:p-5">
+						<div class="flex flex-wrap items-center justify-between gap-2">
+							<div>
+								<h2 class="text-lg font-semibold text-[#2c2925]">Instructions</h2>
+								<p class="text-xs text-[#7a6550]">Review bilingual instructions and apply only this recipe record to Notion.</p>
+							</div>
+							{#if instructionsDirty}<span class="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-700">Unsaved draft</span>{/if}
+						</div>
+
+						<div class="mt-3 rounded-2xl border border-[#e4d8cc] bg-[#fbf8f5] p-3">
+							<div class="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+								<div>
+									<div class="mb-1.5 flex items-center justify-between gap-2">
+										<p class="text-xs font-bold uppercase tracking-wide text-[#a37752]">English</p>
+										<button type="button" onclick={() => saveInstructions('english')} disabled={isSavingInstructions !== null || englishInstructionsDraft === (selectedRecipe.instructionsText ?? '')} class="rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-[#7a6550] shadow-sm disabled:cursor-not-allowed disabled:opacity-45 hover:bg-[#f6f1eb]">{isSavingInstructions === 'english' ? 'Saving…' : 'Apply to Notion'}</button>
+									</div>
+									<textarea bind:value={englishInstructionsDraft} rows="18" class="w-full rounded-xl border border-[#d8c8b8] bg-white p-3 text-sm leading-6 text-[#3f352d] outline-none focus:border-[#9a7656] focus:ring-2 focus:ring-[#9a7656]/15" placeholder="English recipe instructions"></textarea>
+								</div>
+
+								<div class="flex items-center justify-center gap-2 xl:flex-col">
+									<button type="button" onclick={() => translateInstructions('english-to-thai')} disabled={isTranslating !== null || !englishInstructionsDraft.trim()} title="Translate English to Thai" class="inline-flex min-w-11 items-center justify-center gap-1 rounded-full bg-[#2c2925] px-3 py-2 text-sm font-bold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-45 hover:bg-[#443b33]">
+										{#if isTranslating === 'english-to-thai'}<LoaderCircle size={16} class="animate-spin" />{:else}→{/if}
+									</button>
+									<button type="button" onclick={() => translateInstructions('thai-to-english')} disabled={isTranslating !== null || !thaiInstructionsDraft.trim()} title="Translate Thai to English" class="inline-flex min-w-11 items-center justify-center gap-1 rounded-full bg-[#2c2925] px-3 py-2 text-sm font-bold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-45 hover:bg-[#443b33]">
+										{#if isTranslating === 'thai-to-english'}<LoaderCircle size={16} class="animate-spin" />{:else}←{/if}
+									</button>
+								</div>
+
+								<div>
+									<div class="mb-1.5 flex items-center justify-between gap-2">
+										<p class="text-xs font-bold uppercase tracking-wide text-[#a37752]">Thai</p>
+										<button type="button" onclick={() => saveInstructions('thai')} disabled={isSavingInstructions !== null || thaiInstructionsDraft === (selectedRecipe.thaiInstructionsText ?? '')} class="rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-[#7a6550] shadow-sm disabled:cursor-not-allowed disabled:opacity-45 hover:bg-[#f6f1eb]">{isSavingInstructions === 'thai' ? 'Saving…' : 'Apply to Notion'}</button>
+									</div>
+									<textarea bind:value={thaiInstructionsDraft} rows="18" class="w-full rounded-xl border border-[#d8c8b8] bg-white p-3 text-sm leading-6 text-[#3f352d] outline-none focus:border-[#9a7656] focus:ring-2 focus:ring-[#9a7656]/15" placeholder="Thai recipe instructions"></textarea>
+								</div>
+							</div>
+							{#if isTranslating}
+								<p class="mt-2 inline-flex items-center gap-2 rounded-xl bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700">
+									<LoaderCircle size={14} class="animate-spin" />
+									Translating with Replicate… keep this page open.
+								</p>
+							{:else if translationMessage}
+								<p class="mt-2 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">{translationMessage}</p>
+							{/if}
+							{#if translationError}<p class="mt-2 rounded-xl bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">{translationError}</p>{/if}
+						</div>
+
+						{#if selectedRecipe.instructionBlocks.length}
+							<div class="mt-4 space-y-3 text-sm">
+								{#each selectedRecipe.instructionBlocks as block (block.id)}<InstructionBlock {block} />{/each}
+							</div>
+						{:else if !selectedRecipe.instructionsText && !selectedRecipe.thaiInstructionsText}
+							<p class="mt-3 rounded-2xl border border-dashed border-[#d8c8b8] p-4 text-sm text-[#7a6550]">No instruction content found.</p>
+						{/if}
+					</section>
 				</article>
 			{:else if selectedMenuItem}
 				{@render MenuOnlyCard({ item: selectedMenuItem, heroImage, menuAllergens, dietaryOptions, money })}

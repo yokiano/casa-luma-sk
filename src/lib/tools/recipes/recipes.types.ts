@@ -87,6 +87,7 @@ export type InstructionBlock = {
 
 export type RecipeDetail = RecipeSummary & {
 	instructionsText?: string;
+	thaiInstructionsText?: string;
 	instructionBlocks: InstructionBlock[];
 	ingredientLines: IngredientLine[];
 	menuItems: MenuItemContext[];
