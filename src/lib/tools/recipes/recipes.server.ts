@@ -1,19 +1,16 @@
 import { env } from '$env/dynamic/private';
 import { error } from '@sveltejs/kit';
 import { RecipesDatabase, RecipesPatchDTO, RecipesResponseDTO, type RecipesQueryResponse } from '$lib/notion-sdk/dbs/recipes';
-import { RecipeLinesDatabase, RecipeLinesResponseDTO, type RecipeLinesQueryResponse } from '$lib/notion-sdk/dbs/recipe-lines';
+import { RecipeLinesDatabase, RecipeLinesResponseDTO } from '$lib/notion-sdk/dbs/recipe-lines';
 import { IngredientsDatabase, IngredientsResponseDTO } from '$lib/notion-sdk/dbs/ingredients';
 import { MenuItemsDatabase, MenuItemsResponseDTO, type MenuItemsQueryResponse } from '$lib/notion-sdk/dbs/menu-items';
-import type { BlockObjectResponseWithChildren } from '$lib/notion-sdk/core/src/generic-db';
 import type {
 	IngredientLine,
-	InstructionBlock,
 	MenuCategoryGroup,
 	MenuGrandCategoryGroup,
 	MenuItemContext,
 	MenuItemGroup,
 	MenuItemSummary,
-	RecipeCompletenessResult,
 	RecipeDetail,
 	RecipeMenuIndex,
 	RecipeSummary
@@ -80,34 +77,8 @@ const chooseCogs = (recipe: RecipesResponseDTO, calculatedCogs?: number): number
 	return notionCogs;
 };
 
-const fileUrl = (file: any): string | undefined => {
-	if (!file) return undefined;
-	if (file.type === 'external') return file.external?.url;
-	if (file.type === 'file') return file.file?.url;
-	return undefined;
-};
-
 const imageFromFiles = (files?: { urls: Array<string | undefined> }) => files?.urls.find(Boolean);
 const notionIdKey = (id: string) => id.replaceAll('-', '').toLowerCase();
-
-const blockToInstruction = (block: BlockObjectResponseWithChildren): InstructionBlock | null => {
-	const data = (block as any)[(block as any).type] ?? {};
-	const text = textFromRichText(data.rich_text ?? data.caption);
-	const imageUrl = (block as any).type === 'image' ? fileUrl(data) : undefined;
-	const children = block.children?.map(blockToInstruction).filter(Boolean) as InstructionBlock[] | undefined;
-
-	if (!text && !imageUrl && (!children || children.length === 0)) return null;
-
-	return {
-		id: block.id,
-		type: (block as any).type,
-		text,
-		level: (block as any).type === 'heading_1' ? 1 : (block as any).type === 'heading_2' ? 2 : (block as any).type === 'heading_3' ? 3 : undefined,
-		checked: typeof data.checked === 'boolean' ? data.checked : undefined,
-		imageUrl,
-		children
-	};
-};
 
 const fetchAllRecipeDtos = async (db: RecipesDatabase): Promise<RecipesResponseDTO[]> => {
 	const results: RecipesQueryResponse['results'] = [];
@@ -124,19 +95,6 @@ const fetchAllRecipeDtos = async (db: RecipesDatabase): Promise<RecipesResponseD
 	} while (cursor);
 
 	return results.map((recipe) => new RecipesResponseDTO(recipe));
-};
-
-const fetchAllRecipeLineDtos = async (db: RecipeLinesDatabase): Promise<RecipeLinesResponseDTO[]> => {
-	const results: RecipeLinesQueryResponse['results'] = [];
-	let cursor: string | undefined;
-
-	do {
-		const response = await db.query({ page_size: 100, start_cursor: cursor });
-		results.push(...response.results);
-		cursor = response.next_cursor ?? undefined;
-	} while (cursor);
-
-	return results.map((line) => new RecipeLinesResponseDTO(line));
 };
 
 const fetchAllMenuItemDtos = async (db: MenuItemsDatabase): Promise<MenuItemsResponseDTO[]> => {
@@ -164,7 +122,8 @@ const fetchAllMenuItemDtos = async (db: MenuItemsDatabase): Promise<MenuItemsRes
 
 const toSummary = (recipe: RecipesResponseDTO, calculatedCogs?: number, hasInstructionsOverride?: boolean): RecipeSummary => {
 	const hasIngredientLines = recipe.properties.recipeLinesIds.length > 0;
-	const hasInstructions = hasInstructionsOverride ?? Boolean(recipe.properties.instructions.text?.trim());
+	const hasInstructions =
+		hasInstructionsOverride ?? Boolean(recipe.properties.instructions.text?.trim() || recipe.properties.thaiInstructions.text?.trim());
 	return {
 		id: recipe.id,
 		name: recipe.properties.name.text ?? 'Untitled recipe',
@@ -237,44 +196,10 @@ const groupMenuIndex = (items: MenuItemSummary[]): MenuGrandCategoryGroup[] => {
 	});
 };
 
-const getInstructionCompleteness = async (recipesDb: RecipesDatabase, recipes: RecipesResponseDTO[]): Promise<Map<string, boolean>> => {
-	const entries = await Promise.all(
-		recipes.map(async (recipe) => {
-			if (recipe.properties.instructions.text?.trim()) return [recipe.id, true] as const;
-			const blocks = await recipesDb.getPageBlocks(recipe.id);
-			return [recipe.id, blocks.map(blockToInstruction).some(Boolean)] as const;
-		})
-	);
-	return new Map(entries);
-};
-
-const getRecipeSummariesFromDtos = (
-	recipes: RecipesResponseDTO[],
-	allRecipeLines: RecipeLinesResponseDTO[],
-	instructionsByRecipeId = new Map<string, boolean>()
-): RecipeSummary[] => {
-	const lineCostsById = new Map(allRecipeLines.map((line) => [line.id, lineCostNumber(line)]));
-	return recipes.map((recipe) =>
-		toSummary(
-			recipe,
-			recipe.properties.recipeLinesIds.length
-				? recipe.properties.recipeLinesIds.reduce((sum, id) => sum + (lineCostsById.get(id) ?? 0), 0)
-				: undefined,
-			instructionsByRecipeId.get(recipe.id)
-		)
-	);
-};
-
 export const getRecipeSummariesData = async (): Promise<RecipeSummary[]> => {
 	const recipesDb = new RecipesDatabase({ notionSecret: NOTION_API_KEY });
-	const recipeLinesDb = new RecipeLinesDatabase({ notionSecret: NOTION_API_KEY });
-	const [recipes, allRecipeLines] = await Promise.all([
-		fetchAllRecipeDtos(recipesDb),
-		fetchAllRecipeLineDtos(recipeLinesDb)
-	]);
-
-	const instructionsByRecipeId = await getInstructionCompleteness(recipesDb, recipes);
-	return getRecipeSummariesFromDtos(recipes, allRecipeLines, instructionsByRecipeId);
+	const recipes = await fetchAllRecipeDtos(recipesDb);
+	return recipes.map((recipe) => toSummary(recipe));
 };
 
 export const getRecipeMenuIndexData = async (): Promise<RecipeMenuIndex> => {
@@ -312,31 +237,6 @@ export const getRecipeMenuIndexData = async (): Promise<RecipeMenuIndex> => {
 		recipes,
 		menuGroups: groupMenuIndex(menuItems)
 	};
-};
-
-export const getRecipeCompletenessData = async (recipeIds: string[]): Promise<RecipeCompletenessResult[]> => {
-	const recipesDb = new RecipesDatabase({ notionSecret: NOTION_API_KEY });
-	const uniqueRecipeIds = Array.from(new Set(recipeIds.map((id) => id.trim()).filter(Boolean))).slice(0, 10);
-
-	return Promise.all(
-		uniqueRecipeIds.map(async (recipeId) => {
-			const recipe = new RecipesResponseDTO(await recipesDb.getPage(recipeId));
-			const hasIngredientLines = recipe.properties.recipeLinesIds.length > 0;
-			let hasInstructions = Boolean(recipe.properties.instructions.text?.trim());
-
-			if (!hasInstructions) {
-				const blocks = await recipesDb.getPageBlocks(recipe.id);
-				hasInstructions = blocks.map(blockToInstruction).some(Boolean);
-			}
-
-			return {
-				recipeId: recipe.id,
-				hasIngredientLines,
-				hasInstructions,
-				isComplete: hasIngredientLines && hasInstructions
-			};
-		})
-	);
 };
 
 const NOTION_API_KEY = env.NOTION_API_KEY ?? '';
@@ -477,9 +377,8 @@ export const getRecipeDetailData = async (recipeId: string): Promise<RecipeDetai
 		};
 	});
 
-	const blocks = await recipesDb.getPageBlocks(selectedDto.id);
-	const instructionBlocks = blocks.map(blockToInstruction).filter(Boolean) as InstructionBlock[];
-	const hasInstructions = Boolean(selectedDto.properties.instructions.text?.trim()) || instructionBlocks.length > 0;
+	const instructionBlocks = [];
+	const hasInstructions = Boolean(selectedDto.properties.instructions.text?.trim() || selectedDto.properties.thaiInstructions.text?.trim());
 	const hasIngredientLines = ingredientLines.length > 0;
 
 	return {

@@ -1,7 +1,6 @@
 import { command, query } from '$app/server';
 import * as v from 'valibot';
 import {
-	getRecipeCompletenessData,
 	getRecipeDetailData,
 	getRecipeMenuIndexData,
 	getRecipeSummariesData,
@@ -17,10 +16,6 @@ const TranslateInstructionsSchema = v.object({
 	recipeId: v.pipe(v.string(), v.trim(), v.minLength(1)),
 	direction: v.picklist(['english-to-thai', 'thai-to-english']),
 	text: v.pipe(v.string(), v.minLength(1), v.maxLength(20000))
-});
-
-const RecipeCompletenessSchema = v.object({
-	recipeIds: v.pipe(v.array(v.pipe(v.string(), v.trim(), v.minLength(1))), v.maxLength(10))
 });
 
 const UpdateInstructionsSchema = v.object({
@@ -39,10 +34,6 @@ export const getRecipeMenuIndex = query(async () => {
 
 export const getRecipeDetail = query(RecipeIdSchema, async ({ recipeId }) => {
 	return getRecipeDetailData(recipeId);
-});
-
-export const getRecipeCompleteness = query(RecipeCompletenessSchema, async ({ recipeIds }) => {
-	return getRecipeCompletenessData(recipeIds);
 });
 
 export const translateRecipeInstructions = command(TranslateInstructionsSchema, async ({ recipeId, direction, text }) => {

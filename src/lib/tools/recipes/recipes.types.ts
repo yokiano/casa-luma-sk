@@ -70,13 +70,6 @@ export type RecipeMenuIndex = {
 	menuGroups: MenuGrandCategoryGroup[];
 };
 
-export type RecipeCompletenessResult = {
-	recipeId: string;
-	hasIngredientLines: boolean;
-	hasInstructions: boolean;
-	isComplete: boolean;
-};
-
 export type MenuItemGroup = {
 	category: string;
 	items: MenuItemContext[];
