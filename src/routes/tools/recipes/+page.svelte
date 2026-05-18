@@ -5,8 +5,14 @@
 	import { LoaderCircle } from 'lucide-svelte';
 	import type { PageData } from './$types';
 	import InstructionBlock from './InstructionBlock.svelte';
-	import { getRecipeDetail, getRecipeMenuIndex, translateRecipeInstructions, updateRecipeInstructions } from '$lib/tools/recipes/recipes.remote';
-	import type { MenuGrandCategoryGroup, MenuItemSummary, RecipeDetail } from '$lib/tools/recipes/recipes.types';
+	import {
+		getRecipeCompleteness,
+		getRecipeDetail,
+		getRecipeMenuIndex,
+		translateRecipeInstructions,
+		updateRecipeInstructions
+	} from '$lib/tools/recipes/recipes.remote';
+	import type { MenuGrandCategoryGroup, MenuItemSummary, RecipeCompletenessResult, RecipeDetail } from '$lib/tools/recipes/recipes.types';
 
 	let { data }: { data: PageData } = $props();
 	let search = $state('');
@@ -18,8 +24,11 @@
 	let selectedRecipe = $state<RecipeDetail | null>(null);
 	let isLoadingList = $state(true);
 	let isLoadingDetail = $state(false);
+	let isCheckingCompleteness = $state(false);
 	let listError = $state<string | null>(null);
 	let detailError = $state<string | null>(null);
+	let completenessMessage = $state<string | null>(null);
+	let completenessError = $state<string | null>(null);
 	let englishInstructionsDraft = $state('');
 	let thaiInstructionsDraft = $state('');
 	let translationMessage = $state<string | null>(null);
@@ -33,6 +42,7 @@
 	const legacyRecipeId = $derived(page.url.searchParams.get('id') ?? data.selectedId);
 	const money = new Intl.NumberFormat('en-TH', { style: 'currency', currency: 'THB', maximumFractionDigits: 0 });
 	const number = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
+	const COMPLETENESS_BATCH_SIZE = 10;
 
 	const notionIdKey = (id: string) => id.replaceAll('-', '').toLowerCase();
 	const allMenuItems = $derived(menuGroups.flatMap((grand) => grand.categories.flatMap((category) => category.items)));
@@ -110,6 +120,82 @@
 		if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') return error.message;
 		return fallback;
 	};
+
+	const recomputeMenuGroups = (groups: MenuGrandCategoryGroup[]) =>
+		groups.map((grand) => {
+			const categories = grand.categories.map((category) => ({
+				...category,
+				recipeCount: category.items.filter((item) => item.recipeStatus === 'complete').length
+			}));
+			return {
+				...grand,
+				categories,
+				totalItems: categories.reduce((sum, category) => sum + category.items.length, 0),
+				recipeCount: categories.reduce((sum, category) => sum + category.recipeCount, 0)
+			};
+		});
+
+	function applyCompletenessResults(results: RecipeCompletenessResult[]) {
+		const resultsByRecipeId = new Map(results.map((result) => [notionIdKey(result.recipeId), result]));
+		menuGroups = recomputeMenuGroups(
+			menuGroups.map((grand) => ({
+				...grand,
+				categories: grand.categories.map((category) => ({
+					...category,
+					items: category.items.map((item) => {
+						const completeRecipeId = item.recipeIds.find((recipeId) => resultsByRecipeId.get(notionIdKey(recipeId))?.isComplete);
+						if (!completeRecipeId) return item;
+						return {
+							...item,
+							primaryRecipeId: completeRecipeId,
+							recipeStatus: 'complete'
+						};
+					})
+				}))
+			}))
+		);
+	}
+
+	function recipeIdsForCompletenessCheck() {
+		const seen = new Set<string>();
+		const ids: string[] = [];
+		for (const recipeId of visibleMenuItems.filter((item) => item.recipeStatus !== 'complete').flatMap((item) => item.recipeIds)) {
+			const key = notionIdKey(recipeId);
+			if (seen.has(key)) continue;
+			seen.add(key);
+			ids.push(recipeId);
+		}
+		return ids;
+	}
+
+	async function checkVisibleCompleteness() {
+		const recipeIds = recipeIdsForCompletenessCheck();
+		completenessError = null;
+		completenessMessage = null;
+
+		if (recipeIds.length === 0) {
+			completenessMessage = 'No linked incomplete recipes in the current list.';
+			return;
+		}
+
+		isCheckingCompleteness = true;
+		let checkedCount = 0;
+		try {
+			for (let index = 0; index < recipeIds.length; index += COMPLETENESS_BATCH_SIZE) {
+				const batch = recipeIds.slice(index, index + COMPLETENESS_BATCH_SIZE);
+				const results = await getRecipeCompleteness({ recipeIds: batch });
+				applyCompletenessResults(results);
+				checkedCount += batch.length;
+				completenessMessage = `Checked ${checkedCount}/${recipeIds.length} linked recipes…`;
+			}
+			completenessMessage = `Checked ${checkedCount} linked recipes. The list now includes recipes that have instruction blocks.`;
+		} catch (error) {
+			console.error('recipes: failed to check instruction completeness', error);
+			completenessError = 'Could not check instruction blocks right now.';
+		} finally {
+			isCheckingCompleteness = false;
+		}
+	}
 
 	async function loadMenuIndex() {
 		isLoadingList = true;
@@ -357,6 +443,23 @@
 							>
 								Needs work
 							</button>
+						</div>
+
+						<div class="mt-3 rounded-2xl border border-dashed border-[#dfd2c6] bg-white/70 p-2.5">
+							<button
+								type="button"
+								onclick={checkVisibleCompleteness}
+								disabled={isCheckingCompleteness}
+								class="flex w-full items-center justify-center gap-2 rounded-xl bg-[#2c2925] px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-[#3a342f] disabled:cursor-wait disabled:opacity-70"
+							>
+								{#if isCheckingCompleteness}<LoaderCircle class="h-3.5 w-3.5 animate-spin" />{/if}
+								{isCheckingCompleteness ? 'Checking instruction blocks…' : 'Check block instructions for this list'}
+							</button>
+							<p class="mt-1.5 text-[10px] leading-snug text-[#7a6550]">
+								Fast list uses recipe properties only. This opt-in check fetches Notion blocks in batches of {COMPLETENESS_BATCH_SIZE}.
+							</p>
+							{#if completenessMessage}<p class="mt-1 text-[10px] font-semibold text-emerald-700">{completenessMessage}</p>{/if}
+							{#if completenessError}<p class="mt-1 text-[10px] font-semibold text-red-700">{completenessError}</p>{/if}
 						</div>
 					</section>
 

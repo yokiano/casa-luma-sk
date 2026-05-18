@@ -13,6 +13,7 @@ import type {
 	MenuItemContext,
 	MenuItemGroup,
 	MenuItemSummary,
+	RecipeCompletenessResult,
 	RecipeDetail,
 	RecipeMenuIndex,
 	RecipeSummary
@@ -278,15 +279,9 @@ export const getRecipeSummariesData = async (): Promise<RecipeSummary[]> => {
 
 export const getRecipeMenuIndexData = async (): Promise<RecipeMenuIndex> => {
 	const recipesDb = new RecipesDatabase({ notionSecret: NOTION_API_KEY });
-	const recipeLinesDb = new RecipeLinesDatabase({ notionSecret: NOTION_API_KEY });
 	const menuItemsDb = new MenuItemsDatabase({ notionSecret: NOTION_API_KEY });
-	const [recipeDtos, allRecipeLines, menuItemDtos] = await Promise.all([
-		fetchAllRecipeDtos(recipesDb),
-		fetchAllRecipeLineDtos(recipeLinesDb),
-		fetchAllMenuItemDtos(menuItemsDb)
-	]);
-	const instructionsByRecipeId = await getInstructionCompleteness(recipesDb, recipeDtos);
-	const recipes = getRecipeSummariesFromDtos(recipeDtos, allRecipeLines, instructionsByRecipeId);
+	const [recipeDtos, menuItemDtos] = await Promise.all([fetchAllRecipeDtos(recipesDb), fetchAllMenuItemDtos(menuItemsDb)]);
+	const recipes = recipeDtos.map((recipe) => toSummary(recipe));
 	const recipesByMenuItemId = new Map<string, RecipeSummary[]>();
 
 	for (const recipe of recipes) {
@@ -317,6 +312,31 @@ export const getRecipeMenuIndexData = async (): Promise<RecipeMenuIndex> => {
 		recipes,
 		menuGroups: groupMenuIndex(menuItems)
 	};
+};
+
+export const getRecipeCompletenessData = async (recipeIds: string[]): Promise<RecipeCompletenessResult[]> => {
+	const recipesDb = new RecipesDatabase({ notionSecret: NOTION_API_KEY });
+	const uniqueRecipeIds = Array.from(new Set(recipeIds.map((id) => id.trim()).filter(Boolean))).slice(0, 10);
+
+	return Promise.all(
+		uniqueRecipeIds.map(async (recipeId) => {
+			const recipe = new RecipesResponseDTO(await recipesDb.getPage(recipeId));
+			const hasIngredientLines = recipe.properties.recipeLinesIds.length > 0;
+			let hasInstructions = Boolean(recipe.properties.instructions.text?.trim());
+
+			if (!hasInstructions) {
+				const blocks = await recipesDb.getPageBlocks(recipe.id);
+				hasInstructions = blocks.map(blockToInstruction).some(Boolean);
+			}
+
+			return {
+				recipeId: recipe.id,
+				hasIngredientLines,
+				hasInstructions,
+				isComplete: hasIngredientLines && hasInstructions
+			};
+		})
+	);
 };
 
 const NOTION_API_KEY = env.NOTION_API_KEY ?? '';
