@@ -31,6 +31,7 @@
 			page.url.pathname.startsWith('/tools/onboarding') ||
 			page.url.pathname.startsWith('/customer-intake') ||
 			page.url.pathname === '/tools/salary-payment' ||
+			page.url.pathname.startsWith('/mgmt-dashboard') ||
 			page.url.pathname.startsWith('/test-cfai')
 	);
 </script>
