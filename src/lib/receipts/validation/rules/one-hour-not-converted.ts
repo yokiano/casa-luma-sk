@@ -1,14 +1,22 @@
-import { getReceiptToolsMeta } from '$lib/receipts/receipt-tools';
+import {
+  getReceiptToolsMeta,
+  NOT_CONVERTED_DURATION_THRESHOLD_MINUTES,
+  ONE_HOUR_BASE_DURATION_MINUTES,
+  ONE_HOUR_GRACE_PERIOD_MINUTES,
+  RECEIPT_TOOLS_TIME_ZONE
+} from '$lib/receipts/receipt-tools';
 import type { ReceiptValidationRule } from '../types';
 
 export interface OneHourNotConvertedRuleOptions {
   skipRefunds?: boolean;
+  thresholdMinutes?: number;
 }
 
 export const createOneHourNotConvertedRule = (
   options: OneHourNotConvertedRuleOptions = {}
 ): ReceiptValidationRule => {
   const skipRefunds = options.skipRefunds ?? true;
+  const thresholdMinutes = options.thresholdMinutes ?? NOT_CONVERTED_DURATION_THRESHOLD_MINUTES;
 
   return {
     code: 'ONE_HOUR_NOT_CONVERTED',
@@ -18,7 +26,10 @@ export const createOneHourNotConvertedRule = (
       if (skipRefunds && receipt.receipt_type === 'REFUND') return null;
 
       const toolsMeta = getReceiptToolsMeta(receipt);
-      if (!toolsMeta.isNotConverted) return null;
+      const exceedsThreshold =
+        toolsMeta.durationMinutes !== null && toolsMeta.durationMinutes > thresholdMinutes;
+
+      if (!toolsMeta.hasOneHour || toolsMeta.hasOneHourToDay || !exceedsThreshold) return null;
 
       return {
         code: 'ONE_HOUR_NOT_CONVERTED',
@@ -31,7 +42,11 @@ export const createOneHourNotConvertedRule = (
           durationMinutes: toolsMeta.durationMinutes,
           oneHourQuantity: toolsMeta.oneHourQuantity,
           oneHourToDayQuantity: toolsMeta.oneHourToDayQuantity,
-          exceedsUnconvertedThreshold: toolsMeta.exceedsUnconvertedThreshold
+          baseDurationMinutes: ONE_HOUR_BASE_DURATION_MINUTES,
+          gracePeriodMinutes: ONE_HOUR_GRACE_PERIOD_MINUTES,
+          thresholdMinutes,
+          timeZone: RECEIPT_TOOLS_TIME_ZONE,
+          exceedsUnconvertedThreshold: exceedsThreshold
         }
       };
     }

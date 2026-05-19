@@ -35,6 +35,8 @@ Webhook usage is orchestration-only:
   - one-hour ticket exists,
   - conversion item is missing,
   - duration exceeds threshold.
+- The threshold is the one-hour ticket duration plus a 15-minute grace period (`60 + 15 = 75` minutes), so a 65-minute stay is intentionally allowed.
+- Duration is calculated against the store-local `Asia/Bangkok` checkout clock, not the server timezone.
 - Skips refunds by default.
 
 ## Output Contract

@@ -96,9 +96,12 @@ Source: `src/lib/receipts/validation/rules/one-hour-not-converted.ts`
 
 Purpose: critical alert when a one-hour ticket exceeds the duration threshold and no one-hour-to-day conversion item exists.
 
+The duration threshold includes the intentional 15-minute grace period: `60` one-hour minutes + `15` grace minutes = `75` minutes. A receipt at 1 hour 5 minutes is allowed and must not alert.
+
 Defaults:
 
 - `skipRefunds: true`
+- `thresholdMinutes: 75`
 - severity: `critical`
 
 It uses `getReceiptToolsMeta(receipt)` from `src/lib/receipts/receipt-tools.ts`.
@@ -107,6 +110,8 @@ Current tool constants:
 
 - One-hour item: `e034b61e-88e0-43bc-a72b-eec3a301a7b2`
 - One-hour-to-day conversion item: `c86ad6d4-f8ff-4a43-bd9d-e4988d98c0c5`
+- One-hour base duration: `60` minutes
+- Grace period: `15` minutes
 - Not-converted threshold: `75` minutes
 
 The helper parses:
@@ -114,6 +119,7 @@ The helper parses:
 - order number from `#<digits>` in `receipt.order`
 - the last time in `receipt.order` as the start time
 - checkout time from `created_at` or `receipt_date`
+- checkout local clock time in `Asia/Bangkok`, independent of the server timezone
 
 `isNotConverted` is true when:
 
@@ -121,6 +127,14 @@ The helper parses:
 has one-hour item
 AND does not have one-hour-to-day item
 AND durationMinutes > 75
+```
+
+This comparison is strictly greater than `75`; durations up to and including the grace threshold are allowed.
+
+```text
+Allowed: 65 minutes
+Allowed: 75 minutes
+Alert:   76+ minutes
 ```
 
 ### `FORCED_TEST_FAILURE`

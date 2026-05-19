@@ -163,7 +163,11 @@ The category map is cached in memory for 10 minutes. If Loyverse category loadin
 Analytics and validation both use the same business threshold from `src/lib/receipts/receipt-tools.ts`:
 
 ```ts
+ONE_HOUR_BASE_DURATION_MINUTES = 60
+ONE_HOUR_GRACE_PERIOD_MINUTES = 15
 NOT_CONVERTED_DURATION_THRESHOLD_MINUTES = 75
 ```
+
+The 75-minute threshold intentionally includes the 15-minute grace period for one-hour tickets.
 
 The analytics SQL extracts the last `HH:mm`-looking time from `receipts.order`, compares it with `created_at`/`receipt_date`, handles midnight rollover, and aggregates duration metrics.

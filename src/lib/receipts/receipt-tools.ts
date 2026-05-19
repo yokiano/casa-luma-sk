@@ -2,7 +2,11 @@ import type { LoyverseReceipt } from '$lib/receipts/types';
 
 export const ONE_HOUR_ITEM_ID = 'e034b61e-88e0-43bc-a72b-eec3a301a7b2';
 export const ONE_HOUR_TO_DAY_ITEM_ID = 'c86ad6d4-f8ff-4a43-bd9d-e4988d98c0c5';
-export const NOT_CONVERTED_DURATION_THRESHOLD_MINUTES = 75;
+export const ONE_HOUR_BASE_DURATION_MINUTES = 60;
+export const ONE_HOUR_GRACE_PERIOD_MINUTES = 15;
+export const NOT_CONVERTED_DURATION_THRESHOLD_MINUTES =
+  ONE_HOUR_BASE_DURATION_MINUTES + ONE_HOUR_GRACE_PERIOD_MINUTES;
+export const RECEIPT_TOOLS_TIME_ZONE = 'Asia/Bangkok';
 
 export interface ReceiptToolsMeta {
   orderNumber: string | null;
@@ -23,6 +27,12 @@ export interface ReceiptWithTools extends LoyverseReceipt {
 
 const ORDER_NUMBER_REGEX = /#(\d+)/;
 const ORDER_TIME_REGEX = /\b(\d{1,2}):([0-5]\d)(?:\s*([AaPp][Mm]))?\b/g;
+const CHECKOUT_TIME_FORMATTER = new Intl.DateTimeFormat('en-GB', {
+  timeZone: RECEIPT_TOOLS_TIME_ZONE,
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23'
+});
 
 const parseOrderNumber = (order?: string | null): string | null => {
   if (!order) return null;
@@ -73,29 +83,39 @@ const getCheckoutAt = (receipt: LoyverseReceipt): string | null => {
   return value ?? null;
 };
 
+const getCheckoutLocalMinutes = (checkoutAt: string): number | null => {
+  const checkoutDate = new Date(checkoutAt);
+  if (Number.isNaN(checkoutDate.getTime())) return null;
+
+  const parts = CHECKOUT_TIME_FORMATTER.formatToParts(checkoutDate);
+  const hour = Number(parts.find((part) => part.type === 'hour')?.value);
+  const minute = Number(parts.find((part) => part.type === 'minute')?.value);
+  if (Number.isNaN(hour) || Number.isNaN(minute)) return null;
+
+  return hour * 60 + minute;
+};
+
 const calculateDurationMinutes = (
   orderStartTime: string | null,
   checkoutAt: string | null
 ): number | null => {
   if (!orderStartTime || !checkoutAt) return null;
 
-  const checkoutDate = new Date(checkoutAt);
-  if (Number.isNaN(checkoutDate.getTime())) return null;
-
   const [startHourText, startMinuteText] = orderStartTime.split(':');
   const startHour = Number(startHourText);
   const startMinute = Number(startMinuteText);
   if (Number.isNaN(startHour) || Number.isNaN(startMinute)) return null;
 
-  const startDate = new Date(checkoutDate);
-  startDate.setHours(startHour, startMinute, 0, 0);
+  const checkoutMinutes = getCheckoutLocalMinutes(checkoutAt);
+  if (checkoutMinutes === null) return null;
 
-  let durationMs = checkoutDate.getTime() - startDate.getTime();
-  if (durationMs < 0) {
-    durationMs += 24 * 60 * 60 * 1000;
+  const startMinutes = startHour * 60 + startMinute;
+  let durationMinutes = checkoutMinutes - startMinutes;
+  if (durationMinutes < 0) {
+    durationMinutes += 24 * 60;
   }
 
-  return Math.round(durationMs / (60 * 1000));
+  return durationMinutes;
 };
 
 export const analyzeReceiptTools = (receipt: LoyverseReceipt): ReceiptToolsMeta => {

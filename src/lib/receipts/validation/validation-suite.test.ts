@@ -88,11 +88,53 @@ describe('receipt validation suite', () => {
     expect(result.hasFailures).toBe(false);
   });
 
+  it('allows the 15-minute grace period before flagging one-hour tickets', () => {
+    const suite = createReceiptValidationSuite([createOneHourNotConvertedRule()]);
+    const receipt = createReceipt({
+      order: '#776 10:00',
+      created_at: '2026-01-12T04:05:00.000Z',
+      line_items: [
+        {
+          item_id: ONE_HOUR_ITEM_ID,
+          item_name: 'Open Play 1H',
+          quantity: 1
+        }
+      ]
+    });
+
+    const result = runReceiptValidationSuite(suite, receipt);
+
+    expect(result.hasFailures).toBe(false);
+    expect(result.findings).toHaveLength(0);
+  });
+
+  it('does not use the server timezone when calculating one-hour duration', () => {
+    const suite = createReceiptValidationSuite([createOneHourNotConvertedRule()]);
+    const receipt = createReceipt({
+      receipt_number: '1-4595',
+      order: 'Epelbon [EP1] - 4:32 PM',
+      created_at: '2026-05-19T10:20:05.000Z',
+      receipt_date: '2026-05-19T10:19:49.000Z',
+      line_items: [
+        {
+          item_id: ONE_HOUR_ITEM_ID,
+          item_name: '1 Hour',
+          quantity: 1
+        }
+      ]
+    });
+
+    const result = runReceiptValidationSuite(suite, receipt);
+
+    expect(result.hasFailures).toBe(false);
+    expect(result.findings).toHaveLength(0);
+  });
+
   it('finds one-hour tickets not converted after threshold', () => {
     const suite = createReceiptValidationSuite([createOneHourNotConvertedRule()]);
     const receipt = createReceipt({
       order: '#777 09:30',
-      created_at: '2026-01-12T11:15:00.000Z',
+      created_at: '2026-01-12T04:15:00.000Z',
       line_items: [
         {
           item_id: ONE_HOUR_ITEM_ID,
@@ -107,6 +149,9 @@ describe('receipt validation suite', () => {
     expect(result.hasFailures).toBe(true);
     expect(result.findings[0].code).toBe('ONE_HOUR_NOT_CONVERTED');
     expect(result.findings[0].details?.durationMinutes).toBeGreaterThan(75);
+    expect(result.findings[0].details?.gracePeriodMinutes).toBe(15);
+    expect(result.findings[0].details?.thresholdMinutes).toBe(75);
+    expect(result.findings[0].details?.timeZone).toBe('Asia/Bangkok');
   });
 
   it('skips one-hour validation for refunds by default', () => {
@@ -114,7 +159,7 @@ describe('receipt validation suite', () => {
     const receipt = createReceipt({
       receipt_type: 'REFUND',
       order: '#778 09:30',
-      created_at: '2026-01-12T11:15:00.000Z',
+      created_at: '2026-01-12T04:15:00.000Z',
       line_items: [{ item_id: ONE_HOUR_ITEM_ID, quantity: 1 }]
     });
 
