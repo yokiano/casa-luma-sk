@@ -1,6 +1,6 @@
-import { CasaLumaWaitlistResponse, CasaLumaWaitlistQuery, CasaLumaWaitlistQueryResponse } from './types'
-import { CasaLumaWaitlistPatchDTO } from './patch.dto'
-import { GenericDatabaseClass, DatabaseOptions } from '../../core/src/generic-db'
+import type { CasaLumaWaitlistResponse, CasaLumaWaitlistQuery, CasaLumaWaitlistQueryResponse } from './types'
+import type { CasaLumaWaitlistPatchDTO } from './patch.dto'
+import { GenericDatabaseClass, type DatabaseOptions } from '../../core/src/generic-db'
 import { CASA_LUMA_WAITLIST_PROPS_TO_TYPES, CASA_LUMA_WAITLIST_PROPS_TO_IDS, CasaLumaWaitlistDTOProperties } from './constants'
 
 export class CasaLumaWaitlistDatabase extends GenericDatabaseClass<

@@ -1,6 +1,6 @@
-import { ExpenseScanRulesResponse, ExpenseScanRulesQuery, ExpenseScanRulesQueryResponse } from './types'
-import { ExpenseScanRulesPatchDTO } from './patch.dto'
-import { GenericDatabaseClass, DatabaseOptions } from '../../core/src/generic-db'
+import type { ExpenseScanRulesResponse, ExpenseScanRulesQuery, ExpenseScanRulesQueryResponse } from './types'
+import type { ExpenseScanRulesPatchDTO } from './patch.dto'
+import { GenericDatabaseClass, type DatabaseOptions } from '../../core/src/generic-db'
 import { EXPENSE_SCAN_RULES_PROPS_TO_TYPES, EXPENSE_SCAN_RULES_PROPS_TO_IDS, ExpenseScanRulesDTOProperties } from './constants'
 
 export class ExpenseScanRulesDatabase extends GenericDatabaseClass<

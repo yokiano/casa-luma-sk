@@ -1,6 +1,6 @@
-import { MembershipsResponse, MembershipsQuery, MembershipsQueryResponse } from './types'
-import { MembershipsPatchDTO } from './patch.dto'
-import { GenericDatabaseClass, DatabaseOptions } from '../../core/src/generic-db'
+import type { MembershipsResponse, MembershipsQuery, MembershipsQueryResponse } from './types'
+import type { MembershipsPatchDTO } from './patch.dto'
+import { GenericDatabaseClass, type DatabaseOptions } from '../../core/src/generic-db'
 import { MEMBERSHIPS_PROPS_TO_TYPES, MEMBERSHIPS_PROPS_TO_IDS, MembershipsDTOProperties } from './constants'
 
 export class MembershipsDatabase extends GenericDatabaseClass<

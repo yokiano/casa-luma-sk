@@ -1,6 +1,6 @@
-import { StoreItemsResponse, StoreItemsQuery, StoreItemsQueryResponse } from './types'
-import { StoreItemsPatchDTO } from './patch.dto'
-import { GenericDatabaseClass, DatabaseOptions } from '../../core/src/generic-db'
+import type { StoreItemsResponse, StoreItemsQuery, StoreItemsQueryResponse } from './types'
+import type { StoreItemsPatchDTO } from './patch.dto'
+import { GenericDatabaseClass, type DatabaseOptions } from '../../core/src/generic-db'
 import { STORE_ITEMS_PROPS_TO_TYPES, STORE_ITEMS_PROPS_TO_IDS, StoreItemsDTOProperties } from './constants'
 
 export class StoreItemsDatabase extends GenericDatabaseClass<

@@ -1,6 +1,6 @@
-import { RecipeLinesResponse, RecipeLinesQuery, RecipeLinesQueryResponse } from './types'
-import { RecipeLinesPatchDTO } from './patch.dto'
-import { GenericDatabaseClass, DatabaseOptions } from '../../core/src/generic-db'
+import type { RecipeLinesResponse, RecipeLinesQuery, RecipeLinesQueryResponse } from './types'
+import type { RecipeLinesPatchDTO } from './patch.dto'
+import { GenericDatabaseClass, type DatabaseOptions } from '../../core/src/generic-db'
 import { RECIPE_LINES_PROPS_TO_TYPES, RECIPE_LINES_PROPS_TO_IDS, RecipeLinesDTOProperties } from './constants'
 
 export class RecipeLinesDatabase extends GenericDatabaseClass<

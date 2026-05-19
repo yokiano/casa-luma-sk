@@ -1,6 +1,6 @@
-import { FamiliesResponse, FamiliesQuery, FamiliesQueryResponse } from './types'
-import { FamiliesPatchDTO } from './patch.dto'
-import { GenericDatabaseClass, DatabaseOptions } from '../../core/src/generic-db'
+import type { FamiliesResponse, FamiliesQuery, FamiliesQueryResponse } from './types'
+import type { FamiliesPatchDTO } from './patch.dto'
+import { GenericDatabaseClass, type DatabaseOptions } from '../../core/src/generic-db'
 import { FAMILIES_PROPS_TO_TYPES, FAMILIES_PROPS_TO_IDS, FamiliesDTOProperties } from './constants'
 
 export class FamiliesDatabase extends GenericDatabaseClass<

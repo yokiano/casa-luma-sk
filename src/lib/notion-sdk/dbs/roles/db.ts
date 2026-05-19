@@ -1,6 +1,6 @@
-import { RolesResponse, RolesQuery, RolesQueryResponse } from './types'
-import { RolesPatchDTO } from './patch.dto'
-import { GenericDatabaseClass, DatabaseOptions } from '../../core/src/generic-db'
+import type { RolesResponse, RolesQuery, RolesQueryResponse } from './types'
+import type { RolesPatchDTO } from './patch.dto'
+import { GenericDatabaseClass, type DatabaseOptions } from '../../core/src/generic-db'
 import { ROLES_PROPS_TO_TYPES, ROLES_PROPS_TO_IDS, RolesDTOProperties } from './constants'
 
 export class RolesDatabase extends GenericDatabaseClass<

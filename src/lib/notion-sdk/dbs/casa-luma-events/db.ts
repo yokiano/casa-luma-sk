@@ -1,6 +1,6 @@
-import { CasaLumaEventsResponse, CasaLumaEventsQuery, CasaLumaEventsQueryResponse } from './types'
-import { CasaLumaEventsPatchDTO } from './patch.dto'
-import { GenericDatabaseClass, DatabaseOptions } from '../../core/src/generic-db'
+import type { CasaLumaEventsResponse, CasaLumaEventsQuery, CasaLumaEventsQueryResponse } from './types'
+import type { CasaLumaEventsPatchDTO } from './patch.dto'
+import { GenericDatabaseClass, type DatabaseOptions } from '../../core/src/generic-db'
 import { CASA_LUMA_EVENTS_PROPS_TO_TYPES, CASA_LUMA_EVENTS_PROPS_TO_IDS, CasaLumaEventsDTOProperties } from './constants'
 
 export class CasaLumaEventsDatabase extends GenericDatabaseClass<

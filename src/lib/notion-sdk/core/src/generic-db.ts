@@ -1,4 +1,4 @@
-import {
+import type {
   AppendBlockChildrenBodyParameters,
   BlockObjectRequest,
   BlockObjectResponse,
@@ -14,7 +14,7 @@ import {
   notionPageApiURL,
   notionBlockChildrenApiURL,
 } from './notion-urls'
-import pThrottle, { ThrottleConfig } from './p-throttle'
+import pThrottle, { type ThrottleConfig } from './p-throttle'
 
 export type DatabaseOptions = {
   // firebaseSecret: string

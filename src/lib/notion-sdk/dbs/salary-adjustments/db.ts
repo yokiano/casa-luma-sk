@@ -1,6 +1,6 @@
-import { SalaryAdjustmentsResponse, SalaryAdjustmentsQuery, SalaryAdjustmentsQueryResponse } from './types'
-import { SalaryAdjustmentsPatchDTO } from './patch.dto'
-import { GenericDatabaseClass, DatabaseOptions } from '../../core/src/generic-db'
+import type { SalaryAdjustmentsResponse, SalaryAdjustmentsQuery, SalaryAdjustmentsQueryResponse } from './types'
+import type { SalaryAdjustmentsPatchDTO } from './patch.dto'
+import { GenericDatabaseClass, type DatabaseOptions } from '../../core/src/generic-db'
 import { SALARY_ADJUSTMENTS_PROPS_TO_TYPES, SALARY_ADJUSTMENTS_PROPS_TO_IDS, SalaryAdjustmentsDTOProperties } from './constants'
 
 export class SalaryAdjustmentsDatabase extends GenericDatabaseClass<

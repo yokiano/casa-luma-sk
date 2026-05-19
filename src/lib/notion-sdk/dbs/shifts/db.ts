@@ -1,6 +1,6 @@
-import { ShiftsResponse, ShiftsQuery, ShiftsQueryResponse } from './types'
-import { ShiftsPatchDTO } from './patch.dto'
-import { GenericDatabaseClass, DatabaseOptions } from '../../core/src/generic-db'
+import type { ShiftsResponse, ShiftsQuery, ShiftsQueryResponse } from './types'
+import type { ShiftsPatchDTO } from './patch.dto'
+import { GenericDatabaseClass, type DatabaseOptions } from '../../core/src/generic-db'
 import { SHIFTS_PROPS_TO_TYPES, SHIFTS_PROPS_TO_IDS, ShiftsDTOProperties } from './constants'
 
 export class ShiftsDatabase extends GenericDatabaseClass<

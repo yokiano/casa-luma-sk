@@ -1,6 +1,6 @@
-import { IngredientsResponse, IngredientsQuery, IngredientsQueryResponse } from './types'
-import { IngredientsPatchDTO } from './patch.dto'
-import { GenericDatabaseClass, DatabaseOptions } from '../../core/src/generic-db'
+import type { IngredientsResponse, IngredientsQuery, IngredientsQueryResponse } from './types'
+import type { IngredientsPatchDTO } from './patch.dto'
+import { GenericDatabaseClass, type DatabaseOptions } from '../../core/src/generic-db'
 import { INGREDIENTS_PROPS_TO_TYPES, INGREDIENTS_PROPS_TO_IDS, IngredientsDTOProperties } from './constants'
 
 export class IngredientsDatabase extends GenericDatabaseClass<

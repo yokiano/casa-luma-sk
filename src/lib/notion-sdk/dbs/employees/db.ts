@@ -1,6 +1,6 @@
-import { EmployeesResponse, EmployeesQuery, EmployeesQueryResponse } from './types'
-import { EmployeesPatchDTO } from './patch.dto'
-import { GenericDatabaseClass, DatabaseOptions } from '../../core/src/generic-db'
+import type { EmployeesResponse, EmployeesQuery, EmployeesQueryResponse } from './types'
+import type { EmployeesPatchDTO } from './patch.dto'
+import { GenericDatabaseClass, type DatabaseOptions } from '../../core/src/generic-db'
 import { EMPLOYEES_PROPS_TO_TYPES, EMPLOYEES_PROPS_TO_IDS, EmployeesDTOProperties } from './constants'
 
 export class EmployeesDatabase extends GenericDatabaseClass<

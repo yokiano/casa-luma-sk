@@ -1,6 +1,6 @@
-import { SopCatalogResponse, SopCatalogQuery, SopCatalogQueryResponse } from './types'
-import { SopCatalogPatchDTO } from './patch.dto'
-import { GenericDatabaseClass, DatabaseOptions } from '../../core/src/generic-db'
+import type { SopCatalogResponse, SopCatalogQuery, SopCatalogQueryResponse } from './types'
+import type { SopCatalogPatchDTO } from './patch.dto'
+import { GenericDatabaseClass, type DatabaseOptions } from '../../core/src/generic-db'
 import { SOP_CATALOG_PROPS_TO_TYPES, SOP_CATALOG_PROPS_TO_IDS, SopCatalogDTOProperties } from './constants'
 
 export class SopCatalogDatabase extends GenericDatabaseClass<
