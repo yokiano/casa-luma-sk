@@ -1,4 +1,4 @@
-import { StoreItemsResponse } from "./types"
+import type { StoreItemsResponse } from "./types"
 
 export class StoreItemsResponseDTO {
   __data: StoreItemsResponse

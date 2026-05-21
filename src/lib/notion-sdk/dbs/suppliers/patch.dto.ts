@@ -1,5 +1,5 @@
-import { SuppliersResponse } from "./types"
-import { UpdatePageBodyParameters,
+import type { SuppliersResponse } from "./types"
+import type { UpdatePageBodyParameters,
 RichTextItemRequest
 } from '../../core/types/notion-api.types'
 

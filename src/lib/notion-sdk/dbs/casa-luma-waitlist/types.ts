@@ -1,5 +1,5 @@
-import { WithOptional, Join, PathsToStringProps } from '../../core/types/helper.types'
-import {
+import type { WithOptional, Join, PathsToStringProps } from '../../core/types/helper.types'
+import type {
 DatabaseObjectResponse,
 StringRequest,
 CheckboxPropertyItemObjectResponse,
@@ -18,7 +18,7 @@ DatePropertyFilter,
 RelationPropertyFilter,
 TextPropertyFilter
 } from '../../core/types/notion-api.types'
-import { CASA_LUMA_WAITLIST_PROPS_TO_IDS } from './constants'
+import type { CASA_LUMA_WAITLIST_PROPS_TO_IDS } from './constants'
 
 export interface CasaLumaWaitlistResponse extends WithOptional<Omit<DatabaseObjectResponse, 'properties'>, 'title'| 'description'| 'is_inline'| 'url'| 'public_url'> {
   properties: {

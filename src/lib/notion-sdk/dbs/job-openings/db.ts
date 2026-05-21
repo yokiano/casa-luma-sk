@@ -1,7 +1,7 @@
 import type { JobOpeningsResponse, JobOpeningsQuery, JobOpeningsQueryResponse } from './types'
 import type { JobOpeningsPatchDTO } from './patch.dto'
 import { GenericDatabaseClass, type DatabaseOptions } from '../../core/src/generic-db'
-import { JOB_OPENINGS_PROPS_TO_TYPES, JOB_OPENINGS_PROPS_TO_IDS, JobOpeningsDTOProperties } from './constants'
+import { JOB_OPENINGS_PROPS_TO_TYPES, JOB_OPENINGS_PROPS_TO_IDS, type JobOpeningsDTOProperties } from './constants'
 
 export class JobOpeningsDatabase extends GenericDatabaseClass<
   JobOpeningsResponse,

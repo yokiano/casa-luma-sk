@@ -1,4 +1,4 @@
-import { ExpensesTrackerResponse } from "./types"
+import type { ExpensesTrackerResponse } from "./types"
 
 export class ExpensesTrackerResponseDTO {
   __data: ExpensesTrackerResponse

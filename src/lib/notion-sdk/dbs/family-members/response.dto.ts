@@ -1,4 +1,4 @@
-import { FamilyMembersResponse } from "./types"
+import type { FamilyMembersResponse } from "./types"
 
 export class FamilyMembersResponseDTO {
   __data: FamilyMembersResponse

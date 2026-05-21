@@ -1,7 +1,7 @@
 import type { WebsiteImagesResponse, WebsiteImagesQuery, WebsiteImagesQueryResponse } from './types'
 import type { WebsiteImagesPatchDTO } from './patch.dto'
 import { GenericDatabaseClass, type DatabaseOptions } from '../../core/src/generic-db'
-import { WEBSITE_IMAGES_PROPS_TO_TYPES, WEBSITE_IMAGES_PROPS_TO_IDS, WebsiteImagesDTOProperties } from './constants'
+import { WEBSITE_IMAGES_PROPS_TO_TYPES, WEBSITE_IMAGES_PROPS_TO_IDS, type WebsiteImagesDTOProperties } from './constants'
 
 export class WebsiteImagesDatabase extends GenericDatabaseClass<
   WebsiteImagesResponse,

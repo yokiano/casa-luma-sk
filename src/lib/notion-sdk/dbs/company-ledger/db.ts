@@ -1,7 +1,7 @@
 import type { CompanyLedgerResponse, CompanyLedgerQuery, CompanyLedgerQueryResponse } from './types'
 import type { CompanyLedgerPatchDTO } from './patch.dto'
 import { GenericDatabaseClass, type DatabaseOptions } from '../../core/src/generic-db'
-import { COMPANY_LEDGER_PROPS_TO_TYPES, COMPANY_LEDGER_PROPS_TO_IDS, CompanyLedgerDTOProperties } from './constants'
+import { COMPANY_LEDGER_PROPS_TO_TYPES, COMPANY_LEDGER_PROPS_TO_IDS, type CompanyLedgerDTOProperties } from './constants'
 
 export class CompanyLedgerDatabase extends GenericDatabaseClass<
   CompanyLedgerResponse,

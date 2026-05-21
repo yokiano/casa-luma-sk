@@ -1,5 +1,5 @@
-import { WithOptional, Join, PathsToStringProps } from '../../core/types/helper.types'
-import {
+import type { WithOptional, Join, PathsToStringProps } from '../../core/types/helper.types'
+import type {
 DatabaseObjectResponse,
 StringRequest,
 CreatedByPropertyItemObjectResponse,
@@ -27,7 +27,7 @@ PeoplePropertyFilter,
 RelationPropertyFilter,
 TextPropertyFilter
 } from '../../core/types/notion-api.types'
-import { EXPENSES_TRACKER_PROPS_TO_IDS } from './constants'
+import type { EXPENSES_TRACKER_PROPS_TO_IDS } from './constants'
 
 export interface ExpensesTrackerResponse extends WithOptional<Omit<DatabaseObjectResponse, 'properties'>, 'title'| 'description'| 'is_inline'| 'url'| 'public_url'> {
   properties: {

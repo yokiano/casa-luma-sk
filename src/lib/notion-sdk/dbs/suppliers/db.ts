@@ -1,7 +1,7 @@
 import type { SuppliersResponse, SuppliersQuery, SuppliersQueryResponse } from './types'
 import type { SuppliersPatchDTO } from './patch.dto'
 import { GenericDatabaseClass, type DatabaseOptions } from '../../core/src/generic-db'
-import { SUPPLIERS_PROPS_TO_TYPES, SUPPLIERS_PROPS_TO_IDS, SuppliersDTOProperties } from './constants'
+import { SUPPLIERS_PROPS_TO_TYPES, SUPPLIERS_PROPS_TO_IDS, type SuppliersDTOProperties } from './constants'
 
 export class SuppliersDatabase extends GenericDatabaseClass<
   SuppliersResponse,

@@ -1,7 +1,7 @@
 import type { EndOfShiftReportsResponse, EndOfShiftReportsQuery, EndOfShiftReportsQueryResponse } from './types'
 import type { EndOfShiftReportsPatchDTO } from './patch.dto'
 import { GenericDatabaseClass, type DatabaseOptions } from '../../core/src/generic-db'
-import { END_OF_SHIFT_REPORTS_PROPS_TO_TYPES, END_OF_SHIFT_REPORTS_PROPS_TO_IDS, EndOfShiftReportsDTOProperties } from './constants'
+import { END_OF_SHIFT_REPORTS_PROPS_TO_TYPES, END_OF_SHIFT_REPORTS_PROPS_TO_IDS, type EndOfShiftReportsDTOProperties } from './constants'
 
 export class EndOfShiftReportsDatabase extends GenericDatabaseClass<
   EndOfShiftReportsResponse,

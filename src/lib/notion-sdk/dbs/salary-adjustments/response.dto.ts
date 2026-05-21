@@ -1,4 +1,4 @@
-import { SalaryAdjustmentsResponse } from "./types"
+import type { SalaryAdjustmentsResponse } from "./types"
 
 export class SalaryAdjustmentsResponseDTO {
   __data: SalaryAdjustmentsResponse

@@ -1,5 +1,5 @@
-import { CompanyLedgerResponse } from "./types"
-import { UpdatePageBodyParameters,
+import type { CompanyLedgerResponse } from "./types"
+import type { UpdatePageBodyParameters,
 RichTextItemRequest
 } from '../../core/types/notion-api.types'
 

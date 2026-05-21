@@ -1,4 +1,4 @@
-import { EmployeesResponse } from "./types"
+import type { EmployeesResponse } from "./types"
 
 export class EmployeesResponseDTO {
   __data: EmployeesResponse

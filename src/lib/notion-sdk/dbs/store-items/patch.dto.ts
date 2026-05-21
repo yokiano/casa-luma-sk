@@ -1,5 +1,5 @@
-import { StoreItemsResponse } from "./types"
-import { UpdatePageBodyParameters,
+import type { StoreItemsResponse } from "./types"
+import type { UpdatePageBodyParameters,
 RichTextItemRequest
 } from '../../core/types/notion-api.types'
 

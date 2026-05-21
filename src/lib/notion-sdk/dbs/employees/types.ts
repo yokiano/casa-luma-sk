@@ -1,5 +1,5 @@
-import { WithOptional, Join, PathsToStringProps } from '../../core/types/helper.types'
-import {
+import type { WithOptional, Join, PathsToStringProps } from '../../core/types/helper.types'
+import type {
 DatabaseObjectResponse,
 StringRequest,
 DatePropertyItemObjectResponse,
@@ -26,7 +26,7 @@ PeoplePropertyFilter,
 RelationPropertyFilter,
 TextPropertyFilter
 } from '../../core/types/notion-api.types'
-import { EMPLOYEES_PROPS_TO_IDS } from './constants'
+import type { EMPLOYEES_PROPS_TO_IDS } from './constants'
 
 export interface EmployeesResponse extends WithOptional<Omit<DatabaseObjectResponse, 'properties'>, 'title'| 'description'| 'is_inline'| 'url'| 'public_url'> {
   properties: {

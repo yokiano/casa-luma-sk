@@ -1,4 +1,4 @@
-import { PosModifiersResponse } from "./types"
+import type { PosModifiersResponse } from "./types"
 
 export class PosModifiersResponseDTO {
   __data: PosModifiersResponse

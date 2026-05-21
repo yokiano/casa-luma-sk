@@ -1,5 +1,5 @@
-import { WithOptional, Join, PathsToStringProps } from '../../core/types/helper.types'
-import {
+import type { WithOptional, Join, PathsToStringProps } from '../../core/types/helper.types'
+import type {
 DatabaseObjectResponse,
 StringRequest,
 CreatedByPropertyItemObjectResponse,
@@ -23,7 +23,7 @@ PeoplePropertyFilter,
 RelationPropertyFilter,
 TextPropertyFilter
 } from '../../core/types/notion-api.types'
-import { STORE_ITEMS_PROPS_TO_IDS } from './constants'
+import type { STORE_ITEMS_PROPS_TO_IDS } from './constants'
 
 export interface StoreItemsResponse extends WithOptional<Omit<DatabaseObjectResponse, 'properties'>, 'title'| 'description'| 'is_inline'| 'url'| 'public_url'> {
   properties: {

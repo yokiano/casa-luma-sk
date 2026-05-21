@@ -1,7 +1,7 @@
 import type { OpenPlayPosItemsResponse, OpenPlayPosItemsQuery, OpenPlayPosItemsQueryResponse } from './types'
 import type { OpenPlayPosItemsPatchDTO } from './patch.dto'
 import { GenericDatabaseClass, type DatabaseOptions } from '../../core/src/generic-db'
-import { OPEN_PLAY_POS_ITEMS_PROPS_TO_TYPES, OPEN_PLAY_POS_ITEMS_PROPS_TO_IDS, OpenPlayPosItemsDTOProperties } from './constants'
+import { OPEN_PLAY_POS_ITEMS_PROPS_TO_TYPES, OPEN_PLAY_POS_ITEMS_PROPS_TO_IDS, type OpenPlayPosItemsDTOProperties } from './constants'
 
 export class OpenPlayPosItemsDatabase extends GenericDatabaseClass<
   OpenPlayPosItemsResponse,

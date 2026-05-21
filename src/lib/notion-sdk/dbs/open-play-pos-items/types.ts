@@ -1,5 +1,5 @@
-import { WithOptional, Join, PathsToStringProps } from '../../core/types/helper.types'
-import {
+import type { WithOptional, Join, PathsToStringProps } from '../../core/types/helper.types'
+import type {
 DatabaseObjectResponse,
 StringRequest,
 CheckboxPropertyItemObjectResponse,
@@ -16,7 +16,7 @@ CheckboxPropertyFilter,
 NumberPropertyFilter,
 TextPropertyFilter
 } from '../../core/types/notion-api.types'
-import { OPEN_PLAY_POS_ITEMS_PROPS_TO_IDS } from './constants'
+import type { OPEN_PLAY_POS_ITEMS_PROPS_TO_IDS } from './constants'
 
 export interface OpenPlayPosItemsResponse extends WithOptional<Omit<DatabaseObjectResponse, 'properties'>, 'title'| 'description'| 'is_inline'| 'url'| 'public_url'> {
   properties: {

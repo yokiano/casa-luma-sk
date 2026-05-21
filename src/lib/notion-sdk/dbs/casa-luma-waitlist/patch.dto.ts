@@ -1,5 +1,5 @@
-import { CasaLumaWaitlistResponse } from "./types"
-import { UpdatePageBodyParameters,
+import type { CasaLumaWaitlistResponse } from "./types"
+import type { UpdatePageBodyParameters,
 RichTextItemRequest
 } from '../../core/types/notion-api.types'
 

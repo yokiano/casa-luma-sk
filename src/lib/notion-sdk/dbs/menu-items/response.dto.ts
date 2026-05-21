@@ -1,4 +1,4 @@
-import { MenuItemsResponse } from "./types"
+import type { MenuItemsResponse } from "./types"
 
 export class MenuItemsResponseDTO {
   __data: MenuItemsResponse

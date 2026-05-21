@@ -1,5 +1,5 @@
-import { ExpensesTrackerResponse } from "./types"
-import { UpdatePageBodyParameters,
+import type { ExpensesTrackerResponse } from "./types"
+import type { UpdatePageBodyParameters,
 RichTextItemRequest
 } from '../../core/types/notion-api.types'
 

@@ -1,7 +1,7 @@
 import type { PosDiscountsResponse, PosDiscountsQuery, PosDiscountsQueryResponse } from './types'
 import type { PosDiscountsPatchDTO } from './patch.dto'
 import { GenericDatabaseClass, type DatabaseOptions } from '../../core/src/generic-db'
-import { POS_DISCOUNTS_PROPS_TO_TYPES, POS_DISCOUNTS_PROPS_TO_IDS, PosDiscountsDTOProperties } from './constants'
+import { POS_DISCOUNTS_PROPS_TO_TYPES, POS_DISCOUNTS_PROPS_TO_IDS, type PosDiscountsDTOProperties } from './constants'
 
 export class PosDiscountsDatabase extends GenericDatabaseClass<
   PosDiscountsResponse,

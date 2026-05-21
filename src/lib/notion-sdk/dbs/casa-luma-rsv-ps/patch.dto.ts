@@ -1,5 +1,5 @@
-import { CasaLumaRsvPsResponse } from "./types"
-import { UpdatePageBodyParameters,
+import type { CasaLumaRsvPsResponse } from "./types"
+import type { UpdatePageBodyParameters,
 RichTextItemRequest
 } from '../../core/types/notion-api.types'
 

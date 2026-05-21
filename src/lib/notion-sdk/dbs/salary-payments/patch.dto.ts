@@ -1,5 +1,5 @@
-import { SalaryPaymentsResponse } from "./types"
-import { UpdatePageBodyParameters,
+import type { SalaryPaymentsResponse } from "./types"
+import type { UpdatePageBodyParameters,
 RichTextItemRequest
 } from '../../core/types/notion-api.types'
 

@@ -1,5 +1,5 @@
-import { MenuItemsResponse } from "./types"
-import { UpdatePageBodyParameters,
+import type { MenuItemsResponse } from "./types"
+import type { UpdatePageBodyParameters,
 RichTextItemRequest
 } from '../../core/types/notion-api.types'
 

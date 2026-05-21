@@ -1,5 +1,5 @@
-import { WithOptional, Join, PathsToStringProps } from '../../core/types/helper.types'
-import {
+import type { WithOptional, Join, PathsToStringProps } from '../../core/types/helper.types'
+import type {
 DatabaseObjectResponse,
 StringRequest,
 DatePropertyItemObjectResponse,
@@ -19,7 +19,7 @@ NumberPropertyFilter,
 RelationPropertyFilter,
 TextPropertyFilter
 } from '../../core/types/notion-api.types'
-import { MEMBERSHIPS_PROPS_TO_IDS } from './constants'
+import type { MEMBERSHIPS_PROPS_TO_IDS } from './constants'
 
 export interface MembershipsResponse extends WithOptional<Omit<DatabaseObjectResponse, 'properties'>, 'title'| 'description'| 'is_inline'| 'url'| 'public_url'> {
   properties: {

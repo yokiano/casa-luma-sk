@@ -1,5 +1,5 @@
-import { EndOfShiftReportsResponse } from "./types"
-import { UpdatePageBodyParameters,
+import type { EndOfShiftReportsResponse } from "./types"
+import type { UpdatePageBodyParameters,
 RichTextItemRequest
 } from '../../core/types/notion-api.types'
 

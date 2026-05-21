@@ -1,4 +1,4 @@
-import { CasaLumaRsvPsResponse } from "./types"
+import type { CasaLumaRsvPsResponse } from "./types"
 
 export class CasaLumaRsvPsResponseDTO {
   __data: CasaLumaRsvPsResponse

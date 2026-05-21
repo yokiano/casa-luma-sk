@@ -1,4 +1,4 @@
-import { ShiftsResponse } from "./types"
+import type { ShiftsResponse } from "./types"
 
 export class ShiftsResponseDTO {
   __data: ShiftsResponse

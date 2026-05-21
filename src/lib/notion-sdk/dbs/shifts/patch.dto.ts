@@ -1,5 +1,5 @@
-import { ShiftsResponse } from "./types"
-import { UpdatePageBodyParameters,
+import type { ShiftsResponse } from "./types"
+import type { UpdatePageBodyParameters,
 RichTextItemRequest
 } from '../../core/types/notion-api.types'
 

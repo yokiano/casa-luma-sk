@@ -1,4 +1,4 @@
-import { CasaLumaWaitlistResponse } from "./types"
+import type { CasaLumaWaitlistResponse } from "./types"
 
 export class CasaLumaWaitlistResponseDTO {
   __data: CasaLumaWaitlistResponse

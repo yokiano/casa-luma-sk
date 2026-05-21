@@ -1,5 +1,5 @@
-import { ExpenseScanRulesResponse } from "./types"
-import { UpdatePageBodyParameters,
+import type { ExpenseScanRulesResponse } from "./types"
+import type { UpdatePageBodyParameters,
 RichTextItemRequest
 } from '../../core/types/notion-api.types'
 

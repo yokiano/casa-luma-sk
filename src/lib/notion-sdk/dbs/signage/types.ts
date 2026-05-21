@@ -1,5 +1,5 @@
-import { WithOptional, Join, PathsToStringProps } from '../../core/types/helper.types'
-import {
+import type { WithOptional, Join, PathsToStringProps } from '../../core/types/helper.types'
+import type {
 DatabaseObjectResponse,
 StringRequest,
 FilesPropertyItemObjectResponse,
@@ -13,7 +13,7 @@ TimestampCreatedTimeFilter,
 TimestampLastEditedTimeFilter,
 TextPropertyFilter
 } from '../../core/types/notion-api.types'
-import { SIGNAGE_PROPS_TO_IDS } from './constants'
+import type { SIGNAGE_PROPS_TO_IDS } from './constants'
 
 export interface SignageResponse extends WithOptional<Omit<DatabaseObjectResponse, 'properties'>, 'title'| 'description'| 'is_inline'| 'url'| 'public_url'> {
   properties: {

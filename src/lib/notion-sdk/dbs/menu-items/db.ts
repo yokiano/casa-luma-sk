@@ -1,7 +1,7 @@
 import type { MenuItemsResponse, MenuItemsQuery, MenuItemsQueryResponse } from './types'
 import type { MenuItemsPatchDTO } from './patch.dto'
 import { GenericDatabaseClass, type DatabaseOptions } from '../../core/src/generic-db'
-import { MENU_ITEMS_PROPS_TO_TYPES, MENU_ITEMS_PROPS_TO_IDS, MenuItemsDTOProperties } from './constants'
+import { MENU_ITEMS_PROPS_TO_TYPES, MENU_ITEMS_PROPS_TO_IDS, type MenuItemsDTOProperties } from './constants'
 
 export class MenuItemsDatabase extends GenericDatabaseClass<
   MenuItemsResponse,

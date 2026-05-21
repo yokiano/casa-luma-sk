@@ -1,4 +1,4 @@
-import { EndOfShiftReportsResponse } from "./types"
+import type { EndOfShiftReportsResponse } from "./types"
 
 export class EndOfShiftReportsResponseDTO {
   __data: EndOfShiftReportsResponse

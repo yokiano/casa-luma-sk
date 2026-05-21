@@ -1,5 +1,5 @@
-import { RolesResponse } from "./types"
-import { UpdatePageBodyParameters,
+import type { RolesResponse } from "./types"
+import type { UpdatePageBodyParameters,
 RichTextItemRequest
 } from '../../core/types/notion-api.types'
 

@@ -1,5 +1,5 @@
-import { PosModifiersResponse } from "./types"
-import { UpdatePageBodyParameters,
+import type { PosModifiersResponse } from "./types"
+import type { UpdatePageBodyParameters,
 RichTextItemRequest
 } from '../../core/types/notion-api.types'
 

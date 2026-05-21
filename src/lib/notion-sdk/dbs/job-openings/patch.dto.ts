@@ -1,5 +1,5 @@
-import { JobOpeningsResponse } from "./types"
-import { UpdatePageBodyParameters,
+import type { JobOpeningsResponse } from "./types"
+import type { UpdatePageBodyParameters,
 RichTextItemRequest
 } from '../../core/types/notion-api.types'
 
