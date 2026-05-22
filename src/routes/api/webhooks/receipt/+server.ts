@@ -75,6 +75,58 @@ const hasErrorCode = (error: unknown, code: string): boolean => {
     return hasErrorCode(error.cause, code);
 };
 
+const buildReceiptUrl = (receiptNumber: string): string | undefined => {
+    const base = env.INCIDENT_REPORT_BASE_URL;
+    if (!base) return undefined;
+    return `${base.replace(/\/$/, '')}/tools/receipts/${encodeURIComponent(receiptNumber)}`;
+};
+
+const getPrimaryFinding = (findings: { code: string; severity: string; message: string; details?: Record<string, unknown> }[]) => {
+    return findings.find((finding) => finding.severity === 'critical') ?? findings[0] ?? null;
+};
+
+const pickKeys = (value: unknown, keys: string[]): Record<string, unknown> | undefined => {
+    if (!isObject(value)) return undefined;
+
+    const picked = Object.fromEntries(
+        keys.filter((key) => value[key] !== undefined).map((key) => [key, value[key]])
+    );
+
+    return Object.keys(picked).length ? picked : undefined;
+};
+
+const getCompactFindingDetails = (finding: { code: string; details?: Record<string, unknown> }) => {
+    switch (finding.code) {
+        case 'DISCOUNT_100_PRESENT':
+            return pickKeys(finding.details, [
+                'thresholdPercentage',
+                'receiptLevelDiscounts',
+                'lineLevelDiscounts'
+            ]);
+        case 'DISCOUNT_TOTAL_OVER_THRESHOLD':
+            return pickKeys(finding.details, [
+                'thresholdAmount',
+                'discountTotal',
+                'comparableDiscountTotal',
+                'currency',
+                'discountNames'
+            ]);
+        case 'ONE_HOUR_NOT_CONVERTED':
+            return pickKeys(finding.details, [
+                'orderStartTime',
+                'checkoutAt',
+                'durationMinutes',
+                'baseDurationMinutes',
+                'gracePeriodMinutes',
+                'thresholdMinutes',
+                'timeZone',
+                'exceedsUnconvertedThreshold'
+            ]);
+        default:
+            return undefined;
+    }
+};
+
 export const POST: RequestHandler = async ({ request }) => {
     let rawPayload: unknown;
 
@@ -153,6 +205,9 @@ export const POST: RequestHandler = async ({ request }) => {
                         failedChecks
                     });
 
+                    const primaryFinding = getPrimaryFinding(validationReport.findings);
+                    const receiptNumber = receiptPayload.items.receipt_number;
+
                     await incidentReporter.report({
                         source: 'receipt-webhook',
                         code: hasEngineFailure
@@ -165,8 +220,18 @@ export const POST: RequestHandler = async ({ request }) => {
                         merchantId: receiptPayload.merchant_id,
                         receiptKey: result.receiptKey,
                         context: {
-                            receiptNumber: receiptPayload.items.receipt_number,
-                            failedChecks
+                            receiptNumber,
+                            receiptUrl: buildReceiptUrl(receiptNumber),
+                            failedChecks,
+                            primaryFindingCode: primaryFinding?.code,
+                            primaryFindingMessage: primaryFinding?.message,
+                            primaryFindingDetails: primaryFinding ? getCompactFindingDetails(primaryFinding) : undefined,
+                            validationFindingsSummary: validationReport.findings.slice(0, 5).map((finding) => ({
+                                code: finding.code,
+                                severity: finding.severity,
+                                message: finding.message,
+                                details: getCompactFindingDetails(finding)
+                            }))
                         },
                         payload: {
                             receipt: receiptPayload.items,

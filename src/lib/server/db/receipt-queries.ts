@@ -197,73 +197,11 @@ const buildReceiptShape = (args: {
   };
 };
 
-export const queryReceiptsFromDb = async ({
-  dateFrom,
-  dateTo,
-  storeId,
-  limit,
-  cursor
-}: ReceiptDbQueryInput): Promise<{ receipts: LoyverseReceipt[]; cursor: string | null; hasMore: boolean }> => {
-  const pageSize = Math.min(Math.max(limit ?? 50, 1), MAX_LIMIT);
-  const filters: SQL[] = [];
-
-  const dateFromValue = toDate(dateFrom);
-  if (dateFromValue) {
-    filters.push(gte(receipts.createdAt, dateFromValue));
-  }
-
-  const dateToValue = toDate(dateTo);
-  if (dateToValue) {
-    filters.push(lte(receipts.createdAt, dateToValue));
-  }
-
-  if (storeId) {
-    filters.push(eq(receipts.storeId, storeId));
-  }
-
-  const cursorPayload = parseCursor(cursor);
-  if (cursorPayload) {
-    const cursorDate = new Date(cursorPayload.updatedAt);
-    filters.push(
-      or(
-        lt(receipts.updatedFromEventAt, cursorDate),
-        and(eq(receipts.updatedFromEventAt, cursorDate), lt(receipts.receiptKey, cursorPayload.receiptKey))
-      ) as SQL
-    );
-  }
-
-  const whereClause = filters.length ? and(...filters) : undefined;
-
-  let rows: (typeof receipts.$inferSelect)[];
-
-  try {
-    rows = await db
-      .select()
-      .from(receipts)
-      .where(whereClause)
-      .orderBy(desc(receipts.updatedFromEventAt), desc(receipts.receiptKey))
-      .limit(pageSize + 1);
-  } catch (error) {
-    console.error('[receipts] failed to query receipts', {
-      dateFrom,
-      dateTo,
-      storeId: storeId ?? null,
-      limit: pageSize,
-      cursorPresent: Boolean(cursor),
-      error: serializeQueryError(error)
-    });
-
-    throw new Error('Receipt database query failed. Check the server logs for the underlying Postgres connection/query error.', {
-      cause: error
-    });
-  }
-
-  const hasMore = rows.length > pageSize;
-  const selectedRows = hasMore ? rows.slice(0, pageSize) : rows;
+const hydrateReceiptRows = async (selectedRows: (typeof receipts.$inferSelect)[]): Promise<LoyverseReceipt[]> => {
   const receiptKeys = selectedRows.map((row) => row.receiptKey);
 
   if (!receiptKeys.length) {
-    return { receipts: [], cursor: null, hasMore: false };
+    return [];
   }
 
   const [lineItems, lineModifiers, lineDiscountRows, lineTaxRows, discountRows, taxRows, paymentRows] =
@@ -329,7 +267,7 @@ export const queryReceiptsFromDb = async ({
     paymentsByReceipt.set(row.receiptKey, list);
   }
 
-  const shapedReceipts = selectedRows.map((receiptRow) => {
+  return selectedRows.map((receiptRow) => {
     const rowLineItems = lineItemsByReceipt.get(receiptRow.receiptKey) ?? [];
 
     const lineModifiersByLine = new Map<number, (typeof lineModifiers)[number][]>();
@@ -362,6 +300,76 @@ export const queryReceiptsFromDb = async ({
       payments: paymentsByReceipt.get(receiptRow.receiptKey) ?? []
     });
   });
+};
+
+export const queryReceiptsFromDb = async ({
+  dateFrom,
+  dateTo,
+  storeId,
+  limit,
+  cursor
+}: ReceiptDbQueryInput): Promise<{ receipts: LoyverseReceipt[]; cursor: string | null; hasMore: boolean }> => {
+  const pageSize = Math.min(Math.max(limit ?? 50, 1), MAX_LIMIT);
+  const filters: SQL[] = [];
+
+  const dateFromValue = toDate(dateFrom);
+  if (dateFromValue) {
+    filters.push(gte(receipts.createdAt, dateFromValue));
+  }
+
+  const dateToValue = toDate(dateTo);
+  if (dateToValue) {
+    filters.push(lte(receipts.createdAt, dateToValue));
+  }
+
+  if (storeId) {
+    filters.push(eq(receipts.storeId, storeId));
+  }
+
+  const cursorPayload = parseCursor(cursor);
+  if (cursorPayload) {
+    const cursorDate = new Date(cursorPayload.updatedAt);
+    filters.push(
+      or(
+        lt(receipts.updatedFromEventAt, cursorDate),
+        and(eq(receipts.updatedFromEventAt, cursorDate), lt(receipts.receiptKey, cursorPayload.receiptKey))
+      ) as SQL
+    );
+  }
+
+  const whereClause = filters.length ? and(...filters) : undefined;
+
+  let rows: (typeof receipts.$inferSelect)[];
+
+  try {
+    rows = await db
+      .select()
+      .from(receipts)
+      .where(whereClause)
+      .orderBy(desc(receipts.updatedFromEventAt), desc(receipts.receiptKey))
+      .limit(pageSize + 1);
+  } catch (error) {
+    console.error('[receipts] failed to query receipts', {
+      dateFrom,
+      dateTo,
+      storeId: storeId ?? null,
+      limit: pageSize,
+      cursorPresent: Boolean(cursor),
+      error: serializeQueryError(error)
+    });
+
+    throw new Error('Receipt database query failed. Check the server logs for the underlying Postgres connection/query error.', {
+      cause: error
+    });
+  }
+
+  const hasMore = rows.length > pageSize;
+  const selectedRows = hasMore ? rows.slice(0, pageSize) : rows;
+  if (!selectedRows.length) {
+    return { receipts: [], cursor: null, hasMore: false };
+  }
+
+  const shapedReceipts = await hydrateReceiptRows(selectedRows);
 
   const nextCursor = hasMore
     ? encodeCursor({
@@ -375,4 +383,28 @@ export const queryReceiptsFromDb = async ({
     cursor: nextCursor,
     hasMore
   };
+};
+
+export const queryReceiptByNumberFromDb = async ({
+  receiptNumber,
+  merchantId
+}: {
+  receiptNumber: string;
+  merchantId?: string;
+}): Promise<LoyverseReceipt | null> => {
+  const normalizedReceiptNumber = receiptNumber.trim();
+  if (!normalizedReceiptNumber) return null;
+
+  const filters: SQL[] = [eq(receipts.receiptNumber, normalizedReceiptNumber)];
+  if (merchantId) filters.push(eq(receipts.merchantId, merchantId));
+
+  const rows = await db
+    .select()
+    .from(receipts)
+    .where(and(...filters))
+    .orderBy(desc(receipts.updatedFromEventAt), desc(receipts.receiptKey))
+    .limit(1);
+
+  const shaped = await hydrateReceiptRows(rows);
+  return shaped[0] ?? null;
 };

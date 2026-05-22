@@ -3,6 +3,7 @@ import type { LoyverseReceipt } from '$lib/receipts/types';
 import {
   createAlwaysFailValidationRule,
   createDefaultReceiptValidationSuite,
+  createDiscountTotalOverThresholdRule,
   createHundredPercentDiscountRule,
   createOneHourNotConvertedRule,
   createReceiptValidationSuite,
@@ -86,6 +87,40 @@ describe('receipt validation suite', () => {
     const result = runReceiptValidationSuite(suite, receipt);
 
     expect(result.hasFailures).toBe(false);
+  });
+
+  it('finds total receipt discounts strictly over 400 baht', () => {
+    const suite = createDefaultReceiptValidationSuite();
+    const receipt = createReceipt({ total_discount: 401 });
+
+    const result = runReceiptValidationSuite(suite, receipt);
+
+    expect(result.hasFailures).toBe(true);
+    expect(result.findings.some((finding) => finding.code === 'DISCOUNT_TOTAL_OVER_THRESHOLD')).toBe(true);
+  });
+
+  it('does not flag total receipt discounts equal to 400 baht', () => {
+    const suite = createReceiptValidationSuite([createDiscountTotalOverThresholdRule()]);
+    const receipt = createReceipt({ total_discount: 400 });
+
+    const result = runReceiptValidationSuite(suite, receipt);
+
+    expect(result.hasFailures).toBe(false);
+  });
+
+  it('skips total discount validation for refunds by default', () => {
+    const suite = createReceiptValidationSuite([createDiscountTotalOverThresholdRule()]);
+    const receipt = createReceipt({ receipt_type: 'REFUND', total_discount: 999 });
+
+    const result = runReceiptValidationSuite(suite, receipt);
+
+    expect(result.hasFailures).toBe(false);
+  });
+
+  it('includes total discount validation in the default suite', () => {
+    const suite = createDefaultReceiptValidationSuite();
+
+    expect(suite.rules.some((rule) => rule.code === 'DISCOUNT_TOTAL_OVER_THRESHOLD')).toBe(true);
   });
 
   it('allows the 15-minute grace period before flagging one-hour tickets', () => {

@@ -23,6 +23,7 @@
   });
 
   const toolsMeta = $derived.by(() => getReceiptToolsMeta(receipt));
+  const receiptHref = $derived(`/tools/receipts/${encodeURIComponent(receipt.receipt_number)}`);
   const showNotConvertedFlag = $derived.by(
     () => toolsMeta.hasOneHour && toolsMeta.isNotConverted && Boolean(toolsMeta.orderStartTime)
   );
@@ -35,6 +36,15 @@
       <p class="text-xs uppercase tracking-wide text-[#7a6550]/70">Receipt</p>
       <p class="flex items-center gap-2 font-semibold text-[#2c2925]">
         <span>{formatOptional(receipt.receipt_number)}</span>
+        <a
+          class="inline-flex h-5 w-5 items-center justify-center rounded-full text-xs text-[#7a6550] hover:bg-[#eadfd4] hover:text-[#2c2925]"
+          href={receiptHref}
+          target="_blank"
+          rel="noreferrer"
+          aria-label={`Open receipt ${receipt.receipt_number} in new tab`}
+          title="Open receipt in new tab"
+          onclick={(event) => event.stopPropagation()}
+        >↗</a>
         {#if showNotConvertedFlag}
           <span class="inline-flex rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-700">
             overdue unhandled

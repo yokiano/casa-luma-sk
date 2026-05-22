@@ -19,6 +19,7 @@
   });
 
   const toolsMeta = $derived.by(() => getReceiptToolsMeta(receipt));
+  const receiptHref = $derived(`/tools/receipts/${encodeURIComponent(receipt.receipt_number)}`);
   const showNotConvertedFlag = $derived.by(
     () => toolsMeta.hasOneHour && toolsMeta.isNotConverted && Boolean(toolsMeta.orderStartTime)
   );
@@ -29,7 +30,17 @@
   <header class="flex flex-wrap items-start justify-between gap-4">
     <div>
       <p class="text-xs uppercase tracking-wide text-[#7a6550]/70">Receipt</p>
-      <h3 class="text-lg font-semibold text-[#2c2925]">{formatOptional(receipt.receipt_number)}</h3>
+      <div class="flex items-center gap-2">
+        <h3 class="text-lg font-semibold text-[#2c2925]">{formatOptional(receipt.receipt_number)}</h3>
+        <a
+          class="inline-flex h-6 w-6 items-center justify-center rounded-full text-sm text-[#7a6550] hover:bg-[#eadfd4] hover:text-[#2c2925]"
+          href={receiptHref}
+          target="_blank"
+          rel="noreferrer"
+          aria-label={`Open receipt ${receipt.receipt_number} in new tab`}
+          title="Open receipt in new tab"
+        >↗</a>
+      </div>
       <p class="mt-1 text-sm text-[#7a6550]/80">
         {formatOptional(receipt.receipt_type)} · {itemsCount} items
       </p>
