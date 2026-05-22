@@ -1,10 +1,10 @@
-import { getSuppliers } from '$lib/suppliers.remote';
+import { getSuppliersData } from '$lib/server/suppliers';
 import { COMPANY_LEDGER_PROP_VALUES } from '$lib/notion-sdk/dbs/company-ledger/constants';
 import { ExpenseScanRulesDatabase } from '$lib/notion-sdk/dbs/expense-scan-rules/db';
 import { NOTION_API_KEY } from '$env/static/private';
 
 export const load = async () => {
-  const suppliers = await getSuppliers({ search: undefined });
+  const suppliers = await getSuppliersData();
   const rulesDb = new ExpenseScanRulesDatabase({ notionSecret: NOTION_API_KEY });
   const rules = await rulesDb.query({
     sorts: [{ timestamp: 'last_edited_time', direction: 'descending' }]
