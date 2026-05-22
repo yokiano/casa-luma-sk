@@ -9,7 +9,8 @@ export type EndOfShiftReportsPropertiesPatch = {
   cardPayments?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'number' }>['number']
   notes?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   expectedCash?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'number' }>['number']
-  closedBy?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'people' }>['people']
+  paidOut?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'number' }>['number']
+  closedBy?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   posSummary?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'files' }>['files']
   scanPayments?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'number' }>['number']
   date?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'date' }>['date']
@@ -83,10 +84,32 @@ export class EndOfShiftReportsPatchDTO {
       }
     }
 
+    if (props?.paidOut !== undefined) {
+      this.__data.properties['Paid Out'] = {
+        type: 'number',
+        number: props.paidOut,
+      }
+    }
+
     if (props?.closedBy !== undefined) {
       this.__data.properties['a_n%5C'] = {
-        type: 'people',
-        people: props.closedBy,
+        type: 'rich_text',
+        rich_text: typeof props.closedBy === 'string' 
+          ? [{ type: 'text', text: { content: props.closedBy } }]
+          : Array.isArray(props.closedBy)
+            ? props.closedBy
+            : props.closedBy === null
+              ? []
+              : [
+                  {
+                    type: 'text',
+                    text: {
+                      content: props.closedBy.text,
+                      link: props.closedBy?.url ? { url: props.closedBy.url } : undefined
+                    },
+                    annotations: props.closedBy.annotations
+                  },
+                ]
       }
     }
 

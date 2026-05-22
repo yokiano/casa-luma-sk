@@ -51,7 +51,7 @@ export const END_OF_SHIFT_REPORTS_PROPS_TO_TYPES = {
   "cardPayments": "number",
   "notes": "rich_text",
   "expectedCash": "number",
-  "closedBy": "people",
+  "closedBy": "rich_text",
   "posSummary": "files",
   "scanPayments": "number",
   "date": "date",

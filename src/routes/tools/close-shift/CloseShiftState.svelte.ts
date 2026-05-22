@@ -1,4 +1,6 @@
 import { submitCloseShift } from '$lib/close-shift.remote';
+import { submitCloseShiftExpense } from '$lib/close-shift-expenses/submit.remote';
+import type { ShiftExpenseDraft } from '$lib/close-shift-expenses/types';
 import { SvelteDate } from 'svelte/reactivity';
 
 type Denomination = '1000' | '500' | '100' | '50' | '20' | '10' | '5' | '2' | '1';
@@ -49,6 +51,8 @@ export class CloseShiftState {
   closerName = $state('');
   notes = $state('');
   cashIn = $state<number | undefined>(0);
+  paidOut = $state<number | undefined>(0);
+  expenses = $state<ShiftExpenseDraft[]>([]);
   
   isSubmitting = $state(false);
   error = $state<string | null>(null);
@@ -69,7 +73,15 @@ export class CloseShiftState {
     return total;
   });
 
-  difference = $derived(this.actualCash - numberOrZero(this.expectedCash));
+  expensesTotal = $derived.by(() =>
+    this.expenses.reduce((sum, expense) => sum + numberOrZero(expense.amount), 0)
+  );
+
+  paidOutDifference = $derived(numberOrZero(this.paidOut) - this.expensesTotal);
+
+  adjustedExpectedCash = $derived(numberOrZero(this.expectedCash) - numberOrZero(this.paidOut));
+
+  difference = $derived(this.actualCash - this.adjustedExpectedCash);
 
   // Methods
   normalizeExpectedCash() {
@@ -91,12 +103,49 @@ export class CloseShiftState {
     this.cashIn = numberOrZero(this.cashIn);
   }
 
+  normalizePaidOut() {
+    this.paidOut = numberOrZero(this.paidOut);
+  }
+
+  addExpense(expense?: Partial<ShiftExpenseDraft>) {
+    this.expenses = [
+      ...this.expenses,
+      {
+        id: crypto.randomUUID(),
+        title: '',
+        amount: undefined,
+        category: '',
+        department: '',
+        supplierId: '',
+        notes: '',
+        ...expense
+      }
+    ];
+  }
+
+  updateExpense(id: string, patch: Partial<ShiftExpenseDraft>) {
+    const expense = this.expenses.find((item) => item.id === id);
+    if (!expense) return;
+    Object.assign(expense, patch);
+  }
+
+  removeExpense(id: string) {
+    this.expenses = this.expenses.filter((expense) => expense.id !== id);
+  }
+
+  normalizeExpenseAmount(id: string) {
+    const expense = this.expenses.find((item) => item.id === id);
+    if (!expense) return;
+    expense.amount = numberOrZero(expense.amount);
+  }
+
   sanitizeForSubmit() {
     this.normalizeExpectedCash();
     (Object.keys(this.billCounts) as Denomination[]).forEach((denom) => this.normalizeBillCount(denom));
     this.normalizePaymentMethod('scan');
     this.normalizePaymentMethod('card');
     this.normalizeCashIn();
+    this.normalizePaidOut();
   }
 
   getValidationError() {
@@ -104,6 +153,26 @@ export class CloseShiftState {
     if (numberOrZero(this.paymentMethods.scan) < 0) return 'Scan / transfer total cannot be negative.';
     if (numberOrZero(this.paymentMethods.card) < 0) return 'Credit card total cannot be negative.';
     if (numberOrZero(this.cashIn) < 0) return 'Cash In cannot be negative.';
+    if (numberOrZero(this.paidOut) < 0) return 'Paid Out cannot be negative.';
+
+    for (const expense of this.expenses) {
+      const hasAnyField =
+        expense.title.trim() ||
+        numberOrZero(expense.amount) > 0 ||
+        expense.category ||
+        expense.department ||
+        expense.supplierId ||
+        expense.notes.trim();
+
+      if (!hasAnyField) continue;
+
+      if (!expense.title.trim()) return 'Each shift expense needs a description.';
+      if (numberOrZero(expense.amount) <= 0) {
+        return `Expense "${expense.title}" needs an amount greater than zero.`;
+      }
+      if (!expense.category) return `Expense "${expense.title}" needs a category.`;
+      if (!expense.department) return `Expense "${expense.title}" needs a department.`;
+    }
 
     for (const denom of Object.keys(this.billCounts) as Denomination[]) {
       const count = numberOrZero(this.billCounts[denom]);
@@ -135,17 +204,45 @@ export class CloseShiftState {
     }
     
     try {
+      const shiftDate = new SvelteDate().toISOString();
+      const expenseLines = this.expenses.filter((expense) => numberOrZero(expense.amount) > 0);
+      const expenseSummary = expenseLines.length || numberOrZero(this.paidOut) > 0
+        ? `\n\nPaid Out from shift report: ฿${numberOrZero(this.paidOut).toLocaleString()}\nDetailed cash expenses: ${expenseLines.length} item(s), total ฿${this.expensesTotal.toLocaleString()}\nPaid Out difference: ฿${this.paidOutDifference.toLocaleString()}`
+        : '';
+
       const result = await submitCloseShift({
         expectedCash: numberOrZero(this.expectedCash),
         billCounts: this.billCounts,
         paymentMethods: this.paymentMethods,
         cashIn: numberOrZero(this.cashIn),
+        paidOut: numberOrZero(this.paidOut),
         closerId: this.closerId,
         closerPersonId: this.closerPersonId,
         closerName: this.closerName,
-        notes: this.notes,
-        shiftDate: new SvelteDate().toISOString()
+        notes: `${this.notes}${expenseSummary}`,
+        shiftDate
       });
+
+      for (const expense of expenseLines) {
+        try {
+          await submitCloseShiftExpense({
+            id: expense.id,
+            title: expense.title,
+            amount: numberOrZero(expense.amount),
+            category: expense.category,
+            department: expense.department,
+            supplierId: expense.supplierId || undefined,
+            notes: expense.notes || undefined,
+            shiftDate,
+            closerName: this.closerName,
+            closeShiftReportId: result.id
+          });
+        } catch (e: any) {
+          throw new Error(
+            `Shift report was saved, but expense "${expense.title}" failed to save to the ledger. ${e?.body?.message || e?.message || ''}`
+          );
+        }
+      }
       
       this.success = true;
       return result;
@@ -169,6 +266,8 @@ export class CloseShiftState {
     this.closerName = '';
     this.notes = '';
     this.cashIn = 0;
+    this.paidOut = 0;
+    this.expenses = [];
     this.error = null;
     this.success = false;
     this.isSubmitting = false;

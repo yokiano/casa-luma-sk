@@ -53,7 +53,8 @@ const CloseShiftSchema = v.object({
     card: moneyField('Credit card total')
   }),
   cashIn: moneyField('Cash In'),
-  closerId: v.string(),
+  paidOut: moneyField('Paid Out'),
+  closerId: v.optional(v.string(), ''),
   closerPersonId: v.optional(v.string()),
   closerName: v.string(),
   notes: v.optional(v.string(), ''),
@@ -69,16 +70,6 @@ export const submitCloseShift = command(
     });
 
     try {
-      // Manual mapping fallback for known managers if personId is missing
-      let closedByPersonId = data.closerPersonId;
-      if (!closedByPersonId) {
-        if (data.closerName.toLowerCase().includes('dream')) {
-          closedByPersonId = '2d4d872b-594c-810b-8fed-0002a74b6b26';
-        } else if (data.closerName.toLowerCase().includes('kwan')) {
-          closedByPersonId = 'a75bee8b-461b-429b-b34b-e859a5dbe8e7';
-        }
-      }
-
       // Create a new page in the End of Shift Reports database
       const response = await db.createPage(
         new EndOfShiftReportsPatchDTO({
@@ -86,9 +77,10 @@ export const submitCloseShift = command(
             shiftDate: `Shift: ${new Date(data.shiftDate).toLocaleDateString('en-GB')}`,
             date: { start: data.shiftDate },
             expectedCash: data.expectedCash,
+            paidOut: data.paidOut,
             
-            // Closed By - Use the person ID if we have it
-            closedBy: closedByPersonId ? [{ id: closedByPersonId }] : undefined,
+            // Closed By is a text property in Notion.
+            closedBy: data.closerName.trim() || undefined,
             
             // Bill Counts - Using updated property names from SDK
             bill_1000Baht_1: data.billCounts['1000'],
@@ -109,7 +101,7 @@ export const submitCloseShift = command(
             cashIn: data.cashIn,
             
             // Notes
-            notes: `Closed by: ${data.closerName}${closedByPersonId ? '' : ' (User ID not found)'}\n\n${data.notes}`
+            notes: `Closed by: ${data.closerName}\n\n${data.notes}`
           }
         })
       );

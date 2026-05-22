@@ -3,6 +3,7 @@
   import GeneralInfoSection from '$lib/components/tools/close-shift/sections/GeneralInfoSection.svelte';
   import CashCountSection from '$lib/components/tools/close-shift/sections/CashCountSection.svelte';
   import OtherPaymentsSection from '$lib/components/tools/close-shift/sections/OtherPaymentsSection.svelte';
+  import ShiftExpensesSection from '$lib/components/tools/close-shift/sections/ShiftExpensesSection.svelte';
   import SummarySection from '$lib/components/tools/close-shift/sections/SummarySection.svelte';
   import { toast } from 'svelte-sonner';
   import { fade } from 'svelte/transition';
@@ -11,6 +12,7 @@
   let { data }: { data: PageData } = $props();
 
   const shiftState = new CloseShiftState();
+  let suppliers = $state(data.suppliers);
   let uploadedFile = $state<string | null>(null);
 
   // Define denominations for ordered iteration (High to Low)
@@ -66,13 +68,22 @@
       <!-- Left Column: Inputs -->
       <div class="space-y-8">
         <!-- Step 1: General Info -->
-        <GeneralInfoSection shiftState={shiftState} managers={data.managers} />
+        <GeneralInfoSection shiftState={shiftState} />
 
         <!-- Step 2: Cash Count -->
         <CashCountSection shiftState={shiftState} {denominations} />
 
         <!-- Step 3: Other Payments -->
         <OtherPaymentsSection shiftState={shiftState} />
+
+        <!-- Step 4: Shift Expenses -->
+        <ShiftExpensesSection
+          shiftState={shiftState}
+          categories={data.categories}
+          departments={data.departments}
+          {suppliers}
+          onSupplierCreated={(supplier) => suppliers = [...suppliers, supplier].sort((a, b) => a.name.localeCompare(b.name))}
+        />
       </div>
 
       <!-- Right Column: Summary & Submit -->
