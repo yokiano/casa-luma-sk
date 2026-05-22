@@ -41,6 +41,8 @@
     notConvertedReceipts.reduce((sum, receipt) => sum + (receipt.toolsMeta.oneHourQuantity ?? 0), 0)
   );
 
+  const LOST_BAHT_PER_UNCONVERTED_HOUR = 170;
+
   const unhandledOverdueHours = $derived.by(() => {
     const minutes = notConvertedReceipts.reduce((sum, receipt) => {
       const duration = receipt.toolsMeta.durationMinutes;
@@ -51,6 +53,14 @@
 
     return minutes / 60;
   });
+
+  const unconvertedViolationLostBaht = $derived.by(
+    () => unhandledOverdueHours * LOST_BAHT_PER_UNCONVERTED_HOUR
+  );
+
+  const formatBaht = (value: number) => {
+    return `฿${new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(value)}`;
+  };
 
   const unverifiableOneHourReceipts = $derived.by(() =>
     oneHourReceipts.filter((receipt) => !receipt.toolsMeta.orderStartTime)
@@ -85,7 +95,7 @@
 </script>
 
 <section class="space-y-4">
-  <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-8">
+  <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-9">
     <article class="rounded-xl border border-[#d8c9bb] bg-white/80 p-4 shadow-sm">
       <p class="text-xs uppercase tracking-wide text-[#7a6550]/70">Sales scanned</p>
       <p class="mt-1 text-2xl font-semibold text-[#2c2925]">{saleReceipts.length}</p>
@@ -112,6 +122,12 @@
       <p class="text-[11px] text-red-700/80">Across {notConvertedReceipts.length} receipts</p>
       <p class="text-[11px] text-red-700/80">{percentOfOneHourTickets(unhandledOverdueTickets)} of 1-hour tickets</p>
       <p class="text-[11px] text-red-700/80">{unhandledOverdueHours.toFixed(1)} overdue ticket-hours</p>
+    </article>
+    <article class="rounded-xl border border-red-300 bg-red-100 p-4 shadow-sm">
+      <p class="text-xs uppercase tracking-wide text-red-800/80">Lost from unconverted</p>
+      <p class="mt-1 text-2xl font-semibold text-red-800">{formatBaht(unconvertedViolationLostBaht)}</p>
+      <p class="text-[11px] text-red-800/80">Bottom line for this report</p>
+      <p class="text-[11px] text-red-800/80">{unhandledOverdueHours.toFixed(1)} hours × ฿{LOST_BAHT_PER_UNCONVERTED_HOUR}/hour</p>
     </article>
     <article class="rounded-xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
       <p class="text-xs uppercase tracking-wide text-amber-700/80">Missing start hour</p>
