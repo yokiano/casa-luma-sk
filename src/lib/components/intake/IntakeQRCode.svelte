@@ -2,9 +2,12 @@
   import { onMount } from 'svelte';
   import QRCode from 'qrcode';
   import logo from '$lib/assets/logo/logo-no-sun-transparent.png';
+  import { cn } from '$lib/utils';
 
   const intakeUrl = 'https://www.casalumakpg.com/customer-intake?secret=happycustomer';
   let qrDataUrl = $state('');
+
+  let { hideFromPrint = true } = $props();
 
   onMount(async () => {
     try {
@@ -27,12 +30,24 @@
   }
 </script>
 
-<div class="mt-16 pt-12 border-t border-border/50 flex flex-col items-center space-y-8 no-print">
+<div 
+  class={cn(
+    "flex flex-col items-center space-y-8",
+    hideFromPrint && "mt-16 pt-12 border-t border-border/50 no-print"
+  )}
+>
   <div class="text-center space-y-3">
-    <h3 class="text-2xl font-bold text-primary tracking-tight">Staff: Printable QR Card</h3>
-    <p class="text-muted-foreground max-w-sm mx-auto">
-      You can print this card or right-click to copy and paste it into a document.
-    </p>
+    {#if hideFromPrint}
+    <div class="pt-2">
+      <a 
+        href="/customer-intake/print-qr" 
+        class="text-sm font-medium text-primary hover:underline flex items-center justify-center gap-1"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-printer"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v5"/><rect width="12" height="8" x="6" y="14" rx="1"/></svg>
+        Open dedicated QR print page
+      </a>
+    </div>
+    {/if}
   </div>
 
   <!-- The Card Design -->
@@ -69,25 +84,19 @@
     </div>
   </div>
 
-  <div class="flex flex-col items-center gap-4 pb-12">
+  <div class="flex flex-col items-center gap-4 pb-12 no-print">
     <button 
       onclick={handlePrint}
       class="px-8 py-3 bg-primary text-primary-foreground rounded-full font-bold shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:scale-[0.98] transition-all"
     >
       Print this card
     </button>
-    <div class="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 px-4 py-2 rounded-full">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mouse-pointer-2"><path d="m3 3 7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/><path d="m13 13 6 6"/></svg>
-      <span>Right-click the card and choose <b>"Copy Image"</b> to share it</span>
-    </div>
+    
   </div>
 </div>
 
 <style>
   @media print {
-    :global(body > *:not(.max-w-lg)) {
-      display: none !important;
-    }
     :global(.no-print) {
       display: none !important;
     }

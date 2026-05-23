@@ -1,5 +1,6 @@
 <script lang="ts">
   import logo from "$lib/assets/logo/logo-no-sun-transparent.png";
+  import IntakeQRCode from "$lib/components/intake/IntakeQRCode.svelte";
 </script>
 
 <svelte:head>
@@ -217,3 +218,5 @@
     <p>Thank you for registering with Casa Luma. We look forward to welcoming your family.</p>
   </footer>
 </div>
+
+<IntakeQRCode />
