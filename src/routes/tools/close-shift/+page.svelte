@@ -14,6 +14,7 @@
   const shiftState = new CloseShiftState();
   let suppliers = $state(data.suppliers);
   let uploadedFile = $state<string | null>(null);
+  const submitBlocker = $derived(shiftState.getValidationError({ categories: data.categories, departments: data.departments }));
 
   // Define denominations for ordered iteration (High to Low)
   const denominations = ['1000', '500', '100', '50', '20', '10', '5', '2', '1'] as const;
@@ -21,7 +22,7 @@
   async function handleSubmit() {
     if (shiftState.isSubmitting) return;
 
-    const result = await shiftState.submit();
+    const result = await shiftState.submit({ categories: data.categories, departments: data.departments });
     if (result?.success) {
       toast.success('Shift closed successfully!');
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -88,7 +89,7 @@
 
       <!-- Right Column: Summary & Submit -->
       <div class="space-y-8">
-        <SummarySection shiftState={shiftState} bind:uploadedFile onSubmit={handleSubmit} />
+        <SummarySection shiftState={shiftState} bind:uploadedFile onSubmit={handleSubmit} disabledReason={submitBlocker} />
       </div>
     </div>
   {/if}

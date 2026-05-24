@@ -21,12 +21,14 @@
 		shiftState: CloseShiftStateLike;
 		uploadedFile: string | null;
 		onSubmit: () => void | Promise<void>;
+		disabledReason?: string | null;
 	};
 
 	let {
 		shiftState,
 		uploadedFile = $bindable(null),
 		onSubmit,
+		disabledReason = null,
 	}: Props = $props();
 </script>
 
@@ -108,11 +110,17 @@
 	<div class="pt-4">
 		<button
 			onclick={onSubmit}
-			disabled={shiftState.isSubmitting }
+			disabled={shiftState.isSubmitting || Boolean(disabledReason)}
+			title={disabledReason ?? undefined}
 			class="w-full bg-[#5c4a3d] text-white font-bold py-3 px-4 rounded-xl shadow-md hover:bg-[#4a3b30] hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
 		>
 			{shiftState.isSubmitting ? "Submitting..." : "Submit Report"}
 		</button>
+		{#if disabledReason && !shiftState.error}
+			<p class="text-sm text-amber-700 text-center mt-2 bg-amber-50 p-2 rounded-lg border border-amber-100">
+				{disabledReason}
+			</p>
+		{/if}
 		{#if shiftState.error}
 			<p
 				class="text-sm text-red-500 text-center mt-2 bg-red-50 p-2 rounded-lg border border-red-100"

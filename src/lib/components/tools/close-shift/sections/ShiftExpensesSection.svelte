@@ -181,7 +181,7 @@
 					</div>
 
 					<div class="space-y-1">
-						<label class="text-xs font-medium">Supplier (optional)</label>
+						<span class="text-xs font-medium">Supplier (optional)</span>
 						<SupplierSelector
 							{suppliers}
 							bind:value={expense.supplierId}

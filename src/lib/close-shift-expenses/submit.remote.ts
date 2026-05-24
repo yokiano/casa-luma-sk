@@ -1,6 +1,8 @@
 import { command } from '$app/server';
+import { error } from '@sveltejs/kit';
 import * as v from 'valibot';
 import { createCompanyLedgerExpense } from '$lib/server/ledger-expenses';
+import { COMPANY_LEDGER_PROP_VALUES } from '$lib/notion-sdk/dbs/company-ledger/constants';
 
 const moneyField = v.pipe(
   v.number('Amount must be a number.'),
@@ -22,6 +24,13 @@ const SubmitCloseShiftExpenseSchema = v.object({
 });
 
 export const submitCloseShiftExpense = command(SubmitCloseShiftExpenseSchema, async (data) => {
+  if (!(COMPANY_LEDGER_PROP_VALUES.category as readonly string[]).includes(data.category)) {
+    throw error(400, { message: `Invalid expense category: ${data.category}` });
+  }
+  if (!(COMPANY_LEDGER_PROP_VALUES.department as readonly string[]).includes(data.department)) {
+    throw error(400, { message: `Invalid expense department: ${data.department}` });
+  }
+
   const notes = [
     'source: close-shift',
     data.closeShiftReportId ? `close shift report: ${data.closeShiftReportId}` : undefined,

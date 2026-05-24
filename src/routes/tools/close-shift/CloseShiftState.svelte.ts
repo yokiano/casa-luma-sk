@@ -10,6 +10,11 @@ type PaymentMethods = {
   card: number | undefined;
 };
 
+type SubmitValidationOptions = {
+  categories?: string[];
+  departments?: string[];
+};
+
 const DEFAULT_BILL_COUNTS: BillCounts = {
   '1000': 0,
   '500': 0,
@@ -148,17 +153,23 @@ export class CloseShiftState {
     this.normalizePaidOut();
   }
 
-  getValidationError() {
+  getValidationError(options: SubmitValidationOptions = {}) {
+    if (!this.closerName.trim()) return 'Closer name is required.';
     if (numberOrZero(this.expectedCash) < 0) return 'Expected cash cannot be negative.';
     if (numberOrZero(this.paymentMethods.scan) < 0) return 'Scan / transfer total cannot be negative.';
     if (numberOrZero(this.paymentMethods.card) < 0) return 'Credit card total cannot be negative.';
     if (numberOrZero(this.cashIn) < 0) return 'Cash In cannot be negative.';
     if (numberOrZero(this.paidOut) < 0) return 'Paid Out cannot be negative.';
 
+    const validCategories = new Set(options.categories ?? []);
+    const validDepartments = new Set(options.departments ?? []);
+
     for (const expense of this.expenses) {
+      const title = expense.title.trim();
+      const amount = numberOrZero(expense.amount);
       const hasAnyField =
-        expense.title.trim() ||
-        numberOrZero(expense.amount) > 0 ||
+        title ||
+        amount > 0 ||
         expense.category ||
         expense.department ||
         expense.supplierId ||
@@ -166,12 +177,24 @@ export class CloseShiftState {
 
       if (!hasAnyField) continue;
 
-      if (!expense.title.trim()) return 'Each shift expense needs a description.';
-      if (numberOrZero(expense.amount) <= 0) {
-        return `Expense "${expense.title}" needs an amount greater than zero.`;
+      if (!title) return 'Each shift expense needs a description.';
+      if (amount <= 0) return `Expense "${title}" needs an amount greater than zero.`;
+      if (!expense.category) return `Expense "${title}" needs a category.`;
+      if (!expense.department) return `Expense "${title}" needs a department.`;
+      if (validCategories.size > 0 && !validCategories.has(expense.category)) {
+        return `Expense "${title}" uses an old or invalid category. Please choose a current category.`;
       }
-      if (!expense.category) return `Expense "${expense.title}" needs a category.`;
-      if (!expense.department) return `Expense "${expense.title}" needs a department.`;
+      if (validDepartments.size > 0 && !validDepartments.has(expense.department)) {
+        return `Expense "${title}" uses an old or invalid department. Please choose a current department.`;
+      }
+    }
+
+    if (this.expensesTotal > 0 && numberOrZero(this.paidOut) <= 0) {
+      return 'Paid Out from the POS shift report is required when shift expenses are entered.';
+    }
+
+    if (this.expensesTotal > 0 && this.paidOutDifference !== 0 && !this.notes.trim()) {
+      return 'Please explain the Paid Out difference in Notes before submitting.';
     }
 
     for (const denom of Object.keys(this.billCounts) as Denomination[]) {
@@ -192,11 +215,11 @@ export class CloseShiftState {
     this.billCounts = { ...DEFAULT_BILL_COUNTS };
   }
 
-  async submit() {
+  async submit(options: SubmitValidationOptions = {}) {
     this.isSubmitting = true;
     this.error = null;
     this.sanitizeForSubmit();
-    const validationError = this.getValidationError();
+    const validationError = this.getValidationError(options);
     if (validationError) {
       this.error = validationError;
       this.isSubmitting = false;
