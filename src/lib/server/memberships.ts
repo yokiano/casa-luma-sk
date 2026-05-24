@@ -19,6 +19,7 @@ type MembershipItem = {
 	endDate: string | null;
 	status: string | null;
 	notes: string | null;
+	receipt: string | null;
 	createdTime: string;
 	family: FamilySummary | null;
 };
@@ -79,6 +80,7 @@ const toMembershipItem = (
 		endDate: dto.properties.endDate?.start ?? null,
 		status: getFormulaText(dto.properties.status) ?? null,
 		notes: dto.properties.notes?.text ?? null,
+		receipt: dto.properties.receipt ?? null,
 		createdTime: dto.createdTime,
 		family
 	};

@@ -111,6 +111,82 @@ describe('incident telegram payload formatter', () => {
     expect(payload.body).toContain('• Discount Total Over ฿400');
   });
 
+  it('formats membership validation incidents with concise details', () => {
+    const payload = buildIncidentAlertPayload({
+      source: 'receipt-webhook',
+      code: 'RECEIPT_WEBHOOK_VALIDATION_RULES_FAILED',
+      severity: 'critical',
+      message: 'fallback message',
+      context: {
+        receiptNumber: 'R-MEM',
+        failedChecks: ['MEMBERSHIP_ENTRY_WITHOUT_VALID_MEMBERSHIP'],
+        primaryFindingCode: 'MEMBERSHIP_ENTRY_WITHOUT_VALID_MEMBERSHIP',
+        primaryFindingDetails: {
+          reason: 'no_active_membership',
+          customerId: 'cust-1',
+          checkedDate: '2026-01-12',
+          memberEntryQuantity: 2,
+          matchedFamily: { id: 'fam-1', name: 'Test Family' }
+        }
+      }
+    });
+
+    expect(payload.body.startsWith('<b>Receipt Violation — Membership Entry Without Valid Membership</b>')).toBe(true);
+    expect(payload.body).toContain('Reason: no active membership');
+    expect(payload.body).toContain('Customer: cust-1');
+    expect(payload.body).toContain('Family: Test Family');
+  });
+
+  it('formats flexi validation incidents with balance details', () => {
+    const payload = buildIncidentAlertPayload({
+      source: 'receipt-webhook',
+      code: 'RECEIPT_WEBHOOK_VALIDATION_RULES_FAILED',
+      severity: 'critical',
+      message: 'fallback message',
+      context: {
+        receiptNumber: 'R-FLX',
+        failedChecks: ['FLEXI_ENTRY_WITHOUT_AVAILABLE_PASS'],
+        primaryFindingCode: 'FLEXI_ENTRY_WITHOUT_AVAILABLE_PASS',
+        primaryFindingDetails: {
+          reason: 'insufficient_remaining_entries',
+          customerId: 'cust-1',
+          currentReceiptEntries: 1,
+          entriesPurchased: 11,
+          entriesUsedIncludingCurrent: 12,
+          remainingBeforeCurrentReceipt: 0,
+          remainingAfterCurrentReceipt: -1
+        }
+      }
+    });
+
+    expect(payload.body.startsWith('<b>Receipt Violation — Flexi Entry Without Available Pass</b>')).toBe(true);
+    expect(payload.body).toContain('Remaining: before 0; after -1');
+    expect(payload.body).toContain('Flexi history: purchased 11; used 12');
+  });
+
+  it('formats missing customer validation incidents with item details', () => {
+    const payload = buildIncidentAlertPayload({
+      source: 'receipt-webhook',
+      code: 'RECEIPT_WEBHOOK_VALIDATION_RULES_FAILED',
+      severity: 'critical',
+      message: 'fallback message',
+      context: {
+        receiptNumber: 'R-NOCUST',
+        failedChecks: ['RECEIPT_CLOSED_WITHOUT_CUSTOMER'],
+        primaryFindingCode: 'RECEIPT_CLOSED_WITHOUT_CUSTOMER',
+        primaryFindingDetails: {
+          totalMoney: 600,
+          itemCount: 2,
+          items: [{ itemName: 'Member Valid Visit' }, { itemName: 'Coffee' }]
+        }
+      }
+    });
+
+    expect(payload.body.startsWith('<b>Receipt Alert — Closed Without Customer</b>')).toBe(true);
+    expect(payload.body).toContain('Total: 600 THB');
+    expect(payload.body).toContain('Item names: Member Valid Visit, Coffee');
+  });
+
   it('omits non-http links for validation incidents', () => {
     const payload = buildIncidentAlertPayload({
       source: 'receipt-webhook',
@@ -126,6 +202,54 @@ describe('incident telegram payload formatter', () => {
     });
 
     expect(payload.body).not.toContain('<a href=');
+  });
+
+  it('formats successful membership automation incidents as success messages', () => {
+    const payload = buildIncidentAlertPayload({
+      source: 'receipt-webhook',
+      code: 'MEMBERSHIP_CREATED',
+      severity: 'info',
+      message: 'Created Notion membership from Loyverse receipt.',
+      context: {
+        receiptNumber: 'R-MEM-AUTO',
+        familyName: 'Test Family',
+        type: 'Weekly',
+        numberOfKids: 3,
+        startDate: '2026-01-12',
+        endDate: '2026-01-18',
+        membershipName: 'Test Family - Weekly - 3 kids',
+        receiptUrl: 'https://admin.example.com/tools/receipts/R-MEM-AUTO',
+        reportUrl: 'https://admin.example.com/tools/incidents/99'
+      }
+    });
+
+    expect(payload.title).toBe('✅ Membership automation');
+    expect(payload.body).toContain('<b>Membership Created Automatically</b>');
+    expect(payload.body).toContain('🧾 Receipt: <code>R-MEM-AUTO</code>');
+    expect(payload.body).toContain('Family: Test Family');
+    expect(payload.body).toContain('Type: Weekly');
+    expect(payload.body).toContain('Kids: 3');
+    expect(payload.body).toContain('Dates: 2026-01-12 → 2026-01-18');
+    expect(payload.body).toContain('<a href="https://admin.example.com/tools/receipts/R-MEM-AUTO">Open receipt</a>');
+  });
+
+  it('formats membership automation review incidents', () => {
+    const payload = buildIncidentAlertPayload({
+      source: 'receipt-webhook',
+      code: 'MEMBERSHIP_CREATION_REFUND_SKIPPED',
+      severity: 'warning',
+      message: 'Refund receipt skipped.',
+      context: {
+        receiptNumber: 'R-REFUND',
+        reason: 'refund_receipt',
+        itemId: 'weekly-1'
+      }
+    });
+
+    expect(payload.title).toBe('⚠️ Membership automation');
+    expect(payload.body).toContain('<b>Membership Automation Needs Review</b>');
+    expect(payload.body).toContain('Reason: refund receipt');
+    expect(payload.body).toContain('Item ID: weekly-1');
   });
 
   it('falls back to incident message when code summary is unknown', () => {

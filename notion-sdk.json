@@ -23,6 +23,14 @@
     {
       "name": "Branding Assets",
       "id": "36b36604-dae8-440a-813d-802610ac868a"
+    },
+    {
+      "name": "Department Category Mapping",
+      "id": "9a4c14fe-df4b-44dd-a928-b1a06ee759b6"
+    },
+    {
+      "name": "HR Documents ",
+      "id": "364fc77d-b4f3-8059-9605-f39574660507"
     }
   ],
   "databases": {
@@ -1482,7 +1490,7 @@
         },
         "a_n%5C": {
           "_name": "Closed By",
-          "_type": "people",
+          "_type": "rich_text",
           "varName": "closedBy",
           "readOnly": false
         },
@@ -1586,6 +1594,12 @@
           "_name": "Cash In",
           "_type": "number",
           "varName": "cashIn",
+          "readOnly": false
+        },
+        "al%3ED": {
+          "_name": "Paid Out",
+          "_type": "number",
+          "varName": "paidOut",
           "readOnly": false
         }
       }
@@ -1842,6 +1856,12 @@
           "_name": "Name",
           "_type": "title",
           "varName": "name",
+          "readOnly": false
+        },
+        "SqTk": {
+          "_name": "Receipt",
+          "_type": "url",
+          "varName": "receipt",
           "readOnly": false
         }
       }

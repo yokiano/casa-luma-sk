@@ -1,4 +1,4 @@
-import type { MembershipsResponse } from "./types"
+import { MembershipsResponse } from "./types"
 
 export class MembershipsResponseDTO {
   __data: MembershipsResponse
@@ -70,6 +70,7 @@ export class MembershipsPropertiesResponseDTO {
       numberOfKids: this.__props['Number of Kids'],
       notes: this.__props['Notes'],
       name: this.__props['Name'],
+      receipt: this.__props['Receipt'],
     }
   }
 
@@ -117,5 +118,9 @@ export class MembershipsPropertiesResponseDTO {
       links: this.__props['Name']?.title ? this.__props['Name'].title.filter((item) => item.href?.length).map((item) => item.href) : [],
       title: this.__props['Name']?.title,
     }
+  }
+
+  get receipt() {
+    return this.__props['Receipt']?.url
   }
 }

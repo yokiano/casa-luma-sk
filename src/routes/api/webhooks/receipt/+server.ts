@@ -7,7 +7,9 @@ import {
     createDefaultReceiptValidationSuite,
     runReceiptValidationSuite
 } from '$lib/receipts/validation';
-import { incidentReporter } from '$lib/server/incidents';
+import { incidentReporter, type IncidentSeverity } from '$lib/server/incidents';
+import { createDefaultReceiptAutomationSuite } from '$lib/server/membership-automation';
+import { runReceiptAutomationSuite, type ReceiptAutomationResult } from '$lib/receipts/automations';
 
 const getReceiptValidationSuite = () => {
     const forceFail = env.RECEIPT_VALIDATION_FORCE_FAIL === '1';
@@ -75,14 +77,34 @@ const hasErrorCode = (error: unknown, code: string): boolean => {
     return hasErrorCode(error.cause, code);
 };
 
-const buildReceiptUrl = (receiptNumber: string): string | undefined => {
-    const base = env.INCIDENT_REPORT_BASE_URL;
+const getToolsBaseUrl = (): string | undefined => {
+    const base = env.INCIDENT_REPORT_BASE_URL?.trim().replace(/\/$/, '');
     if (!base) return undefined;
-    return `${base.replace(/\/$/, '')}/tools/receipts/${encodeURIComponent(receiptNumber)}`;
+    return base.replace(/\/tools\/incidents$/, '');
+};
+
+const buildReceiptUrl = (receiptNumber: string): string | undefined => {
+    const base = getToolsBaseUrl();
+    if (!base) return undefined;
+    return `${base}/tools/receipts/${encodeURIComponent(receiptNumber)}`;
 };
 
 const getPrimaryFinding = (findings: { code: string; severity: string; message: string; details?: Record<string, unknown> }[]) => {
     return findings.find((finding) => finding.severity === 'critical') ?? findings[0] ?? null;
+};
+
+const getAutomationIncidentSeverity = (result: ReceiptAutomationResult): IncidentSeverity | null => {
+    if (result.status === 'completed' && result.code === 'MEMBERSHIP_CREATED') return 'info';
+    if (result.status === 'failed') return 'critical';
+    if (result.status === 'skipped' && typeof result.details?.incidentCode === 'string') return 'warning';
+    return null;
+};
+
+const getAutomationIncidentCode = (result: ReceiptAutomationResult) => {
+    if (result.code === 'MEMBERSHIP_CREATED') return 'MEMBERSHIP_CREATED';
+    return typeof result.details?.incidentCode === 'string'
+        ? result.details.incidentCode
+        : 'RECEIPT_WEBHOOK_AUTOMATION_FAILED';
 };
 
 const pickKeys = (value: unknown, keys: string[]): Record<string, unknown> | undefined => {
@@ -121,6 +143,34 @@ const getCompactFindingDetails = (finding: { code: string; details?: Record<stri
                 'thresholdMinutes',
                 'timeZone',
                 'exceedsUnconvertedThreshold'
+            ]);
+        case 'MEMBERSHIP_ENTRY_WITHOUT_VALID_MEMBERSHIP':
+            return pickKeys(finding.details, [
+                'reason',
+                'checkedDate',
+                'customerId',
+                'memberEntryQuantity',
+                'matchedFamily',
+                'activeMembershipCount'
+            ]);
+        case 'FLEXI_ENTRY_WITHOUT_AVAILABLE_PASS':
+            return pickKeys(finding.details, [
+                'reason',
+                'checkedDate',
+                'customerId',
+                'currentReceiptEntries',
+                'cardsPurchased',
+                'entriesPurchased',
+                'entriesUsedIncludingCurrent',
+                'remainingBeforeCurrentReceipt',
+                'remainingAfterCurrentReceipt'
+            ]);
+        case 'RECEIPT_CLOSED_WITHOUT_CUSTOMER':
+            return pickKeys(finding.details, [
+                'receiptType',
+                'totalMoney',
+                'itemCount',
+                'items'
             ]);
         default:
             return undefined;
@@ -181,13 +231,57 @@ export const POST: RequestHandler = async ({ request }) => {
         }
 
         const results = [];
+        const automationResults: ReceiptAutomationResult[] = [];
         for (const receiptPayload of receiptPayloads) {
             const result = await ingestReceiptWebhook(receiptPayload);
             results.push(result);
 
             if (result.status === 'processed') {
+                const automationSuite = createDefaultReceiptAutomationSuite();
+                const receiptUrl = buildReceiptUrl(receiptPayload.items.receipt_number);
+                const automationReport = await runReceiptAutomationSuite(automationSuite, receiptPayload.items, {
+                    merchantId: receiptPayload.merchant_id,
+                    receiptKey: result.receiptKey,
+                    eventType: receiptPayload.type,
+                    eventCreatedAt: receiptPayload.created_at,
+                    receiptUrl
+                });
+                automationResults.push(...automationReport.results);
+
+                for (const automationResult of automationReport.results) {
+                    const severity = getAutomationIncidentSeverity(automationResult);
+                    if (!severity) continue;
+
+                    console.warn('[receipt-webhook] automation issue', {
+                        receiptKey: result.receiptKey,
+                        automationCode: automationResult.code,
+                        status: automationResult.status,
+                        details: automationResult.details
+                    });
+
+                    await incidentReporter.report({
+                        source: 'receipt-webhook',
+                        code: getAutomationIncidentCode(automationResult),
+                        severity,
+                        message: automationResult.message,
+                        merchantId: receiptPayload.merchant_id,
+                        receiptKey: result.receiptKey,
+                        context: {
+                            automationCode: automationResult.code,
+                            receiptNumber: receiptPayload.items.receipt_number,
+                            receiptUrl,
+                            customerId: typeof receiptPayload.items.customer_id === 'string' ? receiptPayload.items.customer_id : undefined,
+                            ...automationResult.details
+                        },
+                        payload: {
+                            receipt: receiptPayload.items,
+                            automationResult
+                        }
+                    });
+                }
+
                 const validationSuite = getReceiptValidationSuite();
-                const validationReport = runReceiptValidationSuite(validationSuite, receiptPayload.items, {
+                const validationReport = await runReceiptValidationSuite(validationSuite, receiptPayload.items, {
                     merchantId: receiptPayload.merchant_id,
                     receiptKey: result.receiptKey,
                     eventType: receiptPayload.type,
@@ -222,6 +316,7 @@ export const POST: RequestHandler = async ({ request }) => {
                         context: {
                             receiptNumber,
                             receiptUrl: buildReceiptUrl(receiptNumber),
+                            customerId: typeof receiptPayload.items.customer_id === 'string' ? receiptPayload.items.customer_id : undefined,
                             failedChecks,
                             primaryFindingCode: primaryFinding?.code,
                             primaryFindingMessage: primaryFinding?.message,
@@ -246,10 +341,15 @@ export const POST: RequestHandler = async ({ request }) => {
             acc[result.status] = (acc[result.status] ?? 0) + 1;
             return acc;
         }, {});
+        const automationStatusCounts = automationResults.reduce<Record<string, number>>((acc, result) => {
+            acc[result.status] = (acc[result.status] ?? 0) + 1;
+            return acc;
+        }, {});
 
         console.log('[receipt-webhook] processed', {
             receiptCount: results.length,
             statusCounts,
+            automationStatusCounts,
             receiptKeys: results.map((result) => result.receiptKey)
         });
 
@@ -257,7 +357,8 @@ export const POST: RequestHandler = async ({ request }) => {
         return json({
             received: true,
             status: results.length === 1 ? results[0].status : 'processed_batch',
-            statusCounts
+            statusCounts,
+            automationStatusCounts
         });
     } catch (err) {
         const isInvalidJson = err instanceof SyntaxError && rawPayload === undefined;

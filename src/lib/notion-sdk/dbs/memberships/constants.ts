@@ -14,7 +14,8 @@ export const MEMBERSHIPS_PROPS_TO_IDS = {
   "endDate": "iSVs",
   "numberOfKids": "kYoY",
   "notes": "%7Caqz",
-  "name": "title"
+  "name": "title",
+  "receipt": "SqTk"
 } as const
 export const MEMBERSHIPS_IDS_TO_PROPS = {
   "GY%3E%3F": "type",
@@ -25,7 +26,8 @@ export const MEMBERSHIPS_IDS_TO_PROPS = {
   "iSVs": "endDate",
   "kYoY": "numberOfKids",
   "%7Caqz": "notes",
-  "title": "name"
+  "title": "name",
+  "SqTk": "receipt"
 } as const
 export const MEMBERSHIPS_PROPS_TO_TYPES = {
   "type": "select",
@@ -36,7 +38,8 @@ export const MEMBERSHIPS_PROPS_TO_TYPES = {
   "endDate": "date",
   "numberOfKids": "number",
   "notes": "rich_text",
-  "name": "title"
+  "name": "title",
+  "receipt": "url"
 } as const
 
   export type MembershipsDTOProperties = keyof typeof MEMBERSHIPS_PROPS_TO_IDS

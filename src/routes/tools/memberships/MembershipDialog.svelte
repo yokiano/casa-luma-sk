@@ -22,6 +22,7 @@
 		endDate: string | null;
 		status: string | null;
 		notes: string | null;
+		receipt: string | null;
 		createdTime: string;
 		family: FamilySummary | null;
 	};

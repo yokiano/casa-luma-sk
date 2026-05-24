@@ -3,7 +3,7 @@
 	import { toast } from 'svelte-sonner';
 	import { getMemberships, deleteMembership, getFamilyDetails } from '$lib/memberships.remote';
 	import MembershipDialog from './MembershipDialog.svelte';
-	import { ChevronDown, ChevronUp, MoreVertical, Pencil, Trash2, Loader2, ArrowUpDown, CalendarDays } from 'lucide-svelte';
+	import { ChevronDown, ChevronUp, MoreVertical, Pencil, Trash2, Loader2, ArrowUpDown, CalendarDays, ExternalLink } from 'lucide-svelte';
 
 	type FamilySummary = {
 		id: string;
@@ -21,6 +21,7 @@
 		endDate: string | null;
 		status: string | null;
 		notes: string | null;
+		receipt: string | null;
 		createdTime: string;
 		family: FamilySummary | null;
 	};
@@ -39,8 +40,8 @@
 	let loadingFamilyDetails = $state<Set<string>>(new Set());
 
 	// Sorting state
-	let sortBy = $state<'endDate' | 'createdTime' | 'familyName'>('endDate');
-	let sortOrder = $state<'asc' | 'desc'>('asc');
+	let sortBy = $state<'endDate' | 'createdTime' | 'familyName'>('createdTime');
+	let sortOrder = $state<'asc' | 'desc'>('desc');
 
 	const sortedMemberships = $derived(
 		[...memberships].sort((a, b) => {
@@ -271,46 +272,9 @@
 		<MembershipDialog mode="create" onSaved={handleCreated} />
 	</div>
 
-	<div class="flex flex-col gap-3 rounded-3xl border border-[#e3d7cc] bg-white/80 p-4 sm:flex-row sm:items-center">
-		<div class="flex-1">
-			<label for="search-input" class="text-xs font-semibold uppercase tracking-wide text-[#7a6550]">Search</label>
-			<input
-				id="search-input"
-				type="text"
-				placeholder="Family name, customer code, or phone number"
-				class="mt-2 h-11 w-full rounded-2xl border border-[#d9d0c7] bg-white px-4 text-sm focus:border-[#7a6550] focus:outline-none focus:ring-2 focus:ring-[#cdb69f]/40"
-				value={searchValue}
-				oninput={(event) => handleSearchInput((event.target as HTMLInputElement).value)}
-			/>
-		</div>
-		<div class="sm:w-56">
-			<label for="sort-select" class="text-xs font-semibold uppercase tracking-wide text-[#7a6550]">Sort By</label>
-			<div class="mt-2 flex gap-1">
-				<select
-					id="sort-select"
-					class="h-11 flex-1 rounded-2xl border border-[#d9d0c7] bg-white px-3 text-sm focus:border-[#7a6550] focus:outline-none focus:ring-2 focus:ring-[#cdb69f]/40"
-					value={sortBy}
-					onchange={(e) => (sortBy = (e.target as HTMLSelectElement).value as any)}
-				>
-					<option value="endDate">Validity (End Date)</option>
-					<option value="createdTime">Creation Date</option>
-					<option value="familyName">Family Name</option>
-				</select>
-				<button
-					type="button"
-					class="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#d9d0c7] bg-white text-[#7a6550] hover:bg-[#fdfbf9]"
-					onclick={() => (sortOrder = sortOrder === 'asc' ? 'desc' : 'asc')}
-					title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
-				>
-					<ArrowUpDown class="h-4 w-4" />
-				</button>
-			</div>
-		</div>
-	</div>
-
 	<div class="flex flex-col gap-4 rounded-3xl border border-[#e3d7cc] bg-[#faf6f2] p-4">
 		<div>
-			<p class="text-xs font-semibold uppercase tracking-wide text-[#7a6550]">Flexi Pass</p>
+			<p class="text-xs font-semibold uppercase tracking-wide text-[#7a6550]">Validity calculation helper</p>
 		</div>
 		<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 			<div>
@@ -337,6 +301,43 @@
 				<CalendarDays class="h-4 w-4" />
 				<span>Calculate Flexi 60 Days</span>
 			</button>
+		</div>
+	</div>
+
+	<div class="flex flex-col gap-3 rounded-3xl border border-[#e3d7cc] bg-white/80 p-4 sm:flex-row sm:items-center">
+		<div class="flex-1">
+			<label for="search-input" class="text-xs font-semibold uppercase tracking-wide text-[#7a6550]">Search</label>
+			<input
+				id="search-input"
+				type="text"
+				placeholder="Family name, customer code, or phone number"
+				class="mt-2 h-11 w-full rounded-2xl border border-[#d9d0c7] bg-white px-4 text-sm focus:border-[#7a6550] focus:outline-none focus:ring-2 focus:ring-[#cdb69f]/40"
+				value={searchValue}
+				oninput={(event) => handleSearchInput((event.target as HTMLInputElement).value)}
+			/>
+		</div>
+		<div class="sm:w-56">
+			<label for="sort-select" class="text-xs font-semibold uppercase tracking-wide text-[#7a6550]">Sort By</label>
+			<div class="mt-2 flex gap-1">
+				<select
+					id="sort-select"
+					class="h-11 flex-1 rounded-2xl border border-[#d9d0c7] bg-white px-3 text-sm focus:border-[#7a6550] focus:outline-none focus:ring-2 focus:ring-[#cdb69f]/40"
+					value={sortBy}
+					onchange={(e) => (sortBy = (e.target as HTMLSelectElement).value as any)}
+				>
+					<option value="createdTime">Creation Date</option>
+					<option value="endDate">Validity (End Date)</option>
+					<option value="familyName">Family Name</option>
+				</select>
+				<button
+					type="button"
+					class="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#d9d0c7] bg-white text-[#7a6550] hover:bg-[#fdfbf9]"
+					onclick={() => (sortOrder = sortOrder === 'asc' ? 'desc' : 'asc')}
+					title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+				>
+					<ArrowUpDown class="h-4 w-4" />
+				</button>
+			</div>
 		</div>
 	</div>
 
@@ -394,7 +395,12 @@
 								{/if}
 								{#if membership.startDate}
 									<span class="rounded-full bg-[#e3d7cc]/50 px-2.5 py-0.5 text-xs font-medium text-[#5c4a3d]">
-										{formatDate(membership.startDate)}
+										Start {formatDate(membership.startDate)}
+									</span>
+								{/if}
+								{#if membership.endDate}
+									<span class="rounded-full bg-[#e3d7cc]/50 px-2.5 py-0.5 text-xs font-medium text-[#5c4a3d]">
+										End {formatDate(membership.endDate)}
 									</span>
 								{/if}
 								{#if membership.status && membership.status !== '—'}
@@ -411,6 +417,19 @@
 								{/if}
 							</div>
 						</button>
+
+						{#if membership.receipt}
+							<a
+								href={membership.receipt}
+								target="_blank"
+								rel="noreferrer"
+								class="inline-flex items-center gap-1 rounded-full border border-[#d9d0c7] bg-white px-3 py-2 text-xs font-medium text-[#7a6550] transition hover:bg-[#fdfbf9]"
+								title="Open linked receipt"
+							>
+								<ExternalLink class="h-3.5 w-3.5" />
+								<span class="hidden sm:inline">Receipt</span>
+							</a>
+						{/if}
 
 						<!-- Actions menu -->
 						<div class="relative" data-actions-menu>
@@ -502,6 +521,15 @@
 									<p class="mt-1">{formatDate(membership.createdTime)}</p>
 								</div>
 							</div>
+
+							{#if membership.receipt}
+								<div class="mt-4 rounded-2xl border border-[#f0e6db] bg-[#fdfbf9] px-4 py-3 text-sm text-[#5c4a3d]/90">
+									<p class="text-xs uppercase tracking-wide text-[#7a6550]/60">Receipt</p>
+									<a href={membership.receipt} target="_blank" rel="noreferrer" class="mt-1 inline-flex items-center gap-1 font-medium text-[#7a6550] underline-offset-2 hover:underline">
+										Open linked receipt <ExternalLink class="h-3.5 w-3.5" />
+									</a>
+								</div>
+							{/if}
 
 							{#if membership.notes}
 								<div class="mt-4 rounded-2xl border border-[#f0e6db] bg-[#faf6f2] px-4 py-3 text-sm text-[#5c4a3d]/90">

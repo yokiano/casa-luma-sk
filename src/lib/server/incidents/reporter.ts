@@ -11,7 +11,13 @@ import type {
   ReportIncidentResult
 } from './types';
 
-const shouldNotifyCriticalOnly = (severity: IncidentSeverity) => severity === 'critical';
+const shouldNotifyByDefault = (severity: IncidentSeverity, input?: ReportIncidentInput) => {
+  if (severity === 'critical') return true;
+  return (
+    typeof input?.code === 'string' &&
+    (input.code === 'MEMBERSHIP_CREATED' || input.code.startsWith('MEMBERSHIP_CREATION_'))
+  );
+};
 
 const buildReportUrl = (incidentId: number | null): string | null => {
   if (incidentId === null) return null;
@@ -69,7 +75,7 @@ const logIncident = (input: ReportIncidentInput) => {
 
 export const createIncidentReporter = (options: IncidentReporterOptions = {}) => {
   const publisher = options.publisher ?? null;
-  const shouldNotify = options.shouldNotify ?? shouldNotifyCriticalOnly;
+  const shouldNotify = options.shouldNotify;
 
   return {
     report: async (input: ReportIncidentInput): Promise<ReportIncidentResult> => {
@@ -101,7 +107,11 @@ export const createIncidentReporter = (options: IncidentReporterOptions = {}) =>
         console.error('[incident] failed to persist incident', persistError);
       }
 
-      if (!publisher || !shouldNotify(input.severity)) {
+      const shouldSendNotification = shouldNotify
+        ? shouldNotify(input.severity)
+        : shouldNotifyByDefault(input.severity, input);
+
+      if (!publisher || !shouldSendNotification) {
         return {
           incidentId,
           persisted: incidentId !== null,

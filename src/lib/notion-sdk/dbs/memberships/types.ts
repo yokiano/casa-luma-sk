@@ -1,5 +1,5 @@
-import type { WithOptional, Join, PathsToStringProps } from '../../core/types/helper.types'
-import type {
+import { WithOptional, Join, PathsToStringProps } from '../../core/types/helper.types'
+import {
 DatabaseObjectResponse,
 StringRequest,
 DatePropertyItemObjectResponse,
@@ -9,6 +9,7 @@ RelationPropertyItemObjectResponse,
 RichTextPropertyItemObjectResponse,
 SelectPropertyItemObjectResponse,
 TitlePropertyItemObjectResponse,
+UrlPropertyItemObjectResponse,
 ExistencePropertyFilter,
 QueryDatabaseBodyParameters,
 TimestampCreatedTimeFilter,
@@ -19,7 +20,7 @@ NumberPropertyFilter,
 RelationPropertyFilter,
 TextPropertyFilter
 } from '../../core/types/notion-api.types'
-import type { MEMBERSHIPS_PROPS_TO_IDS } from './constants'
+import { MEMBERSHIPS_PROPS_TO_IDS } from './constants'
 
 export interface MembershipsResponse extends WithOptional<Omit<DatabaseObjectResponse, 'properties'>, 'title'| 'description'| 'is_inline'| 'url'| 'public_url'> {
   properties: {
@@ -31,7 +32,8 @@ export interface MembershipsResponse extends WithOptional<Omit<DatabaseObjectRes
     "End Date": DatePropertyItemObjectResponse,
     "Number of Kids": NumberPropertyItemObjectResponse,
     "Notes": RichTextPropertyItemObjectResponse,
-    "Name": TitlePropertyItemObjectResponse
+    "Name": TitlePropertyItemObjectResponse,
+    "Receipt": UrlPropertyItemObjectResponse
   }
 }
 
@@ -58,8 +60,9 @@ type MembershipsEndDatePropertyFilter = DatePropertyFilter
 type MembershipsNumberOfKidsPropertyFilter = NumberPropertyFilter
 type MembershipsNotesPropertyFilter = TextPropertyFilter
 type MembershipsNamePropertyFilter = TextPropertyFilter
+type MembershipsReceiptPropertyFilter = TextPropertyFilter
 
-export type MembershipsPropertyFilter = { type: MembershipsTypePropertyFilter } | { hasSiblingDiscount: MembershipsHasSiblingDiscountPropertyFilter } | { status: MembershipsStatusPropertyFilter } | { family: MembershipsFamilyPropertyFilter } | { startDate: MembershipsStartDatePropertyFilter } | { endDate: MembershipsEndDatePropertyFilter } | { numberOfKids: MembershipsNumberOfKidsPropertyFilter } | { notes: MembershipsNotesPropertyFilter } | { name: MembershipsNamePropertyFilter }
+export type MembershipsPropertyFilter = { type: MembershipsTypePropertyFilter } | { hasSiblingDiscount: MembershipsHasSiblingDiscountPropertyFilter } | { status: MembershipsStatusPropertyFilter } | { family: MembershipsFamilyPropertyFilter } | { startDate: MembershipsStartDatePropertyFilter } | { endDate: MembershipsEndDatePropertyFilter } | { numberOfKids: MembershipsNumberOfKidsPropertyFilter } | { notes: MembershipsNotesPropertyFilter } | { name: MembershipsNamePropertyFilter } | { receipt: MembershipsReceiptPropertyFilter }
 
 export type MembershipsQuery = Omit<QueryDatabaseBodyParameters, 'filter' | 'sorts'> & {
   sorts?: Array<

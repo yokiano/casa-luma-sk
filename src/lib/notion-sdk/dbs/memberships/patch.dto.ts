@@ -1,5 +1,5 @@
-import type { MembershipsResponse } from "./types"
-import type { UpdatePageBodyParameters,
+import { MembershipsResponse } from "./types"
+import { UpdatePageBodyParameters,
 RichTextItemRequest
 } from '../../core/types/notion-api.types'
 
@@ -15,6 +15,7 @@ export type MembershipsPropertiesPatch = {
   numberOfKids?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'number' }>['number']
   notes?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   name?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
+  receipt?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'url' }>['url']
 }
 
   
@@ -125,6 +126,13 @@ export class MembershipsPatchDTO {
                     annotations: props.name.annotations
                   },
                 ]
+      }
+    }
+
+    if (props?.receipt !== undefined) {
+      this.__data.properties['SqTk'] = {
+        type: 'url',
+        url: props.receipt,
       }
     }
   }

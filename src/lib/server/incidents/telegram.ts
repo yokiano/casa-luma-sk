@@ -16,6 +16,10 @@ const VALIDATION_LABEL_BY_CODE: Record<string, string> = {
   ONE_HOUR_NOT_CONVERTED: 'Receipt Violation — One Hour Not Converted',
   DISCOUNT_100_PRESENT: 'Receipt Alert — 100% Discount Used',
   DISCOUNT_TOTAL_OVER_THRESHOLD: 'Receipt Alert — Discount Total Over ฿400',
+  MEMBERSHIP_ENTRY_WITHOUT_VALID_MEMBERSHIP:
+    'Receipt Violation — Membership Entry Without Valid Membership',
+  FLEXI_ENTRY_WITHOUT_AVAILABLE_PASS: 'Receipt Violation — Flexi Entry Without Available Pass',
+  RECEIPT_CLOSED_WITHOUT_CUSTOMER: 'Receipt Alert — Closed Without Customer',
   FORCED_TEST_FAILURE: 'Receipt Alert — Forced Test Failure'
 };
 
@@ -216,6 +220,62 @@ const formatOneHourDetails = (details: Record<string, unknown>): string[] => {
   return lines;
 };
 
+const formatMembershipDetails = (details: Record<string, unknown>): string[] => {
+  const lines: string[] = [];
+  const reason = getString(details.reason);
+  const customerId = getString(details.customerId);
+  const checkedDate = getString(details.checkedDate);
+  const family = isRecord(details.matchedFamily) ? getString(details.matchedFamily.name) : null;
+
+  if (reason) lines.push(`Reason: ${reason.replaceAll('_', ' ')}`);
+  if (customerId) lines.push(`Customer: ${customerId}`);
+  if (family) lines.push(`Family: ${family}`);
+  if (checkedDate) lines.push(`Checked date: ${checkedDate}`);
+  if (isFiniteNumber(details.memberEntryQuantity)) {
+    lines.push(`Member entries: ${formatNumber(details.memberEntryQuantity)}`);
+  }
+
+  return lines;
+};
+
+const formatFlexiDetails = (details: Record<string, unknown>): string[] => {
+  const lines: string[] = [];
+  const reason = getString(details.reason);
+  const customerId = getString(details.customerId);
+
+  if (reason) lines.push(`Reason: ${reason.replaceAll('_', ' ')}`);
+  if (customerId) lines.push(`Customer: ${customerId}`);
+  if (isFiniteNumber(details.currentReceiptEntries)) {
+    lines.push(`Current entries: ${formatNumber(details.currentReceiptEntries)}`);
+  }
+  if (isFiniteNumber(details.remainingBeforeCurrentReceipt) || isFiniteNumber(details.remainingAfterCurrentReceipt)) {
+    lines.push(
+      `Remaining: before ${isFiniteNumber(details.remainingBeforeCurrentReceipt) ? formatNumber(details.remainingBeforeCurrentReceipt) : 'unknown'}; after ${isFiniteNumber(details.remainingAfterCurrentReceipt) ? formatNumber(details.remainingAfterCurrentReceipt) : 'unknown'}`
+    );
+  }
+  if (isFiniteNumber(details.entriesPurchased) || isFiniteNumber(details.entriesUsedIncludingCurrent)) {
+    lines.push(
+      `Flexi history: purchased ${isFiniteNumber(details.entriesPurchased) ? formatNumber(details.entriesPurchased) : 'unknown'}; used ${isFiniteNumber(details.entriesUsedIncludingCurrent) ? formatNumber(details.entriesUsedIncludingCurrent) : 'unknown'}`
+    );
+  }
+
+  return lines;
+};
+
+const formatMissingCustomerDetails = (details: Record<string, unknown>): string[] => {
+  const lines: string[] = [];
+  if (isFiniteNumber(details.totalMoney)) lines.push(`Total: ${formatNumber(details.totalMoney)} THB`);
+  if (isFiniteNumber(details.itemCount)) lines.push(`Items: ${formatNumber(details.itemCount)}`);
+  if (Array.isArray(details.items)) {
+    const itemNames = details.items
+      .filter(isRecord)
+      .map((item) => getString(item.itemName) ?? getString(item.itemId) ?? null)
+      .filter((value): value is string => Boolean(value));
+    if (itemNames.length) lines.push(`Item names: ${formatList(itemNames)}`);
+  }
+  return lines;
+};
+
 const formatValidationDetails = (code: string | null, details: Record<string, unknown> | null): string[] => {
   if (!code || !details) return [];
 
@@ -226,6 +286,12 @@ const formatValidationDetails = (code: string | null, details: Record<string, un
       return formatHighDiscountDetails(details);
     case 'ONE_HOUR_NOT_CONVERTED':
       return formatOneHourDetails(details);
+    case 'MEMBERSHIP_ENTRY_WITHOUT_VALID_MEMBERSHIP':
+      return formatMembershipDetails(details);
+    case 'FLEXI_ENTRY_WITHOUT_AVAILABLE_PASS':
+      return formatFlexiDetails(details);
+    case 'RECEIPT_CLOSED_WITHOUT_CUSTOMER':
+      return formatMissingCustomerDetails(details);
     default:
       return [];
   }
@@ -276,8 +342,62 @@ const buildReceiptValidationAlertPayload = (input: ReportIncidentInput): AlertPu
   };
 };
 
+const isMembershipAutomationIncident = (input: ReportIncidentInput): boolean =>
+  input.code === 'MEMBERSHIP_CREATED' ||
+  input.code.startsWith('MEMBERSHIP_CREATION_') ||
+  input.context?.automationCode === 'MEMBERSHIP_CREATED';
+
+const buildMembershipAutomationAlertPayload = (input: ReportIncidentInput): AlertPublishPayload => {
+  const receiptNumber = typeof input.context?.receiptNumber === 'string' ? input.context.receiptNumber : null;
+  const receiptUrl = isHttpUrl(input.context?.receiptUrl) ? input.context.receiptUrl : null;
+  const reportUrl = isHttpUrl(input.context?.reportUrl) ? input.context.reportUrl : null;
+  const familyName = getString(input.context?.familyName);
+  const type = getString(input.context?.type);
+  const startDate = getString(input.context?.startDate);
+  const endDate = getString(input.context?.endDate);
+  const reason = getString(input.context?.reason);
+  const membershipName = getString(input.context?.membershipName);
+  const itemId = getString(input.context?.itemId);
+  const numberOfKids = isFiniteNumber(input.context?.numberOfKids) ? input.context.numberOfKids : null;
+
+  const isSuccess = input.code === 'MEMBERSHIP_CREATED';
+  const label = isSuccess ? 'Membership Created Automatically' : 'Membership Automation Needs Review';
+  const icon = isSuccess ? '✅' : input.severity === 'critical' ? '🚨' : '⚠️';
+
+  const details = [
+    familyName ? `Family: ${familyName}` : null,
+    type ? `Type: ${type}` : null,
+    numberOfKids !== null ? `Kids: ${formatNumber(numberOfKids)}` : null,
+    startDate || endDate ? `Dates: ${startDate ?? 'unknown'} → ${endDate ?? 'unknown'}` : null,
+    membershipName ? `Membership: ${membershipName}` : null,
+    reason ? `Reason: ${reason.replaceAll('_', ' ')}` : null,
+    itemId ? `Item ID: ${itemId}` : null
+  ].filter((line): line is string => Boolean(line));
+
+  const links = [
+    receiptUrl ? `• ${formatHtmlLink('Open receipt', receiptUrl)}` : null,
+    reportUrl ? `• ${formatHtmlLink('Open incident', reportUrl)}` : null
+  ].filter((line): line is string => Boolean(line));
+
+  const body = [
+    `<b>${escapeHtml(label)}</b>`,
+    receiptNumber ? `🧾 Receipt: <code>${escapeHtml(receiptNumber)}</code>` : null,
+    details.length ? ['<b>Details</b>', ...details.map((line) => `• ${escapeHtml(line)}`)].join('\n') : null,
+    links.length ? ['<b>Links</b>', ...links].join('\n') : null
+  ]
+    .filter((line): line is string => Boolean(line))
+    .join('\n');
+
+  return {
+    title: `${icon} Membership automation`,
+    body,
+    parseMode: 'HTML'
+  };
+};
+
 export const buildIncidentAlertPayload = (input: ReportIncidentInput): AlertPublishPayload => {
   if (isReceiptValidationIncident(input)) return buildReceiptValidationAlertPayload(input);
+  if (isMembershipAutomationIncident(input)) return buildMembershipAutomationAlertPayload(input);
 
   const failedChecks = getFailedChecks(input);
   const summary = INCIDENT_SUMMARY_BY_CODE[input.code] ?? input.message;
