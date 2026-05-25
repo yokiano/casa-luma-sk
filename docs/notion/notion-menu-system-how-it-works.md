@@ -67,7 +67,21 @@ Then your backend can link modifiers to menu items during syncing (since Loyvers
 
 ---
 
-## 4) Discounts (predefined discount buttons for staff)
+## 4) Recipes (cost-of-goods source)
+
+**Recipes** describe what each menu item costs to make. A recipe links back to one or more **Menu Items** through `Recipes.Menu Item`.
+
+For POS syncing:
+
+- **Menu Items** remain the sellable catalog: name, description, category, price, variants, and modifiers.
+- **Recipes** are the COGS source for those sellable items.
+- COGS is calculated from related **Recipe Lines** by summing each line’s `Line Cost`. This is preferred over the `Recipes.COGS` rollup because Notion rollups can be stale/zero through the API.
+- The Menu Items sync writes the selected recipe COGS into Loyverse variant `cost` and `purchase_cost` fields. For now, the same average recipe COGS is applied to all variants of a menu item.
+- If multiple linked recipes have usable COGS, the sync chooses deterministically and surfaces a warning. If no usable recipe COGS exists, it leaves existing Loyverse costs unchanged.
+
+---
+
+## 5) Discounts (predefined discount buttons for staff)
 
 **Discounts** are a simple list of discount options that staff can apply at checkout.
 
@@ -84,21 +98,24 @@ Discounts don’t change often. Think of them like “POS configuration” rathe
 
 ---
 
-## 5) Where things live (quick mental map)
+## 6) Where things live (quick mental map)
 
 - **Menu Items** = what you sell (the main menu catalog)
+- **Recipes** = what those items cost to make, linked back to Menu Items for POS COGS sync
+- **Recipe Lines** = ingredient/amount rows whose `Line Cost` formulas are summed into recipe COGS
 - **Variants** = mutually exclusive versions of a menu item (chosen once)
 - **Modifiers** = add-ons/customizations applied on top of an item (can stack)
 - **Discounts** = checkout-level promotion buttons staff can apply
 
 ---
 
-## 6) How you use it day-to-day
+## 7) How you use it day-to-day
 
 1. Add or update items in **Menu Items**
-2. If an item needs “choose one version”, set it up as **variants**
-3. If an item needs “optional extras”, assign **modifiers**
-4. Keep **discounts** as your approved promo list (like the 30% soft opening)
-5. Your backend sync reads these sources and pushes them into Loyverse in the right structure
+2. Link a **Recipe** to each Menu Item when you want POS COGS synced
+3. If an item needs “choose one version”, set it up as **variants**
+4. If an item needs “optional extras”, assign **modifiers**
+5. Keep **discounts** as your approved promo list (like the 30% soft opening)
+6. Your backend sync reads these sources and pushes them into Loyverse in the right structure
 
-That’s the whole “0 to hero” model: Menu Items are the center, Variants handle “choose one,” Modifiers handle “add extras,” Discounts handle promos at checkout.
+That’s the whole “0 to hero” model: Menu Items are the center, Recipes provide COGS, Variants handle “choose one,” Modifiers handle “add extras,” Discounts handle promos at checkout.

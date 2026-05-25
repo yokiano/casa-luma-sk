@@ -2,14 +2,14 @@
 
 Route: `/tools/recipes`
 
-This staff tool presents the Notion `Recipes` database as a kitchen recipe book.
+This staff tool presents the Notion `Recipes` database as a kitchen recipe book. Recipes also provide the cost-of-goods source used by the `/tools/pos-sync` Menu Items sync.
 
 ## Data sources
 
 - `Recipes`: recipe name, Thai name, image, COGS rollup, recipe-line relations, menu-item relations, rich-text instructions, and Notion page body blocks.
-- `Recipe Lines`: amount, unit formula, line cost formula, ingredient relation. The tool derives displayed COGS by summing Recipe Line `Line Cost` formulas because the Notion API can return a stale/zero `Recipes.COGS` rollup even when line formulas are calculated.
+- `Recipe Lines`: amount, unit formula, line cost formula, ingredient relation. The tool derives displayed and synced COGS by summing Recipe Line `Line Cost` formulas because the Notion API can return a stale/zero `Recipes.COGS` rollup even when line formulas are calculated.
 - `Ingredients`: English name, Thai name, unit, cost, department, image.
-- `Menu Items`: menu context such as price, English/Thai name, description, category, status, dietary options, allergens, and image.
+- `Menu Items`: menu context such as price, English/Thai name, description, category, status, dietary options, allergens, and image. Recipes link back to Menu Items through `Recipes.Menu Item`, making Recipes the POS COGS source while Menu Items remain the sellable catalog.
 
 ## Loading strategy
 
@@ -45,6 +45,7 @@ The recipe card is designed for kitchen readability:
 - `src/routes/tools/+layout.svelte` — staff tools navigation entry.
 - `src/routes/tools/recipes/+page.server.ts` — immediate non-blocking route data.
 - `src/lib/tools/recipes/recipes.server.ts` — Notion loading/expansion and block normalization.
+- `src/lib/tools/recipes/recipe-cogs.server.ts` — shared recipe-line COGS calculation and Menu Item recipe COGS mapping for POS sync.
 - `src/lib/tools/recipes/recipes.remote.ts` — remote functions used by the UI.
 - `src/lib/tools/recipes/recipes.translation.ts` — Replicate prompt, glossary, output-normalization, and Notion rich-text chunk helpers.
 - `src/routes/tools/recipes/+page.svelte` — searchable list and compact recipe detail UI.

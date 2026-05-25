@@ -78,6 +78,8 @@ const chooseCogs = (recipe: RecipesResponseDTO, calculatedCogs?: number): number
 };
 
 const imageFromFiles = (files?: { urls: Array<string | undefined> }) => files?.urls.find(Boolean);
+const recipeThaiName = (recipe: RecipesResponseDTO): string | undefined =>
+	(recipe.properties as { thaiName?: { text?: string } }).thaiName?.text;
 const notionIdKey = (id: string) => id.replaceAll('-', '').toLowerCase();
 
 const fetchAllRecipeDtos = async (db: RecipesDatabase): Promise<RecipesResponseDTO[]> => {
@@ -127,7 +129,7 @@ const toSummary = (recipe: RecipesResponseDTO, calculatedCogs?: number, hasInstr
 	return {
 		id: recipe.id,
 		name: recipe.properties.name.text ?? 'Untitled recipe',
-		thaiName: recipe.properties.thaiName.text,
+		thaiName: recipeThaiName(recipe),
 		imageUrl: imageFromFiles(recipe.properties.image),
 		cogs: chooseCogs(recipe, calculatedCogs),
 		menuItemIds: recipe.properties.menuItemIds,

@@ -140,6 +140,29 @@
                     </div>
                   {/if}
 
+                  {#if item.recipeCogs}
+                    <div class="text-xs text-emerald-700">
+                      Recipe COGS: ฿{item.recipeCogs.toFixed(2)}{item.recipeName ? ` from ${item.recipeName}` : ''}
+                      {#if item.recipeCogsSource}
+                        <span class="text-[10px] text-gray-400">({item.recipeCogsSource})</span>
+                      {/if}
+                    </div>
+                  {/if}
+
+                  {#if item.loyverseCost !== undefined}
+                    <div class="text-xs text-gray-500">
+                      Loyverse cost: ฿{item.loyverseCost.toFixed(2)}{item.hasVariants ? ' (first variant shown; same COGS syncs to all variants)' : ''}
+                    </div>
+                  {/if}
+
+                  {#if item.warnings && item.warnings.length > 0}
+                    <ul class="list-disc list-inside text-xs text-amber-600">
+                      {#each item.warnings as warning}
+                        <li>{warning}</li>
+                      {/each}
+                    </ul>
+                  {/if}
+
                   {#if item.syncResult}
                     <div class="text-[11px] {item.syncResult.status === 'SUCCESS' ? 'text-green-600' : 'text-red-600'} font-medium">
                       {item.syncResult.action}: {item.syncResult.status}

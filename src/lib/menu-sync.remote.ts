@@ -2,7 +2,11 @@ import { query, command } from '$app/server';
 import { NOTION_API_KEY } from '$env/static/private';
 import { MenuItemsDatabase, MenuItemsResponseDTO, MenuItemsPatchDTO } from '$lib/notion-sdk/dbs/menu-items';
 import { PosModifiersDatabase, PosModifiersResponseDTO } from '$lib/notion-sdk/dbs/pos-modifiers';
+import { RecipesDatabase } from '$lib/notion-sdk/dbs/recipes';
+import { RecipeLinesDatabase } from '$lib/notion-sdk/dbs/recipe-lines';
 import { loyverse } from '$lib/server/loyverse';
+import { buildRecipeCostVariantFields } from '$lib/menu-sync.costs';
+import { buildMenuItemRecipeCogsMap, notionIdKey, roundMoney, type RecipeCogsInfo } from '$lib/tools/recipes/recipe-cogs.server';
 import * as v from 'valibot';
 
 // Types for the UI
@@ -17,8 +21,13 @@ export interface MenuItemSyncState {
   notionLoyverseIdProp?: string; // The value in the Notion "LoyverseID" property
   status: SyncStatus;
   diffs?: string[]; // Description of differences if MODIFIED
+  warnings?: string[];
   hasVariants?: boolean;
   modifiersCount?: number;
+  recipeCogs?: number;
+  recipeCogsSource?: RecipeCogsInfo['source'];
+  recipeName?: string;
+  loyverseCost?: number;
 }
 
 export interface ItemSyncResult {
@@ -96,11 +105,36 @@ function parseVariants(jsonString?: string): ParsedVariant[] {
 }
 
 // Helper to compare Notion and Loyverse items
+function costsDiffer(expected: number, actual?: number): boolean {
+  return actual === undefined || Math.abs(roundMoney(actual) - expected) > 0.001;
+}
+
+function compareVariantCosts(loyverseVariants: any[], recipeCogsInfo?: RecipeCogsInfo, trackStock = false): string[] {
+  if (!recipeCogsInfo) return [];
+
+  const expectedCost = recipeCogsInfo.cogs;
+  const mismatchedVariants = loyverseVariants.filter((variant) =>
+    costsDiffer(expectedCost, variant.cost) || (trackStock && costsDiffer(expectedCost, variant.purchase_cost))
+  );
+
+  const diffs: string[] = [];
+  if (mismatchedVariants.length > 0) {
+    diffs.push(
+      loyverseVariants.length > 1
+        ? `Recipe COGS mismatch on ${mismatchedVariants.length}/${loyverseVariants.length} variants: expected ${expectedCost}`
+        : `Recipe COGS mismatch: expected ${expectedCost} vs Loyverse ${loyverseVariants[0]?.cost ?? 'empty'}`
+    );
+  }
+  return diffs;
+}
+
+// Helper to compare Notion and Loyverse items
 function compareItems(
   notionItem: MenuItemsResponseDTO, 
   loyverseItem: any, 
   loyverseCategories: Map<string, any>,
-  notionModifiersMap: Map<string, string> // Notion Page ID -> Loyverse Modifier ID
+  notionModifiersMap: Map<string, string>, // Notion Page ID -> Loyverse Modifier ID
+  recipeCogsInfo?: RecipeCogsInfo
 ): string[] {
   const diffs: string[] = [];
   
@@ -127,6 +161,8 @@ function compareItems(
      const nOp3 = normalize(notionItem.properties.variantOption_3Name.text);
      const lOp3 = normalize(loyverseItem.option3_name);
      if (nOp3 !== lOp3 && (nOp3 || lOp3)) diffs.push(`Option 3 Name mismatch: "${nOp3}" vs "${lOp3}"`);
+
+     diffs.push(...compareVariantCosts(loyverseVariants, recipeCogsInfo, loyverseItem.track_stock === true));
 
      // Compare Variant Count
      if (notionVariants.length !== loyverseVariants.length) {
@@ -161,6 +197,8 @@ function compareItems(
     if (notionPrice !== loyversePrice) {
       diffs.push(`Price mismatch: ${notionPrice} vs ${loyversePrice}`);
     }
+
+    diffs.push(...compareVariantCosts(loyverseItem.variants || [], recipeCogsInfo, loyverseItem.track_stock === true));
   }
 
   // Compare Description
@@ -208,15 +246,18 @@ function compareItems(
 export const getMenuSyncStatus = query(async () => {
   const notionDb = new MenuItemsDatabase({ notionSecret: NOTION_API_KEY });
   const modifiersDb = new PosModifiersDatabase({ notionSecret: NOTION_API_KEY });
+  const recipesDb = new RecipesDatabase({ notionSecret: NOTION_API_KEY });
+  const recipeLinesDb = new RecipeLinesDatabase({ notionSecret: NOTION_API_KEY });
   
   // Parallel fetch
-  const [notionResult, notionModifiersResult, loyverseItems, loyverseCategoriesList, loyverseModifiers] = await Promise.all([
+  const [notionResult, notionModifiersResult, recipeCogsByMenuItemId, loyverseItems, loyverseCategoriesList, loyverseModifiers] = await Promise.all([
     fetchAllPages(notionDb, {
       status: { equals: 'Active' }
     }),
     fetchAllPages(modifiersDb, {
       active: { equals: true }
     }),
+    buildMenuItemRecipeCogsMap(recipesDb, recipeLinesDb),
     loyverse.getAllItems(),
     loyverse.getAllCategories(),
     loyverse.getAllModifiers()
@@ -259,6 +300,7 @@ export const getMenuSyncStatus = query(async () => {
     const imageUrl = nItem.properties.image?.urls?.[0]; // Get first image URL if available
     const hasVariants = nItem.properties.hasVariants ?? false;
     const modifiersCount = nItem.properties.modifiersIds?.length || 0;
+    const recipeCogsInfo = recipeCogsByMenuItemId.get(notionIdKey(nItem.id));
     
     let status: SyncStatus = 'NOT_IN_LOYVERSE';
     let loyverseId: string | undefined = undefined;
@@ -270,7 +312,7 @@ export const getMenuSyncStatus = query(async () => {
       loyverseId = lItem.id;
       matchedLoyverseIds.add(lItem.id);
       
-      diffs = compareItems(nItem, lItem, loyverseCategories, notionModifiersMap);
+      diffs = compareItems(nItem, lItem, loyverseCategories, notionModifiersMap, recipeCogsInfo);
       status = diffs.length > 0 ? 'MODIFIED' : 'SYNCED';
     } else if (loyverseByName.has(normalize(name).toLowerCase())) {
       // Found by name but not linked via ID property
@@ -279,7 +321,7 @@ export const getMenuSyncStatus = query(async () => {
       matchedLoyverseIds.add(lItem.id);
 
       status = 'LINKED_ONLY'; // Needs to update Notion with ID
-      diffs = compareItems(nItem, lItem, loyverseCategories, notionModifiersMap);
+      diffs = compareItems(nItem, lItem, loyverseCategories, notionModifiersMap, recipeCogsInfo);
     }
 
     syncStates.push({
@@ -291,8 +333,13 @@ export const getMenuSyncStatus = query(async () => {
       notionLoyverseIdProp: notionLoyverseId,
       status,
       diffs,
+      warnings: recipeCogsInfo?.warning ? [recipeCogsInfo.warning] : undefined,
       hasVariants,
-      modifiersCount
+      modifiersCount,
+      recipeCogs: recipeCogsInfo?.cogs,
+      recipeCogsSource: recipeCogsInfo?.source,
+      recipeName: recipeCogsInfo?.recipeName,
+      loyverseCost: loyverseId ? loyverseById.get(loyverseId)?.variants?.[0]?.cost : undefined
     });
   }
 
@@ -327,21 +374,24 @@ export const syncMenuItems = command(
   async ({ itemIds, deleteOrphans }) => {
     const notionDb = new MenuItemsDatabase({ notionSecret: NOTION_API_KEY });
     const modifiersDb = new PosModifiersDatabase({ notionSecret: NOTION_API_KEY });
+    const recipesDb = new RecipesDatabase({ notionSecret: NOTION_API_KEY });
+    const recipeLinesDb = new RecipeLinesDatabase({ notionSecret: NOTION_API_KEY });
     const report: SyncReport = { created: 0, updated: 0, linked: 0, deleted: 0, errors: [], itemResults: [] };
 
     try {
       // Fetch data - Only sync Active items from Notion
-      const [notionResult, notionModifiersResult, loyverseItems, loyverseCategoriesList, loyverseModifiers] = await Promise.all([
+      const [notionResult, notionModifiersResult, recipeCogsByMenuItemId, loyverseItems, loyverseCategoriesList, loyverseModifiers] = await Promise.all([
         fetchAllPages(notionDb, {
           status: { equals: 'Active' }
         }),
         fetchAllPages(modifiersDb, {
           active: { equals: true }
         }),
+        buildMenuItemRecipeCogsMap(recipesDb, recipeLinesDb),
         loyverse.getAllItems(),
         loyverse.getAllCategories(),
-      loyverse.getAllModifiers()
-    ]);
+        loyverse.getAllModifiers()
+      ]);
 
     const allNotionItems = notionResult.results.map(r => new MenuItemsResponseDTO(r));
       const notionModifiers = notionModifiersResult.results.map(r => new PosModifiersResponseDTO(r));
@@ -411,6 +461,8 @@ export const syncMenuItems = command(
           const description = nItem.properties.description.text || '';
           const categoryName = nItem.properties.category?.name || 'Uncategorized';
           const hasVariants = nItem.properties.hasVariants ?? false;
+          const recipeCogsInfo = recipeCogsByMenuItemId.get(notionIdKey(nItem.id));
+          const recipeCogs = recipeCogsInfo?.cogs;
           
           const categoryId = await resolveCategoryId(categoryName);
 
@@ -444,7 +496,7 @@ export const syncMenuItems = command(
 
           // Optimization: Skip if already synced
           if (!isNew && targetLoyverseItem) {
-            const diffs = compareItems(nItem, targetLoyverseItem, loyverseCategories, notionModifiersMap);
+            const diffs = compareItems(nItem, targetLoyverseItem, loyverseCategories, notionModifiersMap, recipeCogsInfo);
             if (diffs.length === 0) {
               report.itemResults.push({
                 notionId: nItem.id,
@@ -457,6 +509,8 @@ export const syncMenuItems = command(
               continue;
             }
           }
+
+          const shouldSyncPurchaseCost = !isNew && targetLoyverseItem?.track_stock === true;
 
           // Construct Payload
           const payload: any = {
@@ -485,6 +539,7 @@ export const syncMenuItems = command(
                     default_price: nv.price,
                     sku: nv.sku,
                     barcode: nv.barcode,
+                    ...buildRecipeCostVariantFields(recipeCogs, shouldSyncPurchaseCost),
                     default_pricing_type: 'FIXED'
                  }));
              } 
@@ -511,6 +566,7 @@ export const syncMenuItems = command(
              const price = nItem.properties.price ?? 0;
              const variant: any = {
                 default_price: price,
+                ...buildRecipeCostVariantFields(recipeCogs, shouldSyncPurchaseCost),
                 default_pricing_type: 'FIXED'
              };
              
