@@ -1,4 +1,4 @@
-import type { EndOfShiftReportsResponse } from "./types"
+import { EndOfShiftReportsResponse } from "./types"
 
 export class EndOfShiftReportsResponseDTO {
   __data: EndOfShiftReportsResponse
@@ -82,6 +82,7 @@ export class EndOfShiftReportsPropertiesResponseDTO {
       coin_2Baht_1: this.__props['Coin 2 Baht 1'],
       allIncome: this.__props['All Income'],
       cashIn: this.__props['Cash In'],
+      paidOut: this.__props['Paid Out'],
     }
   }
 
@@ -103,7 +104,11 @@ export class EndOfShiftReportsPropertiesResponseDTO {
   }
 
   get closedBy() {
-    return this.__props['Closed By']?.people
+    return {
+      text: this.__props['Closed By']?.rich_text ? this.__props['Closed By'].rich_text.reduce((acc, item) => acc + item.plain_text, '') : undefined,
+      links: this.__props['Closed By']?.rich_text ? this.__props['Closed By'].rich_text.filter((item) => item.href?.length).map((item) => item.href) : [],
+      rich_text: this.__props['Closed By']?.rich_text,
+    }
   }
 
   get posSummary() {
@@ -181,5 +186,9 @@ export class EndOfShiftReportsPropertiesResponseDTO {
 
   get cashIn() {
     return this.__props['Cash In']?.number
+  }
+
+  get paidOut() {
+    return this.__props['Paid Out']?.number
   }
 }

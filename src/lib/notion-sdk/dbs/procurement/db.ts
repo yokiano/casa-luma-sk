@@ -1,7 +1,7 @@
-import type { ProcurementResponse, ProcurementQuery, ProcurementQueryResponse } from './types'
-import type { ProcurementPatchDTO } from './patch.dto'
-import { GenericDatabaseClass, type DatabaseOptions } from '../../core/src/generic-db'
-import { PROCUREMENT_PROPS_TO_TYPES, PROCUREMENT_PROPS_TO_IDS, type ProcurementDTOProperties } from './constants'
+import { ProcurementResponse, ProcurementQuery, ProcurementQueryResponse } from './types'
+import { ProcurementPatchDTO } from './patch.dto'
+import { GenericDatabaseClass, DatabaseOptions } from '../../core/src/generic-db'
+import { PROCUREMENT_PROPS_TO_TYPES, PROCUREMENT_PROPS_TO_IDS, ProcurementDTOProperties } from './constants'
 
 export class ProcurementDatabase extends GenericDatabaseClass<
   ProcurementResponse,

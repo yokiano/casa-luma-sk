@@ -1,4 +1,4 @@
-import type { WebsiteImagesResponse } from "./types"
+import { WebsiteImagesResponse } from "./types"
 
 export class WebsiteImagesResponseDTO {
   __data: WebsiteImagesResponse

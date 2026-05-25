@@ -1,5 +1,5 @@
-import type { OpenPlayPosItemsResponse } from "./types"
-import type { UpdatePageBodyParameters,
+import { OpenPlayPosItemsResponse } from "./types"
+import { UpdatePageBodyParameters,
 RichTextItemRequest
 } from '../../core/types/notion-api.types'
 

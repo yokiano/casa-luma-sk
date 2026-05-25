@@ -1,4 +1,4 @@
-import type { OpenPlayPosItemsResponse } from "./types"
+import { OpenPlayPosItemsResponse } from "./types"
 
 export class OpenPlayPosItemsResponseDTO {
   __data: OpenPlayPosItemsResponse

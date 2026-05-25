@@ -1,7 +1,7 @@
-import type { PosModifiersResponse, PosModifiersQuery, PosModifiersQueryResponse } from './types'
-import type { PosModifiersPatchDTO } from './patch.dto'
-import { GenericDatabaseClass, type DatabaseOptions } from '../../core/src/generic-db'
-import { POS_MODIFIERS_PROPS_TO_TYPES, POS_MODIFIERS_PROPS_TO_IDS, type PosModifiersDTOProperties } from './constants'
+import { PosModifiersResponse, PosModifiersQuery, PosModifiersQueryResponse } from './types'
+import { PosModifiersPatchDTO } from './patch.dto'
+import { GenericDatabaseClass, DatabaseOptions } from '../../core/src/generic-db'
+import { POS_MODIFIERS_PROPS_TO_TYPES, POS_MODIFIERS_PROPS_TO_IDS, PosModifiersDTOProperties } from './constants'
 
 export class PosModifiersDatabase extends GenericDatabaseClass<
   PosModifiersResponse,

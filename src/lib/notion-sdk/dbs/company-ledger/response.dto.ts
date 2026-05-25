@@ -1,4 +1,4 @@
-import type { CompanyLedgerResponse } from "./types"
+import { CompanyLedgerResponse } from "./types"
 
 export class CompanyLedgerResponseDTO {
   __data: CompanyLedgerResponse

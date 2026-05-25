@@ -1,5 +1,5 @@
-import type { PayForPlayItemsResponse } from "./types"
-import type { UpdatePageBodyParameters,
+import { PayForPlayItemsResponse } from "./types"
+import { UpdatePageBodyParameters,
 RichTextItemRequest
 } from '../../core/types/notion-api.types'
 

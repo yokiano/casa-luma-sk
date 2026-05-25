@@ -1,5 +1,5 @@
-import type { WithOptional, Join, PathsToStringProps } from '../../core/types/helper.types'
-import type {
+import { WithOptional, Join, PathsToStringProps } from '../../core/types/helper.types'
+import {
 DatabaseObjectResponse,
 StringRequest,
 CheckboxPropertyItemObjectResponse,
@@ -14,7 +14,7 @@ TimestampLastEditedTimeFilter,
 CheckboxPropertyFilter,
 TextPropertyFilter
 } from '../../core/types/notion-api.types'
-import type { WEBSITE_IMAGES_PROPS_TO_IDS } from './constants'
+import { WEBSITE_IMAGES_PROPS_TO_IDS } from './constants'
 
 export interface WebsiteImagesResponse extends WithOptional<Omit<DatabaseObjectResponse, 'properties'>, 'title'| 'description'| 'is_inline'| 'url'| 'public_url'> {
   properties: {

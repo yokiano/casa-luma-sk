@@ -1,4 +1,4 @@
-import type { RecipesResponse } from "./types"
+import { RecipesResponse } from "./types"
 
 export class RecipesResponseDTO {
   __data: RecipesResponse
@@ -63,7 +63,6 @@ export class RecipesPropertiesResponseDTO {
     this.__data = {
       recipeLines: this.__props['Recipe Lines'],
       cogs: this.__props['COGS'],
-      thaiName: this.__props['Thai Name'],
       instructions: this.__props['Instructions'],
       menuItem: this.__props['Menu Item'],
       image: this.__props['Image'],
@@ -80,14 +79,6 @@ export class RecipesPropertiesResponseDTO {
 
   get cogs() {
     return this.__props['COGS']?.rollup
-  }
-
-  get thaiName() {
-    return {
-      text: this.__props['Thai Name']?.rich_text ? this.__props['Thai Name'].rich_text.reduce((acc, item) => acc + item.plain_text, '') : undefined,
-      links: this.__props['Thai Name']?.rich_text ? this.__props['Thai Name'].rich_text.filter((item) => item.href?.length).map((item) => item.href) : [],
-      rich_text: this.__props['Thai Name']?.rich_text,
-    }
   }
 
   get instructions() {

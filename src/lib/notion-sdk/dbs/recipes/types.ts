@@ -1,5 +1,5 @@
-import type { WithOptional, Join, PathsToStringProps } from '../../core/types/helper.types'
-import type {
+import { WithOptional, Join, PathsToStringProps } from '../../core/types/helper.types'
+import {
 DatabaseObjectResponse,
 StringRequest,
 FilesPropertyItemObjectResponse,
@@ -15,13 +15,12 @@ RelationPropertyFilter,
 RollupPropertyFilter,
 TextPropertyFilter
 } from '../../core/types/notion-api.types'
-import type { RECIPES_PROPS_TO_IDS } from './constants'
+import { RECIPES_PROPS_TO_IDS } from './constants'
 
 export interface RecipesResponse extends WithOptional<Omit<DatabaseObjectResponse, 'properties'>, 'title'| 'description'| 'is_inline'| 'url'| 'public_url'> {
   properties: {
     "Recipe Lines": RelationPropertyItemObjectResponse,
     "COGS": RollupPropertyItemObjectResponse,
-    "Thai Name": RichTextPropertyItemObjectResponse,
     "Instructions": RichTextPropertyItemObjectResponse,
     "Menu Item": RelationPropertyItemObjectResponse,
     "Image": FilesPropertyItemObjectResponse,
@@ -35,14 +34,13 @@ export type RecipesPath = Join<PathsToStringProps<RecipesResponse>>
 
 type RecipesRecipeLinesPropertyFilter = RelationPropertyFilter
 type RecipesCogsPropertyFilter = RollupPropertyFilter
-type RecipesThaiNamePropertyFilter = TextPropertyFilter
 type RecipesInstructionsPropertyFilter = TextPropertyFilter
 type RecipesMenuItemPropertyFilter = RelationPropertyFilter
 type RecipesImagePropertyFilter = ExistencePropertyFilter
 type RecipesNamePropertyFilter = TextPropertyFilter
 type RecipesThaiInstructionsPropertyFilter = TextPropertyFilter
 
-export type RecipesPropertyFilter = { recipeLines: RecipesRecipeLinesPropertyFilter } | { cogs: RecipesCogsPropertyFilter } | { thaiName: RecipesThaiNamePropertyFilter } | { instructions: RecipesInstructionsPropertyFilter } | { menuItem: RecipesMenuItemPropertyFilter } | { image: RecipesImagePropertyFilter } | { name: RecipesNamePropertyFilter } | { thaiInstructions: RecipesThaiInstructionsPropertyFilter }
+export type RecipesPropertyFilter = { recipeLines: RecipesRecipeLinesPropertyFilter } | { cogs: RecipesCogsPropertyFilter } | { instructions: RecipesInstructionsPropertyFilter } | { menuItem: RecipesMenuItemPropertyFilter } | { image: RecipesImagePropertyFilter } | { name: RecipesNamePropertyFilter } | { thaiInstructions: RecipesThaiInstructionsPropertyFilter }
 
 export type RecipesQuery = Omit<QueryDatabaseBodyParameters, 'filter' | 'sorts'> & {
   sorts?: Array<

@@ -1,5 +1,5 @@
-import type { RecipeLinesResponse } from "./types"
-import type { UpdatePageBodyParameters,
+import { RecipeLinesResponse } from "./types"
+import { UpdatePageBodyParameters,
 RichTextItemRequest
 } from '../../core/types/notion-api.types'
 

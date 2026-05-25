@@ -1,7 +1,7 @@
-import type { SignageResponse, SignageQuery, SignageQueryResponse } from './types'
-import type { SignagePatchDTO } from './patch.dto'
-import { GenericDatabaseClass, type DatabaseOptions } from '../../core/src/generic-db'
-import { SIGNAGE_PROPS_TO_TYPES, SIGNAGE_PROPS_TO_IDS, type SignageDTOProperties } from './constants'
+import { SignageResponse, SignageQuery, SignageQueryResponse } from './types'
+import { SignagePatchDTO } from './patch.dto'
+import { GenericDatabaseClass, DatabaseOptions } from '../../core/src/generic-db'
+import { SIGNAGE_PROPS_TO_TYPES, SIGNAGE_PROPS_TO_IDS, SignageDTOProperties } from './constants'
 
 export class SignageDatabase extends GenericDatabaseClass<
   SignageResponse,

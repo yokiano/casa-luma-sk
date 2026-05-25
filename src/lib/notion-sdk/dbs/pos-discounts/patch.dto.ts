@@ -1,5 +1,5 @@
-import type { PosDiscountsResponse } from "./types"
-import type { UpdatePageBodyParameters,
+import { PosDiscountsResponse } from "./types"
+import { UpdatePageBodyParameters,
 RichTextItemRequest
 } from '../../core/types/notion-api.types'
 

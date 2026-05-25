@@ -1,4 +1,4 @@
-import type { SopCatalogResponse } from "./types"
+import { SopCatalogResponse } from "./types"
 
 export class SopCatalogResponseDTO {
   __data: SopCatalogResponse

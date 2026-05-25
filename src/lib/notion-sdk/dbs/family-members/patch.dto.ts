@@ -1,5 +1,5 @@
-import type { FamilyMembersResponse } from "./types"
-import type { UpdatePageBodyParameters,
+import { FamilyMembersResponse } from "./types"
+import { UpdatePageBodyParameters,
 RichTextItemRequest
 } from '../../core/types/notion-api.types'
 

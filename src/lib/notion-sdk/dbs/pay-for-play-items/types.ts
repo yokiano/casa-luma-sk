@@ -1,5 +1,5 @@
-import type { WithOptional, Join, PathsToStringProps } from '../../core/types/helper.types'
-import type {
+import { WithOptional, Join, PathsToStringProps } from '../../core/types/helper.types'
+import {
 DatabaseObjectResponse,
 StringRequest,
 CreatedByPropertyItemObjectResponse,
@@ -23,7 +23,7 @@ PeoplePropertyFilter,
 RelationPropertyFilter,
 TextPropertyFilter
 } from '../../core/types/notion-api.types'
-import type { PAY_FOR_PLAY_ITEMS_PROPS_TO_IDS } from './constants'
+import { PAY_FOR_PLAY_ITEMS_PROPS_TO_IDS } from './constants'
 
 export interface PayForPlayItemsResponse extends WithOptional<Omit<DatabaseObjectResponse, 'properties'>, 'title'| 'description'| 'is_inline'| 'url'| 'public_url'> {
   properties: {

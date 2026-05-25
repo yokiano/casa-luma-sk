@@ -1,4 +1,4 @@
-import type { ExpenseScanRulesResponse } from "./types"
+import { ExpenseScanRulesResponse } from "./types"
 
 export class ExpenseScanRulesResponseDTO {
   __data: ExpenseScanRulesResponse

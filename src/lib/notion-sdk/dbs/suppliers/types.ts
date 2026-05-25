@@ -1,5 +1,5 @@
-import type { WithOptional, Join, PathsToStringProps } from '../../core/types/helper.types'
-import type {
+import { WithOptional, Join, PathsToStringProps } from '../../core/types/helper.types'
+import {
 DatabaseObjectResponse,
 StringRequest,
 EmailPropertyItemObjectResponse,
@@ -15,7 +15,7 @@ TimestampCreatedTimeFilter,
 TimestampLastEditedTimeFilter,
 TextPropertyFilter
 } from '../../core/types/notion-api.types'
-import type { SUPPLIERS_PROPS_TO_IDS } from './constants'
+import { SUPPLIERS_PROPS_TO_IDS } from './constants'
 
 export interface SuppliersResponse extends WithOptional<Omit<DatabaseObjectResponse, 'properties'>, 'title'| 'description'| 'is_inline'| 'url'| 'public_url'> {
   properties: {

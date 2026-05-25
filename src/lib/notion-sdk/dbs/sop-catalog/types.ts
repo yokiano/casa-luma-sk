@@ -1,5 +1,5 @@
-import type { WithOptional, Join, PathsToStringProps } from '../../core/types/helper.types'
-import type {
+import { WithOptional, Join, PathsToStringProps } from '../../core/types/helper.types'
+import {
 DatabaseObjectResponse,
 StringRequest,
 RelationPropertyItemObjectResponse,
@@ -13,7 +13,7 @@ TimestampLastEditedTimeFilter,
 RelationPropertyFilter,
 TextPropertyFilter
 } from '../../core/types/notion-api.types'
-import type { SOP_CATALOG_PROPS_TO_IDS } from './constants'
+import { SOP_CATALOG_PROPS_TO_IDS } from './constants'
 
 export interface SopCatalogResponse extends WithOptional<Omit<DatabaseObjectResponse, 'properties'>, 'title'| 'description'| 'is_inline'| 'url'| 'public_url'> {
   properties: {

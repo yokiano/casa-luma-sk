@@ -1,7 +1,7 @@
-import type { PayForPlayItemsResponse, PayForPlayItemsQuery, PayForPlayItemsQueryResponse } from './types'
-import type { PayForPlayItemsPatchDTO } from './patch.dto'
-import { GenericDatabaseClass, type DatabaseOptions } from '../../core/src/generic-db'
-import { PAY_FOR_PLAY_ITEMS_PROPS_TO_TYPES, PAY_FOR_PLAY_ITEMS_PROPS_TO_IDS, type PayForPlayItemsDTOProperties } from './constants'
+import { PayForPlayItemsResponse, PayForPlayItemsQuery, PayForPlayItemsQueryResponse } from './types'
+import { PayForPlayItemsPatchDTO } from './patch.dto'
+import { GenericDatabaseClass, DatabaseOptions } from '../../core/src/generic-db'
+import { PAY_FOR_PLAY_ITEMS_PROPS_TO_TYPES, PAY_FOR_PLAY_ITEMS_PROPS_TO_IDS, PayForPlayItemsDTOProperties } from './constants'
 
 export class PayForPlayItemsDatabase extends GenericDatabaseClass<
   PayForPlayItemsResponse,

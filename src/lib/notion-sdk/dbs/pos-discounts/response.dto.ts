@@ -1,4 +1,4 @@
-import type { PosDiscountsResponse } from "./types"
+import { PosDiscountsResponse } from "./types"
 
 export class PosDiscountsResponseDTO {
   __data: PosDiscountsResponse

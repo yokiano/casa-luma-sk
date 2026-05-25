@@ -1,4 +1,4 @@
-import type { PayForPlayItemsResponse } from "./types"
+import { PayForPlayItemsResponse } from "./types"
 
 export class PayForPlayItemsResponseDTO {
   __data: PayForPlayItemsResponse

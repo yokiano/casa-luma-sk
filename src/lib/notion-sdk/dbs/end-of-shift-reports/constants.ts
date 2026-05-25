@@ -22,7 +22,8 @@ export const END_OF_SHIFT_REPORTS_PROPS_TO_IDS = {
   "bill_100Baht_1": "fUnb",
   "coin_2Baht_1": "smDb",
   "allIncome": "%3DHVV",
-  "cashIn": "~%7Beh"
+  "cashIn": "~%7Beh",
+  "paidOut": "al%3ED"
 } as const
 export const END_OF_SHIFT_REPORTS_IDS_TO_PROPS = {
   "%3ESv%3C": "cardPayments",
@@ -45,7 +46,8 @@ export const END_OF_SHIFT_REPORTS_IDS_TO_PROPS = {
   "fUnb": "bill_100Baht_1",
   "smDb": "coin_2Baht_1",
   "%3DHVV": "allIncome",
-  "~%7Beh": "cashIn"
+  "~%7Beh": "cashIn",
+  "al%3ED": "paidOut"
 } as const
 export const END_OF_SHIFT_REPORTS_PROPS_TO_TYPES = {
   "cardPayments": "number",
@@ -68,7 +70,8 @@ export const END_OF_SHIFT_REPORTS_PROPS_TO_TYPES = {
   "bill_100Baht_1": "number",
   "coin_2Baht_1": "number",
   "allIncome": "formula",
-  "cashIn": "number"
+  "cashIn": "number",
+  "paidOut": "number"
 } as const
 
   export type EndOfShiftReportsDTOProperties = keyof typeof END_OF_SHIFT_REPORTS_PROPS_TO_IDS

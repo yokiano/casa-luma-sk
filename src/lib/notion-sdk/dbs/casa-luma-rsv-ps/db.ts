@@ -1,7 +1,7 @@
-import type { CasaLumaRsvPsResponse, CasaLumaRsvPsQuery, CasaLumaRsvPsQueryResponse } from './types'
-import type { CasaLumaRsvPsPatchDTO } from './patch.dto'
-import { GenericDatabaseClass, type DatabaseOptions } from '../../core/src/generic-db'
-import { CASA_LUMA_RSV_PS_PROPS_TO_TYPES, CASA_LUMA_RSV_PS_PROPS_TO_IDS, type CasaLumaRsvPsDTOProperties } from './constants'
+import { CasaLumaRsvPsResponse, CasaLumaRsvPsQuery, CasaLumaRsvPsQueryResponse } from './types'
+import { CasaLumaRsvPsPatchDTO } from './patch.dto'
+import { GenericDatabaseClass, DatabaseOptions } from '../../core/src/generic-db'
+import { CASA_LUMA_RSV_PS_PROPS_TO_TYPES, CASA_LUMA_RSV_PS_PROPS_TO_IDS, CasaLumaRsvPsDTOProperties } from './constants'
 
 export class CasaLumaRsvPsDatabase extends GenericDatabaseClass<
   CasaLumaRsvPsResponse,

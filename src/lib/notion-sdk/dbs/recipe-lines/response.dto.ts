@@ -1,4 +1,4 @@
-import type { RecipeLinesResponse } from "./types"
+import { RecipeLinesResponse } from "./types"
 
 export class RecipeLinesResponseDTO {
   __data: RecipeLinesResponse

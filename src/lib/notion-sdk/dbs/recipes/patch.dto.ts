@@ -1,5 +1,5 @@
-import type { RecipesResponse } from "./types"
-import type { UpdatePageBodyParameters,
+import { RecipesResponse } from "./types"
+import { UpdatePageBodyParameters,
 RichTextItemRequest
 } from '../../core/types/notion-api.types'
 
@@ -7,7 +7,6 @@ type TypeFromRecord<Obj, Type> = Obj extends Record<string, infer T> ? Extract<T
 
 export type RecipesPropertiesPatch = {
   recipeLines?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'relation' }>['relation']
-  thaiName?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   instructions?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   menuItem?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'relation' }>['relation']
   image?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'files' }>['files']
@@ -37,28 +36,6 @@ export class RecipesPatchDTO {
       this.__data.properties['%3EAo%5D'] = {
         type: 'relation',
         relation: props.recipeLines,
-      }
-    }
-
-    if (props?.thaiName !== undefined) {
-      this.__data.properties['K%3E%3AU'] = {
-        type: 'rich_text',
-        rich_text: typeof props.thaiName === 'string' 
-          ? [{ type: 'text', text: { content: props.thaiName } }]
-          : Array.isArray(props.thaiName)
-            ? props.thaiName
-            : props.thaiName === null
-              ? []
-              : [
-                  {
-                    type: 'text',
-                    text: {
-                      content: props.thaiName.text,
-                      link: props.thaiName?.url ? { url: props.thaiName.url } : undefined
-                    },
-                    annotations: props.thaiName.annotations
-                  },
-                ]
       }
     }
 

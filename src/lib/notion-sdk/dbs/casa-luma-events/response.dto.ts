@@ -1,4 +1,4 @@
-import type { CasaLumaEventsResponse } from "./types"
+import { CasaLumaEventsResponse } from "./types"
 
 export class CasaLumaEventsResponseDTO {
   __data: CasaLumaEventsResponse

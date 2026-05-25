@@ -1,4 +1,4 @@
-import type { SignageResponse } from "./types"
+import { SignageResponse } from "./types"
 
 export class SignageResponseDTO {
   __data: SignageResponse

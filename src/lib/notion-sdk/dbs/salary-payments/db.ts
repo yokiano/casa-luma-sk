@@ -1,7 +1,7 @@
-import type { SalaryPaymentsResponse, SalaryPaymentsQuery, SalaryPaymentsQueryResponse } from './types'
-import type { SalaryPaymentsPatchDTO } from './patch.dto'
-import { GenericDatabaseClass, type DatabaseOptions } from '../../core/src/generic-db'
-import { SALARY_PAYMENTS_PROPS_TO_TYPES, SALARY_PAYMENTS_PROPS_TO_IDS, type SalaryPaymentsDTOProperties } from './constants'
+import { SalaryPaymentsResponse, SalaryPaymentsQuery, SalaryPaymentsQueryResponse } from './types'
+import { SalaryPaymentsPatchDTO } from './patch.dto'
+import { GenericDatabaseClass, DatabaseOptions } from '../../core/src/generic-db'
+import { SALARY_PAYMENTS_PROPS_TO_TYPES, SALARY_PAYMENTS_PROPS_TO_IDS, SalaryPaymentsDTOProperties } from './constants'
 
 export class SalaryPaymentsDatabase extends GenericDatabaseClass<
   SalaryPaymentsResponse,

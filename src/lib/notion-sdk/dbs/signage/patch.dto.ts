@@ -1,5 +1,5 @@
-import type { SignageResponse } from "./types"
-import type { UpdatePageBodyParameters,
+import { SignageResponse } from "./types"
+import { UpdatePageBodyParameters,
 RichTextItemRequest
 } from '../../core/types/notion-api.types'
 

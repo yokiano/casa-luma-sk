@@ -1,7 +1,7 @@
-import type { ExpensesTrackerResponse, ExpensesTrackerQuery, ExpensesTrackerQueryResponse } from './types'
-import type { ExpensesTrackerPatchDTO } from './patch.dto'
-import { GenericDatabaseClass, type DatabaseOptions } from '../../core/src/generic-db'
-import { EXPENSES_TRACKER_PROPS_TO_TYPES, EXPENSES_TRACKER_PROPS_TO_IDS, type ExpensesTrackerDTOProperties } from './constants'
+import { ExpensesTrackerResponse, ExpensesTrackerQuery, ExpensesTrackerQueryResponse } from './types'
+import { ExpensesTrackerPatchDTO } from './patch.dto'
+import { GenericDatabaseClass, DatabaseOptions } from '../../core/src/generic-db'
+import { EXPENSES_TRACKER_PROPS_TO_TYPES, EXPENSES_TRACKER_PROPS_TO_IDS, ExpensesTrackerDTOProperties } from './constants'
 
 export class ExpensesTrackerDatabase extends GenericDatabaseClass<
   ExpensesTrackerResponse,

@@ -1,5 +1,5 @@
-import type { EndOfShiftReportsResponse } from "./types"
-import type { UpdatePageBodyParameters,
+import { EndOfShiftReportsResponse } from "./types"
+import { UpdatePageBodyParameters,
 RichTextItemRequest
 } from '../../core/types/notion-api.types'
 
@@ -9,7 +9,6 @@ export type EndOfShiftReportsPropertiesPatch = {
   cardPayments?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'number' }>['number']
   notes?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   expectedCash?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'number' }>['number']
-  paidOut?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'number' }>['number']
   closedBy?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   posSummary?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'files' }>['files']
   scanPayments?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'number' }>['number']
@@ -28,6 +27,7 @@ export type EndOfShiftReportsPropertiesPatch = {
   coin_2Baht_1?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'number' }>['number']
   allIncome?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'formula' }>['formula']
   cashIn?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'number' }>['number']
+  paidOut?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'number' }>['number']
 }
 
   
@@ -81,13 +81,6 @@ export class EndOfShiftReportsPatchDTO {
       this.__data.properties['R%5C%40S'] = {
         type: 'number',
         number: props.expectedCash,
-      }
-    }
-
-    if (props?.paidOut !== undefined) {
-      this.__data.properties['Paid Out'] = {
-        type: 'number',
-        number: props.paidOut,
       }
     }
 
@@ -244,6 +237,13 @@ export class EndOfShiftReportsPatchDTO {
       this.__data.properties['~%7Beh'] = {
         type: 'number',
         number: props.cashIn,
+      }
+    }
+
+    if (props?.paidOut !== undefined) {
+      this.__data.properties['al%3ED'] = {
+        type: 'number',
+        number: props.paidOut,
       }
     }
   }
