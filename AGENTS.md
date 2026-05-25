@@ -2,6 +2,10 @@
 - Never run `pnpm check`, `svelte check`, or `pnpm build` in this project.
 - They produce excessive output and add noise to the agent context.
 
+## Notion schema changes
+- When adding, renaming, or changing Notion database properties used by `src/lib/notion-sdk/**`, run `pnpm notion:generate` afterward so the generated SDK/types stay in sync.
+- If the generator prompts about unrelated new databases, add those databases to `notion-sdk.json` `ignore` only when they are not needed by this app, then rerun the generator.
+
 ## Dev server logs via tmux
 - The dev server is often already running in tmux. Before starting a new server, check for an existing tmux server and panes:
   - `echo "$TMUX"` / `echo "$TMUX_PANE"` to see whether the agent shell is itself inside tmux.
