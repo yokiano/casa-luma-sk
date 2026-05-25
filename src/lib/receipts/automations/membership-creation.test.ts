@@ -33,6 +33,8 @@ const createDeps = (overrides: Partial<MembershipAutomationDeps> = {}): Membersh
     loyverseCustomerId: 'cust-1'
   }),
   findExistingAutomatedMembership: vi.fn().mockResolvedValue(null),
+  findAutomatedMembershipsByReceiptNumber: vi.fn().mockResolvedValue([]),
+  markMembershipRefunded: vi.fn().mockResolvedValue({ id: 'membership-1', name: 'Test Family - Weekly - 1 kid' }),
   createMembership: vi.fn().mockResolvedValue({ id: 'membership-1', name: 'Test Family - Weekly - 1 kid' }),
   ...overrides
 });
@@ -161,16 +163,49 @@ describe('membership creation automation', () => {
     expect(deps.createMembership).not.toHaveBeenCalled();
   });
 
-  it('skips and flags refund receipts before calling Notion deps', async () => {
+  it('marks the matching automated membership as refunded for refund receipts', async () => {
+    const deps = createDeps({
+      findAutomatedMembershipsByReceiptNumber: vi.fn().mockResolvedValue([
+        { id: 'membership-1', name: 'Test Family - Weekly - 1 kid' }
+      ])
+    });
+
+    const results = await runAutomation(
+      createReceipt({ receipt_number: 'R-2000', receipt_type: 'REFUND', refund_for: 'R-1000' }),
+      deps
+    );
+
+    expect(results[0]).toMatchObject({
+      code: 'MEMBERSHIP_REFUNDED',
+      status: 'completed',
+      details: { originalReceiptNumber: 'R-1000', refundReceiptNumber: 'R-2000' }
+    });
+    expect(deps.findAutomatedMembershipsByReceiptNumber).toHaveBeenCalledWith({
+      receiptNumber: 'R-1000',
+      itemIds: [weeklyItem.itemId]
+    });
+    expect(deps.markMembershipRefunded).toHaveBeenCalledWith(
+      expect.objectContaining({
+        membershipId: 'membership-1',
+        originalReceiptNumber: 'R-1000',
+        refundReceiptNumber: 'R-2000'
+      })
+    );
+    expect(deps.findFamilyByLoyverseCustomerId).not.toHaveBeenCalled();
+    expect(deps.createMembership).not.toHaveBeenCalled();
+  });
+
+  it('skips refund receipts when no automated membership matches the original receipt', async () => {
     const deps = createDeps();
 
-    const results = await runAutomation(createReceipt({ receipt_type: 'REFUND' }), deps);
+    const results = await runAutomation(createReceipt({ receipt_type: 'REFUND', refund_for: 'R-9999' }), deps);
 
     expect(results[0]).toMatchObject({
       status: 'skipped',
-      details: { reason: 'refund_receipt', incidentCode: 'MEMBERSHIP_CREATION_REFUND_SKIPPED' }
+      details: { reason: 'refunded_membership_not_found', incidentCode: 'MEMBERSHIP_REFUND_MEMBERSHIP_NOT_FOUND' }
     });
     expect(deps.findFamilyByLoyverseCustomerId).not.toHaveBeenCalled();
+    expect(deps.createMembership).not.toHaveBeenCalled();
   });
 
   it('skips and flags cancelled receipts before calling Notion deps', async () => {

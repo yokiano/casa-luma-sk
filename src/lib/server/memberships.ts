@@ -1,4 +1,5 @@
 import { NOTION_API_KEY } from '$env/static/private';
+import { MEMBERSHIP_REFUND_NOTE_PREFIX } from '$lib/receipts/automations/membership-creation';
 import { MembershipsDatabase, MembershipsPatchDTO, MembershipsResponseDTO } from '$lib/notion-sdk/dbs/memberships';
 import { 
 	queryFamilyMatches, 
@@ -36,6 +37,14 @@ const getFormulaText = (formula: unknown) => {
 	if (typeof value.number === 'number') return String(value.number);
 	if (typeof value.boolean === 'boolean') return value.boolean ? 'Yes' : 'No';
 	return null;
+};
+
+const getMembershipStatus = (dto: MembershipsResponseDTO) => {
+	const notes = dto.properties.notes?.text ?? '';
+	// Notion Status is a formula and cannot be updated directly from automation. This marker makes
+	// refunded automated memberships display with the intended status until the Notion formula supports it.
+	if (notes.includes(MEMBERSHIP_REFUND_NOTE_PREFIX)) return 'Refund';
+	return getFormulaText(dto.properties.status) ?? null;
 };
 
 // Parse family name from membership name format: "FamilyName - Type - X kids"
@@ -78,7 +87,7 @@ const toMembershipItem = (
 		numberOfKids: dto.properties.numberOfKids ?? null,
 		startDate: dto.properties.startDate?.start ?? null,
 		endDate: dto.properties.endDate?.start ?? null,
-		status: getFormulaText(dto.properties.status) ?? null,
+		status: getMembershipStatus(dto),
 		notes: dto.properties.notes?.text ?? null,
 		receipt: dto.properties.receipt ?? null,
 		createdTime: dto.createdTime,

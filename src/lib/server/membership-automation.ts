@@ -2,6 +2,7 @@ import { NOTION_API_KEY } from '$env/static/private';
 import { FamiliesDatabase, FamiliesResponseDTO } from '$lib/notion-sdk/dbs/families';
 import { MembershipsDatabase, MembershipsPatchDTO, MembershipsResponseDTO } from '$lib/notion-sdk/dbs/memberships';
 import {
+  MEMBERSHIP_REFUND_NOTE_PREFIX,
   createMembershipFromReceiptAutomation,
   type CreateMembershipFromReceiptInput,
   type ExistingMembershipQuery,
@@ -36,6 +37,32 @@ const toExistingMembership = (dto: MembershipsResponseDTO) => ({
   endDate: dto.properties.endDate?.start ?? null,
   notes: dto.properties.notes?.text ?? null
 });
+
+const appendRefundNote = (notes: string | null | undefined, input: {
+  originalReceiptNumber: string;
+  refundReceiptNumber: string;
+  refundReceiptKey?: string;
+  refundReceiptUrl?: string;
+}) => {
+  const existingNotes = notes?.trim() ?? '';
+  if (existingNotes.includes(`${MEMBERSHIP_REFUND_NOTE_PREFIX}: ${input.refundReceiptNumber}`)) {
+    return existingNotes;
+  }
+
+  return [
+    existingNotes || null,
+    [
+      `${MEMBERSHIP_REFUND_NOTE_PREFIX}: ${input.refundReceiptNumber}`,
+      `Refunded Original Receipt Number: ${input.originalReceiptNumber}`,
+      input.refundReceiptKey ? `Refund Receipt Key: ${input.refundReceiptKey}` : null,
+      input.refundReceiptUrl ? `Refund Receipt URL: ${input.refundReceiptUrl}` : null
+    ]
+      .filter(Boolean)
+      .join('\n')
+  ]
+    .filter(Boolean)
+    .join('\n\n');
+};
 
 export const createNotionMembershipAutomationDeps = (): MembershipAutomationDeps => ({
   async findFamilyByLoyverseCustomerId({ loyverseCustomerId }) {
@@ -82,6 +109,48 @@ export const createNotionMembershipAutomationDeps = (): MembershipAutomationDeps
       );
 
     return existing ? { id: existing.id, name: existing.name } : null;
+  },
+
+  async findAutomatedMembershipsByReceiptNumber({ receiptNumber, itemIds }) {
+    const membershipsDb = new MembershipsDatabase({ notionSecret: NOTION_API_KEY });
+    const membershipResponse = await membershipsDb.query({
+      page_size: 100,
+      filter: {
+        notes: { contains: `Receipt Number: ${receiptNumber}` }
+      }
+    } as any);
+
+    const itemIdSet = new Set(itemIds ?? []);
+    return membershipResponse.results
+      .map((result) => toExistingMembership(new MembershipsResponseDTO(result as any)))
+      .filter((membership) => {
+        const notes = membership.notes ?? '';
+        if (!notes.includes('Created automatically from Loyverse receipt.')) return false;
+        if (!notes.includes(`Receipt Number: ${receiptNumber}`)) return false;
+        if (!itemIdSet.size) return true;
+        return [...itemIdSet].some((itemId) => notes.includes(`Loyverse Item ID: ${itemId}`));
+      })
+      .map((membership) => ({ id: membership.id, name: membership.name }));
+  },
+
+  async markMembershipRefunded(input) {
+    const membershipsDb = new MembershipsDatabase({ notionSecret: NOTION_API_KEY });
+    const current = await membershipsDb.getPage(input.membershipId);
+    const currentDto = new MembershipsResponseDTO(current as any);
+    const currentMembership = toExistingMembership(currentDto);
+    const notes = appendRefundNote(currentMembership.notes, input);
+
+    // Notion Status is currently a formula, so it is not directly writable. The refund marker in Notes
+    // is used by the app as the manual status override and can be picked up by a future Status formula.
+    const updated = await membershipsDb.updatePage(input.membershipId, new MembershipsPatchDTO({
+      properties: { notes }
+    }));
+    const updatedDto = new MembershipsResponseDTO(updated);
+
+    return {
+      id: updatedDto.id,
+      name: updatedDto.properties.name?.text ?? currentMembership.name
+    };
   },
 
   async createMembership(input) {

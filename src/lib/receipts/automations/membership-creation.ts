@@ -28,6 +28,8 @@ export type ExistingMembership = {
   name: string;
 };
 
+export const MEMBERSHIP_REFUND_NOTE_PREFIX = 'Refund Status: Refund';
+
 export type CreateMembershipFromReceiptInput = {
   familyId: string;
   familyName: string;
@@ -47,6 +49,14 @@ export type CreatedMembership = {
 export type MembershipAutomationDeps = {
   findFamilyByLoyverseCustomerId(input: { loyverseCustomerId: string }): Promise<FamilyMatch | null>;
   findExistingAutomatedMembership(input: ExistingMembershipQuery): Promise<ExistingMembership | null>;
+  findAutomatedMembershipsByReceiptNumber(input: { receiptNumber: string; itemIds?: string[] }): Promise<ExistingMembership[]>;
+  markMembershipRefunded(input: {
+    membershipId: string;
+    originalReceiptNumber: string;
+    refundReceiptNumber: string;
+    refundReceiptKey?: string;
+    refundReceiptUrl?: string;
+  }): Promise<ExistingMembership>;
   createMembership(input: CreateMembershipFromReceiptInput): Promise<CreatedMembership>;
 };
 
@@ -149,6 +159,82 @@ const missingDeps = (): ReceiptAutomationResult =>
     reason: 'missing_dependencies',
     incidentCode: 'MEMBERSHIP_CREATION_NOTION_CREATE_FAILED'
   });
+
+const missingRefundDeps = (): ReceiptAutomationResult =>
+  failed('Membership refund automation dependencies are not configured.', {
+    reason: 'missing_refund_dependencies',
+    incidentCode: 'MEMBERSHIP_REFUND_NOTION_UPDATE_FAILED'
+  });
+
+const markRefundedMemberships = async (input: {
+  receipt: LoyverseReceipt;
+  context: ReceiptAutomationContext;
+  deps: MembershipAutomationDeps;
+  itemIds: string[];
+}): Promise<ReceiptAutomationResult> => {
+  const { receipt, context, deps, itemIds } = input;
+  const originalReceiptNumber = typeof receipt.refund_for === 'string' ? receipt.refund_for.trim() : '';
+
+  if (!originalReceiptNumber) {
+    return skipped('Refund receipt does not reference an original receipt number.', {
+      reason: 'refund_missing_original_receipt',
+      incidentCode: 'MEMBERSHIP_REFUND_ORIGINAL_RECEIPT_MISSING',
+      refundReceiptNumber: receipt.receipt_number,
+      itemIds
+    });
+  }
+
+  try {
+    const memberships = await deps.findAutomatedMembershipsByReceiptNumber({
+      receiptNumber: originalReceiptNumber,
+      itemIds
+    });
+
+    if (!memberships.length) {
+      return skipped('No automated membership matched the original receipt for this refund.', {
+        reason: 'refunded_membership_not_found',
+        incidentCode: 'MEMBERSHIP_REFUND_MEMBERSHIP_NOT_FOUND',
+        refundReceiptNumber: receipt.receipt_number,
+        originalReceiptNumber,
+        itemIds
+      });
+    }
+
+    const updated = await Promise.all(
+      memberships.map((membership) =>
+        deps.markMembershipRefunded({
+          membershipId: membership.id,
+          originalReceiptNumber,
+          refundReceiptNumber: receipt.receipt_number,
+          refundReceiptKey: context.receiptKey,
+          refundReceiptUrl: context.receiptUrl
+        })
+      )
+    );
+
+    return {
+      code: 'MEMBERSHIP_REFUNDED',
+      status: 'completed',
+      message: 'Marked automated membership as refunded from Loyverse refund receipt.',
+      details: {
+        membershipIds: updated.map((membership) => membership.id),
+        membershipNames: updated.map((membership) => membership.name),
+        refundReceiptNumber: receipt.receipt_number,
+        originalReceiptNumber,
+        itemIds
+      }
+    };
+  } catch (error) {
+    return failed('Failed to mark automated membership as refunded.', {
+      reason: 'notion_refund_update_failed',
+      incidentCode: 'MEMBERSHIP_REFUND_NOTION_UPDATE_FAILED',
+      refundReceiptNumber: receipt.receipt_number,
+      originalReceiptNumber,
+      itemIds,
+      errorMessage: error instanceof Error ? error.message : String(error)
+    });
+  }
+};
 
 const createGroupResult = async (input: {
   receipt: LoyverseReceipt;
@@ -292,10 +378,15 @@ export const createMembershipFromReceiptAutomation = (
       }
 
       if (receipt.receipt_type === 'REFUND') {
-        return skipped('Refund receipts do not create memberships; staff should review whether any membership needs manual reversal.', {
-          reason: 'refund_receipt',
-          incidentCode: 'MEMBERSHIP_CREATION_REFUND_SKIPPED',
-          receiptNumber: receipt.receipt_number,
+        const deps = options.deps;
+        if (!deps?.findAutomatedMembershipsByReceiptNumber || !deps.markMembershipRefunded) {
+          return missingRefundDeps();
+        }
+
+        return markRefundedMemberships({
+          receipt,
+          context,
+          deps: deps as MembershipAutomationDeps,
           itemIds: groups.map((group) => group.config.itemId)
         });
       }
