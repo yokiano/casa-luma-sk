@@ -16,13 +16,18 @@ export interface ReceiptValidationFinding {
   details?: Record<string, unknown>;
 }
 
+export type ReceiptValidationRuleResult =
+  | ReceiptValidationFinding
+  | ReceiptValidationFinding[]
+  | null;
+
 export interface ReceiptValidationRule {
   code: string;
   description: string;
   validate: (args: {
     receipt: LoyverseReceipt;
     context: ReceiptValidationContext;
-  }) => ReceiptValidationFinding | ReceiptValidationFinding[] | null;
+  }) => ReceiptValidationRuleResult | Promise<ReceiptValidationRuleResult>;
 }
 
 export interface ReceiptValidationRunResult {

@@ -8,6 +8,7 @@ Source files:
 - Validation types: `src/lib/receipts/validation/types.ts`
 - Rules: `src/lib/receipts/validation/rules/`
 - Incident reporting: `src/lib/server/incidents/`
+- Violation dashboard analytics: `src/lib/server/incidents/violation-analytics.ts`
 - Tool helpers used by validation: `src/lib/receipts/receipt-tools.ts`
 
 ## When validation runs
@@ -27,7 +28,7 @@ It does not run for:
 The webhook route calls:
 
 ```ts
-runReceiptValidationSuite(validationSuite, receiptPayload.items, {
+await runReceiptValidationSuite(validationSuite, receiptPayload.items, {
   merchantId: receiptPayload.merchant_id,
   receiptKey: result.receiptKey,
   eventType: receiptPayload.type,
@@ -39,7 +40,7 @@ Rules receive both the raw Loyverse receipt and this context.
 
 ## Engine behavior
 
-`runReceiptValidationSuite` executes every rule in the suite and flattens findings.
+`runReceiptValidationSuite` executes every rule in the suite and flattens findings. The engine is async-capable: rules may return findings directly or return a Promise, so server-backed rules can await Notion/Neon lookups while existing synchronous rules keep working.
 
 If a rule throws, the engine converts that exception into a critical finding:
 
@@ -62,10 +63,13 @@ The returned report includes:
 
 `createDefaultReceiptValidationSuite` creates suite name `receipt-default-suite` with:
 
-1. `DISCOUNT_100_PRESENT`
-2. `DISCOUNT_TOTAL_OVER_THRESHOLD`
-3. `ONE_HOUR_NOT_CONVERTED`
-4. any `extraRules`
+1. `RECEIPT_CLOSED_WITHOUT_CUSTOMER`
+2. `MEMBERSHIP_ENTRY_WITHOUT_VALID_MEMBERSHIP`
+3. `FLEXI_ENTRY_WITHOUT_AVAILABLE_PASS`
+4. `DISCOUNT_100_PRESENT`
+5. `DISCOUNT_TOTAL_OVER_THRESHOLD`
+6. `ONE_HOUR_NOT_CONVERTED`
+7. any `extraRules`
 
 The webhook can inject an always-fail rule when:
 
@@ -76,6 +80,45 @@ RECEIPT_VALIDATION_FORCE_FAIL=1
 That mode is for alert pipeline testing.
 
 ## Current validation rules
+
+### `RECEIPT_CLOSED_WITHOUT_CUSTOMER`
+
+Source: `src/lib/receipts/validation/rules/missing-customer.ts`
+
+Purpose: warn when a non-refund, non-cancelled receipt is closed without `receipt.customer_id`.
+
+Defaults:
+
+- `skipRefunds: true`
+- `skipCancelled: true`
+- severity: `warning`
+
+Finding details include the receipt type, total, item count, and a compact item summary.
+
+### `MEMBERSHIP_ENTRY_WITHOUT_VALID_MEMBERSHIP`
+
+Source: `src/lib/receipts/validation/rules/member-valid-visit.ts`
+
+Purpose: warn when `Member Valid Visit` appears but the receipt customer cannot be verified against a valid Notion membership for the receipt date.
+
+The rule is efficient: it calls Notion only when the receipt contains the hardcoded `Member Valid Visit` item ID. If the item appears without `receipt.customer_id`, it emits a finding immediately.
+
+Finding reasons include `missing_customer`, `family_not_found`, and `no_active_membership`.
+
+### `FLEXI_ENTRY_WITHOUT_AVAILABLE_PASS`
+
+Source: `src/lib/receipts/validation/rules/flexi-pass-entry.ts`
+
+Purpose: warn when `Flexi Single Entrance` appears but the customer has no available flexi pass balance in Neon receipt history.
+
+The rule is efficient: it calls the Neon flexi balance helper only when the receipt contains the hardcoded `Flexi Single Entrance` item ID and has a customer attached.
+
+Flexi cards currently grant `11` entrances each. Finding reasons include `missing_customer`, `no_flexi_purchase`, and `insufficient_remaining_entries`.
+
+See also:
+
+- `docs/casa-luma/memberships/data-model.md`
+- `docs/casa-luma/memberships/receipt-validation.md`
 
 ### `DISCOUNT_100_PRESENT`
 
@@ -182,6 +225,16 @@ Incident payload includes:
 
 Receipt validation findings currently create one critical validation incident, so Telegram is sent even when an individual discount rule finding has `warning` severity.
 
+## Management dashboard
+
+Receipt validation triage now lives under the management dashboard:
+
+- `/mgmt-dashboard/violations` aggregates incidents by the underlying validation code from `reported_errors.context` / `reported_errors.payload`, including `context.failedChecks`, `context.primaryFindingCode`, `context.validationFindingsSummary`, and `payload.validationFindings`. It supports 7-day, 30-day, 90-day, 12-month, and all-time filters plus daily/weekly/monthly trend buckets.
+- `/mgmt-dashboard/violations/[id]` reuses the incident detail data and adds validation-code metadata so staff can inspect individual incidents from the dashboard.
+- The old `/tools/incidents` list remains available as a legacy/debug view, but it is deprecated for receipt validation triage because it groups around top-level incident codes such as `RECEIPT_WEBHOOK_VALIDATION_RULES_FAILED`.
+
+Dashboard labels and descriptions come from shared receipt validation metadata in `src/lib/receipts/validation/metadata.ts`, backed by the default suite rule descriptions where possible.
+
 ## Telegram notifications
 
 `incidentReporter` is built with `createTelegramAlertPublisherFromEnv()` and notifies only critical incidents by default.
@@ -207,6 +260,9 @@ Known detail formatters include:
 - `DISCOUNT_100_PRESENT`: concise receipt-level discount names/percentages and up to three line-level item/discount pairs.
 - `DISCOUNT_TOTAL_OVER_THRESHOLD`: total discount amount, threshold amount, currency, and up to three discount names.
 - `ONE_HOUR_NOT_CONVERTED`: calculated duration in minutes/hours, threshold plus grace period, start/checkout times, timezone, and a plausibility hint for the duration calculation.
+- `MEMBERSHIP_ENTRY_WITHOUT_VALID_MEMBERSHIP`: reason, customer ID, Family, checked date, and member-entry quantity.
+- `FLEXI_ENTRY_WITHOUT_AVAILABLE_PASS`: reason, customer ID, current entry quantity, purchased/used counts, and remaining balance before/after the receipt.
+- `RECEIPT_CLOSED_WITHOUT_CUSTOMER`: total, item count, and compact item names.
 
 The Telegram formatter escapes all human-sourced text as HTML and avoids dumping raw finding JSON. Unknown validation codes keep the generic friendly check-list formatting.
 

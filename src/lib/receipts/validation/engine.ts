@@ -22,30 +22,35 @@ export const createReceiptValidationSuite = (
   rules
 });
 
-export const runReceiptValidationSuite = (
+export const runReceiptValidationSuite = async (
   suite: ReceiptValidationSuite,
   receipt: LoyverseReceipt,
   context: ReceiptValidationContext = {}
-): ReceiptValidationRunResult => {
-  const findings = suite.rules.flatMap((rule) => {
-    try {
-      return toFindings(rule.validate({ receipt, context })).map((finding) => ({
-        ...finding,
-        code: finding.code || rule.code
-      }));
-    } catch (error) {
-      return [
-        {
-          code: `RULE_EXECUTION_ERROR:${rule.code}`,
-          severity: 'critical' as const,
-          message: `Validation rule failed to execute: ${rule.code}`,
-          details: {
-            error: error instanceof Error ? error.message : String(error)
+): Promise<ReceiptValidationRunResult> => {
+  const findingsByRule = await Promise.all(
+    suite.rules.map(async (rule) => {
+      try {
+        const result = await rule.validate({ receipt, context });
+        return toFindings(result).map((finding) => ({
+          ...finding,
+          code: finding.code || rule.code
+        }));
+      } catch (error) {
+        return [
+          {
+            code: `RULE_EXECUTION_ERROR:${rule.code}`,
+            severity: 'critical' as const,
+            message: `Validation rule failed to execute: ${rule.code}`,
+            details: {
+              error: error instanceof Error ? error.message : String(error)
+            }
           }
-        }
-      ];
-    }
-  });
+        ];
+      }
+    })
+  );
+
+  const findings = findingsByRule.flat();
 
   return {
     receiptNumber: receipt.receipt_number,

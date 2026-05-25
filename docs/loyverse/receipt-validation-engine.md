@@ -8,7 +8,11 @@ This module provides composable receipt validation rules that can be executed by
 - Rule contracts and output types: `src/lib/receipts/validation/types.ts`
 - Default rules and suite factory: `src/lib/receipts/validation/default-suite.ts`
 - Rules:
+  - `RECEIPT_CLOSED_WITHOUT_CUSTOMER`
+  - `MEMBERSHIP_ENTRY_WITHOUT_VALID_MEMBERSHIP`
+  - `FLEXI_ENTRY_WITHOUT_AVAILABLE_PASS`
   - `DISCOUNT_100_PRESENT`
+  - `DISCOUNT_TOTAL_OVER_THRESHOLD`
   - `ONE_HOUR_NOT_CONVERTED`
 - Notification sinks (server-only): `src/lib/server/alerts/*`
 - Incident reporting pipeline: `src/lib/server/incidents/*`
@@ -21,6 +25,27 @@ Webhook usage is orchestration-only:
 4. Always return webhook response independently of notification success.
 
 ## Rule Coverage (Current)
+
+The rule contract is async-capable. Existing synchronous rules return findings directly; membership/flexi rules await Notion/Neon helpers only after their relevant item IDs appear.
+
+### `RECEIPT_CLOSED_WITHOUT_CUSTOMER`
+
+- Skips refunds and cancelled receipts by default.
+- Triggers when `receipt.customer_id` is empty.
+
+### `MEMBERSHIP_ENTRY_WITHOUT_VALID_MEMBERSHIP`
+
+- Triggers only for `Member Valid Visit` (`dd4303a3-0bfb-49ed-95bc-fd65b853d22b`).
+- Requires a Loyverse customer on the receipt.
+- Uses `Families.Loyverse Customer ID` in Notion to find the Family.
+- Requires a Membership related to that Family whose date range covers the receipt date.
+
+### `FLEXI_ENTRY_WITHOUT_AVAILABLE_PASS`
+
+- Triggers only for `Flexi Single Entrance` (`a94027fa-dd55-43d2-a031-b358877f4752`).
+- Requires a Loyverse customer on the receipt.
+- Queries Neon receipt history for flexi card purchases and flexi entries for that customer.
+- Counts `Flexible Resident` and `flexible Regular` cards as 11 entrances each.
 
 ### `DISCOUNT_100_PRESENT`
 
@@ -54,7 +79,9 @@ This shape is designed for reuse across alert channels and any future persistenc
 Telegram sink is implemented in `src/lib/server/alerts/telegram.ts`.
 
 Incident reporter is implemented in `src/lib/server/incidents/reporter.ts` and persists incidents in
-`reported_errors` before optionally notifying Telegram.
+`reported_errors` before optionally notifying Telegram. The management dashboard violations page at
+`/mgmt-dashboard/violations` replaces the old `/tools/incidents` list for receipt-validation triage by
+aggregating these rows by underlying validation codes from incident context/payload.
 
 Critical validation incidents use distinct error codes:
 
@@ -95,6 +122,10 @@ Tests are in `src/lib/receipts/validation/validation-suite.test.ts` and cover:
 - receipt-level 100% discount -> detected
 - line-level 100% discount -> detected
 - threshold behavior (`99.99` vs `100`)
+- async rule support and async execution errors
+- missing customer receipt alerts
+- membership entry checks with mocked Notion lookup
+- flexi entry balance checks with mocked Neon lookup
 - one-hour not converted -> detected
 - refund skip behavior for one-hour rule
 
@@ -110,7 +141,7 @@ Tests are in `src/lib/receipts/validation/validation-suite.test.ts` and cover:
 
 - [x] Centralized validation engine and typed rule contracts
 - [x] Composable suite factory and configurable rules
-- [x] Default suite with 2 initial business rules
+- [x] Default suite with discount, one-hour, missing-customer, membership, and flexi business rules
 - [x] Telegram alert sink and alert formatting
 - [x] Webhook orchestration integration
 - [x] Unit tests with realistic sample receipts
