@@ -4,16 +4,37 @@ import { sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { db, getDatabaseEnvKey } from '$lib/server/db/client';
 import { incidentReporter } from '$lib/server/incidents';
+import { CompanyLedgerDatabase } from '$lib/notion-sdk/dbs/company-ledger/db';
+import { CompanyLedgerResponseDTO } from '$lib/notion-sdk/dbs/company-ledger/response.dto';
+import { SalaryAdjustmentsDatabase } from '$lib/notion-sdk/dbs/salary-adjustments/db';
+import { SalaryAdjustmentsResponseDTO } from '$lib/notion-sdk/dbs/salary-adjustments/response.dto';
+import { EmployeesDatabase } from '$lib/notion-sdk/dbs/employees/db';
+import { EmployeesResponseDTO } from '$lib/notion-sdk/dbs/employees/response.dto';
+import { bangkokDate, bangkokDateRangeUtc, compactDateLabel } from '$lib/mgmt-dashboard-dates';
 
 type Row = Record<string, unknown>;
 
 const RECEIPT_FRESHNESS_MIN_COUNT = 5;
+const COMPANY_LEDGER_DATABASE_ID = '8c565c29798a4ac39e3b23c35db93c5b';
+const SALARY_ADJUSTMENTS_DATABASE_ID = 'eb751fe68e764a618c4398560a0ae114';
+const EMPLOYEES_DATABASE_ID = 'cf220f8b4efc4caeb7e46723c4f5e3e9';
+const TASKS_DATABASE_ID = '0df7129c34034bf0937088586b557c2a';
+const TASKS_VIEW_URL = 'https://efficacious-drizzle-ad4.notion.site/ebd//0df7129c34034bf0937088586b557c2a?v=36bfc77db4f38069bac4000c8a72a853';
 const DEPARTMENT_MAPPING_DATABASE_ID = '9a4c14fedf4b44dda928b1a06ee759b6';
 const DEPARTMENTS = ['playground', 'cafe', 'store', 'workshops'] as const;
 const UNKNOWN_DEPARTMENT = 'unknown';
+const TEST_ALERT_TYPES = [
+  'generic',
+  'one_hour_not_converted',
+  'discount_100_present',
+  'discount_total_over_threshold',
+  'forced_test_failure',
+  'validation_engine_error'
+] as const;
 
 type Department = (typeof DEPARTMENTS)[number];
 type DashboardDepartment = Department | typeof UNKNOWN_DEPARTMENT;
+type TestAlertType = (typeof TEST_ALERT_TYPES)[number];
 
 type LoyverseItem = {
   id: string;
@@ -222,6 +243,217 @@ const getDepartmentMapping = async (): Promise<DepartmentMapping> => {
 
 const maskPresence = (value: string | undefined) => ({
   present: Boolean(value?.trim())
+});
+
+const getIncidentBaseUrl = () => env.INCIDENT_REPORT_BASE_URL?.trim().replace(/\/$/, '') || null;
+
+const buildReceiptUrl = (receiptNumber: string) => {
+  const base = getIncidentBaseUrl();
+  return base ? `${base}/tools/receipts/${encodeURIComponent(receiptNumber)}` : null;
+};
+
+const isTestAlertType = (value: string): value is TestAlertType =>
+  TEST_ALERT_TYPES.includes(value as TestAlertType);
+
+const createTestValidationContext = ({
+  receiptNumber,
+  code,
+  message,
+  details
+}: {
+  receiptNumber: string;
+  code: string;
+  message: string;
+  details: Record<string, unknown>;
+}) => ({
+  trigger: 'mgmt-dashboard-health-test',
+  sentAt: new Date().toISOString(),
+  receiptNumber,
+  receiptUrl: buildReceiptUrl(receiptNumber),
+  failedChecks: [code],
+  primaryFindingCode: code,
+  primaryFindingMessage: message,
+  primaryFindingDetails: details,
+  validationFindingsSummary: [
+    {
+      code,
+      severity: 'warning',
+      message,
+      details
+    }
+  ]
+});
+
+const notionDatabaseUrl = (databaseId: string) => `https://www.notion.so/${databaseId.replace(/-/g, '')}`;
+
+const getNotionSecret = () => env.NOTION_API_KEY?.trim();
+
+const resolveEmployeeNames = async (db: EmployeesDatabase, employeeIds: string[]) => {
+  const uniqueIds = Array.from(new Set(employeeIds.filter(Boolean)));
+  const pairs = await Promise.all(
+    uniqueIds.map(async (id) => {
+      try {
+        const employee = new EmployeesResponseDTO((await db.getPage(id)) as any);
+        return [id, employee.properties.nickname.text || employee.properties.fullName.text || 'Employee'] as const;
+      } catch (error) {
+        console.error('[mgmt-dashboard] failed to load employee relation:', error);
+        return [id, 'Employee'] as const;
+      }
+    })
+  );
+
+  return new Map(pairs);
+};
+
+const nextBirthdayWithinWindow = (birthDate: string | undefined, startDate: string, windowEndDate: string) => {
+  if (!birthDate) return null;
+  const [, month, day] = birthDate.slice(0, 10).split('-');
+  if (!month || !day) return null;
+
+  const startYear = Number(startDate.slice(0, 4));
+  const candidates = [`${startYear}-${month}-${day}`, `${startYear + 1}-${month}-${day}`];
+  return candidates.find((candidate) => candidate >= startDate && candidate < windowEndDate) ?? null;
+};
+
+export const getDailyMeetingDashboard = query(async () => {
+  const notionSecret = getNotionSecret();
+  const yesterday = bangkokDate(-1);
+  const today = bangkokDate(0);
+  const tomorrow = bangkokDate(1);
+  const salaryWindowEnd = bangkokDate(31);
+  const ledgerDateRange = bangkokDateRangeUtc(yesterday, tomorrow);
+
+  const links = {
+    companyLedger: notionDatabaseUrl(COMPANY_LEDGER_DATABASE_ID),
+    salaryAdjustments: notionDatabaseUrl(SALARY_ADJUSTMENTS_DATABASE_ID),
+    employees: notionDatabaseUrl(EMPLOYEES_DATABASE_ID),
+    tasks: TASKS_VIEW_URL,
+    tasksDatabase: notionDatabaseUrl(TASKS_DATABASE_ID)
+  };
+
+  if (!notionSecret) {
+    return {
+      yesterday,
+      today,
+      tomorrow,
+      links,
+      expenses: [],
+      salaryAdjustments: [],
+      birthdays: [],
+      error: 'NOTION_API_KEY is not configured.'
+    };
+  }
+
+  try {
+    const companyLedgerDb = new CompanyLedgerDatabase({ notionSecret });
+    const salaryAdjustmentsDb = new SalaryAdjustmentsDatabase({ notionSecret });
+    const employeesDb = new EmployeesDatabase({ notionSecret });
+
+    const [ledgerResponse, salaryResponse, employeeResponse] = await Promise.all([
+      companyLedgerDb.query({
+        page_size: 12,
+        filter: {
+          and: [{ date: { on_or_after: ledgerDateRange.start } }, { date: { before: ledgerDateRange.endExclusive } }]
+        },
+        sorts: [{ property: 'date', direction: 'ascending' }]
+      } as any),
+      salaryAdjustmentsDb.query({
+        page_size: 12,
+        filter: {
+          and: [{ date: { on_or_after: today } }, { date: { before: salaryWindowEnd } }]
+        },
+        sorts: [{ property: 'date', direction: 'ascending' }]
+      } as any),
+      employeesDb.query({
+        page_size: 100,
+        filter: {
+          and: [
+            { dateOfBirth: { is_not_empty: true } },
+            {
+              or: [
+                { employmentStatus: { equals: 'Working' } },
+                { employmentStatus: { equals: 'Active' } },
+                { employmentStatus: { equals: 'Onboarding' } }
+              ]
+            }
+          ]
+        }
+      } as any)
+    ]);
+
+    const salaryDtos = salaryResponse.results.map((result) => new SalaryAdjustmentsResponseDTO(result as any));
+    const employeeNames = await resolveEmployeeNames(
+      employeesDb,
+      salaryDtos.flatMap((adjustment) => adjustment.properties.employeeIds)
+    );
+
+    const expenses = ledgerResponse.results.map((result) => {
+      const expense = new CompanyLedgerResponseDTO(result as any);
+      return {
+        id: expense.id,
+        title: expense.properties.description.text || 'Untitled expense',
+        amountThb: expense.properties.amountThb ?? 0,
+        date: compactDateLabel(expense.properties.date?.start, expense.properties.date?.end),
+        type: expense.properties.type?.name ?? null,
+        status: expense.properties.status?.name ?? null,
+        department: expense.properties.department?.name ?? null,
+        category: expense.properties.category?.name ?? null,
+        owner: expense.properties.owner?.name ?? null,
+        url: expense.url
+      };
+    });
+
+    const salaryAdjustments = salaryDtos.map((adjustment) => ({
+      id: adjustment.id,
+      title: adjustment.properties.adjustmentTitle.text || 'Untitled adjustment',
+      amountThb: adjustment.properties.amountThb ?? 0,
+      date: compactDateLabel(adjustment.properties.date?.start, adjustment.properties.date?.end),
+      type: adjustment.properties.adjustmentType?.name ?? null,
+      approvedBy: adjustment.properties.approvedBy?.name ?? null,
+      employees: adjustment.properties.employeeIds.map((id) => employeeNames.get(id) ?? 'Employee'),
+      url: adjustment.url
+    }));
+
+    const birthdays = employeeResponse.results
+      .map((result) => {
+        const employee = new EmployeesResponseDTO(result as any);
+        const nextDate = nextBirthdayWithinWindow(employee.properties.dateOfBirth?.start, today, salaryWindowEnd);
+        if (!nextDate) return null;
+        return {
+          id: employee.id,
+          name: employee.properties.nickname.text || employee.properties.fullName.text || 'Employee',
+          date: nextDate,
+          department: employee.properties.department?.name ?? null,
+          url: employee.url
+        };
+      })
+      .filter((birthday): birthday is NonNullable<typeof birthday> => Boolean(birthday))
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .slice(0, 8);
+
+    return {
+      yesterday,
+      today,
+      tomorrow,
+      links,
+      expenses,
+      salaryAdjustments,
+      birthdays,
+      error: null
+    };
+  } catch (error) {
+    console.error('[mgmt-dashboard] failed to load daily meeting data:', error);
+    return {
+      yesterday,
+      today,
+      tomorrow,
+      links,
+      expenses: [],
+      salaryAdjustments: [],
+      birthdays: [],
+      error: serializeError(error).message
+    };
+  }
 });
 
 export const getTodayDashboardOverview = query(async () => {
@@ -505,23 +737,120 @@ export const getIncidentHealth = query(async () => {
   }
 });
 
-export const sendTestTelegramAlert = command(v.object({}), async () => {
-  const result = await incidentReporter.report({
-    source: 'mgmt-dashboard',
-    code: 'TEST_TELEGRAM_ALERT',
-    severity: 'critical',
-    message: 'Manual Telegram alert test from the management dashboard.',
-    context: {
-      trigger: 'mgmt-dashboard',
-      sentAt: new Date().toISOString()
+export const sendTestTelegramAlert = command(v.object({ alertType: v.optional(v.string()) }), async ({ alertType = 'generic' }) => {
+  const requestedAlertType = isTestAlertType(alertType) ? alertType : 'generic';
+  const receiptNumber = `TEST-${new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok' }).format(new Date())}`;
+
+  const incidentInputByType: Record<TestAlertType, Parameters<typeof incidentReporter.report>[0]> = {
+    generic: {
+      source: 'mgmt-dashboard',
+      code: 'TEST_TELEGRAM_ALERT',
+      severity: 'critical',
+      message: 'Manual Telegram alert test from the management dashboard.',
+      context: {
+        trigger: 'mgmt-dashboard-health-test',
+        sentAt: new Date().toISOString(),
+        alertType: requestedAlertType
+      },
+      payload: {
+        note: 'This is a deliberate generic test alert. No action is required.'
+      }
     },
-    payload: {
-      note: 'This is a deliberate test alert. No action is required.'
+    one_hour_not_converted: {
+      source: 'receipt-webhook',
+      code: 'RECEIPT_WEBHOOK_VALIDATION_RULES_FAILED',
+      severity: 'critical',
+      message: 'Test receipt validation alert: one-hour ticket was not converted.',
+      context: createTestValidationContext({
+        receiptNumber,
+        code: 'ONE_HOUR_NOT_CONVERTED',
+        message: 'One-hour ticket stayed longer than the allowed threshold and was not converted.',
+        details: {
+          durationMinutes: 96,
+          thresholdMinutes: 75,
+          baseDurationMinutes: 60,
+          gracePeriodMinutes: 15,
+          orderStartTime: '10:00',
+          checkoutAt: '11:36',
+          timeZone: 'Asia/Bangkok'
+        }
+      }),
+      payload: { test: true, alertType: requestedAlertType }
+    },
+    discount_100_present: {
+      source: 'receipt-webhook',
+      code: 'RECEIPT_WEBHOOK_VALIDATION_RULES_FAILED',
+      severity: 'critical',
+      message: 'Test receipt validation alert: 100% discount used.',
+      context: createTestValidationContext({
+        receiptNumber,
+        code: 'DISCOUNT_100_PRESENT',
+        message: 'A 100% discount was used on this receipt.',
+        details: {
+          thresholdPercentage: 99.99,
+          receiptLevelDiscounts: [{ discountName: 'Manager comp', percentage: 100 }],
+          lineLevelDiscounts: [{ itemName: 'Open Play Entry', discountName: 'Free entry', percentage: 100 }]
+        }
+      }),
+      payload: { test: true, alertType: requestedAlertType }
+    },
+    discount_total_over_threshold: {
+      source: 'receipt-webhook',
+      code: 'RECEIPT_WEBHOOK_VALIDATION_RULES_FAILED',
+      severity: 'critical',
+      message: 'Test receipt validation alert: total discount over threshold.',
+      context: createTestValidationContext({
+        receiptNumber,
+        code: 'DISCOUNT_TOTAL_OVER_THRESHOLD',
+        message: 'Total receipt discount is over the configured threshold.',
+        details: {
+          discountTotal: 520,
+          comparableDiscountTotal: 520,
+          thresholdAmount: 400,
+          currency: 'THB',
+          discountNames: ['Staff approval', 'Cafe comp']
+        }
+      }),
+      payload: { test: true, alertType: requestedAlertType }
+    },
+    forced_test_failure: {
+      source: 'receipt-webhook',
+      code: 'RECEIPT_WEBHOOK_VALIDATION_RULES_FAILED',
+      severity: 'critical',
+      message: 'Test receipt validation alert: forced test failure.',
+      context: createTestValidationContext({
+        receiptNumber,
+        code: 'FORCED_TEST_FAILURE',
+        message: 'Forced receipt validation failure test from the management dashboard.',
+        details: {
+          note: 'This mirrors the forced validation failure alert path without changing environment variables.'
+        }
+      }),
+      payload: { test: true, alertType: requestedAlertType }
+    },
+    validation_engine_error: {
+      source: 'receipt-webhook',
+      code: 'RECEIPT_WEBHOOK_VALIDATION_ENGINE_ERROR',
+      severity: 'critical',
+      message: 'Test receipt validation alert: validation engine error.',
+      context: {
+        trigger: 'mgmt-dashboard-health-test',
+        sentAt: new Date().toISOString(),
+        receiptNumber,
+        receiptUrl: buildReceiptUrl(receiptNumber),
+        failedChecks: ['VALIDATION_ENGINE_ERROR'],
+        primaryFindingMessage: 'The validation engine failed while running receipt rules.'
+      },
+      payload: { test: true, alertType: requestedAlertType },
+      error: new Error('Deliberate validation engine test error from management dashboard')
     }
-  });
+  };
+
+  const result = await incidentReporter.report(incidentInputByType[requestedAlertType]);
 
   return {
     ...result,
+    alertType: requestedAlertType,
     sentAt: new Date().toISOString()
   };
 });

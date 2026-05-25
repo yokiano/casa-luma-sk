@@ -6,7 +6,40 @@
   const receiptFreshness = getReceiptFreshnessHealth();
   const incidentHealth = getIncidentHealth();
 
-  let testAlertLoading = $state(false);
+  const testAlertTypes = [
+    {
+      value: 'generic',
+      label: 'Generic incident',
+      description: 'Basic dashboard Telegram plumbing test.'
+    },
+    {
+      value: 'one_hour_not_converted',
+      label: 'One hour not converted',
+      description: 'Receipt violation with duration details.'
+    },
+    {
+      value: 'discount_100_present',
+      label: '100% discount used',
+      description: 'Receipt alert for full discount usage.'
+    },
+    {
+      value: 'discount_total_over_threshold',
+      label: 'Discount over ฿400',
+      description: 'Receipt alert for high total discount.'
+    },
+    {
+      value: 'forced_test_failure',
+      label: 'Forced test failure',
+      description: 'Receipt validation forced-failure alert.'
+    },
+    {
+      value: 'validation_engine_error',
+      label: 'Validation engine error',
+      description: 'Receipt validation exception alert.'
+    }
+  ];
+
+  let testAlertLoading = $state<string | null>(null);
   let testAlertResult = $state<string | null>(null);
   let testAlertError = $state<string | null>(null);
 
@@ -34,21 +67,23 @@
     return 'border-amber-200 bg-amber-50 text-amber-800';
   };
 
-  const sendTestAlert = async () => {
+  const sendTestAlert = async (alertType: string) => {
     if (testAlertLoading) return;
-    testAlertLoading = true;
+    testAlertLoading = alertType;
     testAlertResult = null;
     testAlertError = null;
 
+    const alertLabel = testAlertTypes.find((type) => type.value === alertType)?.label ?? 'Test alert';
+
     try {
-      const result = await sendTestTelegramAlert({});
+      const result = await sendTestTelegramAlert({ alertType });
       testAlertResult = result.notified
-        ? `Telegram test sent. Incident #${result.incidentId ?? 'unknown'} was recorded.`
-        : `Test incident recorded (#${result.incidentId ?? 'unknown'}), but Telegram was not notified. Check Telegram config / notify_error.`;
+        ? `${alertLabel} sent. Incident #${result.incidentId ?? 'unknown'} was recorded.`
+        : `${alertLabel} incident recorded (#${result.incidentId ?? 'unknown'}), but Telegram was not notified. Check Telegram config / notify_error.`;
     } catch (error) {
       testAlertError = error instanceof Error ? error.message : 'Failed to send test alert.';
     } finally {
-      testAlertLoading = false;
+      testAlertLoading = null;
     }
   };
 </script>
@@ -63,20 +98,9 @@
       </p>
     </div>
 
-    <button
-      type="button"
-      class="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#7a6550] px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#654f3d] disabled:cursor-not-allowed disabled:opacity-60"
-      onclick={sendTestAlert}
-      disabled={testAlertLoading}
-    >
-      {#if testAlertLoading}
-        <Loader2 class="animate-spin" size={18} />
-        Sending…
-      {:else}
-        <Send size={18} />
-        Send test Telegram alert
-      {/if}
-    </button>
+    <div class="rounded-2xl border border-[#dfd2c5] bg-white/70 px-4 py-3 text-xs text-[#7a6550] shadow-sm">
+      Use the test buttons below to send dummy Telegram alerts.
+    </div>
   </div>
 
   {#if testAlertResult}
@@ -89,6 +113,40 @@
       {testAlertError}
     </div>
   {/if}
+
+  <section class="rounded-3xl border border-[#dfd2c5] bg-white p-6 shadow-sm">
+    <div class="flex items-start justify-between gap-4">
+      <div>
+        <p class="text-sm font-bold text-[#7a6550]">Telegram alert tests</p>
+        <h2 class="mt-2 text-2xl font-semibold">Send dummy alert types</h2>
+        <p class="mt-2 max-w-2xl text-sm text-[#7a6550]">
+          These create real incident rows and send Telegram notifications, but the payload is clearly marked as a management-dashboard test.
+        </p>
+      </div>
+      <Send class="text-[#7a6550]" size={24} />
+    </div>
+
+    <div class="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+      {#each testAlertTypes as alertType}
+        <button
+          type="button"
+          class="rounded-2xl border border-[#dfd2c5] bg-[#fffaf4] p-4 text-left shadow-sm transition hover:border-[#b99f86] hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+          onclick={() => sendTestAlert(alertType.value)}
+          disabled={Boolean(testAlertLoading)}
+        >
+          <span class="flex items-center gap-2 text-sm font-bold text-[#2c2925]">
+            {#if testAlertLoading === alertType.value}
+              <Loader2 class="animate-spin text-[#7a6550]" size={16} />
+            {:else}
+              <Send class="text-[#7a6550]" size={16} />
+            {/if}
+            {alertType.label}
+          </span>
+          <span class="mt-2 block text-xs leading-relaxed text-[#7a6550]">{alertType.description}</span>
+        </button>
+      {/each}
+    </div>
+  </section>
 
   <div class="grid gap-4 xl:grid-cols-3">
     <article class="rounded-3xl border border-[#dfd2c5] bg-white p-6 shadow-sm">

@@ -11,7 +11,10 @@
 <section class="space-y-6">
   <header class="space-y-2">
     <h2 class="text-2xl font-semibold text-[#2c2925]">Incidents (Reported Errors)</h2>
-    <p class="text-sm text-[#7a6550]/80">Recent incidents persisted by the server error pipeline.</p>
+    <p class="text-sm text-[#7a6550]/80">
+      Recent incidents persisted by the server error pipeline. This legacy tools list is deprecated for receipt
+      validation triage; use <a class="font-semibold underline" href="/mgmt-dashboard/violations">Mgmt Dashboard → Violations</a> instead.
+    </p>
   </header>
 
   {#if data.dbError}

@@ -1,17 +1,19 @@
 <script lang="ts">
   import { page } from '$app/state';
   import type { Snippet } from 'svelte';
-  import { Activity, BarChart3, HeartPulse } from 'lucide-svelte';
+  import { Activity, AlertTriangle, BarChart3, HeartPulse } from 'lucide-svelte';
 
   let { children }: { children?: Snippet } = $props();
 
   const sections = [
-    { href: '/mgmt-dashboard', label: 'Overview', icon: BarChart3 },
+    { href: '/mgmt-dashboard', label: 'Daily meeting', icon: BarChart3 },
+    { href: '/mgmt-dashboard/violations', label: 'Violations', icon: AlertTriangle },
     { href: '/mgmt-dashboard/health', label: 'Health checks', icon: HeartPulse }
   ];
 
   const currentPath = $derived(page.url.pathname.replace(/\/$/, '') || '/');
-  const isActive = (href: string) => currentPath === href;
+  const isActive = (href: string) =>
+    href === '/mgmt-dashboard' ? currentPath === href : currentPath === href || currentPath.startsWith(`${href}/`);
 </script>
 
 <svelte:head>
@@ -49,7 +51,7 @@
       </nav>
 
       <p class="mt-8 hidden rounded-3xl border border-[#dfd2c5] bg-[#fbf8f4] p-4 text-xs leading-5 text-[#7a6550] lg:block">
-        Operational snapshot for receipt ingestion, incidents, and daily receipt totals.
+        Daily meeting agenda with Notion-led expenses, HR reminders, task links, and receipt operations snapshots.
       </p>
     </aside>
 
