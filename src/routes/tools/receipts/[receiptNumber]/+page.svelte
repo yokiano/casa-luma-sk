@@ -1,7 +1,11 @@
 <script lang="ts">
+  import { goto } from '$app/navigation';
+  import { toast } from 'svelte-sonner';
+  import ReceiptCustomerCard from '$lib/components/receipts/ReceiptCustomerCard.svelte';
   import ReceiptRowExpanded from '$lib/components/receipts/ReceiptRowExpanded.svelte';
   import { enrichReceiptsWithTools } from '$lib/components/receipts';
   import { formatAmount, formatDateTime } from '$lib/components/receipts/receipt-format';
+  import { deleteReceipt } from '$lib/receipts.remote';
   import type { PageData } from './$types';
 
   interface Props {
@@ -10,6 +14,31 @@
 
   let { data }: Props = $props();
   const receipt = $derived(enrichReceiptsWithTools([data.receipt])[0]);
+  let isDeleting = $state(false);
+
+  const handleDeleteReceipt = async () => {
+    const receiptNumber = data.receipt.receipt_number;
+    const confirmedReceiptNumber = window.prompt(
+      `Delete receipt ${receiptNumber} and all stored receipt details?\n\nType the receipt number to confirm.`
+    );
+
+    if (confirmedReceiptNumber !== receiptNumber) {
+      if (confirmedReceiptNumber !== null) toast.info('Receipt delete cancelled; receipt number did not match.');
+      return;
+    }
+
+    isDeleting = true;
+    try {
+      await deleteReceipt({ receiptNumber });
+      toast.success(`Receipt ${receiptNumber} deleted.`);
+      await goto('/tools/receipts');
+    } catch (error) {
+      console.error('receipts: failed to delete receipt', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to delete receipt.');
+    } finally {
+      isDeleting = false;
+    }
+  };
 </script>
 
 <svelte:head>
@@ -31,8 +60,24 @@
             Created {formatDateTime(data.receipt.created_at ?? data.receipt.receipt_date)} · Total {formatAmount(data.receipt.total_money)}
           </p>
         </div>
+        <div class="flex flex-col items-end gap-2">
+          <!-- TODO: Owner-only once authorization exists; currently unguarded because auth is not implemented. -->
+          <button
+            type="button"
+            class="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+            onclick={handleDeleteReceipt}
+            disabled={isDeleting}
+          >
+            {isDeleting ? 'Deleting…' : 'Delete receipt'}
+          </button>
+          <p class="max-w-xs text-right text-xs text-[#7a6550]/70">
+            Deletes the receipt, line items, totals, payments, receipt incidents, and matching receipt webhook events.
+          </p>
+        </div>
       </div>
     </header>
+
+    <ReceiptCustomerCard family={data.family} customerId={data.receipt.customer_id} />
 
     <ReceiptRowExpanded {receipt} />
   </div>

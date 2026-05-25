@@ -5,5 +5,6 @@ export { default as ReceiptsAnalytics } from './ReceiptsAnalytics.svelte';
 export { default as ReceiptsTools } from './ReceiptsTools.svelte';
 export { default as ReceiptRowCompact } from './ReceiptRowCompact.svelte';
 export { default as ReceiptRowExpanded } from './ReceiptRowExpanded.svelte';
+export { default as ReceiptCustomerCard } from './ReceiptCustomerCard.svelte';
 export * from './receipt-format';
 export * from './receipt-tools';

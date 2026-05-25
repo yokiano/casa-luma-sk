@@ -1,5 +1,5 @@
 import { Buffer } from 'node:buffer';
-import { and, desc, eq, gte, inArray, lt, lte, or, type SQL } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, lt, lte, or, sql, type SQL } from 'drizzle-orm';
 import type { LoyverseReceipt } from '$lib/receipts/types';
 import { db } from './client';
 import {
@@ -10,7 +10,9 @@ import {
   receiptLineTaxes,
   receiptPayments,
   receipts,
-  receiptTaxes
+  receiptTaxes,
+  reportedErrors,
+  webhookEvents
 } from './schema';
 
 const MAX_LIMIT = 250;
@@ -19,6 +21,7 @@ interface ReceiptDbQueryInput {
   dateFrom?: string;
   dateTo?: string;
   storeId?: string;
+  customerId?: string;
   limit?: number;
   cursor?: string;
 }
@@ -26,6 +29,14 @@ interface ReceiptDbQueryInput {
 interface CursorPayload {
   updatedAt: string;
   receiptKey: string;
+}
+
+export interface DeleteReceiptFromDbResult {
+  deleted: boolean;
+  receiptKey: string | null;
+  receiptNumber: string;
+  deletedWebhookEvents: number;
+  deletedReportedErrors: number;
 }
 
 const toDate = (value?: string): Date | null => {
@@ -306,6 +317,7 @@ export const queryReceiptsFromDb = async ({
   dateFrom,
   dateTo,
   storeId,
+  customerId,
   limit,
   cursor
 }: ReceiptDbQueryInput): Promise<{ receipts: LoyverseReceipt[]; cursor: string | null; hasMore: boolean }> => {
@@ -324,6 +336,10 @@ export const queryReceiptsFromDb = async ({
 
   if (storeId) {
     filters.push(eq(receipts.storeId, storeId));
+  }
+
+  if (customerId) {
+    filters.push(eq(receipts.customerId, customerId));
   }
 
   const cursorPayload = parseCursor(cursor);
@@ -353,6 +369,7 @@ export const queryReceiptsFromDb = async ({
       dateFrom,
       dateTo,
       storeId: storeId ?? null,
+      customerId: customerId ?? null,
       limit: pageSize,
       cursorPresent: Boolean(cursor),
       error: serializeQueryError(error)
@@ -407,4 +424,80 @@ export const queryReceiptByNumberFromDb = async ({
 
   const shaped = await hydrateReceiptRows(rows);
   return shaped[0] ?? null;
+};
+
+export const deleteReceiptByNumberFromDb = async ({
+  receiptNumber,
+  merchantId
+}: {
+  receiptNumber: string;
+  merchantId?: string;
+}): Promise<DeleteReceiptFromDbResult> => {
+  const normalizedReceiptNumber = receiptNumber.trim();
+  if (!normalizedReceiptNumber) {
+    return {
+      deleted: false,
+      receiptKey: null,
+      receiptNumber: normalizedReceiptNumber,
+      deletedWebhookEvents: 0,
+      deletedReportedErrors: 0
+    };
+  }
+
+  const filters: SQL[] = [eq(receipts.receiptNumber, normalizedReceiptNumber)];
+  if (merchantId) filters.push(eq(receipts.merchantId, merchantId));
+
+  return db.transaction(async (tx) => {
+    const [receiptRow] = await tx
+      .select({ receiptKey: receipts.receiptKey, merchantId: receipts.merchantId })
+      .from(receipts)
+      .where(and(...filters))
+      .orderBy(desc(receipts.updatedFromEventAt), desc(receipts.receiptKey))
+      .limit(1);
+
+    if (!receiptRow) {
+      return {
+        deleted: false,
+        receiptKey: null,
+        receiptNumber: normalizedReceiptNumber,
+        deletedWebhookEvents: 0,
+        deletedReportedErrors: 0
+      };
+    }
+
+    const receiptKey = receiptRow.receiptKey;
+
+    await tx.delete(receiptLineModifiers).where(eq(receiptLineModifiers.receiptKey, receiptKey));
+    await tx.delete(receiptLineDiscounts).where(eq(receiptLineDiscounts.receiptKey, receiptKey));
+    await tx.delete(receiptLineTaxes).where(eq(receiptLineTaxes.receiptKey, receiptKey));
+    await tx.delete(receiptLineItems).where(eq(receiptLineItems.receiptKey, receiptKey));
+    await tx.delete(receiptDiscounts).where(eq(receiptDiscounts.receiptKey, receiptKey));
+    await tx.delete(receiptTaxes).where(eq(receiptTaxes.receiptKey, receiptKey));
+    await tx.delete(receiptPayments).where(eq(receiptPayments.receiptKey, receiptKey));
+
+    const deletedReportedErrors = await tx
+      .delete(reportedErrors)
+      .where(eq(reportedErrors.receiptKey, receiptKey))
+      .returning({ id: reportedErrors.id });
+
+    const deletedWebhookEvents = await tx
+      .delete(webhookEvents)
+      .where(
+        and(
+          eq(webhookEvents.merchantId, receiptRow.merchantId),
+          sql`${webhookEvents.payload}->'items'->>'receipt_number' = ${normalizedReceiptNumber}`
+        )
+      )
+      .returning({ id: webhookEvents.id });
+
+    await tx.delete(receipts).where(eq(receipts.receiptKey, receiptKey));
+
+    return {
+      deleted: true,
+      receiptKey,
+      receiptNumber: normalizedReceiptNumber,
+      deletedWebhookEvents: deletedWebhookEvents.length,
+      deletedReportedErrors: deletedReportedErrors.length
+    };
+  });
 };

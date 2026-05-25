@@ -8,6 +8,7 @@ interface ReceiptAnalyticsQueryInput {
   dateFrom?: string;
   dateTo?: string;
   storeId?: string;
+  customerId?: string;
 }
 
 type Row = Record<string, unknown>;
@@ -137,7 +138,7 @@ const buildTimeSeries = (dailyRows: DailyTimeSeriesRow[]): Record<ReceiptAnalyti
   };
 };
 
-const baseFilterSql = (dateFrom: Date | null, dateTo: Date | null, storeId?: string) => {
+const baseFilterSql = (dateFrom: Date | null, dateTo: Date | null, storeId?: string, customerId?: string) => {
   const conditions = [];
 
   // Drizzle raw sql + postgres-js does not encode Date objects here, so pass ISO strings
@@ -145,6 +146,7 @@ const baseFilterSql = (dateFrom: Date | null, dateTo: Date | null, storeId?: str
   if (dateFrom) conditions.push(sql`r.created_at >= ${dateFrom.toISOString()}::timestamptz`);
   if (dateTo) conditions.push(sql`r.created_at <= ${dateTo.toISOString()}::timestamptz`);
   if (storeId) conditions.push(sql`r.store_id = ${storeId}`);
+  if (customerId) conditions.push(sql`r.customer_id = ${customerId}`);
 
   if (!conditions.length) return sql`true`;
   return sql.join(conditions, sql` and `);
@@ -153,11 +155,12 @@ const baseFilterSql = (dateFrom: Date | null, dateTo: Date | null, storeId?: str
 export const queryReceiptAnalyticsFromDb = async ({
   dateFrom,
   dateTo,
-  storeId
+  storeId,
+  customerId
 }: ReceiptAnalyticsQueryInput): Promise<ReceiptAnalytics> => {
   const from = toDate(dateFrom);
   const to = toDate(dateTo);
-  const filterSql = () => baseFilterSql(from, to, storeId);
+  const filterSql = () => baseFilterSql(from, to, storeId, customerId);
 
   const [
     summaryRows,

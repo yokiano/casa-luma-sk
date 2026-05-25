@@ -42,11 +42,14 @@
     return date.toISOString();
   };
 
+  const initialCustomerId = page.url.searchParams.get('customerId') || '';
+
   let viewMode = $state<ReceiptViewMode>(validViewMode(page.url.searchParams.get('view')));
   let sortOrder = $state<ReceiptSortOrder>(validSortOrder(page.url.searchParams.get('sortOrder')));
   let activeTab = $state<ReceiptTab>(validTab(page.url.searchParams.get('tab')));
-  let dateFrom = $state(validInputDate(page.url.searchParams.get('dateFrom'), defaultDateFrom()));
-  let dateTo = $state(validInputDate(page.url.searchParams.get('dateTo'), defaultDateTo()));
+  let dateFrom = $state(validInputDate(page.url.searchParams.get('dateFrom'), initialCustomerId ? '' : defaultDateFrom()));
+  let dateTo = $state(validInputDate(page.url.searchParams.get('dateTo'), initialCustomerId ? '' : defaultDateTo()));
+  let customerId = $state(initialCustomerId);
   let storeId = $state(page.url.searchParams.get('storeId') || '');
 
   let receipts = $state<ReceiptWithTools[]>([]);
@@ -77,7 +80,7 @@
     return list;
   });
 
-  const analyticsKey = $derived.by(() => `${dateFrom}|${dateTo}|${storeId}`);
+  const analyticsKey = $derived.by(() => `${dateFrom}|${dateTo}|${storeId}|${customerId}`);
 
   const formatElapsed = (ms: number | null) => {
     if (ms === null) return '';
@@ -88,13 +91,18 @@
   const updateReceiptSearchParams = () => {
     const url = new URL(page.url);
     url.searchParams.set('tab', activeTab);
-    url.searchParams.set('dateFrom', dateFrom);
-    url.searchParams.set('dateTo', dateTo);
+    if (dateFrom) url.searchParams.set('dateFrom', dateFrom);
+    else url.searchParams.delete('dateFrom');
+    if (dateTo) url.searchParams.set('dateTo', dateTo);
+    else url.searchParams.delete('dateTo');
     url.searchParams.set('sortOrder', sortOrder);
     url.searchParams.set('view', viewMode);
 
     if (storeId.trim()) url.searchParams.set('storeId', storeId.trim());
     else url.searchParams.delete('storeId');
+
+    if (customerId.trim()) url.searchParams.set('customerId', customerId.trim());
+    else url.searchParams.delete('customerId');
 
     goto(url, { replaceState: true, keepFocus: true, noScroll: true });
   };
@@ -117,7 +125,8 @@
       const response = await getReceiptAnalytics({
         dateFrom: dateFrom ? startOfDayIso(dateFrom) : undefined,
         dateTo: dateTo ? endOfDayIso(dateTo) : undefined,
-        storeId: storeId || undefined
+        storeId: storeId.trim() || undefined,
+        customerId: customerId.trim() || undefined
       });
 
       if (analyticsRequestedKey === key) {
@@ -149,7 +158,8 @@
         const response = await getReceipts({
           dateFrom: dateFrom ? startOfDayIso(dateFrom) : undefined,
           dateTo: dateTo ? endOfDayIso(dateTo) : undefined,
-          storeId: storeId || undefined,
+          storeId: storeId.trim() || undefined,
+          customerId: customerId.trim() || undefined,
           limit: 250,
           cursor: nextCursor
         });
@@ -180,7 +190,8 @@
       const response = await getReceipts({
         dateFrom: dateFrom ? startOfDayIso(dateFrom) : undefined,
         dateTo: dateTo ? endOfDayIso(dateTo) : undefined,
-        storeId: storeId || undefined,
+        storeId: storeId.trim() || undefined,
+        customerId: customerId.trim() || undefined,
         limit: 50,
         cursor: reset ? undefined : cursor ?? undefined
       });
@@ -212,6 +223,7 @@
     dateFrom = defaultDateFrom();
     dateTo = defaultDateTo();
     storeId = '';
+    customerId = '';
     cursor = null;
     updateReceiptSearchParams();
     loadReceipts({ reset: true });
@@ -256,6 +268,7 @@
     bind:dateFrom
     bind:dateTo
     bind:storeId
+    bind:customerId
     bind:sortOrder
     {isLoading}
     onApply={applyFilters}

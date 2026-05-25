@@ -152,6 +152,45 @@ export const fetchFamilyById = async (id: string): Promise<FamilySummary | null>
 	return families.get(id) ?? null;
 };
 
+export const fetchFamilyByLoyverseCustomerId = async (loyverseCustomerId: string): Promise<FamilySummary | null> => {
+	const normalizedCustomerId = normalizeSearch(loyverseCustomerId);
+	if (!normalizedCustomerId) return null;
+
+	const db = new FamiliesDatabase({ notionSecret: NOTION_API_KEY });
+	const response = await db.query({
+		page_size: 5,
+		filter: {
+			loyverseCustomerId: { contains: normalizedCustomerId }
+		}
+	} as any);
+
+	const familyDto = response.results
+		.map((result) => new FamiliesResponseDTO(result as any))
+		.find((dto) => normalizeSearch(dto.properties.loyverseCustomerId?.text) === normalizedCustomerId);
+
+	if (!familyDto) return null;
+
+	const membersDb = new FamilyMembersDatabase({ notionSecret: NOTION_API_KEY });
+	const membersResponse = await membersDb.query({
+		filter: { family: { contains: familyDto.id } }
+	} as any);
+
+	const members = membersResponse.results.map((result) => {
+		const member = new FamilyMembersResponseDTO(result as any);
+		return {
+			id: member.id,
+			name: member.properties.name?.text ?? 'Untitled Member',
+			type: member.properties.memberType?.name ?? null,
+			email: member.properties.email ?? null,
+			phone: member.properties.phone ?? null
+		};
+	});
+
+	const summary = toFamilySummary(familyDto, members);
+	familyCache.set(summary.id, { summary, timestamp: Date.now() });
+	return summary;
+};
+
 export const upsertFamilyCache = (summary: FamilySummary) => {
 	familyCache.set(summary.id, {
 		summary,

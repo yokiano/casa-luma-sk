@@ -4,6 +4,7 @@
     dateFrom: string;
     dateTo: string;
     storeId: string;
+    customerId: string;
     sortOrder: 'desc' | 'asc';
     isLoading?: boolean;
     onApply?: () => void;
@@ -16,6 +17,7 @@
     dateFrom = $bindable(''),
     dateTo = $bindable(''),
     storeId = $bindable(''),
+    customerId = $bindable(''),
     sortOrder = $bindable('desc'),
     isLoading = false,
     onApply,
@@ -65,6 +67,16 @@
           placeholder="Optional store filter"
           class="min-w-[220px] rounded-lg border border-[#d8c9bb] bg-white px-3 py-2 text-sm text-[#2c2925]"
           bind:value={storeId}
+        />
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <span class="text-xs uppercase tracking-wide text-[#7a6550]/80">Customer ID</span>
+        <input
+          type="text"
+          placeholder="Optional customer filter"
+          class="min-w-[240px] rounded-lg border border-[#d8c9bb] bg-white px-3 py-2 text-sm text-[#2c2925]"
+          bind:value={customerId}
         />
       </div>
 
