@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Shop Balance & Reconciliation Plan</title>
+  <style>
+    :root {
+      --bg: #f6f2e8;
+      --paper: #fffaf0;
+      --ink: #2c2721;
+      --muted: #766b5e;
+      --line: #dccfb9;
+      --bank: #2f6f73;
+      --cash: #b5762f;
+      --pos: #8a5fbf;
+      --expense: #b94e48;
+      --ok: #3f7f4f;
+      --warn: #d49a2a;
+      --shadow: 0 18px 50px rgba(50, 38, 20, 0.12);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at top left, rgba(219, 168, 80, .18), transparent 32rem),
+        radial-gradient(circle at top right, rgba(47, 111, 115, .14), transparent 30rem),
+        var(--bg);
+      color: var(--ink);
+      line-height: 1.45;
+    }
+
+    .page { max-width: 1220px; margin: 0 auto; padding: 32px 22px 70px; }
+    header {
+      background: linear-gradient(135deg, #fffdf6 0%, #f0e4cd 100%);
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      padding: 34px;
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+    }
+    header:after {
+      content: "";
+      position: absolute;
+      inset: auto -50px -80px auto;
+      width: 260px; height: 260px;
+      border-radius: 50%;
+      background: rgba(47, 111, 115, .11);
+    }
+    h1 { font-size: clamp(32px, 5vw, 58px); line-height: .98; margin: 0 0 18px; letter-spacing: -0.05em; }
+    h2 { font-size: 28px; margin: 0 0 18px; letter-spacing: -0.03em; }
+    h3 { font-size: 18px; margin: 0 0 10px; }
+    p { margin: 0 0 12px; }
+    .subtitle { max-width: 780px; color: var(--muted); font-size: 19px; }
+    .tagline {
+      display: inline-flex; gap: 8px; align-items: center;
+      padding: 8px 12px; border-radius: 999px;
+      background: rgba(47,111,115,.1); color: var(--bank);
+      font-weight: 700; margin-bottom: 18px; font-size: 14px;
+    }
+
+    .grid { display: grid; gap: 18px; }
+    .cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    section { margin-top: 26px; }
+    .card {
+      background: rgba(255,250,240,.88);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 22px;
+      box-shadow: 0 10px 30px rgba(50,38,20,.07);
+    }
+    .card strong { color: var(--ink); }
+    .muted { color: var(--muted); }
+    .mini { font-size: 13px; color: var(--muted); }
+    .pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 7px 10px; border-radius: 999px;
+      font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em;
+      background: #f2eadb; color: var(--muted); margin-bottom: 12px;
+    }
+    .bank { --accent: var(--bank); }
+    .cash { --accent: var(--cash); }
+    .pos { --accent: var(--pos); }
+    .expense { --accent: var(--expense); }
+    .accent { border-top: 7px solid var(--accent); }
+    .accent .pill { background: color-mix(in srgb, var(--accent) 13%, white); color: var(--accent); }
+
+    .formula {
+      display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: center;
+      background: #fff7e6;
+      border: 2px dashed #d8bd86;
+      border-radius: 24px;
+      padding: 20px;
+      font-size: 20px;
+      text-align: center;
+      font-weight: 800;
+    }
+    .formula small { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-top: 5px; }
+    .equals { font-size: 38px; color: var(--warn); }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(150px, 1fr));
+      gap: 12px;
+      align-items: stretch;
+    }
+    .step {
+      position: relative;
+      background: #fffdf7;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 18px 16px;
+      min-height: 152px;
+    }
+    .step:not(:last-child):after {
+      content: "→";
+      position: absolute;
+      right: -15px; top: 50%; transform: translateY(-50%);
+      background: var(--bg); color: var(--muted);
+      width: 26px; height: 26px; display: grid; place-items: center;
+      border-radius: 50%; font-weight: 900; z-index: 1;
+    }
+    .num {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--ink); color: white;
+      display: grid; place-items: center;
+      font-weight: 900; margin-bottom: 12px;
+    }
+
+    .ledger-map {
+      display: grid;
+      grid-template-columns: 1.1fr .9fr 1.1fr;
+      gap: 18px;
+      align-items: center;
+    }
+    .bucket {
+      border-radius: 22px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      background: #fffdf7;
+    }
+    .bucket ul, .card ul { padding-left: 20px; margin: 10px 0 0; }
+    li { margin: 7px 0; }
+    .center-box {
+      background: #2c2721;
+      color: white;
+      border-radius: 28px;
+      padding: 24px;
+      text-align: center;
+      box-shadow: var(--shadow);
+    }
+    .center-box .mini { color: #cfc5b6; }
+    .arrow-label { text-align: center; font-weight: 900; color: var(--muted); }
+
+    table { width: 100%; border-collapse: collapse; overflow: hidden; border-radius: 18px; }
+    th, td { padding: 13px 14px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { background: #efe2cd; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; }
+    tr:last-child td { border-bottom: 0; }
+    .role { font-weight: 900; white-space: nowrap; }
+    .badge { display: inline-block; padding: 3px 8px; border-radius: 999px; background: #eee2cc; font-size: 12px; font-weight: 800; }
+
+    .checklist {
+      columns: 2;
+      column-gap: 28px;
+      padding-left: 0;
+      list-style: none;
+    }
+    .checklist li {
+      break-inside: avoid;
+      margin: 0 0 10px;
+      padding-left: 28px;
+      position: relative;
+    }
+    .checklist li:before {
+      content: "□";
+      position: absolute; left: 0; top: -1px;
+      font-weight: 900; color: var(--bank);
+    }
+
+    .memory {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+    }
+    .memory div { background: #fffdf7; border: 1px solid var(--line); border-radius: 18px; padding: 18px; }
+    .big-word { font-size: 28px; font-weight: 950; letter-spacing: -0.04em; margin-bottom: 6px; }
+
+    @media (max-width: 900px) {
+      .cols-2, .cols-3, .cols-4, .ledger-map, .memory { grid-template-columns: 1fr; }
+      .flow { grid-template-columns: 1fr; }
+      .step:not(:last-child):after { content: "↓"; right: 18px; top: auto; bottom: -18px; transform: none; }
+      .formula { grid-template-columns: 1fr; }
+      .checklist { columns: 1; }
+    }
+
+    @media print {
+      body { background: white; }
+      .page { max-width: none; padding: 0; }
+      header, .card { box-shadow: none; break-inside: avoid; }
+      section { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header>
+      <div class="tagline">Simple mental model: record → reconcile → explain differences</div>
+      <h1>Shop Balance & Reconciliation Plan</h1>
+      <p class="subtitle">A practical plan for knowing how much money the business <strong>should</strong> have, then checking it against KBiz / Kasikorn bank, cash counts, and Loyverse POS.</p>
+    </header>
+
+    <section class="grid cols-3">
+      <div class="card accent bank">
+        <div class="pill">1. Expected balance</div>
+        <h3>The ledger says what should exist</h3>
+        <p>Every sale, deposit, expense, salary, fee, transfer, and owner movement is recorded into accounts.</p>
+      </div>
+      <div class="card accent pos">
+        <div class="pill">2. Real-world evidence</div>
+        <h3>POS, slips, bank, cash count</h3>
+        <p>Loyverse, scan slips, credit settlements, cash drawer counts, and KBiz statements prove what really happened.</p>
+      </div>
+      <div class="card accent cash">
+        <div class="pill">3. Reconciliation</div>
+        <h3>Differences must have a reason</h3>
+        <p>If expected and actual do not match, the gap becomes a task: missing expense, pending card settlement, cash not deposited, fee, mistake, or timing delay.</p>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>The core formula</h2>
+      <div class="formula">
+        <div>
+          Ledger / book balance
+          <small>what we should have</small>
+        </div>
+        <div class="equals">↔</div>
+        <div>
+          Actual balance
+          <small>KBiz + counted cash + pending settlements</small>
+        </div>
+      </div>
+      <p class="muted" style="margin-top:14px">The goal is not that every source matches every day. The goal is that every difference is understood and assigned to a bucket.</p>
+    </section>
+
+    <section class="card">
+      <h2>Money map: where records come from</h2>
+      <div class="ledger-map">
+        <div class="bucket">
+          <h3>Inputs from the shop</h3>
+          <ul>
+            <li>Loyverse sales by payment method</li>
+            <li>Cash salary / cash expense notes</li>
+            <li>Cash deposited to bank</li>
+            <li>Refunds, discounts, voids, mistakes</li>
+          </ul>
+        </div>
+        <div class="center-box">
+          <h2 style="margin-bottom:8px">Ledger</h2>
+          <p class="mini">The organized truth of the business</p>
+          <p style="margin-top:12px"><strong>Bank • Cash • Scan/Card clearing • Sales • Expenses</strong></p>
+        </div>
+        <div class="bucket">
+          <h3>Proof / confirmation</h3>
+          <ul>
+            <li>KBiz bank statement</li>
+            <li>Scan payment slips</li>
+            <li>Credit card settlement reports</li>
+            <li>Physical cash count</li>
+            <li>Supplier invoices / receipts</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Actual shop flow: who records what?</h2>
+      <div class="card" style="padding:0; overflow:hidden">
+        <table>
+          <thead>
+            <tr>
+              <th>Area</th>
+              <th>Who records it</th>
+              <th>What to record</th>
+              <th>When</th>
+              <th>Proof</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="role">Scan expenses from bank</td>
+              <td>Accounting manager</td>
+              <td>Expense category, amount, date, payee, note, bank account used</td>
+              <td>Daily / every few days</td>
+              <td>Scan phone slips + KBiz statement</td>
+            </tr>
+            <tr>
+              <td class="role">Cash expenses</td>
+              <td>Shop manager or person paying cash</td>
+              <td>Amount, reason, category, who paid, receipt photo if available</td>
+              <td>Same day</td>
+              <td>Receipt / written note / salary sheet</td>
+            </tr>
+            <tr>
+              <td class="role">Cash salaries</td>
+              <td>Manager + accounting manager</td>
+              <td>Employee, period, amount, date paid, signature/confirmation</td>
+              <td>On salary day</td>
+              <td>Salary sheet / confirmation message</td>
+            </tr>
+            <tr>
+              <td class="role">Loyverse cash sales</td>
+              <td>Cashier closes shift; accounting imports/checks</td>
+              <td>Total cash sales, refunds, discounts, drawer expected amount</td>
+              <td>End of shift/day</td>
+              <td>Loyverse close shift report + cash count</td>
+            </tr>
+            <tr>
+              <td class="role">Loyverse scan / QR sales</td>
+              <td>Cashier/POS records payment method; accounting imports/checks</td>
+              <td>Total scan income by day/payment method; expected bank deposit</td>
+              <td>End of day; reconcile when bank shows it</td>
+              <td>Loyverse + payment provider / KBiz deposit</td>
+            </tr>
+            <tr>
+              <td class="role">Credit card sales</td>
+              <td>POS records card sales; accounting reconciles settlement</td>
+              <td>Gross card sales, fees, net bank deposit, settlement date</td>
+              <td>Sales daily; settlement when received</td>
+              <td>Loyverse + card settlement + KBiz</td>
+            </tr>
+            <tr>
+              <td class="role">Cash deposited to bank</td>
+              <td>Person depositing + accounting confirms</td>
+              <td>Cash leaves drawer and enters bank; not income again</td>
+              <td>On deposit day</td>
+              <td>Deposit slip + KBiz</td>
+            </tr>
+            <tr>
+              <td class="role">Bank-only items</td>
+              <td>Accounting manager</td>
+              <td>Bank fees, interest, automatic payments, unknown withdrawals/deposits</td>
+              <td>During bank reconciliation</td>
+              <td>KBiz statement</td>
+            </tr>
+            <tr>
+              <td class="role">Owner money</td>
+              <td>Owner + accounting manager</td>
+              <td>Owner investment, withdrawal, personal payment, loan to/from company</td>
+              <td>Same day or weekly review</td>
+              <td>Bank/cash proof + owner note</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Income flow by payment method</h2>
+      <div class="flow">
+        <div class="step">
+          <div class="num">1</div>
+          <h3>Sale happens</h3>
+          <p class="mini">Cashier selects Cash, Scan/QR, or Credit Card in Loyverse.</p>
+        </div>
+        <div class="step">
+          <div class="num">2</div>
+          <h3>Loyverse daily report</h3>
+          <p class="mini">Shows total sales split by payment method, including refunds/voids.</p>
+        </div>
+        <div class="step">
+          <div class="num">3</div>
+          <h3>Record into ledger</h3>
+          <p class="mini">Cash goes to Cash on Hand. Scan/card goes to Clearing/Pending Settlement.</p>
+        </div>
+        <div class="step">
+          <div class="num">4</div>
+          <h3>Money arrives</h3>
+          <p class="mini">Cash counted/deposited. Scan/card appears in KBiz, sometimes net of fees.</p>
+        </div>
+        <div class="step">
+          <div class="num">5</div>
+          <h3>Reconcile</h3>
+          <p class="mini">Match expected money to actual money. Explain any difference.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid cols-4">
+      <div class="card accent cash">
+        <div class="pill">Cash sales</div>
+        <h3>Record immediately</h3>
+        <p>Cash increases the drawer. Later deposit is only a transfer from cash to bank.</p>
+        <p class="mini"><strong>Watch for:</strong> cash expenses, salaries, missing cash, change/floats.</p>
+      </div>
+      <div class="card accent pos">
+        <div class="pill">Scan / QR sales</div>
+        <h3>Use clearing account</h3>
+        <p>Sale is recorded today, but bank deposit may appear later or grouped with other sales.</p>
+        <p class="mini"><strong>Watch for:</strong> wrong method in POS, delayed deposits, fees.</p>
+      </div>
+      <div class="card accent bank">
+        <div class="pill">Credit card</div>
+        <h3>Gross vs net</h3>
+        <p>Loyverse may show gross sale. Bank may receive net after card fees.</p>
+        <p class="mini"><strong>Record:</strong> sales gross, bank deposit net, fee as expense.</p>
+      </div>
+      <div class="card accent expense">
+        <div class="pill">Expenses</div>
+        <h3>Payment source matters</h3>
+        <p>Same expense category, different money source: bank scan, cash, card, owner paid.</p>
+        <p class="mini"><strong>Always record:</strong> amount, date, category, proof, paid from where.</p>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Daily / weekly rhythm</h2>
+      <div class="grid cols-2">
+        <div>
+          <h3>Daily close</h3>
+          <ul class="checklist">
+            <li>Export/check Loyverse sales by payment method</li>
+            <li>Count cash drawer and record cash difference</li>
+            <li>Record scan-phone expense slips</li>
+            <li>Record cash expenses and cash salaries paid that day</li>
+            <li>Flag unknown or suspicious payments immediately</li>
+            <li>Keep receipt/slip photos linked to records</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Weekly / monthly reconciliation</h3>
+          <ul class="checklist">
+            <li>Import KBiz statement</li>
+            <li>Match bank deposits to scan/card clearing</li>
+            <li>Match bank withdrawals to expense records</li>
+            <li>Add missing bank fees and automatic payments</li>
+            <li>Review owner withdrawals/injections</li>
+            <li>Produce difference report: explained vs unexplained</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Easy mental model to remember</h2>
+      <div class="memory">
+        <div>
+          <div class="big-word">Sale</div>
+          <p class="mini">What did we earn, and by which payment method?</p>
+        </div>
+        <div>
+          <div class="big-word">Source</div>
+          <p class="mini">Where did the money go first: cash drawer, bank, or pending clearing?</p>
+        </div>
+        <div>
+          <div class="big-word">Spend</div>
+          <p class="mini">What did we pay, and from which source: bank scan, cash, card, owner?</p>
+        </div>
+        <div>
+          <div class="big-word">Match</div>
+          <p class="mini">Can every bank/cash movement be matched to a ledger record?</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid cols-2">
+      <div class="card">
+        <h2>Minimum accounts to track</h2>
+        <ul>
+          <li><strong>Kasikorn / KBiz Bank</strong> — actual bank account</li>
+          <li><strong>Cash on Hand</strong> — shop drawer / safe</li>
+          <li><strong>Scan/QR Clearing</strong> — scan sales expected but not reconciled</li>
+          <li><strong>Credit Card Clearing</strong> — card sales expected but not settled</li>
+          <li><strong>Sales Revenue</strong> — gross income from Loyverse</li>
+          <li><strong>Expense categories</strong> — rent, supplies, salary, utilities, fees, etc.</li>
+          <li><strong>Owner / Loans / Tax</strong> — money that is not normal sale/expense</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h2>Common forgotten things</h2>
+        <ul>
+          <li>Bank fees and card processing fees</li>
+          <li>Refunds, chargebacks, voids, discounts</li>
+          <li>Cash taken for small purchases</li>
+          <li>Cash salaries or advances</li>
+          <li>Owner pays a company expense personally</li>
+          <li>Owner withdraws money for personal use</li>
+          <li>Supplier credit / unpaid bills</li>
+          <li>Deposits that combine several days of sales</li>
+          <li>Money in transit: sale happened but bank has not received it yet</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="card accent bank">
+      <div class="pill">First implementation target</div>
+      <h2>Build the first useful dashboard</h2>
+      <p>Start with a simple report, not a perfect accounting system.</p>
+      <div class="grid cols-3" style="margin-top:14px">
+        <div class="bucket">
+          <h3>Expected</h3>
+          <p class="mini">Ledger bank balance, ledger cash balance, pending scan/card clearing.</p>
+        </div>
+        <div class="bucket">
+          <h3>Actual</h3>
+          <p class="mini">KBiz bank balance, counted cash, settlement reports.</p>
+        </div>
+        <div class="bucket">
+          <h3>Difference</h3>
+          <p class="mini">Explained timing differences + unexplained items that need action.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
