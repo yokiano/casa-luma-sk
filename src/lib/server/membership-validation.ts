@@ -1,6 +1,8 @@
 import { NOTION_API_KEY } from '$env/static/private';
-import { FamiliesDatabase, FamiliesResponseDTO } from '$lib/notion-sdk/dbs/families';
-import { MembershipsDatabase, MembershipsResponseDTO } from '$lib/notion-sdk/dbs/memberships';
+import { FamiliesDatabase } from '$lib/notion-sdk/dbs/families/db';
+import { FamiliesResponseDTO } from '$lib/notion-sdk/dbs/families/response.dto';
+import { MembershipsDatabase } from '$lib/notion-sdk/dbs/memberships/db';
+import { MembershipsResponseDTO } from '$lib/notion-sdk/dbs/memberships/response.dto';
 
 export type MembershipValidationFamily = {
   id: string;

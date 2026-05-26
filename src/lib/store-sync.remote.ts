@@ -1,6 +1,8 @@
 import { query, command } from '$app/server';
 import { NOTION_API_KEY } from '$env/static/private';
-import { StoreItemsDatabase, StoreItemsResponseDTO, StoreItemsPatchDTO } from '$lib/notion-sdk/dbs/store-items';
+import { StoreItemsDatabase } from '$lib/notion-sdk/dbs/store-items/db';
+import { StoreItemsPatchDTO } from '$lib/notion-sdk/dbs/store-items/patch.dto';
+import { StoreItemsResponseDTO } from '$lib/notion-sdk/dbs/store-items/response.dto';
 import { loyverse } from '$lib/server/loyverse';
 import * as v from 'valibot';
 import type { MenuItemSyncState, SyncReport, ItemSyncResult, SyncStatus } from './menu-sync.remote';

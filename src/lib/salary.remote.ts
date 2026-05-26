@@ -1,10 +1,14 @@
 import { query, command } from '$app/server';
 import * as v from 'valibot';
 import { NOTION_API_KEY } from '$env/static/private';
-import { ShiftsDatabase, ShiftsResponseDTO } from '$lib/notion-sdk/dbs/shifts';
-import { SalaryAdjustmentsDatabase, SalaryAdjustmentsResponseDTO } from '$lib/notion-sdk/dbs/salary-adjustments';
-import { EmployeesDatabase, EmployeesResponseDTO } from '$lib/notion-sdk/dbs/employees';
-import { SalaryPaymentsDatabase, SalaryPaymentsPatchDTO } from '$lib/notion-sdk/dbs/salary-payments';
+import { ShiftsDatabase } from '$lib/notion-sdk/dbs/shifts/db';
+import { ShiftsResponseDTO } from '$lib/notion-sdk/dbs/shifts/response.dto';
+import { SalaryAdjustmentsDatabase } from '$lib/notion-sdk/dbs/salary-adjustments/db';
+import { SalaryAdjustmentsResponseDTO } from '$lib/notion-sdk/dbs/salary-adjustments/response.dto';
+import { EmployeesDatabase } from '$lib/notion-sdk/dbs/employees/db';
+import { EmployeesResponseDTO } from '$lib/notion-sdk/dbs/employees/response.dto';
+import { SalaryPaymentsDatabase } from '$lib/notion-sdk/dbs/salary-payments/db';
+import { SalaryPaymentsPatchDTO } from '$lib/notion-sdk/dbs/salary-payments/patch.dto';
 import { uploadToNotion } from '$lib/server/notion/upload';
 import type { SalaryEmployee, SalaryShift, SalaryAdjustment } from './salary';
 import { getBangkokDateStr } from './date-utils';

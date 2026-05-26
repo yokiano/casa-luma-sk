@@ -2,10 +2,8 @@ import { query } from '$app/server';
 import { error } from '@sveltejs/kit';
 import * as v from 'valibot';
 import { NOTION_API_KEY } from '$env/static/private';
-import { 
-	JobOpeningsDatabase,
-	JobOpeningsResponseDTO
-} from '$lib/notion-sdk/dbs/job-openings';
+import { JobOpeningsDatabase } from '$lib/notion-sdk/dbs/job-openings/db';
+import { JobOpeningsResponseDTO } from '$lib/notion-sdk/dbs/job-openings/response.dto';
 import { toPojo } from '$lib/serialization';
 
 // Validation schemas

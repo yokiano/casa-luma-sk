@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { JobOpeningsResponseDTO } from '$lib/notion-sdk/dbs/job-openings';
+  import type { JobOpeningsResponseDTO } from '$lib/notion-sdk/dbs/job-openings/response.dto';
   import GraphicRenderer from '$lib/components/graphics/GraphicRenderer.svelte';
   import AllJobOpeningsGraphic from '$lib/components/graphics/AllJobOpeningsGraphic.svelte';
 

@@ -1,6 +1,7 @@
 import { query } from '$app/server';
 import { NOTION_API_KEY } from '$env/static/private';
-import { PosModifiersDatabase, PosModifiersResponseDTO } from '$lib/notion-sdk/dbs/pos-modifiers';
+import { PosModifiersDatabase } from '$lib/notion-sdk/dbs/pos-modifiers/db';
+import { PosModifiersResponseDTO } from '$lib/notion-sdk/dbs/pos-modifiers/response.dto';
 import type { MenuModifier, MenuModifierOption } from '$lib/types/menu';
 
 const parseOptions = (jsonString?: string): MenuModifierOption[] => {

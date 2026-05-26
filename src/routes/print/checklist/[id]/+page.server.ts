@@ -1,5 +1,6 @@
 import { NOTION_API_KEY } from '$env/static/private';
-import { SopCatalogDatabase, SopCatalogResponseDTO } from '$lib/notion-sdk/dbs/sop-catalog';
+import { SopCatalogDatabase } from '$lib/notion-sdk/dbs/sop-catalog/db';
+import { SopCatalogResponseDTO } from '$lib/notion-sdk/dbs/sop-catalog/response.dto';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {

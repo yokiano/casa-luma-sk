@@ -1,6 +1,9 @@
 import { NOTION_API_KEY } from '$env/static/private';
-import { FamiliesDatabase, FamiliesResponseDTO } from '$lib/notion-sdk/dbs/families';
-import { MembershipsDatabase, MembershipsPatchDTO, MembershipsResponseDTO } from '$lib/notion-sdk/dbs/memberships';
+import { FamiliesDatabase } from '$lib/notion-sdk/dbs/families/db';
+import { FamiliesResponseDTO } from '$lib/notion-sdk/dbs/families/response.dto';
+import { MembershipsDatabase } from '$lib/notion-sdk/dbs/memberships/db';
+import { MembershipsPatchDTO } from '$lib/notion-sdk/dbs/memberships/patch.dto';
+import { MembershipsResponseDTO } from '$lib/notion-sdk/dbs/memberships/response.dto';
 import {
   MEMBERSHIP_REFUND_NOTE_PREFIX,
   createMembershipFromReceiptAutomation,

@@ -1,6 +1,8 @@
 import { query, command } from '$app/server';
 import { NOTION_API_KEY, LOYVERSE_STORE_ID } from '$env/static/private';
-import { PosDiscountsDatabase, PosDiscountsResponseDTO, PosDiscountsPatchDTO } from '$lib/notion-sdk/dbs/pos-discounts';
+import { PosDiscountsDatabase } from '$lib/notion-sdk/dbs/pos-discounts/db';
+import { PosDiscountsPatchDTO } from '$lib/notion-sdk/dbs/pos-discounts/patch.dto';
+import { PosDiscountsResponseDTO } from '$lib/notion-sdk/dbs/pos-discounts/response.dto';
 import { loyverse } from '$lib/server/loyverse';
 import * as v from 'valibot';
 

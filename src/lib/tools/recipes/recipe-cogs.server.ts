@@ -1,5 +1,9 @@
-import { RecipesDatabase, RecipesResponseDTO, type RecipesQueryResponse } from '$lib/notion-sdk/dbs/recipes';
-import { RecipeLinesDatabase, RecipeLinesResponseDTO, type RecipeLinesQueryResponse } from '$lib/notion-sdk/dbs/recipe-lines';
+import { RecipesDatabase } from '$lib/notion-sdk/dbs/recipes/db';
+import { RecipesResponseDTO } from '$lib/notion-sdk/dbs/recipes/response.dto';
+import type { RecipesQueryResponse } from '$lib/notion-sdk/dbs/recipes/types';
+import { RecipeLinesDatabase } from '$lib/notion-sdk/dbs/recipe-lines/db';
+import { RecipeLinesResponseDTO } from '$lib/notion-sdk/dbs/recipe-lines/response.dto';
+import type { RecipeLinesQueryResponse } from '$lib/notion-sdk/dbs/recipe-lines/types';
 
 export type RecipeCogsSource = 'recipe-lines' | 'recipe-rollup';
 

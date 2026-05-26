@@ -1,9 +1,12 @@
 import { query, command } from '$app/server';
 import { NOTION_API_KEY } from '$env/static/private';
-import { MenuItemsDatabase, MenuItemsResponseDTO, MenuItemsPatchDTO } from '$lib/notion-sdk/dbs/menu-items';
-import { PosModifiersDatabase, PosModifiersResponseDTO } from '$lib/notion-sdk/dbs/pos-modifiers';
-import { RecipesDatabase } from '$lib/notion-sdk/dbs/recipes';
-import { RecipeLinesDatabase } from '$lib/notion-sdk/dbs/recipe-lines';
+import { MenuItemsDatabase } from '$lib/notion-sdk/dbs/menu-items/db';
+import { MenuItemsPatchDTO } from '$lib/notion-sdk/dbs/menu-items/patch.dto';
+import { MenuItemsResponseDTO } from '$lib/notion-sdk/dbs/menu-items/response.dto';
+import { PosModifiersDatabase } from '$lib/notion-sdk/dbs/pos-modifiers/db';
+import { PosModifiersResponseDTO } from '$lib/notion-sdk/dbs/pos-modifiers/response.dto';
+import { RecipesDatabase } from '$lib/notion-sdk/dbs/recipes/db';
+import { RecipeLinesDatabase } from '$lib/notion-sdk/dbs/recipe-lines/db';
 import { loyverse } from '$lib/server/loyverse';
 import { buildRecipeCostVariantFields } from '$lib/menu-sync.costs';
 import { buildMenuItemRecipeCogsMap, notionIdKey, roundMoney, type RecipeCogsInfo } from '$lib/tools/recipes/recipe-cogs.server';

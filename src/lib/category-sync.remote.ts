@@ -1,8 +1,11 @@
 import { query, command } from '$app/server';
 import { NOTION_API_KEY } from '$env/static/private';
-import { MenuItemsDatabase, MenuItemsResponseDTO } from '$lib/notion-sdk/dbs/menu-items';
-import { OpenPlayPosItemsDatabase, OpenPlayPosItemsResponseDTO } from '$lib/notion-sdk/dbs/open-play-pos-items';
-import { PayForPlayItemsDatabase, PayForPlayItemsResponseDTO } from '$lib/notion-sdk/dbs/pay-for-play-items';
+import { MenuItemsDatabase } from '$lib/notion-sdk/dbs/menu-items/db';
+import { MenuItemsResponseDTO } from '$lib/notion-sdk/dbs/menu-items/response.dto';
+import { OpenPlayPosItemsDatabase } from '$lib/notion-sdk/dbs/open-play-pos-items/db';
+import { OpenPlayPosItemsResponseDTO } from '$lib/notion-sdk/dbs/open-play-pos-items/response.dto';
+import { PayForPlayItemsDatabase } from '$lib/notion-sdk/dbs/pay-for-play-items/db';
+import { PayForPlayItemsResponseDTO } from '$lib/notion-sdk/dbs/pay-for-play-items/response.dto';
 import { loyverse } from '$lib/server/loyverse';
 import * as v from 'valibot';
 

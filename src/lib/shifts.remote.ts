@@ -2,7 +2,9 @@ import { command, query } from '$app/server';
 import * as v from 'valibot';
 import { error } from '@sveltejs/kit';
 import { NOTION_API_KEY } from '$env/static/private';
-import { ShiftsDatabase, ShiftsResponseDTO, type ShiftsStatusPropertyType } from '$lib/notion-sdk/dbs/shifts';
+import { ShiftsDatabase } from '$lib/notion-sdk/dbs/shifts/db';
+import { ShiftsResponseDTO } from '$lib/notion-sdk/dbs/shifts/response.dto';
+import type { ShiftsStatusPropertyType } from '$lib/notion-sdk/dbs/shifts/types';
 import { ShiftsPatchDTO } from '$lib/notion-sdk/dbs/shifts/patch.dto';
 
 export type ShiftForReview = {

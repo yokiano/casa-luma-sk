@@ -1,6 +1,7 @@
 import { query, command } from '$app/server';
 import { NOTION_API_KEY } from '$env/static/private';
-import { PayForPlayItemsDatabase, PayForPlayItemsResponseDTO } from '$lib/notion-sdk/dbs/pay-for-play-items';
+import { PayForPlayItemsDatabase } from '$lib/notion-sdk/dbs/pay-for-play-items/db';
+import { PayForPlayItemsResponseDTO } from '$lib/notion-sdk/dbs/pay-for-play-items/response.dto';
 import { loyverse } from '$lib/server/loyverse';
 import * as v from 'valibot';
 import type { MenuItemSyncState, SyncReport, ItemSyncResult, SyncStatus } from './menu-sync.remote';

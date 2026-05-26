@@ -1,5 +1,5 @@
-import type { FamiliesDatabase } from '$lib/notion-sdk/dbs/families'
-import { FamiliesPatchDTO } from '$lib/notion-sdk/dbs/families'
+import type { FamiliesDatabase } from '$lib/notion-sdk/dbs/families/db';
+import { FamiliesPatchDTO } from '$lib/notion-sdk/dbs/families/patch.dto';
 
 function lettersOnlyUpper(input: string) {
   return (input ?? '')

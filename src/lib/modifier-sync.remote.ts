@@ -1,6 +1,8 @@
 import { query, command } from '$app/server';
 import { NOTION_API_KEY, LOYVERSE_STORE_ID } from '$env/static/private';
-import { PosModifiersDatabase, PosModifiersResponseDTO, PosModifiersPatchDTO } from '$lib/notion-sdk/dbs/pos-modifiers';
+import { PosModifiersDatabase } from '$lib/notion-sdk/dbs/pos-modifiers/db';
+import { PosModifiersPatchDTO } from '$lib/notion-sdk/dbs/pos-modifiers/patch.dto';
+import { PosModifiersResponseDTO } from '$lib/notion-sdk/dbs/pos-modifiers/response.dto';
 import { loyverse, type LoyverseModifierOption } from '$lib/server/loyverse';
 import * as v from 'valibot';
 

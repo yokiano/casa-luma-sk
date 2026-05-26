@@ -5,6 +5,7 @@
 ## Notion schema changes
 - When adding, renaming, or changing Notion database properties used by `src/lib/notion-sdk/**`, run `pnpm notion:generate` afterward so the generated SDK/types stay in sync.
 - If the generator prompts about unrelated new databases, add those databases to `notion-sdk.json` `ignore` only when they are not needed by this app, then rerun the generator.
+- Avoid importing generated Notion SDK database barrels such as `$lib/notion-sdk/dbs/<db>` from server/runtime code. Import concrete files instead (`/db`, `/response.dto`, `/patch.dto`, `/constants`, `/types`) to avoid Vercel/SvelteKit production-build circular initialization errors like `Cannot access 'GenericDatabaseClass' before initialization`.
 
 ## Dev server logs via tmux
 - The dev server is often already running in tmux. Before starting a new server, check for an existing tmux server and panes:

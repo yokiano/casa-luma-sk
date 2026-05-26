@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { getOpenJobOpenings } from '$lib/careers.remote';
-	import type { JobOpeningsResponseDTO } from '$lib/notion-sdk/dbs/job-openings';
+	import type { JobOpeningsResponseDTO } from '$lib/notion-sdk/dbs/job-openings/response.dto';
   import AllJobsGraphicGenerator from '$lib/components/jobs/AllJobsGraphicGenerator.svelte';
 
 	let openings = $state<JobOpeningsResponseDTO[]>([]);

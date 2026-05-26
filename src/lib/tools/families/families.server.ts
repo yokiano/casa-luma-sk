@@ -1,6 +1,8 @@
 import { NOTION_API_KEY } from '$env/static/private';
-import { FamiliesDatabase, FamiliesResponseDTO } from '$lib/notion-sdk/dbs/families';
-import { FamilyMembersDatabase, FamilyMembersResponseDTO } from '$lib/notion-sdk/dbs/family-members';
+import { FamiliesDatabase } from '$lib/notion-sdk/dbs/families/db';
+import { FamiliesResponseDTO } from '$lib/notion-sdk/dbs/families/response.dto';
+import { FamilyMembersDatabase } from '$lib/notion-sdk/dbs/family-members/db';
+import { FamilyMembersResponseDTO } from '$lib/notion-sdk/dbs/family-members/response.dto';
 
 export type FamilyMemberSummary = {
 	id: string;

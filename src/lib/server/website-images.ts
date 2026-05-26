@@ -1,9 +1,7 @@
 import { NOTION_API_KEY } from '$env/static/private';
 import { dev } from '$app/environment';
-import {
-	WebsiteImagesDatabase,
-	WebsiteImagesResponseDTO
-} from '$lib/notion-sdk/dbs/website-images';
+import { WebsiteImagesDatabase } from '$lib/notion-sdk/dbs/website-images/db';
+import { WebsiteImagesResponseDTO } from '$lib/notion-sdk/dbs/website-images/response.dto';
 import type { WebsiteImageAsset, WebsiteImageMap, WebsiteImageSlug } from '$lib/types/website-media';
 
 const websiteImagesDb = new WebsiteImagesDatabase({ notionSecret: NOTION_API_KEY });

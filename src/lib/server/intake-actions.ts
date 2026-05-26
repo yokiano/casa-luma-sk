@@ -1,12 +1,10 @@
 import { NOTION_API_KEY } from '$env/static/private';
-import {
-  FamiliesDatabase,
-  FamiliesPatchDTO,
-  FamiliesResponseDTO,
-  type FamiliesDietaryPreferenceFamilyPropertyType,
-  type FamiliesHowDidYouHearAboutUsPropertyType,
-} from '$lib/notion-sdk/dbs/families';
-import { FamilyMembersDatabase, FamilyMembersPatchDTO } from '$lib/notion-sdk/dbs/family-members';
+import { FamiliesDatabase } from '$lib/notion-sdk/dbs/families/db';
+import { FamiliesPatchDTO } from '$lib/notion-sdk/dbs/families/patch.dto';
+import { FamiliesResponseDTO } from '$lib/notion-sdk/dbs/families/response.dto';
+import type { FamiliesDietaryPreferenceFamilyPropertyType, FamiliesHowDidYouHearAboutUsPropertyType } from '$lib/notion-sdk/dbs/families/types';
+import { FamilyMembersDatabase } from '$lib/notion-sdk/dbs/family-members/db';
+import { FamilyMembersPatchDTO } from '$lib/notion-sdk/dbs/family-members/patch.dto';
 import { loyverse } from '$lib/server/loyverse';
 import { assignFamilyCustomerCode } from '$lib/server/customer-code';
 import type { IntakeFormData } from '$lib/types/intake';

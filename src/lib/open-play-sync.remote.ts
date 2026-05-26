@@ -1,6 +1,8 @@
 import { query, command } from '$app/server';
 import { NOTION_API_KEY } from '$env/static/private';
-import { OpenPlayPosItemsDatabase, OpenPlayPosItemsResponseDTO, OpenPlayPosItemsPatchDTO } from '$lib/notion-sdk/dbs/open-play-pos-items';
+import { OpenPlayPosItemsDatabase } from '$lib/notion-sdk/dbs/open-play-pos-items/db';
+import { OpenPlayPosItemsPatchDTO } from '$lib/notion-sdk/dbs/open-play-pos-items/patch.dto';
+import { OpenPlayPosItemsResponseDTO } from '$lib/notion-sdk/dbs/open-play-pos-items/response.dto';
 import { loyverse } from '$lib/server/loyverse';
 import * as v from 'valibot';
 import type { MenuItemSyncState, SyncReport, ItemSyncResult, SyncStatus } from './menu-sync.remote';

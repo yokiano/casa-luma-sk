@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import type { JobOpeningsResponseDTO } from '$lib/notion-sdk/dbs/job-openings';
+	import type { JobOpeningsResponseDTO } from '$lib/notion-sdk/dbs/job-openings/response.dto';
 	import GraphicRenderer from '$lib/components/graphics/GraphicRenderer.svelte';
 	import JobOpeningGraphic from '$lib/components/graphics/JobOpeningGraphic.svelte';
 

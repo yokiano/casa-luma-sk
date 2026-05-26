@@ -1,7 +1,8 @@
 import { query } from '$app/server';
 import { NOTION_API_KEY } from '$env/static/private';
-import { EmployeesDatabase, EmployeesResponseDTO } from '$lib/notion-sdk/dbs/employees';
-import { RolesDatabase } from '$lib/notion-sdk/dbs/roles';
+import { EmployeesDatabase } from '$lib/notion-sdk/dbs/employees/db';
+import { EmployeesResponseDTO } from '$lib/notion-sdk/dbs/employees/response.dto';
+import { RolesDatabase } from '$lib/notion-sdk/dbs/roles/db';
 
 export interface PublicEmployee {
 	id: string;

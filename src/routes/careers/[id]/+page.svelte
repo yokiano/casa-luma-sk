@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { getJobOpening } from '$lib/careers.remote';
-	import type { JobOpeningsResponseDTO } from '$lib/notion-sdk/dbs/job-openings';
+	import type { JobOpeningsResponseDTO } from '$lib/notion-sdk/dbs/job-openings/response.dto';
 	import JobBoardPost from '$lib/components/jobs/JobBoardPost.svelte';
 	import JobGraphicGenerator from '$lib/components/jobs/JobGraphicGenerator.svelte';
 

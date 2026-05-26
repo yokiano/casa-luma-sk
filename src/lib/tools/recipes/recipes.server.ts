@@ -1,9 +1,16 @@
 import { env } from '$env/dynamic/private';
 import { error } from '@sveltejs/kit';
-import { RecipesDatabase, RecipesPatchDTO, RecipesResponseDTO, type RecipesQueryResponse } from '$lib/notion-sdk/dbs/recipes';
-import { RecipeLinesDatabase, RecipeLinesResponseDTO } from '$lib/notion-sdk/dbs/recipe-lines';
-import { IngredientsDatabase, IngredientsResponseDTO } from '$lib/notion-sdk/dbs/ingredients';
-import { MenuItemsDatabase, MenuItemsResponseDTO, type MenuItemsQueryResponse } from '$lib/notion-sdk/dbs/menu-items';
+import { RecipesDatabase } from '$lib/notion-sdk/dbs/recipes/db';
+import { RecipesPatchDTO } from '$lib/notion-sdk/dbs/recipes/patch.dto';
+import { RecipesResponseDTO } from '$lib/notion-sdk/dbs/recipes/response.dto';
+import type { RecipesQueryResponse } from '$lib/notion-sdk/dbs/recipes/types';
+import { RecipeLinesDatabase } from '$lib/notion-sdk/dbs/recipe-lines/db';
+import { RecipeLinesResponseDTO } from '$lib/notion-sdk/dbs/recipe-lines/response.dto';
+import { IngredientsDatabase } from '$lib/notion-sdk/dbs/ingredients/db';
+import { IngredientsResponseDTO } from '$lib/notion-sdk/dbs/ingredients/response.dto';
+import { MenuItemsDatabase } from '$lib/notion-sdk/dbs/menu-items/db';
+import { MenuItemsResponseDTO } from '$lib/notion-sdk/dbs/menu-items/response.dto';
+import type { MenuItemsQueryResponse } from '$lib/notion-sdk/dbs/menu-items/types';
 import type {
 	IngredientLine,
 	MenuCategoryGroup,
