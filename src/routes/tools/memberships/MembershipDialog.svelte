@@ -89,11 +89,11 @@
 		endDateOverridden = false;
 		endDate = calculatedEndDate;
 	};
-	const dialogTitle = $derived(isEditMode ? 'Edit Membership' : 'Create Membership');
+	const dialogTitle = $derived(isEditMode ? 'Edit Membership' : 'Memberships are created automatically');
 	const dialogDescription = $derived(
 		isEditMode
 			? 'Update membership details for this family.'
-			: 'Link a family, choose a membership type, and set the duration details.'
+			: 'Memberships are created automatically after an eligible receipt is closed.'
 	);
 	const submitLabel = $derived(isEditMode ? 'Save Changes' : 'Create Membership');
 
@@ -221,35 +221,56 @@
 			</Dialog.Description>
 		</Dialog.Header>
 
-		<MembershipForm
-			bind:selectedFamily
-			bind:membershipType
-			bind:numberOfKids
-			bind:startDate
-			bind:endDate
-			bind:endDateOverridden
-			bind:notes
-			{errorMessage}
-			onResetEndDate={handleResetEndDate}
-		/>
+		{#if isEditMode}
+			<MembershipForm
+				bind:selectedFamily
+				bind:membershipType
+				bind:numberOfKids
+				bind:startDate
+				bind:endDate
+				bind:endDateOverridden
+				bind:notes
+				{errorMessage}
+				onResetEndDate={handleResetEndDate}
+			/>
 
-		<Dialog.Footer class="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-between">
-			<button
-				type="button"
-				class="rounded-full border border-[#d9d0c7] px-4 py-2 text-sm font-medium text-[#7a6550] transition hover:bg-white"
-				onclick={handleClose}
-				disabled={isSubmitting}
-			>
-				Cancel
-			</button>
-			<button
-				type="button"
-				class="rounded-full bg-[#2c2925] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#1f1d1a] disabled:cursor-not-allowed disabled:opacity-60"
-				onclick={handleSubmit}
-				disabled={isSubmitting}
-			>
-				{isSubmitting ? 'Saving...' : submitLabel}
-			</button>
-		</Dialog.Footer>
+			<Dialog.Footer class="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-between">
+				<button
+					type="button"
+					class="rounded-full border border-[#d9d0c7] px-4 py-2 text-sm font-medium text-[#7a6550] transition hover:bg-white"
+					onclick={handleClose}
+					disabled={isSubmitting}
+				>
+					Cancel
+				</button>
+				<button
+					type="button"
+					class="rounded-full bg-[#2c2925] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#1f1d1a] disabled:cursor-not-allowed disabled:opacity-60"
+					onclick={handleSubmit}
+					disabled={isSubmitting}
+				>
+					{isSubmitting ? 'Saving...' : submitLabel}
+				</button>
+			</Dialog.Footer>
+		{:else}
+			<div class="rounded-3xl border border-[#e3d7cc] bg-white/70 p-5 text-sm leading-6 text-[#5c4a3d]">
+				<p>
+					Memberships are created automatically after an eligible receipt is closed.
+				</p>
+				<p class="mt-2 text-[#7a6550]/80">
+					Close the membership purchase receipt first, then refresh this page to see the new membership.
+				</p>
+			</div>
+
+			<Dialog.Footer class="mt-6">
+				<button
+					type="button"
+					class="rounded-full bg-[#2c2925] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#1f1d1a]"
+					onclick={handleClose}
+				>
+					Got it
+				</button>
+			</Dialog.Footer>
+		{/if}
 	</Dialog.Content>
 </Dialog.Root>

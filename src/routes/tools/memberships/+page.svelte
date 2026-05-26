@@ -359,7 +359,7 @@
 		</div>
 	{:else if memberships.length === 0}
 		<div class="rounded-3xl border border-[#e3d7cc] bg-white/70 p-6 text-sm text-[#7a6550]/80">
-			No memberships found. Try a different search or add a new membership.
+			No memberships found. Try a different search or close an eligible membership receipt.
 		</div>
 	{:else}
 		<div class="grid gap-3">
