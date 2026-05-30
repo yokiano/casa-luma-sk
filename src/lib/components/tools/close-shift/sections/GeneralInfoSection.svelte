@@ -54,7 +54,7 @@
 
 		<div class="space-y-2">
 			<label for="paidOut" class="text-sm font-medium">Paid Out (from POS shift report)</label>
-			<p class="text-xs text-muted-foreground">Total cash removed from register for expenses according to the shift report slip.</p>
+			<p class="text-xs text-muted-foreground">Used only to reconcile shift expenses. Loyverse expected cash already includes these payouts.</p>
 			<div class="relative">
 				<span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">฿</span>
 				<input

@@ -8,7 +8,6 @@
 		paidOut: number | undefined;
 		expensesTotal: number;
 		paidOutDifference: number;
-		adjustedExpectedCash: number;
 		actualCash: number;
 		difference: number;
 		notes: string;
@@ -44,24 +43,6 @@
 				>฿{formatCurrency(shiftState.expectedCash)}</span
 			>
 		</div>
-		{#if (shiftState.paidOut ?? 0) > 0 || shiftState.expensesTotal > 0}
-			<div class="flex justify-between items-center text-sm">
-				<span class="text-muted-foreground">Paid Out from Shift Report</span>
-				<span class="font-medium">-฿{formatCurrency(shiftState.paidOut)}</span>
-			</div>
-			<div class="flex justify-between items-center text-sm">
-				<span class="text-muted-foreground">Detailed Shift Expenses</span>
-				<span class="font-medium">฿{formatCurrency(shiftState.expensesTotal)}</span>
-			</div>
-			<div class="flex justify-between items-center text-sm {shiftState.paidOutDifference === 0 ? 'text-green-600' : 'text-red-500'}">
-				<span>Paid Out Difference</span>
-				<span class="font-medium">฿{formatCurrency(shiftState.paidOutDifference)}</span>
-			</div>
-			<div class="flex justify-between items-center text-sm font-semibold">
-				<span>Adjusted Expected Cash</span>
-				<span>฿{formatCurrency(shiftState.adjustedExpectedCash)}</span>
-			</div>
-		{/if}
 		<div class="flex justify-between items-center text-sm">
 			<span class="text-muted-foreground">Actual Cash Count</span>
 			<span class="font-medium"
@@ -81,6 +62,25 @@
 					: ""}฿{shiftState.difference.toLocaleString()}
 			</span>
 		</div>
+
+		{#if (shiftState.paidOut ?? 0) > 0 || shiftState.expensesTotal > 0}
+			<div class="h-px bg-border"></div>
+			<div class="space-y-2 rounded-xl bg-white/70 p-3">
+				<p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Expense reconciliation</p>
+				<div class="flex justify-between items-center text-sm">
+					<span class="text-muted-foreground">Paid Out from Shift Report</span>
+					<span class="font-medium">฿{formatCurrency(shiftState.paidOut)}</span>
+				</div>
+				<div class="flex justify-between items-center text-sm">
+					<span class="text-muted-foreground">Detailed Shift Expenses</span>
+					<span class="font-medium">฿{formatCurrency(shiftState.expensesTotal)}</span>
+				</div>
+				<div class="flex justify-between items-center text-sm {shiftState.paidOutDifference === 0 ? 'text-green-600' : 'text-red-500'}">
+					<span>Paid Out Difference</span>
+					<span class="font-medium">฿{formatCurrency(shiftState.paidOutDifference)}</span>
+				</div>
+			</div>
+		{/if}
 	</div>
 
 	<div class="space-y-2">

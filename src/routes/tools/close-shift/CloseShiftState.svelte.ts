@@ -84,9 +84,9 @@ export class CloseShiftState {
 
   paidOutDifference = $derived(numberOrZero(this.paidOut) - this.expensesTotal);
 
-  adjustedExpectedCash = $derived(numberOrZero(this.expectedCash) - numberOrZero(this.paidOut));
-
-  difference = $derived(this.actualCash - this.adjustedExpectedCash);
+  // Loyverse expected cash already accounts for paid-out cash removals.
+  // Keep Paid Out only for reconciling detailed shift expenses, not for cash variance.
+  difference = $derived(this.actualCash - numberOrZero(this.expectedCash));
 
   // Methods
   normalizeExpectedCash() {
