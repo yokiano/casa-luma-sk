@@ -27,6 +27,41 @@ These constants live in `src/lib/receipts/open-play-items.ts` and are used by re
 
 Each flexi card purchase currently grants `11` entrances (`FLEXI_PASS_ENTRIES_PER_CARD`).
 
+## Notion flexi records
+
+Flexi purchases use a dedicated Notion database: `🎟️ Flexi Passes`.
+
+- Generated SDK: `src/lib/notion-sdk/dbs/flexi-passes/`
+- Database ID: `b1e1d005-eaf0-4dc3-9d25-8d7df3404b36`
+- Created under the Open Play page.
+- The intentionally archived duplicate database `81b2e172-fe5a-4870-8e36-41ed03b1a42f` is listed in `notion-sdk.json` `ignore` so generation stays stable.
+
+Do **not** reuse `Memberships.Number of Kids` for card count. Do **not** store essential structured flexi data only in `Notes`; notes are for human/provenance notes.
+
+Current flexi properties:
+
+| Property | Type | Purpose |
+| --- | --- | --- |
+| `Name` | title | Human-readable pass/receipt label |
+| `Family` | relation to Families | Staff-visible owner |
+| `Loyverse Customer ID` | rich text | Receipt/customer lookup and backfill key |
+| `Card Count` | number | Number of purchased flexi cards |
+| `Entries Granted` | number | Usually `Card Count × 11` |
+| `Entries Used` | number | Deducted entries or imported usage count |
+| `Entries Left` | formula/number | Remaining usable entries |
+| `Valid From` | date | Purchase/activation date |
+| `Valid Until` | date | 60-day inclusive expiry date |
+| `Source Receipt Number` | rich text | Idempotency and staff lookup |
+| `Source Receipt Key` | rich text | Merchant-aware idempotency key |
+| `Source Receipt URL` | url | Link back to receipt tools |
+| `Source Line Indexes` | rich text | Receipt-line provenance |
+| `Source Item IDs` | rich text/multi-select | Flexi item provenance |
+| `Automation Status` | select | `Active`, `Refunded`, `Manual Review`, etc. |
+| `Refund Receipt Number` | rich text | Refund provenance when applicable |
+| `Notes` | rich text | Actual staff notes only |
+
+Automation creates one `Flexi Passes` row per eligible purchase receipt. A receipt quantity of `2` creates one row with `Card Count = 2`, `Entries Granted = 22`, `Entries Used = 0`, and `Entries Left = 22`.
+
 ## Neon receipt fields
 
 - `receipts.customer_id` stores the attached Loyverse customer ID.

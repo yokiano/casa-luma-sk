@@ -6,7 +6,8 @@ import {
 	NOTION_RSVPS_DB_ID,
 	NOTION_WAITLIST_DB_ID,
 } from '$env/static/private';
-import { Client } from '@notionhq/client';
+import { Client, type DatabaseObjectResponse } from '@notionhq/client';
+import type { QueryDataSourceParameters, QueryDataSourceResponse } from '@notionhq/client/build/src/api-endpoints';
 
 // Initialize Notion client
 const getNotionClient = () => {
@@ -37,6 +38,23 @@ export const validateNotionConfig = () => {
 };
 
 export const notion = getNotionClient() as Client;
+
+export async function queryNotionDatabase(
+	databaseId: string,
+	query: Omit<QueryDataSourceParameters, 'data_source_id'>
+): Promise<QueryDataSourceResponse> {
+	const database = (await notion.databases.retrieve({ database_id: databaseId })) as DatabaseObjectResponse;
+	const dataSourceId = database.data_sources?.[0]?.id;
+
+	if (!dataSourceId) {
+		throw new Error(`No data source found for Notion database ${databaseId}`);
+	}
+
+	return notion.dataSources.query({
+		data_source_id: dataSourceId,
+		...query
+	});
+}
 
 // Type guards for Notion property types
 export const isRichText = (property: any): property is { rich_text: Array<{ plain_text: string }> } => {

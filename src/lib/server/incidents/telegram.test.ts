@@ -233,6 +233,76 @@ describe('incident telegram payload formatter', () => {
     expect(payload.body).toContain('<a href="https://admin.example.com/tools/receipts/R-MEM-AUTO">Open receipt</a>');
   });
 
+  it('formats birthday booking incidents with dedicated layout and links', () => {
+    const payload = buildIncidentAlertPayload({
+      source: 'birthday-booking',
+      code: 'BIRTHDAY_BOOKING_SUBMITTED',
+      severity: 'critical',
+      message: 'New birthday party request for Leo.',
+      context: {
+        bookingReference: 'BD-2605-LEO8501',
+        parentName: 'Test Parent',
+        phone: '+66812345678',
+        email: 'test@example.com',
+        childName: 'Leo',
+        turningAge: 5,
+        eventDate: '2026-06-15',
+        startTime: '14:00',
+        packageLabel: 'Mon–Sat Package',
+        kidsCount: 12,
+        estimatedTotal: 12000,
+        mainCourse: 'Nuggets & Fries',
+        upgrades: [],
+        activities: ['Face Painting (+3000 THB)'],
+        specialNotes: 'Nut-free please',
+        summaryUrl: 'https://www.casalumakpg.com/birthdays/summary?ref=BD-2605-LEO8501',
+        reportUrl: 'https://www.casalumakpg.com/tools/incidents/64'
+      }
+    });
+
+    expect(payload.title).toBe('Birthday party booking');
+    expect(payload.body).toContain('<b>Birthday party request — Leo (turning 5)</b>');
+    expect(payload.body).toContain('Ref: <code>BD-2605-LEO8501</code>');
+    expect(payload.body).toContain('Parent: Test Parent');
+    expect(payload.body).toContain('Package: Mon–Sat Package');
+    expect(payload.body).toContain('Quote: 12000 THB');
+    expect(payload.body).toContain('Activities: Face Painting (+3000 THB)');
+    expect(payload.body).toContain('<a href="https://www.casalumakpg.com/birthdays/summary?ref=BD-2605-LEO8501">Open booking summary</a>');
+    expect(payload.body).toContain('<a href="https://www.casalumakpg.com/tools/incidents/64">Open incident</a>');
+    expect(payload.body).not.toContain('birthday-booking incident');
+    expect(payload.body).not.toContain('BIRTHDAY_BOOKING_SUBMITTED');
+  });
+
+  it('formats successful flexi pass automation incidents as success messages', () => {
+    const payload = buildIncidentAlertPayload({
+      source: 'receipt-webhook',
+      code: 'FLEXI_PASSES_CREATED',
+      severity: 'info',
+      message: 'Created structured Notion flexi pass record from Loyverse receipt.',
+      context: {
+        receiptNumber: 'R-FLEXI-AUTO',
+        familyName: 'Test Family',
+        cardCount: 2,
+        entriesGranted: 22,
+        entriesLeft: 22,
+        validFrom: '2026-01-12',
+        validUntil: '2026-03-12',
+        recordName: 'Test Family - Flexi - 2 cards',
+        receiptUrl: 'https://admin.example.com/tools/receipts/R-FLEXI-AUTO',
+        reportUrl: 'https://admin.example.com/tools/incidents/100'
+      }
+    });
+
+    expect(payload.title).toBe('✅ Flexi pass automation');
+    expect(payload.body).toContain('<b>Flexi Pass Created Automatically</b>');
+    expect(payload.body).toContain('🧾 Receipt: <code>R-FLEXI-AUTO</code>');
+    expect(payload.body).toContain('Family: Test Family');
+    expect(payload.body).toContain('Cards: 2');
+    expect(payload.body).toContain('Entries granted: 22');
+    expect(payload.body).toContain('Valid: 2026-01-12 → 2026-03-12');
+    expect(payload.body).toContain('<a href="https://admin.example.com/tools/receipts/R-FLEXI-AUTO">Open receipt</a>');
+  });
+
   it('formats membership automation review incidents', () => {
     const payload = buildIncidentAlertPayload({
       source: 'receipt-webhook',

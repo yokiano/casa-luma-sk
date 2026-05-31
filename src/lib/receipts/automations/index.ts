@@ -10,6 +10,7 @@ import type { LoyverseReceipt } from '$lib/receipts/types';
 export * from './types';
 export * from './membership-items';
 export * from './membership-creation';
+export * from './flexi-pass-purchase';
 
 const automationErrorResult = (automation: ReceiptAutomation, error: unknown): ReceiptAutomationResult => ({
   code: `AUTOMATION_EXECUTION_ERROR:${automation.code}`,

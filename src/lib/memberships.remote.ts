@@ -24,9 +24,13 @@ const SearchFamiliesSchema = v.object({
 
 export const searchFamilies = query(SearchFamiliesSchema, async ({ search }) => searchFamiliesData(search));
 
+const editableMembershipTypes = MEMBERSHIPS_PROP_VALUES.type.filter(
+	(typeOption): typeOption is 'Weekly' | 'Monthly' => typeOption === 'Weekly' || typeOption === 'Monthly'
+);
+
 const CreateMembershipSchema = v.object({
 	familyId: v.pipe(v.string(), v.trim(), v.minLength(1)),
-	type: v.picklist([...MEMBERSHIPS_PROP_VALUES.type]),
+	type: v.picklist(editableMembershipTypes),
 	numberOfKids: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(20)),
 	startDate: v.optional(v.pipe(v.string(), v.trim(), v.minLength(1))),
 	endDate: v.optional(v.pipe(v.string(), v.trim(), v.minLength(1))),
@@ -38,7 +42,7 @@ export const createMembership = command(CreateMembershipSchema, createMembership
 const UpdateMembershipSchema = v.object({
 	id: v.pipe(v.string(), v.trim(), v.minLength(1)),
 	familyId: v.pipe(v.string(), v.trim(), v.minLength(1)),
-	type: v.picklist([...MEMBERSHIPS_PROP_VALUES.type]),
+	type: v.picklist(editableMembershipTypes),
 	numberOfKids: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(20)),
 	startDate: v.optional(v.pipe(v.string(), v.trim(), v.minLength(1))),
 	endDate: v.optional(v.pipe(v.string(), v.trim(), v.minLength(1))),

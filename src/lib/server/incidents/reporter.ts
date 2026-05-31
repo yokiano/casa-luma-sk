@@ -1,5 +1,5 @@
 import { createTelegramAlertPublisherFromEnv } from '$lib/server/alerts/telegram';
-import { env } from '$env/dynamic/private';
+import { buildIncidentReportUrl } from './urls';
 import { db } from '$lib/server/db/client';
 import { reportedErrors } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
@@ -15,15 +15,11 @@ const shouldNotifyByDefault = (severity: IncidentSeverity, input?: ReportInciden
   if (severity === 'critical') return true;
   return (
     typeof input?.code === 'string' &&
-    (input.code === 'MEMBERSHIP_CREATED' || input.code.startsWith('MEMBERSHIP_CREATION_'))
+    (input.code === 'MEMBERSHIP_CREATED' ||
+      input.code.startsWith('MEMBERSHIP_CREATION_') ||
+      input.code === 'FLEXI_PASSES_CREATED' ||
+      input.code.startsWith('FLEXI_PASS_'))
   );
-};
-
-const buildReportUrl = (incidentId: number | null): string | null => {
-  if (incidentId === null) return null;
-  const base = env.INCIDENT_REPORT_BASE_URL;
-  if (!base) return null;
-  return `${base.replace(/\/$/, '')}/tools/incidents/${incidentId}`;
 };
 
 const getErrorDetails = (error: unknown): {
@@ -124,7 +120,7 @@ export const createIncidentReporter = (options: IncidentReporterOptions = {}) =>
           ...input,
           context: {
             ...(input.context ?? {}),
-            reportUrl: buildReportUrl(incidentId)
+            reportUrl: incidentId !== null ? buildIncidentReportUrl(incidentId) : null
           }
         });
         await publisher.publish(notification);

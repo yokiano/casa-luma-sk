@@ -23,6 +23,15 @@ It does not run for:
 - batches with no valid receipts
 - requests that fail before ingestion completes
 
+## Operational SOP (Check-In Timing)
+
+Because receipt validations are post-facto (running after a ticket or receipt is closed on Loyverse), they cannot block register transactions before payment. To prevent validation alerts from arriving too late (e.g., after the customer has stayed, eaten, and left), the venue enforces the following standard operating procedure (SOP):
+
+1. **Immediate 0-Baht Receipts:** When a customer checks in under a weekly/monthly membership or a flexi pass, the staff must immediately add the check-in item (`Member Valid Visit` or `Flexi Single Entrance`) on the Loyverse POS.
+2. **Immediate Ticket Closure:** Staff must **immediately close and pay** this check-in ticket (generating a 0-Baht receipt) right as the family walks in, *before* letting them enter and *before* opening any ongoing open tab for food, drinks, or other retail items.
+3. **Prompt Alerting:** This triggers the webhook and runs validations instantly on arrival. If the customer has an expired membership or insufficient flexi pass balance, staff will receive a Telegram alert within seconds, allowing them to handle the overspent pass with the parent immediately while they are still at the front desk or taking off their shoes.
+
+
 ## Runtime context passed to rules
 
 The webhook route calls:
@@ -237,15 +246,17 @@ Dashboard labels and descriptions come from shared receipt validation metadata i
 
 ## Telegram notifications
 
-`incidentReporter` is built with `createTelegramAlertPublisherFromEnv()` and notifies only critical incidents by default.
+`incidentReporter` is built with `createTelegramAlertPublisherFromEnv()` and notifies critical incidents by default.
 
-Warning incidents are persisted/logged but are not sent to Telegram by the default `shouldNotifyCriticalOnly` policy.
+Membership/Flexi automation success and review incidents are also sent by default so staff can see every automatic Membership or Flexi Pass creation. Other warning incidents are persisted/logged but are not sent to Telegram by default.
 
 Notification status is written back to `reported_errors`:
 
 - `notified`
 - `notified_at`
 - `notify_error`
+
+Flexi Pass creation notifications use `FLEXI_PASSES_CREATED` info incidents and include the receipt, Family, card count, entries granted/left, validity dates, and links when configured.
 
 Receipt validation Telegram messages start with a human alert label, for example:
 

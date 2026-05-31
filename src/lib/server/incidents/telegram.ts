@@ -347,6 +347,79 @@ const isMembershipAutomationIncident = (input: ReportIncidentInput): boolean =>
   input.code.startsWith('MEMBERSHIP_CREATION_') ||
   input.context?.automationCode === 'MEMBERSHIP_CREATED';
 
+const isFlexiPassAutomationIncident = (input: ReportIncidentInput): boolean =>
+  input.code === 'FLEXI_PASSES_CREATED' ||
+  input.code.startsWith('FLEXI_PASS_') ||
+  input.context?.automationCode === 'FLEXI_PASSES_CREATED';
+
+const isBirthdayBookingIncident = (input: ReportIncidentInput): boolean =>
+  input.source === 'birthday-booking' || input.code === 'BIRTHDAY_BOOKING_SUBMITTED';
+
+const buildBirthdayBookingAlertPayload = (input: ReportIncidentInput): AlertPublishPayload => {
+  const bookingReference = getString(input.context?.bookingReference);
+  const childName = getString(input.context?.childName);
+  const turningAge = isFiniteNumber(input.context?.turningAge) ? input.context.turningAge : null;
+  const parentName = getString(input.context?.parentName);
+  const phone = getString(input.context?.phone);
+  const email = getString(input.context?.email);
+  const eventDate = getString(input.context?.eventDate);
+  const startTime = getString(input.context?.startTime);
+  const packageLabel = getString(input.context?.packageLabel);
+  const kidsCount = isFiniteNumber(input.context?.kidsCount) ? input.context.kidsCount : null;
+  const estimatedTotal = isFiniteNumber(input.context?.estimatedTotal) ? input.context.estimatedTotal : null;
+  const mainCourse = getString(input.context?.mainCourse);
+  const specialNotes = getString(input.context?.specialNotes);
+  const upgrades = Array.isArray(input.context?.upgrades)
+    ? input.context.upgrades.filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+    : [];
+  const activities = Array.isArray(input.context?.activities)
+    ? input.context.activities.filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+    : [];
+  const summaryUrl = isHttpUrl(input.context?.summaryUrl) ? input.context.summaryUrl : null;
+  const reportUrl = isHttpUrl(input.context?.reportUrl) ? input.context.reportUrl : null;
+
+  const label =
+    childName && turningAge !== null
+      ? `Birthday party request — ${childName} (turning ${formatNumber(turningAge)})`
+      : 'New birthday party booking request';
+
+  const details = [
+    parentName ? `Parent: ${parentName}` : null,
+    phone ? `Phone: ${phone}` : null,
+    email && email !== 'N/A' ? `Email: ${email}` : null,
+    eventDate || startTime
+      ? `When: ${eventDate ?? 'TBD'}${startTime ? ` @ ${startTime}` : ''}`
+      : null,
+    packageLabel ? `Package: ${packageLabel}` : null,
+    kidsCount !== null ? `Kids: ${formatNumber(kidsCount)}` : null,
+    estimatedTotal !== null ? `Quote: ${formatNumber(estimatedTotal)} THB` : null,
+    mainCourse && mainCourse !== 'None' ? `Main course: ${mainCourse}` : null,
+    upgrades.length ? `Upgrades: ${formatList(upgrades)}` : null,
+    activities.length ? `Activities: ${formatList(activities)}` : null,
+    specialNotes ? `Notes: ${specialNotes}` : null
+  ].filter((line): line is string => Boolean(line));
+
+  const links = [
+    summaryUrl ? `• ${formatHtmlLink('Open booking summary', summaryUrl)}` : null,
+    reportUrl ? `• ${formatHtmlLink('Open incident', reportUrl)}` : null
+  ].filter((line): line is string => Boolean(line));
+
+  const body = [
+    `<b>${escapeHtml(label)}</b>`,
+    bookingReference ? `Ref: <code>${escapeHtml(bookingReference)}</code>` : null,
+    details.length ? ['<b>Details</b>', ...details.map((line) => `• ${escapeHtml(line)}`)].join('\n') : null,
+    links.length ? ['<b>Links</b>', ...links].join('\n') : null
+  ]
+    .filter((line): line is string => Boolean(line))
+    .join('\n');
+
+  return {
+    title: 'Birthday party booking',
+    body,
+    parseMode: 'HTML'
+  };
+};
+
 const buildMembershipAutomationAlertPayload = (input: ReportIncidentInput): AlertPublishPayload => {
   const receiptNumber = typeof input.context?.receiptNumber === 'string' ? input.context.receiptNumber : null;
   const receiptUrl = isHttpUrl(input.context?.receiptUrl) ? input.context.receiptUrl : null;
@@ -395,9 +468,59 @@ const buildMembershipAutomationAlertPayload = (input: ReportIncidentInput): Aler
   };
 };
 
+const buildFlexiPassAutomationAlertPayload = (input: ReportIncidentInput): AlertPublishPayload => {
+  const receiptNumber = typeof input.context?.receiptNumber === 'string' ? input.context.receiptNumber : null;
+  const receiptUrl = isHttpUrl(input.context?.receiptUrl) ? input.context.receiptUrl : null;
+  const reportUrl = isHttpUrl(input.context?.reportUrl) ? input.context.reportUrl : null;
+  const familyName = getString(input.context?.familyName);
+  const recordName = getString(input.context?.recordName);
+  const reason = getString(input.context?.reason);
+  const validFrom = getString(input.context?.validFrom);
+  const validUntil = getString(input.context?.validUntil);
+  const cardCount = isFiniteNumber(input.context?.cardCount) ? input.context.cardCount : null;
+  const entriesGranted = isFiniteNumber(input.context?.entriesGranted) ? input.context.entriesGranted : null;
+  const entriesLeft = isFiniteNumber(input.context?.entriesLeft) ? input.context.entriesLeft : null;
+
+  const isSuccess = input.code === 'FLEXI_PASSES_CREATED';
+  const label = isSuccess ? 'Flexi Pass Created Automatically' : 'Flexi Pass Automation Needs Review';
+  const icon = isSuccess ? '✅' : input.severity === 'critical' ? '🚨' : '⚠️';
+
+  const details = [
+    familyName ? `Family: ${familyName}` : null,
+    cardCount !== null ? `Cards: ${formatNumber(cardCount)}` : null,
+    entriesGranted !== null ? `Entries granted: ${formatNumber(entriesGranted)}` : null,
+    entriesLeft !== null ? `Entries left: ${formatNumber(entriesLeft)}` : null,
+    validFrom || validUntil ? `Valid: ${validFrom ?? 'unknown'} → ${validUntil ?? 'unknown'}` : null,
+    recordName ? `Flexi pass: ${recordName}` : null,
+    reason ? `Reason: ${reason.replaceAll('_', ' ')}` : null
+  ].filter((line): line is string => Boolean(line));
+
+  const links = [
+    receiptUrl ? `• ${formatHtmlLink('Open receipt', receiptUrl)}` : null,
+    reportUrl ? `• ${formatHtmlLink('Open incident', reportUrl)}` : null
+  ].filter((line): line is string => Boolean(line));
+
+  const body = [
+    `<b>${escapeHtml(label)}</b>`,
+    receiptNumber ? `🧾 Receipt: <code>${escapeHtml(receiptNumber)}</code>` : null,
+    details.length ? ['<b>Details</b>', ...details.map((line) => `• ${escapeHtml(line)}`)].join('\n') : null,
+    links.length ? ['<b>Links</b>', ...links].join('\n') : null
+  ]
+    .filter((line): line is string => Boolean(line))
+    .join('\n');
+
+  return {
+    title: `${icon} Flexi pass automation`,
+    body,
+    parseMode: 'HTML'
+  };
+};
+
 export const buildIncidentAlertPayload = (input: ReportIncidentInput): AlertPublishPayload => {
   if (isReceiptValidationIncident(input)) return buildReceiptValidationAlertPayload(input);
   if (isMembershipAutomationIncident(input)) return buildMembershipAutomationAlertPayload(input);
+  if (isFlexiPassAutomationIncident(input)) return buildFlexiPassAutomationAlertPayload(input);
+  if (isBirthdayBookingIncident(input)) return buildBirthdayBookingAlertPayload(input);
 
   const failedChecks = getFailedChecks(input);
   const summary = INCIDENT_SUMMARY_BY_CODE[input.code] ?? input.message;

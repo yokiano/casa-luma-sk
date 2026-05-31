@@ -36,6 +36,8 @@ Validation steps:
 6. Because webhook validation runs after ingestion, compute balance before the current receipt by adding the current receipt's flexi quantity back to the aggregate after-current balance.
 7. Alert when the balance before the current receipt is lower than the current receipt's flexi entry quantity.
 
+Note: flexi card purchase automation now writes structured rows to the dedicated `🎟️ Flexi Passes` database. This validation rule still uses receipt-history balance until the next validation pass switches to `Flexi Passes` as primary and uses receipt history only as fallback/reconciliation.
+
 Finding reasons:
 
 - `missing_customer`
@@ -69,3 +71,12 @@ Notion and Neon helpers are only called after the relevant receipt line appears:
 - no `Member Valid Visit` -> no Notion lookup
 - no `Flexi Single Entrance` -> no flexi history query
 - missing customer for those items -> immediate finding, no external lookup
+
+## Operational SOP (Check-In Workflow)
+
+Because receipt validations are post-facto (running after a ticket or receipt is closed on Loyverse), they cannot block register transactions before payment. To prevent validation alerts from arriving too late (e.g., after the customer has stayed, eaten, and left), the venue enforces the following standard operating procedure (SOP):
+
+1. **Immediate 0-Baht Receipts:** When a customer checks in under a weekly/monthly membership or a flexi pass, the staff must immediately add the check-in item (`Member Valid Visit` or `Flexi Single Entrance`) on the Loyverse POS.
+2. **Immediate Ticket Closure:** Staff must **immediately close and pay** this check-in ticket (generating a 0-Baht receipt) right as the family walks in, *before* letting them enter and *before* opening any ongoing open tab for food, drinks, or other retail items.
+3. **Prompt Alerting:** This triggers the webhook and runs validations instantly on arrival. If the customer has an expired membership or insufficient flexi pass balance, staff will receive a Telegram alert within seconds, allowing them to handle the overspent pass with the parent immediately while they are still at the front desk or taking off their shoes.
+

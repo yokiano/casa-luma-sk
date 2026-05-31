@@ -4,6 +4,9 @@ import { FamiliesResponseDTO } from '$lib/notion-sdk/dbs/families/response.dto';
 import { MembershipsDatabase } from '$lib/notion-sdk/dbs/memberships/db';
 import { MembershipsPatchDTO } from '$lib/notion-sdk/dbs/memberships/patch.dto';
 import { MembershipsResponseDTO } from '$lib/notion-sdk/dbs/memberships/response.dto';
+import { FlexiPassesDatabase } from '$lib/notion-sdk/dbs/flexi-passes/db';
+import { FlexiPassesPatchDTO } from '$lib/notion-sdk/dbs/flexi-passes/patch.dto';
+import { FlexiPassesResponseDTO } from '$lib/notion-sdk/dbs/flexi-passes/response.dto';
 import {
   MEMBERSHIP_REFUND_NOTE_PREFIX,
   createMembershipFromReceiptAutomation,
@@ -11,6 +14,14 @@ import {
   type ExistingMembershipQuery,
   type MembershipAutomationDeps
 } from '$lib/receipts/automations/membership-creation';
+import {
+  FLEXI_PASS_ACTIVE_STATUS,
+  FLEXI_PASS_REFUNDED_STATUS,
+  createFlexiPassPurchaseAutomation,
+  type CreateFlexiPassRecordInput,
+  type ExistingFlexiPassRecordQuery,
+  type FlexiPassPurchaseAutomationDeps
+} from '$lib/receipts/automations/flexi-pass-purchase';
 import type { ReceiptAutomation } from '$lib/receipts/automations/types';
 
 const normalizeId = (value: string) => value.trim();
@@ -19,6 +30,27 @@ const toMembershipName = (input: Pick<CreateMembershipFromReceiptInput, 'familyN
   const kidsLabel = input.numberOfKids === 1 ? 'kid' : 'kids';
   return `${input.familyName} - ${input.type} - ${input.numberOfKids} ${kidsLabel}`;
 };
+
+const toFlexiPassName = (input: Pick<CreateFlexiPassRecordInput, 'familyName' | 'cardCount'>) => {
+  const cardLabel = input.cardCount === 1 ? 'card' : 'cards';
+  return `${input.familyName} - Flexi - ${input.cardCount} ${cardLabel}`;
+};
+
+const flexiRecordMatchesReceipt = (dto: FlexiPassesResponseDTO, query: ExistingFlexiPassRecordQuery) => {
+  const sourceReceiptKey = dto.properties.sourceReceiptKey.text ?? '';
+  const sourceReceiptNumber = dto.properties.sourceReceiptNumber.text ?? '';
+  const sourceItemIds = dto.properties.sourceItemIds.text ?? '';
+  const familyIds = dto.properties.familyIds ?? [];
+
+  return familyIds.includes(query.familyId) &&
+    (query.sourceReceiptKey ? sourceReceiptKey === query.sourceReceiptKey : sourceReceiptNumber === query.sourceReceiptNumber) &&
+    query.sourceItemIds.some((itemId) => sourceItemIds.split(',').map((value) => value.trim()).includes(itemId));
+};
+
+const toExistingFlexiPassRecord = (dto: FlexiPassesResponseDTO) => ({
+  id: dto.id,
+  name: dto.properties.name?.text ?? 'Untitled Flexi Pass'
+});
 
 const notesContainReceiptProvenance = (notes: string | null | undefined, query: ExistingMembershipQuery) => {
   if (!notes) return false;
@@ -31,10 +63,11 @@ const notesContainReceiptProvenance = (notes: string | null | undefined, query: 
   return receiptTokens.every((token) => notes.includes(token));
 };
 
+
 const toExistingMembership = (dto: MembershipsResponseDTO) => ({
   id: dto.id,
   name: dto.properties.name?.text ?? 'Untitled Membership',
-  type: dto.properties.type?.name ?? null,
+  type: (dto.properties.type?.name as string | undefined) ?? null,
   numberOfKids: dto.properties.numberOfKids ?? null,
   startDate: dto.properties.startDate?.start ?? null,
   endDate: dto.properties.endDate?.start ?? null,
@@ -66,6 +99,7 @@ const appendRefundNote = (notes: string | null | undefined, input: {
     .filter(Boolean)
     .join('\n\n');
 };
+
 
 export const createNotionMembershipAutomationDeps = (): MembershipAutomationDeps => ({
   async findFamilyByLoyverseCustomerId({ loyverseCustomerId }) {
@@ -182,6 +216,105 @@ export const createNotionMembershipAutomationDeps = (): MembershipAutomationDeps
   }
 });
 
-export const createDefaultReceiptAutomationSuite = (): ReceiptAutomation[] => [
-  createMembershipFromReceiptAutomation({ deps: createNotionMembershipAutomationDeps() })
-];
+export const createNotionFlexiPassAutomationDeps = (
+  familyDeps: Pick<MembershipAutomationDeps, 'findFamilyByLoyverseCustomerId'> = createNotionMembershipAutomationDeps()
+): FlexiPassPurchaseAutomationDeps => ({
+  findFamilyByLoyverseCustomerId: familyDeps.findFamilyByLoyverseCustomerId,
+
+  async findExistingFlexiPassRecord(query) {
+    const flexiDb = new FlexiPassesDatabase({ notionSecret: NOTION_API_KEY });
+    const response = await flexiDb.query({
+      page_size: 100,
+      filter: query.sourceReceiptKey
+        ? { sourceReceiptKey: { equals: query.sourceReceiptKey } }
+        : { sourceReceiptNumber: { equals: query.sourceReceiptNumber } }
+    } as any);
+
+    const existing = response.results
+      .map((result) => new FlexiPassesResponseDTO(result as any))
+      .find((dto) => flexiRecordMatchesReceipt(dto, query));
+
+    return existing ? toExistingFlexiPassRecord(existing) : null;
+  },
+
+  async findFlexiPassRecordsByReceiptNumber({ receiptNumber, itemIds }) {
+    const flexiDb = new FlexiPassesDatabase({ notionSecret: NOTION_API_KEY });
+    const response = await flexiDb.query({
+      page_size: 100,
+      filter: { sourceReceiptNumber: { equals: receiptNumber } }
+    } as any);
+
+    const itemIdSet = new Set(itemIds ?? []);
+    return response.results
+      .map((result) => new FlexiPassesResponseDTO(result as any))
+      .filter((dto) => {
+        if (!itemIdSet.size) return true;
+        const sourceItemIds = dto.properties.sourceItemIds.text ?? '';
+        return [...itemIdSet].some((itemId) => sourceItemIds.split(',').map((value) => value.trim()).includes(itemId));
+      })
+      .map(toExistingFlexiPassRecord);
+  },
+
+  async markFlexiPassRecordRefunded(input) {
+    const flexiDb = new FlexiPassesDatabase({ notionSecret: NOTION_API_KEY });
+    const current = await flexiDb.getPage(input.recordId);
+    const currentDto = new FlexiPassesResponseDTO(current as any);
+    const updated = await flexiDb.updatePage(input.recordId, new FlexiPassesPatchDTO({
+      properties: {
+        automationStatus: FLEXI_PASS_REFUNDED_STATUS,
+        entriesLeft: 0,
+        refundReceiptNumber: input.refundReceiptNumber,
+        notes: [
+          currentDto.properties.notes.text?.trim() || null,
+          [
+            `Refunded automatically from Loyverse refund receipt.`,
+            `Refunded Original Receipt Number: ${input.originalReceiptNumber}`,
+            `Refund Receipt Number: ${input.refundReceiptNumber}`,
+            input.refundReceiptKey ? `Refund Receipt Key: ${input.refundReceiptKey}` : null,
+            input.refundReceiptUrl ? `Refund Receipt URL: ${input.refundReceiptUrl}` : null
+          ].filter(Boolean).join('\n')
+        ].filter(Boolean).join('\n\n')
+      }
+    }));
+    const updatedDto = new FlexiPassesResponseDTO(updated as any);
+    return toExistingFlexiPassRecord(updatedDto);
+  },
+
+  async createFlexiPassRecord(input) {
+    const flexiDb = new FlexiPassesDatabase({ notionSecret: NOTION_API_KEY });
+    const name = toFlexiPassName(input);
+    const patch = new FlexiPassesPatchDTO({
+      properties: {
+        name,
+        family: [{ id: input.familyId }],
+        loyverseCustomerId: input.loyverseCustomerId,
+        cardCount: input.cardCount,
+        entriesGranted: input.entriesGranted,
+        entriesUsed: input.entriesUsed,
+        entriesLeft: input.entriesLeft,
+        validFrom: { start: input.validFrom },
+        validUntil: { start: input.validUntil },
+        sourceReceiptNumber: input.sourceReceiptNumber,
+        sourceReceiptKey: input.sourceReceiptKey,
+        sourceReceiptUrl: input.sourceReceiptUrl,
+        sourceLineIndexes: input.sourceLineIndexes,
+        sourceItemIds: input.sourceItemIds,
+        automationStatus: FLEXI_PASS_ACTIVE_STATUS,
+        notes: input.notes
+      }
+    });
+
+    const created = await flexiDb.createPage(patch);
+    const dto = new FlexiPassesResponseDTO(created as any);
+    return toExistingFlexiPassRecord(dto);
+  }
+});
+
+export const createDefaultReceiptAutomationSuite = (): ReceiptAutomation[] => {
+  const notionMembershipDeps = createNotionMembershipAutomationDeps();
+
+  return [
+    createMembershipFromReceiptAutomation({ deps: notionMembershipDeps }),
+    createFlexiPassPurchaseAutomation({ deps: createNotionFlexiPassAutomationDeps(notionMembershipDeps) })
+  ];
+};

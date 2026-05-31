@@ -1,6 +1,7 @@
 import { NOTION_API_KEY } from '$env/static/private';
 import { MEMBERSHIP_REFUND_NOTE_PREFIX } from '$lib/receipts/automations/membership-creation';
 import { MembershipsDatabase } from '$lib/notion-sdk/dbs/memberships/db';
+import type { MembershipsTypePropertyType } from '$lib/notion-sdk/dbs/memberships/types';
 import { MembershipsPatchDTO } from '$lib/notion-sdk/dbs/memberships/patch.dto';
 import { MembershipsResponseDTO } from '$lib/notion-sdk/dbs/memberships/response.dto';
 import { 
@@ -16,7 +17,7 @@ import {
 type MembershipItem = {
 	id: string;
 	name: string;
-	type: 'Weekly' | 'Monthly' | null;
+	type: MembershipsTypePropertyType | string | null;
 	numberOfKids: number | null;
 	startDate: string | null;
 	endDate: string | null;
@@ -85,7 +86,7 @@ const toMembershipItem = (
 	return {
 		id: dto.id,
 		name: dto.properties.name?.text ?? 'Untitled Membership',
-		type: dto.properties.type?.name ?? null,
+		type: (dto.properties.type?.name as string | undefined) ?? null,
 		numberOfKids: dto.properties.numberOfKids ?? null,
 		startDate: dto.properties.startDate?.start ?? null,
 		endDate: dto.properties.endDate?.start ?? null,
@@ -156,7 +157,7 @@ export const searchFamiliesData = searchFamiliesDataInternal;
 
 export const createMembershipData = async (input: {
 	familyId: string;
-	type: 'Weekly' | 'Monthly';
+	type: MembershipsTypePropertyType;
 	numberOfKids: number;
 	startDate?: string;
 	endDate?: string;
@@ -194,7 +195,7 @@ export const createMembershipData = async (input: {
 export const updateMembershipData = async (input: {
 	id: string;
 	familyId: string;
-	type: 'Weekly' | 'Monthly';
+	type: MembershipsTypePropertyType;
 	numberOfKids: number;
 	startDate?: string;
 	endDate?: string;

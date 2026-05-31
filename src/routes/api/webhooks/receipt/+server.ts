@@ -8,6 +8,7 @@ import {
     runReceiptValidationSuite
 } from '$lib/receipts/validation';
 import { incidentReporter, type IncidentSeverity } from '$lib/server/incidents';
+import { buildReceiptReportUrl } from '$lib/server/incidents/urls';
 import { createDefaultReceiptAutomationSuite } from '$lib/server/membership-automation';
 import { runReceiptAutomationSuite, type ReceiptAutomationResult } from '$lib/receipts/automations';
 
@@ -77,31 +78,25 @@ const hasErrorCode = (error: unknown, code: string): boolean => {
     return hasErrorCode(error.cause, code);
 };
 
-const getToolsBaseUrl = (): string | undefined => {
-    const base = env.INCIDENT_REPORT_BASE_URL?.trim().replace(/\/$/, '');
-    if (!base) return undefined;
-    return base.replace(/\/tools\/incidents$/, '');
-};
-
-const buildReceiptUrl = (receiptNumber: string): string | undefined => {
-    const base = getToolsBaseUrl();
-    if (!base) return undefined;
-    return `${base}/tools/receipts/${encodeURIComponent(receiptNumber)}`;
-};
+import { buildReceiptReportUrl, getSiteBaseUrl } from '$lib/server/incidents/urls';
 
 const getPrimaryFinding = (findings: { code: string; severity: string; message: string; details?: Record<string, unknown> }[]) => {
     return findings.find((finding) => finding.severity === 'critical') ?? findings[0] ?? null;
 };
 
 const getAutomationIncidentSeverity = (result: ReceiptAutomationResult): IncidentSeverity | null => {
-    if (result.status === 'completed' && result.code === 'MEMBERSHIP_CREATED') return 'info';
+    if (result.status === 'completed' && typeof result.details?.incidentCode === 'string') return 'warning';
+    if (
+        result.status === 'completed' &&
+        (result.code === 'MEMBERSHIP_CREATED' || result.code === 'FLEXI_PASSES_CREATED')
+    ) return 'info';
     if (result.status === 'failed') return 'critical';
     if (result.status === 'skipped' && typeof result.details?.incidentCode === 'string') return 'warning';
     return null;
 };
 
 const getAutomationIncidentCode = (result: ReceiptAutomationResult) => {
-    if (result.code === 'MEMBERSHIP_CREATED') return 'MEMBERSHIP_CREATED';
+    if (result.code === 'MEMBERSHIP_CREATED' || result.code === 'FLEXI_PASSES_CREATED') return result.code;
     return typeof result.details?.incidentCode === 'string'
         ? result.details.incidentCode
         : 'RECEIPT_WEBHOOK_AUTOMATION_FAILED';
@@ -238,7 +233,7 @@ export const POST: RequestHandler = async ({ request }) => {
 
             if (result.status === 'processed') {
                 const automationSuite = createDefaultReceiptAutomationSuite();
-                const receiptUrl = buildReceiptUrl(receiptPayload.items.receipt_number);
+                const receiptUrl = buildReceiptReportUrl(receiptPayload.items.receipt_number) ?? undefined;
                 const automationReport = await runReceiptAutomationSuite(automationSuite, receiptPayload.items, {
                     merchantId: receiptPayload.merchant_id,
                     receiptKey: result.receiptKey,
@@ -315,7 +310,7 @@ export const POST: RequestHandler = async ({ request }) => {
                         receiptKey: result.receiptKey,
                         context: {
                             receiptNumber,
-                            receiptUrl: buildReceiptUrl(receiptNumber),
+                            receiptUrl: buildReceiptReportUrl(receiptNumber) ?? undefined,
                             customerId: typeof receiptPayload.items.customer_id === 'string' ? receiptPayload.items.customer_id : undefined,
                             failedChecks,
                             primaryFindingCode: primaryFinding?.code,

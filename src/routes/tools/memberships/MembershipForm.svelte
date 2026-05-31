@@ -46,6 +46,10 @@
 		isEditingEndDate = false;
 	};
 
+	const membershipTypeOptions = MEMBERSHIPS_PROP_VALUES.type.filter(
+		(typeOption): typeOption is 'Weekly' | 'Monthly' => typeOption === 'Weekly' || typeOption === 'Monthly'
+	);
+
 	const handleResetEndDate = () => {
 		endDateOverridden = false;
 		isEditingEndDate = false;
@@ -67,7 +71,7 @@
 				class="h-11 w-full rounded-2xl border border-[#d9d0c7] bg-white px-4 text-sm focus:border-[#7a6550] focus:outline-none focus:ring-2 focus:ring-[#cdb69f]/40"
 				bind:value={membershipType}
 			>
-				{#each MEMBERSHIPS_PROP_VALUES.type as typeOption}
+				{#each membershipTypeOptions as typeOption}
 					<option value={typeOption}>{typeOption}</option>
 				{/each}
 			</select>
