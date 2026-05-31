@@ -1,0 +1,10 @@
+name = "process-email-trigger"
+main = "src/index.ts"
+compatibility_date = "2026-05-31"
+
+# Public SvelteKit endpoint that receives normalized email events from this Worker.
+[vars]
+EMAIL_WEBHOOK_URL = "https://www.casalumakpg.com/api/webhooks/email"
+
+# Secret, set with:
+# pnpm dlx wrangler secret put EMAIL_WEBHOOK_SECRET --config scripts/cloudflare/process-email-trigger/wrangler.toml

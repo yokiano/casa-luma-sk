@@ -516,7 +516,43 @@ const buildFlexiPassAutomationAlertPayload = (input: ReportIncidentInput): Alert
   };
 };
 
+const buildEmailReceivedAlertPayload = (input: ReportIncidentInput): AlertPublishPayload => {
+  const from = getString(input.context?.from) ?? 'unknown sender';
+  const to = getString(input.context?.to) ?? 'unknown recipient';
+  const subject = getString(input.context?.subject) ?? '(no subject)';
+  const receivedAt = getString(input.context?.receivedAt);
+  const messageId = getString(input.context?.messageId);
+  const attachmentCount = isFiniteNumber(input.context?.attachmentCount) ? input.context.attachmentCount : 0;
+  const textSnippet = getString(input.context?.textSnippet);
+  const reportUrl = isHttpUrl(input.context?.reportUrl) ? input.context.reportUrl : null;
+
+  const details = [
+    `From: ${from}`,
+    `To: ${to}`,
+    `Subject: ${subject}`,
+    receivedAt ? `Received: ${receivedAt}` : null,
+    messageId ? `Message ID: ${messageId}` : null,
+    `Attachments: ${formatNumber(attachmentCount)}`
+  ].filter((line): line is string => Boolean(line));
+
+  const body = [
+    '<b>Email received by Cloudflare Worker</b>',
+    ['<b>Details</b>', ...details.map((line) => `• ${escapeHtml(line)}`)].join('\n'),
+    textSnippet ? ['<b>Snippet</b>', escapeHtml(textSnippet)].join('\n') : null,
+    reportUrl ? `🔎 ${formatHtmlLink('Open incident', reportUrl)}` : null
+  ]
+    .filter((line): line is string => Boolean(line))
+    .join('\n');
+
+  return {
+    title: '📬 Email automation trigger',
+    body,
+    parseMode: 'HTML'
+  };
+};
+
 export const buildIncidentAlertPayload = (input: ReportIncidentInput): AlertPublishPayload => {
+  if (input.code === 'EMAIL_RECEIVED') return buildEmailReceivedAlertPayload(input);
   if (isReceiptValidationIncident(input)) return buildReceiptValidationAlertPayload(input);
   if (isMembershipAutomationIncident(input)) return buildMembershipAutomationAlertPayload(input);
   if (isFlexiPassAutomationIncident(input)) return buildFlexiPassAutomationAlertPayload(input);
