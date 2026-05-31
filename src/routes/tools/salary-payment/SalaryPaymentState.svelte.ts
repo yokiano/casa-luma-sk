@@ -20,7 +20,6 @@ export class SalaryPaymentState {
 	// Payroll Options
 	businessDayOff = $state(3); // Wednesday
 	sickDaysUsedYearToDate = $state(0);
-	includeSSF = $state(true); // SSF checkbox, on by default
 	
 	// Manual Overrides for Calendar Days (keyed by date string YYYY-MM-DD)
 	overriddenDays = $state<Record<string, Partial<CalendarDay>>>({});
@@ -172,8 +171,7 @@ export class SalaryPaymentState {
 			this.endDate,
 			{
 				isMidMonthRun: this.isMidMonthRun,
-				sickDaysUsedYearToDate: this.sickDaysUsedYearToDate,
-				includeSSF: this.includeSSF
+				sickDaysUsedYearToDate: this.sickDaysUsedYearToDate
 			}
 		);
 	});

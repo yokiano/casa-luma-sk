@@ -75,7 +75,7 @@
 		<div class="bg-white/50 backdrop-blur border border-[#d3c5b8] rounded-3xl overflow-hidden p-4 sticky top-8">
 			<h2 class="text-xs font-bold uppercase tracking-widest text-[#7a6550]/60 mb-4 px-2">Staff Members</h2>
 			<div class="space-y-1">
-				{#each state.employees as emp}
+				{#each state.employees as emp (emp.id)}
 					<button
 						class={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm transition-all duration-200 ${
 							state.selectedEmployeeId === emp.id 
@@ -162,25 +162,12 @@
 							onchange={() => state.fetchData()}
 							class="bg-white border border-[#d3c5b8] rounded-2xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#7a6550]/20 transition-all"
 						>
-							{#each daysFull as day, i}
+							{#each daysFull as day, i (day)}
 								<option value={i}>{day}</option>
 							{/each}
 						</select>
 					</div>
 
-					{#if !state.isMidMonthRun}
-						<div class="flex items-center gap-3">
-							<label class="flex items-center gap-2 cursor-pointer">
-								<input 
-									type="checkbox" 
-									bind:checked={state.includeSSF}
-									class="w-4 h-4 rounded border-[#d3c5b8] text-[#7a6550] focus:ring-[#7a6550]/20"
-								/>
-								<span class="text-sm text-[#7a6550]">Include SSF (5%)</span>
-							</label>
-						</div>
-					{/if}
-					
 					<div class="flex-grow"></div>
 					
 					{#if state.salaryData}
@@ -277,7 +264,7 @@
 							<p class="text-xs text-[#7a6550]/60 mb-4">Click on any day to override its status. {daysFull[state.businessDayOff]} is your business day-off (paid by default).</p>
 							
 							<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2">
-								{#each state.effectiveCalendarDays as day}
+								{#each state.effectiveCalendarDays as day (day.id)}
 									{@const date = new Date(day.date)}
 									{@const isPaid = ['Completed', 'Confirmed', 'Sick Day (Paid)', 'Day Off (Paid)', 'Business Day-Off'].includes(day.status)}
 									{@const hasOverride = !!state.overriddenDays[day.id]}
@@ -309,7 +296,7 @@
 											value={day.status}
 											onchange={(e) => state.updateDayOverride(day.id, 'status', e.currentTarget.value)}
 										>
-											{#each statusOptions as opt}
+											{#each statusOptions as opt (opt.value)}
 												<option value={opt.value}>{opt.label}</option>
 											{/each}
 										</select>
@@ -356,7 +343,6 @@
 						startDate={state.startDate}
 						endDate={state.endDate}
 						isMidMonthRun={state.isMidMonthRun}
-						includeSSF={state.includeSSF}
 					/>
 				</div>
 			</div>

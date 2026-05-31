@@ -8,8 +8,7 @@
 		result,
 		startDate,
 		endDate,
-		isMidMonthRun = false,
-		includeSSF = true
+		isMidMonthRun = false
 	}: { 
 		employee: SalaryEmployee; 
 		calendarDays: CalendarDay[]; 
@@ -18,7 +17,6 @@
 		startDate: string;
 		endDate: string;
 		isMidMonthRun?: boolean;
-		includeSSF?: boolean;
 	} = $props();
 
 	function formatDate(dateStr: string | undefined) {
@@ -30,8 +28,15 @@
 		});
 	}
 
-	// Both runs now use netPay which is attendance-based
-	const displayNetPay = $derived(result.netPay);
+	let otFactor = $state(1.5);
+
+	const totalOtHours = $derived(result.otHours15 + result.otHours10 + result.otHours30);
+	const displayOtPay = $derived(totalOtHours * result.hourlyRate * otFactor);
+	const otPayDelta = $derived(displayOtPay - result.otPay);
+
+	// SSO is company-paid; only the payslip OT factor adjusts net pay here.
+	const displayTotalGrossEarned = $derived(result.totalGrossEarned + otPayDelta);
+	const displayNetPay = $derived(result.netPay + otPayDelta);
 </script>
 
 <div class="payslip-container bg-white p-8 text-[#2c2925] shadow-sm print:shadow-none" style="width: 210mm; min-height: 297mm; margin: 0 auto;">
@@ -102,19 +107,32 @@
 				{#if result.otPay > 0}
 					<tr>
 						<td class="py-2 px-3">
-							Overtime Pay (1.5x)
+							<div class="flex items-center gap-2">
+								<span>Overtime Pay</span>
+								<label class="print:hidden">
+									<span class="sr-only">Overtime factor</span>
+									<select
+										bind:value={otFactor}
+										class="rounded-full border border-[#d3c5b8] bg-[#fdfbf9] px-2 py-0.5 text-[10px] font-semibold text-[#7a6550] focus:outline-none"
+									>
+										<option value={1.5}>1.5x</option>
+										<option value={2}>2.0x</option>
+									</select>
+								</label>
+								<span class="hidden print:inline">({otFactor.toFixed(1)}x)</span>
+							</div>
 							<div class="text-[10px] text-gray-500">
-								Total {(result.otHours15 + result.otHours10 + result.otHours30).toFixed(1)} hrs
+								Total {totalOtHours.toFixed(1)} hrs
 							</div>
 						</td>
 						<td class="text-center py-2 px-3">
-							{(result.otHours15 + result.otHours10 + result.otHours30).toFixed(1)} hrs
+							{totalOtHours.toFixed(1)} hrs
 						</td>
-						<td class="text-right py-2 px-3">{result.otPay.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+						<td class="text-right py-2 px-3">{displayOtPay.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
 					</tr>
 				{/if}
 
-				{#each adjustments.filter(a => ['Bonus', 'Reimbursement'].includes(a.type || '')) as adj}
+				{#each adjustments.filter(a => ['Bonus', 'Reimbursement'].includes(a.type || '')) as adj (adj.id)}
 					<tr>
 						<td class="py-2 px-3">
 							{adj.title}
@@ -148,11 +166,11 @@
 
 				<tr class="bg-[#f6f1eb]/30 font-semibold">
 					<td class="py-2 px-3" colspan="2">Total Gross Earned</td>
-					<td class="text-right py-2 px-3">{result.totalGrossEarned.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+					<td class="text-right py-2 px-3">{displayTotalGrossEarned.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
 				</tr>
 
 				<!-- Post-Gross Deductions & Advances -->
-				{#each adjustments.filter(a => !['Bonus', 'Reimbursement'].includes(a.type || '')) as adj}
+				{#each adjustments.filter(a => !['Bonus', 'Reimbursement'].includes(a.type || '')) as adj (adj.id)}
 					<tr class="text-amber-700">
 						<td class="py-2 px-3">
 							{adj.title}
@@ -167,11 +185,14 @@
 					</tr>
 				{/each}
 
-				{#if !isMidMonthRun && result.ssfDeduction > 0 && includeSSF}
-					<tr class="text-amber-700">
-						<td class="py-2 px-3">Social Security (SSF) 5%</td>
-						<td class="text-center py-2 px-3">Capped 750</td>
-						<td class="text-right py-2 px-3">-{result.ssfDeduction.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+				{#if !isMidMonthRun}
+					<tr class="text-[#7a6550]/70">
+						<td class="py-2 px-3">
+							Social Security (SSO)
+							<div class="text-[10px] text-gray-500">Casa Luma covers the employee and company contribution.</div>
+						</td>
+						<td class="text-center py-2 px-3">Company paid</td>
+						<td class="text-right py-2 px-3">No deduction</td>
 					</tr>
 				{/if}
 			</tbody>
@@ -206,7 +227,7 @@
 			</div>
 			<div>
 				<p class="opacity-60 uppercase font-bold mb-1">OT Total</p>
-				<p class="text-sm font-bold">{(result.otHours15 + result.otHours10 + result.otHours30).toFixed(1)}h</p>
+				<p class="text-sm font-bold">{totalOtHours.toFixed(1)}h</p>
 			</div>
 		</div>
 	</div>

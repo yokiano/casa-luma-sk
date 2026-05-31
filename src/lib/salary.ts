@@ -81,6 +81,7 @@ export type SalaryResult = {
 	lateDeductions: number;
 	unpaidLeaveDeductions: number;
 	totalAdjustments: number;
+	// Company policy: Casa Luma covers the full SSO contribution on the employee's behalf.
 	ssfDeduction: number;
 	
 	// Granular Adjustment Components
@@ -100,9 +101,6 @@ export type SalaryResult = {
 
 export const STANDARD_MONTH_DAYS = 30;
 export const STANDARD_DAY_HOURS = 8;
-export const SSF_RATE = 0.05;
-export const SSF_MAX = 750;
-export const SSF_SALARY_CAP = 15000;
 
 // Generate all calendar days for the period
 export function generateCalendarDays(
@@ -181,7 +179,6 @@ export function calculateSalary(
 	options: {
 		isMidMonthRun?: boolean;
 		sickDaysUsedYearToDate?: number;
-		includeSSF?: boolean;
 	} = {}
 ): SalaryResult {
 	const isDaily = employee.salaryCalculation === 'Daily';
@@ -287,16 +284,10 @@ export function calculateSalary(
 	// Net = Base + OT + Bonuses - Attendance Deductions
 	const totalGrossEarned = baseSalaryForPeriod + otPay + bonuses - totalAttendanceDeductions;
 	
-	// SSF Calculation - only on End of Month run and only if enabled
-	let ssfDeduction = 0;
-	if (!options.isMidMonthRun && options.includeSSF !== false) {
-		const ssfBaseSalary = isDaily ? (totalGrossEarned + advances + deductions - bonuses - otPay) : monthlySalary;
-		const ssfBase = Math.min(ssfBaseSalary, SSF_SALARY_CAP);
-		ssfDeduction = Math.min(SSF_MAX, Math.round(ssfBase * SSF_RATE));
-	}
+	const ssfDeduction = 0; // Kept for compatibility; SSO is company-paid.
 
 	// Net payout for this period
-	const netPay = totalGrossEarned - ssfDeduction - advances - deductions;
+	const netPay = totalGrossEarned - advances - deductions;
 
 	// Both runs now calculate based on their period's attendance
 	const midMonthPayout = options.isMidMonthRun ? netPay : (isDaily ? 0 : (monthlySalary / 2));

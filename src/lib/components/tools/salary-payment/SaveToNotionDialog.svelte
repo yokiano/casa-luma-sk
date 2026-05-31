@@ -27,14 +27,16 @@
 	let fileName = $state<string | null>(null);
 	
 	// Pre-filled properties
-	let paymentTitle = $state(`${isMidMonthRun ? 'Mid' : 'End'}-Month Salary - ${employee.name} (${startDate})`);
+	let customPaymentTitle = $state<string | null>(null);
+	const defaultPaymentTitle = $derived(`${isMidMonthRun ? 'Mid' : 'End'}-Month Salary - ${employee.name} (${startDate})`);
+	const paymentTitle = $derived(customPaymentTitle ?? defaultPaymentTitle);
 	let paymentDate = $state(new Date().toISOString().split('T')[0]);
 	let notes = $state("");
 
 	async function handleSave() {
 		isSaving = true;
 		try {
-			const totalDeductions = result.totalAttendanceDeductions + result.deductions + result.ssfDeduction;
+			const totalDeductions = result.totalAttendanceDeductions + result.deductions;
 			
 			await saveSalaryPayment({
 				employeeId: employee.id,
@@ -80,7 +82,8 @@
 				<label for="title" class="text-[10px] font-bold uppercase tracking-widest text-[#7a6550]/60 ml-1">Payment Title</label>
 				<input 
 					id="title" 
-					bind:value={paymentTitle} 
+					value={paymentTitle}
+					oninput={(e) => customPaymentTitle = e.currentTarget.value}
 					class="w-full px-4 py-2.5 bg-white border border-[#d3c5b8] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#7a6550]/20 transition-all text-[#7a6550]" 
 				/>
 			</div>
@@ -115,8 +118,8 @@
 					<div class="text-right font-bold text-amber-700">-{result.advances.toLocaleString(undefined, { minimumFractionDigits: 2 })} THB</div>
 				{/if}
 				
-				{#if result.totalAttendanceDeductions + result.deductions + result.ssfDeduction > 0}
-					{@const totalDeductions = result.totalAttendanceDeductions + result.deductions + result.ssfDeduction}
+				{#if result.totalAttendanceDeductions + result.deductions > 0}
+					{@const totalDeductions = result.totalAttendanceDeductions + result.deductions}
 					<div class="text-[#7a6550]/60 font-semibold uppercase tracking-wider text-[9px]">Total Deductions</div>
 					<div class="text-right font-bold text-amber-700">-{totalDeductions.toLocaleString(undefined, { minimumFractionDigits: 2 })} THB</div>
 				{/if}

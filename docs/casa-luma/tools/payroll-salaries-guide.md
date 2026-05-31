@@ -12,7 +12,7 @@ The system operates on a **bi-monthly independent period model**.
 - **Period 1:** 1st to 15th of the month.
 - **Period 2:** 16th to the end of the month.
 
-Each period is calculated based on its own attendance data, but shares a monthly "Source of Truth" for base salary and Social Security (SSF) caps.
+Each period is calculated based on its own attendance data, but shares a monthly "Source of Truth" for base salary.
 
 ---
 
@@ -22,9 +22,8 @@ Each period is calculated based on its own attendance data, but shares a monthly
 | --- | --- | --- |
 | **Standard Month** | 30 Days | The divisor used for all monthly staff to calculate daily rates. |
 | **Standard Day** | 8 Hours | Standard working hours used to calculate hourly rates. |
-| **SSF Rate** | 5% | Social Security Fund contribution rate. |
-| **SSF Cap** | 750 THB | Maximum monthly deduction (based on 15,000 THB max salary). |
-| **OT Multiplier** | 1.5x | All overtime hours are currently calculated at a fixed 1.5x rate for all staff. |
+| **SSO Employee Deduction** | 0 THB | Casa Luma covers the employee and company Social Security Office contribution. |
+| **OT Multiplier** | 1.5x default | Payroll calculations default to 1.5x. The payslip UI can adjust displayed OT to 2.0x when needed. |
 
 ---
 
@@ -46,12 +45,12 @@ Deductions are subtracted from the 50% base based on the **Attendance Review**:
 
 ### D. Overtime (OT)
 - **OT Pay** = `Total OT Hours in Period * Hourly Rate * 1.5`.
-- Note: While the UI allows selecting different OT types (1.0, 3.0), the current business rule overrides this to **1.5x** for all hours.
+- Note: While the attendance UI allows selecting different OT types (1.0, 3.0), the current salary engine defaults to **1.5x** for all hours. The payslip can display OT at **2.0x** when selected.
 
-### E. Social Security (SSF)
-- **Applicable Run:** Only calculated during the **End-of-Month (Run 2)**.
-- **Calculation:** `min(Monthly Salary, 15000) * 0.05`, rounded to the nearest THB.
-- **Toggle:** Can be disabled via the "Include SSF" checkbox in the UI.
+### E. Social Security (SSO)
+- No employee-side SSO deduction is subtracted from payroll.
+- Casa Luma pays the employee and company contribution on the employee's behalf.
+- The payslip shows a note on the end-of-month run instead of a 5% deduction row.
 
 ### F. Adjustments (Notion Integration)
 Adjustments are fetched from the Notion "Salary Adjustments" database and applied based on type:
@@ -63,10 +62,10 @@ Adjustments are fetched from the Notion "Salary Adjustments" database and applie
 ## 4. Final Formulas
 
 ### Total Gross Earned (Period)
-`Gross = (Monthly Salary / 2) + OT Pay + Bonuses - Attendance Deductions - Regular Deductions`
+`Gross = (Monthly Salary / 2) + OT Pay + Bonuses - Attendance Deductions`
 
 ### Net Payout (Period)
-`Net = Gross - SSF (if Run 2) - Salary Advances`
+`Net = Gross - Regular Deductions - Salary Advances`
 
 ---
 
