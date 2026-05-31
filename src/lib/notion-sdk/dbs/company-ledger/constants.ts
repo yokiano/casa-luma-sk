@@ -1,10 +1,17 @@
 export const COMPANY_LEDGER_PROP_VALUES = {
 "type": [
-  "Income",
-  "Expense",
+  "Bank Transfer Expense",
+  "Credit Card Income",
+  "Scan Income",
+  "Bank Deposit Income",
+  "Expense from Backup",
+  "Scan Expense",
+  "Register Expense",
+  "Refund",
   "Owner Draw",
   "Owner Contribution",
-  "Dividend"
+  "Dividend",
+  "Expense"
 ] as const,
 "status": [
   "Pending",
@@ -52,9 +59,7 @@ export const COMPANY_LEDGER_PROP_VALUES = {
 ] as const,
 "bankAccount": [
   "KBank",
-  "SCB",
-  "Cash Register",
-  "Petty Cash"
+  "Cash Register"
 ] as const,
 }
 

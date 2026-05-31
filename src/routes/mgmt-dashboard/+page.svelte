@@ -1,8 +1,10 @@
 <script lang="ts">
-  import { getDailyMeetingDashboard, getTodayDashboardOverview } from '$lib/mgmt-dashboard.remote';
+  import BalanceReconciliationPanel from '$lib/components/mgmt-dashboard/BalanceReconciliationPanel.svelte';
+  import { getBalanceReconciliationDashboard, getDailyMeetingDashboard, getTodayDashboardOverview } from '$lib/mgmt-dashboard.remote';
   import { CalendarDays, ExternalLink, Gift, ListChecks, NotebookText, ReceiptText, Users } from 'lucide-svelte';
 
   const meeting = getDailyMeetingDashboard();
+  const reconciliation = getBalanceReconciliationDashboard();
   const overview = getTodayDashboardOverview();
 
   const money = new Intl.NumberFormat('en-GB', {
@@ -11,7 +13,8 @@
     maximumFractionDigits: 0
   });
 
-  const formatMoney = (value: number | undefined) => money.format(value ?? 0);
+  const formatMoney = (value: number | null | undefined) => (value === null ? '—' : money.format(value ?? 0));
+  const errorMessage = (error: unknown) => (error instanceof Error ? error.message : error ? String(error) : null);
 
   const departmentLabel = (department: string) =>
     department === 'unknown'
@@ -42,11 +45,7 @@
   {/if}
 
   {#if meeting.loading}
-    <div class="space-y-4">
-      {#each Array(4) as _}
-        <div class="h-44 animate-pulse rounded-3xl bg-white/70 shadow-sm"></div>
-      {/each}
-    </div>
+    <div class="h-44 animate-pulse rounded-3xl bg-white/70 shadow-sm"></div>
   {:else}
     {@const daily = meeting.current}
 
@@ -96,6 +95,18 @@
         {/each}
       </div>
     </section>
+  {/if}
+
+  <BalanceReconciliationPanel data={reconciliation.current} loading={reconciliation.loading} error={errorMessage(reconciliation.error)} />
+
+  {#if meeting.loading}
+    <div class="space-y-4">
+      {#each Array(3) as _}
+        <div class="h-44 animate-pulse rounded-3xl bg-white/70 shadow-sm"></div>
+      {/each}
+    </div>
+  {:else}
+    {@const daily = meeting.current}
 
     <section class="rounded-3xl border border-[#dfd2c5] bg-white p-6 shadow-sm" id="events">
       <div class="flex gap-3">
@@ -103,7 +114,7 @@
           <CalendarDays size={20} />
         </span>
         <div>
-          <p class="text-xs font-bold uppercase tracking-[0.18em] text-[#7a6550]/60">2. Events</p>
+          <p class="text-xs font-bold uppercase tracking-[0.18em] text-[#7a6550]/60">3. Events</p>
           <h2 class="mt-1 text-2xl font-bold tracking-tight">Coming soon</h2>
           <p class="mt-1 text-sm text-[#7a6550]">
             Placeholder for the future events UI/database. Use this slot in the meeting to mention today/tomorrow workshops,
@@ -120,7 +131,7 @@
             <Users size={20} />
           </span>
           <div>
-            <p class="text-xs font-bold uppercase tracking-[0.18em] text-[#7a6550]/60">3. HR</p>
+            <p class="text-xs font-bold uppercase tracking-[0.18em] text-[#7a6550]/60">4. HR</p>
             <h2 class="mt-1 text-2xl font-bold tracking-tight">Salary adjustments & people reminders</h2>
             <p class="mt-1 text-sm text-[#7a6550]">Upcoming salary adjustments and birthdays from Notion.</p>
           </div>
@@ -175,7 +186,7 @@
             <ListChecks size={20} />
           </span>
           <div>
-            <p class="text-xs font-bold uppercase tracking-[0.18em] text-[#7a6550]/60">4. Tasks</p>
+            <p class="text-xs font-bold uppercase tracking-[0.18em] text-[#7a6550]/60">5. Tasks</p>
             <h2 class="mt-1 text-2xl font-bold tracking-tight">Tasks Notion view</h2>
             <p class="mt-1 text-sm text-[#7a6550]">
               Embedded when Notion allows it; use the external link if the frame is blocked by Notion/browser settings.

@@ -1,9 +1,10 @@
 <script lang="ts">
-  import { getDatabaseHealth, getIncidentHealth, getReceiptFreshnessHealth, sendTestTelegramAlert } from '$lib/mgmt-dashboard.remote';
-  import { AlertTriangle, CheckCircle2, Database, HeartPulse, Loader2, Radio, Send } from 'lucide-svelte';
+  import { getDatabaseHealth, getIncidentHealth, getMembershipCreationHealth, getReceiptFreshnessHealth, sendTestTelegramAlert } from '$lib/mgmt-dashboard.remote';
+  import { AlertTriangle, CheckCircle2, Database, HeartPulse, IdCard, Loader2, Radio, Send } from 'lucide-svelte';
 
   const databaseHealth = getDatabaseHealth();
   const receiptFreshness = getReceiptFreshnessHealth();
+  const membershipCreationHealth = getMembershipCreationHealth();
   const incidentHealth = getIncidentHealth();
 
   const testAlertTypes = [
@@ -148,7 +149,7 @@
     </div>
   </section>
 
-  <div class="grid gap-4 xl:grid-cols-3">
+  <div class="grid gap-4 xl:grid-cols-2 2xl:grid-cols-4">
     <article class="rounded-3xl border border-[#dfd2c5] bg-white p-6 shadow-sm">
       <div class="flex items-start justify-between gap-4">
         <div>
@@ -202,6 +203,46 @@
           <div class="flex justify-between gap-4"><dt class="text-[#7a6550]">Latest sync</dt><dd class="font-semibold">{formatDateTime(check?.latestSyncedAt)}</dd></div>
           <div class="flex justify-between gap-4"><dt class="text-[#7a6550]">All receipts</dt><dd class="font-semibold">{check?.totalReceipts ?? 0}</dd></div>
         </dl>
+      {/if}
+    </article>
+
+    <article class="rounded-3xl border border-[#dfd2c5] bg-white p-6 shadow-sm">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <p class="text-sm font-bold text-[#7a6550]">Flexi & memberships</p>
+          <h2 class="mt-2 text-2xl font-semibold">Creation flow</h2>
+        </div>
+        <IdCard class="text-[#7a6550]" size={24} />
+      </div>
+
+      {#if membershipCreationHealth.loading}
+        <div class="mt-6 flex items-center gap-2 text-sm text-[#7a6550]"><Loader2 class="animate-spin" size={16} /> Checking…</div>
+      {:else if membershipCreationHealth.error}
+        <div class="mt-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">Remote function failed.</div>
+      {:else}
+        {@const check = membershipCreationHealth.current}
+        <div class={`mt-6 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-bold ${statusClasses(check?.status)}`}>
+          {#if check?.ok}<CheckCircle2 size={14} />{:else}<AlertTriangle size={14} />{/if}
+          {check?.totalCreated ?? 0} created in last {check?.windowDays ?? 7} days
+        </div>
+        <p class="mt-4 text-sm leading-relaxed text-[#7a6550]">
+          {#if check?.ok}
+            Membership or Flexi Passes records were created recently, so the automation/business flow appears active.
+          {:else}
+            No membership or Flexi Passes records were created recently. The automation/business flow may need checking.
+          {/if}
+        </p>
+        <dl class="mt-5 space-y-3 text-sm">
+          <div class="flex justify-between gap-4"><dt class="text-[#7a6550]">Flexi Passes records</dt><dd class="font-semibold">{check?.flexiCreated ?? 0}</dd></div>
+          <div class="flex justify-between gap-4"><dt class="text-[#7a6550]">Memberships records</dt><dd class="font-semibold">{check?.membershipCreated ?? 0}</dd></div>
+          <div class="flex justify-between gap-4"><dt class="text-[#7a6550]">Latest created</dt><dd class="font-semibold">{formatDateTime(check?.latestCreatedAt)}</dd></div>
+          <div class="flex justify-between gap-4"><dt class="text-[#7a6550]">Elapsed</dt><dd class="font-semibold">{check?.elapsedMs ?? 0}ms</dd></div>
+        </dl>
+        {#if check?.latestRecord}
+          <a href={check.latestRecord.url} target="_blank" rel="noreferrer" class="mt-5 block rounded-2xl bg-[#f6f1eb] p-4 text-xs text-[#7a6550] transition hover:bg-[#efe6dc]">
+            Latest: <b>{check.latestRecord.name}</b> · {check.latestRecord.kind === 'flexi-pass' ? 'Flexi Passes' : 'Memberships'} · {check.latestRecord.type ?? 'No type'}
+          </a>
+        {/if}
       {/if}
     </article>
 

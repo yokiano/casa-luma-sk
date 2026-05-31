@@ -1,12 +1,13 @@
 <script lang="ts">
   import { page } from '$app/state';
   import type { Snippet } from 'svelte';
-  import { Activity, AlertTriangle, BarChart3, HeartPulse } from 'lucide-svelte';
+  import { Activity, AlertTriangle, BarChart3, HeartPulse, Scale } from 'lucide-svelte';
 
   let { children }: { children?: Snippet } = $props();
 
   const sections = [
     { href: '/mgmt-dashboard', label: 'Daily meeting', icon: BarChart3 },
+    { href: '/mgmt-dashboard/reconciliation', label: 'Reconciliation', icon: Scale },
     { href: '/mgmt-dashboard/violations', label: 'Violations', icon: AlertTriangle },
     { href: '/mgmt-dashboard/health', label: 'Health checks', icon: HeartPulse }
   ];
@@ -51,7 +52,7 @@
       </nav>
 
       <p class="mt-8 hidden rounded-3xl border border-[#dfd2c5] bg-[#fbf8f4] p-4 text-xs leading-5 text-[#7a6550] lg:block">
-        Daily meeting agenda with Notion-led expenses, HR reminders, task links, and receipt operations snapshots.
+        Daily meeting agenda with Notion-led expenses, bank/safe reconciliation, HR reminders, task links, and receipt operations snapshots.
       </p>
     </aside>
 

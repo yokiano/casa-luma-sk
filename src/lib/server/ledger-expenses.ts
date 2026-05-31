@@ -2,8 +2,18 @@ import { error } from '@sveltejs/kit';
 import { NOTION_API_KEY } from '$env/static/private';
 import { CompanyLedgerDatabase } from '$lib/notion-sdk/dbs/company-ledger/db';
 import { CompanyLedgerPatchDTO } from '$lib/notion-sdk/dbs/company-ledger/patch.dto';
+import type { CompanyLedgerResponse } from '$lib/notion-sdk/dbs/company-ledger/types';
+
+export const COMPANY_LEDGER_EXPENSE_TYPES = {
+  register: 'Register Expense',
+  scan: 'Scan Expense'
+} as const satisfies Record<string, CompanyLedgerResponse['properties']['Type']['select']['name']>;
+
+export type CompanyLedgerExpenseType =
+  (typeof COMPANY_LEDGER_EXPENSE_TYPES)[keyof typeof COMPANY_LEDGER_EXPENSE_TYPES];
 
 export type CompanyLedgerExpenseInput = {
+  ledgerType: CompanyLedgerExpenseType;
   title: string;
   amount: number;
   date: string;
@@ -95,7 +105,7 @@ export async function createCompanyLedgerExpense(data: CompanyLedgerExpenseInput
     new CompanyLedgerPatchDTO({
       properties: {
         description: data.title,
-        type: 'Expense',
+        type: data.ledgerType,
         status: { name: 'Paid' },
         amountThb: data.amount,
         date: { start: normalizedDate },

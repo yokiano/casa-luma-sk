@@ -1,6 +1,6 @@
 import { command } from '$app/server';
 import * as v from 'valibot';
-import { createCompanyLedgerExpense } from '$lib/server/ledger-expenses';
+import { COMPANY_LEDGER_EXPENSE_TYPES, createCompanyLedgerExpense } from '$lib/server/ledger-expenses';
 
 const SubmitSchema = v.object({
   title: v.string(),
@@ -18,5 +18,8 @@ const SubmitSchema = v.object({
 });
 
 export const submitExpenseSlip = command(SubmitSchema, async (data) => {
-  return createCompanyLedgerExpense(data);
+  return createCompanyLedgerExpense({
+    ...data,
+    ledgerType: COMPANY_LEDGER_EXPENSE_TYPES.scan
+  });
 });

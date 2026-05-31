@@ -1,7 +1,7 @@
 import { command } from '$app/server';
 import { error } from '@sveltejs/kit';
 import * as v from 'valibot';
-import { createCompanyLedgerExpense } from '$lib/server/ledger-expenses';
+import { COMPANY_LEDGER_EXPENSE_TYPES, createCompanyLedgerExpense } from '$lib/server/ledger-expenses';
 import { COMPANY_LEDGER_PROP_VALUES } from '$lib/notion-sdk/dbs/company-ledger/constants';
 
 const moneyField = v.pipe(
@@ -41,6 +41,7 @@ export const submitCloseShiftExpense = command(SubmitCloseShiftExpenseSchema, as
     .join('\n');
 
   return createCompanyLedgerExpense({
+    ledgerType: COMPANY_LEDGER_EXPENSE_TYPES.register,
     title: data.title.trim(),
     amount: data.amount,
     date: data.shiftDate,

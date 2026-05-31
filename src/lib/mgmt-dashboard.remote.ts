@@ -4,17 +4,24 @@ import { sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { db, getDatabaseEnvKey } from '$lib/server/db/client';
 import { incidentReporter } from '$lib/server/incidents';
+import { buildReceiptReportUrl } from '$lib/server/incidents/urls';
 import { CompanyLedgerDatabase } from '$lib/notion-sdk/dbs/company-ledger/db';
 import { CompanyLedgerResponseDTO } from '$lib/notion-sdk/dbs/company-ledger/response.dto';
 import { SalaryAdjustmentsDatabase } from '$lib/notion-sdk/dbs/salary-adjustments/db';
 import { SalaryAdjustmentsResponseDTO } from '$lib/notion-sdk/dbs/salary-adjustments/response.dto';
 import { EmployeesDatabase } from '$lib/notion-sdk/dbs/employees/db';
 import { EmployeesResponseDTO } from '$lib/notion-sdk/dbs/employees/response.dto';
+import { FlexiPassesDatabase } from '$lib/notion-sdk/dbs/flexi-passes/db';
+import { FlexiPassesResponseDTO } from '$lib/notion-sdk/dbs/flexi-passes/response.dto';
+import { MembershipsDatabase } from '$lib/notion-sdk/dbs/memberships/db';
+import { MembershipsResponseDTO } from '$lib/notion-sdk/dbs/memberships/response.dto';
 import { bangkokDate, bangkokDateRangeUtc, compactDateLabel } from '$lib/mgmt-dashboard-dates';
+import { getBalanceReconciliationSummary } from '$lib/server/balance-reconciliation';
 
 type Row = Record<string, unknown>;
 
 const RECEIPT_FRESHNESS_MIN_COUNT = 5;
+const MEMBERSHIP_CREATION_WINDOW_DAYS = 7;
 const COMPANY_LEDGER_DATABASE_ID = '8c565c29798a4ac39e3b23c35db93c5b';
 const SALARY_ADJUSTMENTS_DATABASE_ID = 'eb751fe68e764a618c4398560a0ae114';
 const EMPLOYEES_DATABASE_ID = 'cf220f8b4efc4caeb7e46723c4f5e3e9';
@@ -245,13 +252,6 @@ const maskPresence = (value: string | undefined) => ({
   present: Boolean(value?.trim())
 });
 
-const getIncidentBaseUrl = () => env.INCIDENT_REPORT_BASE_URL?.trim().replace(/\/$/, '') || null;
-
-const buildReceiptUrl = (receiptNumber: string) => {
-  const base = getIncidentBaseUrl();
-  return base ? `${base}/tools/receipts/${encodeURIComponent(receiptNumber)}` : null;
-};
-
 const isTestAlertType = (value: string): value is TestAlertType =>
   TEST_ALERT_TYPES.includes(value as TestAlertType);
 
@@ -269,7 +269,7 @@ const createTestValidationContext = ({
   trigger: 'mgmt-dashboard-health-test',
   sentAt: new Date().toISOString(),
   receiptNumber,
-  receiptUrl: buildReceiptUrl(receiptNumber),
+  receiptUrl: buildReceiptReportUrl(receiptNumber),
   failedChecks: [code],
   primaryFindingCode: code,
   primaryFindingMessage: message,
@@ -455,6 +455,8 @@ export const getDailyMeetingDashboard = query(async () => {
     };
   }
 });
+
+export const getBalanceReconciliationDashboard = query(async () => getBalanceReconciliationSummary({ asOf: new Date() }));
 
 export const getTodayDashboardOverview = query(async () => {
   const [row, lineRows, categoryMaps, departmentMapping] = await Promise.all([
@@ -659,6 +661,114 @@ export const getReceiptFreshnessHealth = query(async () => {
   }
 });
 
+export const getMembershipCreationHealth = query(async () => {
+  const startedAt = Date.now();
+  const notionSecret = getNotionSecret();
+  const since = new Date(Date.now() - MEMBERSHIP_CREATION_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+
+  if (!notionSecret) {
+    return {
+      ok: false,
+      status: 'critical',
+      checkedAt: new Date().toISOString(),
+      elapsedMs: Date.now() - startedAt,
+      windowDays: MEMBERSHIP_CREATION_WINDOW_DAYS,
+      since: since.toISOString(),
+      totalCreated: 0,
+      flexiCreated: 0,
+      membershipCreated: 0,
+      latestCreatedAt: null,
+      latestRecord: null,
+      error: 'NOTION_API_KEY is not configured.'
+    };
+  }
+
+  try {
+    const membershipsDb = new MembershipsDatabase({ notionSecret });
+    const flexiPassesDb = new FlexiPassesDatabase({ notionSecret });
+    const [membershipResponse, flexiResponse] = await Promise.all([
+      membershipsDb.query({
+        page_size: 100,
+        sorts: [{ timestamp: 'created_time', direction: 'descending' }]
+      } as any),
+      flexiPassesDb.query({
+        page_size: 100,
+        sorts: [{ timestamp: 'created_time', direction: 'descending' }]
+      } as any)
+    ]);
+
+    const membershipRecords = membershipResponse.results.map((result) => {
+      const dto = new MembershipsResponseDTO(result as any);
+      const createdAt = toIsoOrNull(dto.createdTime);
+
+      return {
+        id: dto.id,
+        kind: 'membership' as const,
+        name: dto.properties.name?.text ?? 'Untitled membership',
+        type: (dto.properties.type?.name as string | undefined) ?? null,
+        createdAt,
+        url: dto.url
+      };
+    });
+
+    const flexiRecords = flexiResponse.results.map((result) => {
+      const dto = new FlexiPassesResponseDTO(result as any);
+      const createdAt = toIsoOrNull(dto.createdTime);
+
+      return {
+        id: dto.id,
+        kind: 'flexi-pass' as const,
+        name: dto.properties.name?.text ?? 'Untitled flexi pass',
+        type: dto.properties.automationStatus?.name ?? 'Flexi Pass',
+        createdAt,
+        url: dto.url
+      };
+    });
+
+    const recentMembershipRecords = membershipRecords.filter(
+      (record) => record.createdAt && new Date(record.createdAt).getTime() >= since.getTime()
+    );
+    const recentFlexiRecords = flexiRecords.filter(
+      (record) => record.createdAt && new Date(record.createdAt).getTime() >= since.getTime()
+    );
+    const allRecords = [...membershipRecords, ...flexiRecords].sort(
+      (a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime()
+    );
+    const totalCreated = recentMembershipRecords.length + recentFlexiRecords.length;
+    const latestRecord = allRecords[0] ?? null;
+
+    return {
+      ok: totalCreated > 0,
+      status: totalCreated > 0 ? 'healthy' : 'warning',
+      checkedAt: new Date().toISOString(),
+      elapsedMs: Date.now() - startedAt,
+      windowDays: MEMBERSHIP_CREATION_WINDOW_DAYS,
+      since: since.toISOString(),
+      totalCreated,
+      flexiCreated: recentFlexiRecords.length,
+      membershipCreated: recentMembershipRecords.length,
+      latestCreatedAt: latestRecord?.createdAt ?? null,
+      latestRecord,
+      resultCapped: membershipResponse.has_more === true || flexiResponse.has_more === true
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      status: 'critical',
+      checkedAt: new Date().toISOString(),
+      elapsedMs: Date.now() - startedAt,
+      windowDays: MEMBERSHIP_CREATION_WINDOW_DAYS,
+      since: since.toISOString(),
+      totalCreated: 0,
+      flexiCreated: 0,
+      membershipCreated: 0,
+      latestCreatedAt: null,
+      latestRecord: null,
+      error: serializeError(error)
+    };
+  }
+});
+
 export const getIncidentHealth = query(async () => {
   const startedAt = Date.now();
 
@@ -837,7 +947,7 @@ export const sendTestTelegramAlert = command(v.object({ alertType: v.optional(v.
         trigger: 'mgmt-dashboard-health-test',
         sentAt: new Date().toISOString(),
         receiptNumber,
-        receiptUrl: buildReceiptUrl(receiptNumber),
+        receiptUrl: buildReceiptReportUrl(receiptNumber),
         failedChecks: ['VALIDATION_ENGINE_ERROR'],
         primaryFindingMessage: 'The validation engine failed while running receipt rules.'
       },
