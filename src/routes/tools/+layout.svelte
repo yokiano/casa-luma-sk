@@ -14,7 +14,7 @@
     { href: '/tools/families', label: 'Families' },
     { href: '/tools/memberships', label: 'Memberships' },
     { href: '/tools/recipes', label: 'Casa Luma Recipes' },
-    { href: '/tools/onboarding/kitchen', label: 'Onboarding' },
+    { href: '/tools/onboarding', label: 'Onboarding' },
 
     { href: '/tools/salary-payment', label: 'Payroll', managerOnly: true },
     { href: '/tools/pos-sync', label: 'POS Sync', managerOnly: true },
