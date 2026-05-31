@@ -3,7 +3,7 @@
 	import logoFull from '$lib/assets/logo/logo-no-sun-transparent.png';
 </script>
 
-<footer class="border-t border-[#F9F7F2]/10 bg-[#2D3A3A] text-[#F9F7F2]">
+<footer class="border-t border-[#F9F7F2]/10 bg-[#2D3A3A] text-[#F9F7F2] print:hidden">
 	<div class="mx-auto max-w-7xl px-6 py-14 sm:px-8 sm:py-16 lg:px-12">
 		<div class="grid gap-12 lg:grid-cols-[1.2fr_1fr_1fr] lg:gap-10">
 			<div>

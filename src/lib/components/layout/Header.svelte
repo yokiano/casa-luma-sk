@@ -31,7 +31,7 @@
 </script>
 
 <header
-	class="sticky top-0 z-50 border-b border-[#2D3A3A]/10 px-4 transition-all duration-500 sm:px-6 lg:px-8 {scrolled ? 'bg-[#F9F7F2]/90 shadow-[0_8px_30px_rgb(45_58_58_/_0.08)] backdrop-blur-md' : 'bg-[#F9F7F2]/75'}"
+	class="sticky top-0 z-50 border-b border-[#2D3A3A]/10 px-4 transition-all duration-500 sm:px-6 lg:px-8 print:hidden {scrolled ? 'bg-[#F9F7F2]/90 shadow-[0_8px_30px_rgb(45_58_58_/_0.08)] backdrop-blur-md' : 'bg-[#F9F7F2]/75'}"
 >
 	<nav class="mx-auto flex h-20 w-full max-w-7xl items-center justify-between text-[#2D3A3A]">
 		<div class="hidden min-w-0 flex-1 items-center gap-7 md:flex lg:gap-8">

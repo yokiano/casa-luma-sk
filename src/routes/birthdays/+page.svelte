@@ -1,9 +1,18 @@
 <script lang="ts">
 	import Reveal from '$lib/components/animations/Reveal.svelte';
 	import WebsiteMediaImage from '$lib/components/media/WebsiteMediaImage.svelte';
+	import {
+		BIRTHDAY_ACTIVITY_ADDONS,
+		BIRTHDAY_BASE_PRICING,
+		BIRTHDAY_BUFFET_SECTIONS,
+		BIRTHDAY_PLAYGROUND_ADDON_COPY,
+		BIRTHDAY_PLAYGROUND_PRICING,
+		BIRTHDAY_SIMPLE_TABLE_NOTES,
+		BIRTHDAY_SIMPLE_TABLE_UPGRADES
+	} from '$lib/birthday-pricing';
 	import { getWebsiteMediaContext } from '$lib/context/website-media';
 	import { BUSINESS_INFO, GOOGLE_REVIEW_HIGHLIGHTS, SOCIAL_LINKS } from '$lib/constants';
-	import { ArrowRight, ArrowUpRight, Check, Instagram, MapPin, Sparkles, Star } from 'lucide-svelte';
+	import { ArrowRight, ArrowUpRight, Check, Instagram, MapPin, Star } from 'lucide-svelte';
 
 	const websiteMedia = getWebsiteMediaContext();
 	const hasHeroImage = $derived(websiteMedia.has('home-birthday-image'));
@@ -14,130 +23,53 @@
 	const fallbackCelebrationImage =
 		'https://images.unsplash.com/photo-1464349153735-7db50ed83c84?q=80&w=1400&auto=format&fit=crop';
 
-	const atmosphereNotes = [
-		'Private celebrations in a space that already feels special before the first balloon is tied.',
-		'Plenty of room for movement, play, pool time, and slow family moments between the big ones.',
-		'Warm cafe hospitality so the celebration feels held, not hectic.'
-	];
-
-	type PackageColumn = {
-		label: string;
-		price: string;
-		extraKids: string;
-		indoorPlayground: string;
-	};
-
-	type PackageRow =
-		| { label: string; key: keyof Omit<PackageColumn, 'label'> }
-		| { label: string; value: string };
-
-	const packageColumns: PackageColumn[] = [
+	const highlights = [
 		{
-			label: 'Mon-Sat',
-			price: '12,000 THB',
-			extraKids: '+700 THB / child',
-			indoorPlayground: 'Included'
+			title: 'A place children love',
+			text: 'Garden, pool, and our indoor play area — room to move, explore, and enjoy the day together.'
 		},
 		{
-			label: 'Sunday',
-			price: '10,000 THB',
-			extraKids: '+500 THB / child',
-			indoorPlayground: 'Not included'
-		}
-	];
-
-	const packageRows: PackageRow[] = [
-		{ label: 'Price', key: 'price' },
-		{ label: 'Up to', value: '15 kids' },
-		{ label: 'Venue areas', value: 'Garden & Pool' },
-		{ label: 'Duration', value: '3 hours' },
-		{ label: 'Food & cake', value: 'Included' },
-		{ label: 'Waiter', value: 'Included' },
-		{ label: 'Decorations', value: 'Included' },
-		{ label: 'Music', value: 'Included' },
-		{ label: 'Extra kids', key: 'extraKids' },
-		{ label: 'Indoor playground', key: 'indoorPlayground' }
-	];
-
-	const miniOffer = [
-		'Dedicated table provided',
-		'Playground paid separately',
-		'You handle decorations and cake',
-		'10% off playground access'
-	];
-
-	const buffetSections = [
-		{
-			title: 'Starters',
-			items: ['Fresh veggie sticks with dips', 'Chopped salad']
+			title: 'We handle the hosting',
+			text: 'Food, cake, decorations, waiter, and music can all be taken care of so parents can be present.'
 		},
 		{
-			title: 'Dessert',
-			items: ['Birthday cake', 'Fruit platter']
-		},
-		{
-			title: 'Main course (choose one)',
-			items: ['Nuggets & fries', 'Hot dogs', 'Mixed sandwiches (avocado / cheese / veggies / ham)']
-		},
-		{
-			title: 'Drinks',
-			items: ['Water jar', 'Juice jar']
-		}
-	];
-
-	const addOns = [
-		'Buffet - 500 THB per kid',
-		'Extra cake - 700 THB',
-		'Decorations - 500 THB',
-		'Face painting - 3,000 THB',
-		'Movement activity (ages 5+) - 5,000 THB',
-		'Planting & craft workshop - from 6,000 THB'
-	];
-
-	const celebrationElements = [
-		{
-			title: 'A beautiful setting',
-			text: 'Soft interiors, natural light, garden energy, and a playful atmosphere that still feels composed.'
-		},
-		{
-			title: 'Room to play',
-			text: 'Children can move through play areas, explore, and settle into the celebration in their own rhythm.'
-		},
-		{
-			title: 'Easy for grown-ups',
-			text: 'Parents can gather, enjoy food and drinks, and actually be part of the day instead of managing every detail.'
-		},
-		{
-			title: 'Flexible planning',
-			text: 'We can shape the mood, timing, and flow around the kind of birthday you want to host.'
+			title: 'You choose the shape',
+			text: 'A full hosted party for up to 15 children, a smaller garden table for up to 8, and optional playground access.'
 		}
 	];
 
 	const planningSteps = [
 		{
-			title: 'Choose the format',
-			text: 'Pick the main package or the smaller setup for up to 8 kids.'
+			title: 'Date and guest count',
+			text: 'Pick when you would like to celebrate and how many children are coming.'
 		},
 		{
-			title: 'Add the extras',
-			text: 'Select buffet, cake, decorations, or one of the activity add-ons.'
+			title: 'Playground add-on',
+			text: 'Decide whether to include guaranteed indoor playground access — priced separately from the base.'
 		},
 		{
-			title: 'Confirm your space use',
-			text: 'Choose whether to include the indoor playground when available, or keep it garden-focused.'
+			title: 'Food and activities',
+			text: 'Choose buffet options, simple-table upgrades, and any activity add-ons.'
+		},
+		{
+			title: 'Send your request',
+			text: 'Submit the booking form and we will confirm availability with you.'
 		}
 	];
 
 	const review =
 		GOOGLE_REVIEW_HIGHLIGHTS.find((entry) => entry.id === 'review-katalina-matus') ||
 		GOOGLE_REVIEW_HIGHLIGHTS[0];
+
+	const weekdayHostedWithPlayground =
+		BIRTHDAY_BASE_PRICING.fullHosted.monSat + BIRTHDAY_PLAYGROUND_PRICING.fullHosted.flat;
 </script>
 
 <svelte:head>
 	<title>Birthdays - Casa Luma</title>
 	<meta
 		name="description"
-		content="Host a warm, playful birthday at Casa Luma with beautiful surroundings, room to explore, and a celebration that feels easy for the whole family."
+		content="Host a warm, playful birthday at Casa Luma with beautiful surroundings, flexible packages, and an easy booking form."
 	/>
 </svelte:head>
 
@@ -146,10 +78,6 @@
 		<div class="pointer-events-none absolute inset-0 overflow-hidden">
 			<div class="absolute left-[8%] top-16 h-44 w-44 rounded-full bg-accent/14 blur-3xl"></div>
 			<div class="absolute right-[8%] top-10 h-72 w-72 rounded-full bg-primary/18 blur-3xl"></div>
-			<div
-				class="absolute bottom-10 left-1/3 h-56 w-80 bg-secondary/14 blur-3xl"
-				style:border-radius="42% 58% 50% 50% / 51% 42% 58% 49%"
-			></div>
 		</div>
 
 		<div class="relative mx-auto grid max-w-7xl items-center gap-14 lg:grid-cols-[1.05fr_0.95fr] lg:gap-20">
@@ -160,64 +88,41 @@
 
 				<Reveal direction="up" delay={90} trigger="load" skewX={0}>
 					<h1 class="mt-5 max-w-4xl text-5xl leading-[0.9] tracking-tight sm:text-6xl lg:text-[5.5rem]">
-						Birthday details,
-						<span class="italic text-accent">clearly</span>
-						laid out.
+						A birthday your child will
+						<span class="italic text-accent">remember</span>
 					</h1>
 				</Reveal>
 
 				<Reveal direction="up" delay={180} trigger="load" skewX={0}>
 					<p class="mt-7 max-w-2xl text-lg leading-relaxed text-foreground/72 sm:text-xl">
-						For families who already know Casa Luma and just want the practicals: packages, buffet options,
-						add-ons, and what is included.
+						Casa Luma is a warm, natural setting for family celebrations — garden, pool, good food, and space
+						for children to play. Choose what fits your party and book online.
 					</p>
 				</Reveal>
 
 				<Reveal direction="up" delay={260} trigger="load" skewX={0}>
-					<div class="mt-9 flex flex-col gap-3 sm:flex-row">
+					<div class="mt-9 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
 						<a
-							href={SOCIAL_LINKS.instagram}
-							target="_blank"
-							rel="noreferrer"
-							class="inline-flex items-center justify-center gap-2 rounded-full bg-foreground px-6 py-3.5 text-sm uppercase tracking-[0.18em] text-background transition-transform duration-300 hover:-translate-y-0.5 hover:bg-accent"
+							href="/birthdays/book"
+							class="inline-flex flex-row items-center justify-center gap-2 whitespace-nowrap rounded-full bg-accent px-6 py-3.5 text-sm uppercase tracking-[0.18em] text-white transition-transform duration-300 hover:-translate-y-0.5 hover:bg-accent/90"
 						>
-							<Instagram size={16} />
-							Ask about dates
+							Book now
 						</a>
 						<a
 							href="#birthday-details"
-							class="inline-flex items-center justify-center gap-2 rounded-full border border-foreground/12 bg-white/70 px-6 py-3.5 text-sm uppercase tracking-[0.18em] text-foreground transition-transform duration-300 hover:-translate-y-0.5 hover:border-accent/30 hover:text-accent"
+							class="inline-flex flex-row items-center justify-center gap-2 whitespace-nowrap rounded-full border border-foreground/12 bg-white/70 px-6 py-3.5 text-sm uppercase tracking-[0.18em] text-foreground transition-transform duration-300 hover:-translate-y-0.5 hover:border-accent/30 hover:text-accent"
 						>
 							See packages
 							<ArrowRight size={16} />
 						</a>
 					</div>
 				</Reveal>
-
-				<Reveal direction="up" delay={340} trigger="load" skewX={0}>
-					<div class="mt-10 grid gap-4 sm:grid-cols-3">
-						<div class="rounded-[1.6rem] border border-foreground/8 bg-white/80 p-5 shadow-[0_20px_50px_foreground/7] backdrop-blur-sm">
-							<p class="text-[11px] uppercase tracking-[0.24em] text-foreground/55">Atmosphere</p>
-							<p class="mt-3 text-base leading-relaxed text-foreground">Up to 15 kids in the main package.</p>
-						</div>
-						<div class="rounded-[1.6rem] border border-foreground/8 bg-white/80 p-5 shadow-[0_20px_50px_foreground/7] backdrop-blur-sm">
-							<p class="text-[11px] uppercase tracking-[0.24em] text-foreground/55">For Families</p>
-							<p class="mt-3 text-base leading-relaxed text-foreground">3 hours, food, cake, waiter, decorations, music.</p>
-						</div>
-						<div class="rounded-[1.6rem] border border-foreground/8 bg-white/80 p-5 shadow-[0_20px_50px_foreground/7] backdrop-blur-sm">
-							<p class="text-[11px] uppercase tracking-[0.24em] text-foreground/55">Planning</p>
-							<p class="mt-3 text-base leading-relaxed text-foreground">Indoor playground included Mon-Sat, not included Sunday.</p>
-						</div>
-					</div>
-				</Reveal>
 			</div>
 
 			<Reveal direction="up" delay={180} trigger="load" class="relative" skewX={0}>
 				<div class="relative mx-auto max-w-[34rem]">
-					<div class="absolute -left-6 top-10 h-32 w-32 rounded-full border border-accent/18 bg-white/70 blur-sm"></div>
-					<div class="absolute -right-3 bottom-12 h-24 w-24 rounded-[35%_65%_58%_42%_/_45%_46%_54%_55%] bg-primary/28 blur-xl"></div>
 					<div class="relative overflow-hidden rounded-[2.4rem] border border-foreground/8 bg-white p-3 shadow-[0_30px_100px_foreground/16]">
-						<div class="overflow-hidden rounded-[2rem] bg-muted aspect-[4/5]">
+						<div class="aspect-[4/5] overflow-hidden rounded-[2rem] bg-muted">
 							{#if hasHeroImage}
 								<WebsiteMediaImage
 									slug="home-birthday-image"
@@ -231,13 +136,6 @@
 							{/if}
 						</div>
 					</div>
-
-					<div class="absolute -bottom-6 -left-2 max-w-xs rounded-[1.8rem] border border-foreground/8 bg-popover/95 p-5 shadow-[0_18px_50px_foreground/12] backdrop-blur-sm">
-						<p class="text-[11px] uppercase tracking-[0.24em] text-accent">The feeling</p>
-						<p class="mt-3 text-base leading-relaxed text-foreground/78">
-							Booking is especially useful when you want guaranteed indoor playground access, since capacity there is limited.
-						</p>
-					</div>
 				</div>
 			</Reveal>
 		</div>
@@ -248,44 +146,84 @@
 			<Reveal direction="up" skewX={0}>
 				<div class="mb-8 max-w-3xl">
 					<p class="text-[11px] uppercase tracking-[0.28em] text-foreground/70">Packages</p>
-					<h2 class="mt-4 text-4xl leading-tight tracking-tight sm:text-5xl">The details most parents are looking for.</h2>
+					<h2 class="mt-4 text-4xl leading-tight tracking-tight sm:text-5xl">What is included in the base price</h2>
+					<p class="mt-4 text-base leading-relaxed text-foreground/68">
+						Full hosted birthdays cover garden and pool for three hours, with food, cake, decorations, waiter,
+						and music. Weekdays and Saturdays start lower; Sundays start higher because they are usually busier.
+					</p>
 				</div>
 			</Reveal>
 
-			<div class="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-				<Reveal direction="up" class="rounded-[2.3rem] border border-foreground/8 bg-white p-6 shadow-[0_24px_80px_foreground/8] sm:p-8" skewX={0}>
-					<div class="grid gap-4 md:grid-cols-2">
-						{#each packageColumns as column}
-							<div class="rounded-[1.8rem] border border-foreground/8 bg-background p-5">
-								<p class="text-[11px] uppercase tracking-[0.26em] text-foreground/55">{column.label}</p>
-								<p class="mt-3 text-3xl tracking-tight text-foreground">{column.price}</p>
-							</div>
-						{/each}
-					</div>
-					<p class="mt-5 text-sm leading-relaxed text-foreground/62">
-						The indoor playground has limited capacity, so booking the package guarantees your spot when that access is included.
+			<div class="grid gap-6 lg:grid-cols-2">
+				<Reveal direction="up" class="rounded-[2.3rem] border border-foreground/8 bg-white p-8 shadow-[0_24px_80px_foreground/8] sm:p-10" skewX={0}>
+					<p class="text-[11px] uppercase tracking-[0.26em] text-accent">Full hosted birthday</p>
+					<h3 class="mt-5 text-3xl leading-tight tracking-tight sm:text-4xl">Up to 15 children</h3>
+					<p class="mt-4 text-sm leading-relaxed text-foreground/70">
+						Best when you want Casa Luma to host the day: garden, pool, food, cake, decorations,
+						waiter, and music for three hours.
 					</p>
-					<div class="mt-6 overflow-hidden rounded-[1.8rem] border border-foreground/8">
-						<div class="grid grid-cols-[1.05fr_0.95fr_0.95fr] bg-foreground px-5 py-3 text-[11px] uppercase tracking-[0.22em] text-background/70">
-							<div>Included</div>
-							<div>Mon-Sat</div>
-							<div>Sunday</div>
+
+					<div class="mt-7 grid gap-3 sm:grid-cols-2">
+						<div class="rounded-[1.6rem] border border-foreground/8 bg-background p-5">
+							<p class="text-[11px] uppercase tracking-[0.22em] text-foreground/55">Mon–Sat base</p>
+							<p class="mt-3 text-3xl tracking-tight text-foreground">
+								{BIRTHDAY_BASE_PRICING.fullHosted.monSat.toLocaleString()} THB
+							</p>
+							<p class="mt-2 text-xs leading-relaxed text-foreground/58">
+								Add playground and the 15-child weekday total becomes {weekdayHostedWithPlayground.toLocaleString()} THB.
+							</p>
 						</div>
-						{#each packageRows as row}
-							<div class="grid grid-cols-[1.05fr_0.95fr_0.95fr] border-t border-foreground/8 px-5 py-3.5 text-sm text-foreground/78">
-								<div class="font-medium text-foreground">{row.label}</div>
-								<div>{'key' in row ? packageColumns[0][row.key] : row.value}</div>
-								<div>{'key' in row ? packageColumns[1][row.key] : row.value}</div>
+						<div class="rounded-[1.6rem] border border-foreground/8 bg-background p-5">
+							<p class="text-[11px] uppercase tracking-[0.22em] text-foreground/55">Sunday base</p>
+							<p class="mt-3 text-3xl tracking-tight text-foreground">
+								{BIRTHDAY_BASE_PRICING.fullHosted.sunday.toLocaleString()} THB
+							</p>
+							<p class="mt-2 text-xs leading-relaxed text-foreground/58">
+								Sundays start higher because they are usually busier.
+							</p>
+						</div>
+					</div>
+
+					<div class="mt-8 space-y-4">
+						<div class="space-y-2">
+							<p class="text-[11px] uppercase tracking-[0.24em] text-foreground/55">Included in every hosted party</p>
+							<ul class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-foreground/76">
+								<li class="flex items-center gap-2"><Check size={14} class="text-accent" /> Garden & Pool</li>
+								<li class="flex items-center gap-2"><Check size={14} class="text-accent" /> 3 hours duration</li>
+								<li class="flex items-center gap-2"><Check size={14} class="text-accent" /> Buffet food</li>
+								<li class="flex items-center gap-2"><Check size={14} class="text-accent" /> Birthday cake</li>
+								<li class="flex items-center gap-2"><Check size={14} class="text-accent" /> Decorations</li>
+								<li class="flex items-center gap-2"><Check size={14} class="text-accent" /> Dedicated waiter</li>
+								<li class="flex items-center gap-2"><Check size={14} class="text-accent" /> Background music</li>
+							</ul>
+						</div>
+
+						<div class="grid gap-4 sm:grid-cols-2 pt-2">
+							<div class="rounded-[1.4rem] border border-foreground/8 bg-muted/30 p-4">
+								<p class="text-[10px] uppercase tracking-[0.2em] text-foreground/50">Extra children</p>
+								<p class="mt-2 text-sm leading-relaxed text-foreground/80">
+									Mon–Sat: +{BIRTHDAY_BASE_PRICING.fullHosted.extraChildMonSat} THB<br />
+									Sunday: +{BIRTHDAY_BASE_PRICING.fullHosted.extraChildSunday} THB
+								</p>
 							</div>
-						{/each}
+							<div class="rounded-[1.4rem] border border-accent/15 bg-accent/5 p-4">
+								<p class="text-[10px] uppercase tracking-[0.2em] text-accent/70">Indoor playground</p>
+								<p class="mt-2 text-sm leading-relaxed text-foreground/80">
+									{BIRTHDAY_PLAYGROUND_ADDON_COPY.fullHosted}
+								</p>
+							</div>
+						</div>
 					</div>
 				</Reveal>
 
 				<Reveal direction="up" delay={80} class="rounded-[2.3rem] bg-foreground p-8 text-background shadow-[0_28px_80px_foreground/20] sm:p-10" skewX={0}>
 					<p class="text-[11px] uppercase tracking-[0.26em] text-primary">Smaller setup</p>
-					<h3 class="mt-5 text-3xl leading-tight tracking-tight sm:text-4xl">Offer for up to 8 kids</h3>
+					<h3 class="mt-5 text-3xl leading-tight tracking-tight sm:text-4xl">Up to 8 children</h3>
+					<p class="mt-4 text-sm leading-relaxed text-background/75">
+						A dedicated table in the garden. You bring decorations and cake, or add ours as upgrades.
+					</p>
 					<div class="mt-6 space-y-4">
-						{#each miniOffer as note}
+						{#each BIRTHDAY_SIMPLE_TABLE_NOTES as note (note)}
 							<div class="flex gap-3 text-background/80">
 								<div class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/10 text-primary">
 									<Check size={14} />
@@ -294,44 +232,42 @@
 							</div>
 						{/each}
 					</div>
+					<div class="mt-8 pt-6 border-t border-white/10">
+						<p class="text-sm font-medium text-primary">
+							Starts from {BIRTHDAY_PLAYGROUND_PRICING.simpleTable.perChild} THB per child
+						</p>
+						<p class="mt-1 text-xs text-background/50 italic">
+							(Assuming indoor playground add-on)
+						</p>
+					</div>
 				</Reveal>
 			</div>
 		</div>
 	</section>
 
-	<section class="px-6 py-8 sm:px-10 lg:px-20 lg:py-10">
-		<div class="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
-			<Reveal direction="up" class="rounded-[2.3rem] bg-foreground p-8 text-background shadow-[0_28px_80px_foreground/20] sm:p-10" skewX={0}>
-				<p class="text-[11px] uppercase tracking-[0.26em] text-primary">Why it feels special</p>
-				<h2 class="mt-5 max-w-lg text-4xl leading-tight tracking-tight sm:text-5xl">
-					A birthday rhythm that feels natural from start to finish.
-				</h2>
-				<div class="mt-8 space-y-5">
-					{#each atmosphereNotes as note}
-						<div class="flex gap-3 text-background/80">
-							<div class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/10 text-primary">
-								<Check size={14} />
-							</div>
-							<p class="text-base leading-relaxed">{note}</p>
-						</div>
-					{/each}
-				</div>
-				<div class="mt-10 rounded-[1.8rem] border border-white/10 bg-white/6 p-5">
-					<p class="text-[11px] uppercase tracking-[0.24em] text-primary">Good to know</p>
-					<p class="mt-3 text-sm leading-relaxed text-background/74">
-						Depending on the celebration, you can include the indoor playground or keep things focused on the lush garden and pool for a more open-air setup.
-					</p>
-				</div>
-			</Reveal>
+	<Reveal direction="up" delay={100} skewX={0} class="flex justify-center pb-16">
+		<a
+			href="/birthdays/book"
+			class="inline-flex flex-row items-center justify-center gap-2 whitespace-nowrap rounded-full bg-accent px-8 py-4 text-base uppercase tracking-[0.18em] text-white transition-transform duration-300 hover:-translate-y-0.5 hover:bg-accent/90 shadow-lg shadow-accent/20"
+		>
+			Plan your birthday now
+			<ArrowRight size={18} />
+		</a>
+	</Reveal>
 
-			<div class="grid gap-5 sm:grid-cols-2">
-				{#each celebrationElements as item, index (item.title)}
-					<Reveal direction="up" delay={index * 90} class="h-full" skewX={0}>
-						<div class="h-full rounded-[2rem] border border-foreground/8 bg-white p-7 shadow-[0_18px_50px_foreground/7] transition-transform duration-300 hover:-translate-y-1">
-							<div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted text-accent">
-								<Sparkles size={18} />
-							</div>
-							<h3 class="mt-5 text-2xl tracking-tight text-foreground">{item.title}</h3>
+	<section class="px-6 py-8 sm:px-10 lg:px-20 lg:py-12">
+		<div class="mx-auto max-w-7xl">
+			<Reveal direction="up" skewX={0}>
+				<p class="text-[11px] uppercase tracking-[0.26em] text-primary">Why families choose us</p>
+				<h2 class="mt-4 max-w-2xl text-4xl leading-tight tracking-tight sm:text-5xl">
+					Calm for parents, joy for children
+				</h2>
+			</Reveal>
+			<div class="mt-10 grid gap-6 md:grid-cols-3">
+				{#each highlights as item, index (item.title)}
+					<Reveal direction="up" delay={index * 80} skewX={0}>
+						<div class="h-full rounded-[2rem] border border-foreground/8 bg-white p-7 shadow-[0_18px_50px_foreground/7]">
+							<h3 class="text-xl tracking-tight text-foreground">{item.title}</h3>
 							<p class="mt-3 text-base leading-relaxed text-foreground/70">{item.text}</p>
 						</div>
 					</Reveal>
@@ -343,13 +279,18 @@
 	<section class="px-6 py-8 sm:px-10 lg:px-20 lg:py-10">
 		<div class="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[1.15fr_0.85fr]">
 			<Reveal direction="up" class="rounded-[2.3rem] border border-foreground/8 bg-white p-7 shadow-[0_20px_70px_foreground/8] sm:p-8" skewX={0}>
-				<p class="text-[11px] uppercase tracking-[0.28em] text-accent">Buffet menu</p>
-				<div class="mt-6 grid gap-6 sm:grid-cols-2">
-					{#each buffetSections as section}
+				<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+					<p class="text-[11px] uppercase tracking-[0.28em] text-accent">Buffet menu</p>
+					<p class="text-[10px] uppercase tracking-[0.15em] text-foreground/40 bg-muted/50 px-3 py-1 rounded-full">
+						Included in all Full Hosted birthdays
+					</p>
+				</div>
+				<div class="grid gap-6 sm:grid-cols-2">
+					{#each BIRTHDAY_BUFFET_SECTIONS as section (section.title)}
 						<div>
 							<h3 class="text-xl tracking-tight text-foreground">{section.title}</h3>
 							<ul class="mt-3 space-y-2 text-base leading-relaxed text-foreground/72">
-								{#each section.items as item}
+								{#each section.items as item (item)}
 									<li>{item}</li>
 								{/each}
 							</ul>
@@ -359,12 +300,37 @@
 			</Reveal>
 
 			<Reveal direction="up" delay={80} class="rounded-[2.3rem] border border-foreground/8 bg-muted p-7 shadow-[0_20px_70px_foreground/6] sm:p-8" skewX={0}>
-				<p class="text-[11px] uppercase tracking-[0.28em] text-foreground/60">Add-ons</p>
-				<ul class="mt-5 space-y-3 text-base leading-relaxed text-foreground/78">
-					{#each addOns as item}
-						<li>{item}</li>
-					{/each}
-				</ul>
+				<p class="text-[11px] uppercase tracking-[0.28em] text-foreground/60 mb-6">Add-ons & Upgrades</p>
+				
+				<div class="space-y-6">
+					<div>
+						<p class="text-[10px] uppercase tracking-[0.2em] text-foreground/40 mb-3">For all celebrations</p>
+						<ul class="space-y-3 text-base leading-relaxed text-foreground/78">
+							{#each BIRTHDAY_ACTIVITY_ADDONS as addon (addon.id)}
+								<li>
+									{addon.label} — 
+									<span class="font-medium text-foreground">
+										{addon.priceLabel ?? `${addon.price.toLocaleString()} THB`}
+									</span>
+								</li>
+							{/each}
+						</ul>
+					</div>
+
+					<div class="pt-6 border-t border-foreground/10">
+						<p class="text-[10px] uppercase tracking-[0.2em] text-foreground/40 mb-3">For Smaller Setup</p>
+						<ul class="space-y-3 text-base leading-relaxed text-foreground/78">
+							{#each BIRTHDAY_SIMPLE_TABLE_UPGRADES as upgrade (upgrade.id)}
+								<li>
+									{upgrade.label} — 
+									<span class="font-medium text-foreground">
+										{upgrade.flat ? `${upgrade.price} THB` : `${upgrade.pricePerChild} THB per kid`}
+									</span>
+								</li>
+							{/each}
+						</ul>
+					</div>
+				</div>
 			</Reveal>
 		</div>
 	</section>
@@ -372,9 +338,8 @@
 	<section class="relative px-6 py-16 sm:px-10 lg:px-20 lg:py-20">
 		<div class="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
 			<Reveal direction="up" class="relative" skewX={0}>
-				<div class="absolute -left-6 top-8 h-28 w-28 rounded-full bg-secondary/20 blur-2xl"></div>
 				<div class="relative overflow-hidden rounded-[2.5rem] border border-foreground/8 bg-white p-3 shadow-[0_24px_70px_foreground/11]">
-					<div class="aspect-[2/4] overflow-hidden rounded-[2rem] bg-muted">
+					<div class="aspect-[4/5] overflow-hidden rounded-[2rem] bg-muted">
 						{#if hasCelebrationImage}
 							<WebsiteMediaImage
 								slug="home-celebration-image"
@@ -392,9 +357,9 @@
 
 			<div>
 				<Reveal direction="up" skewX={0}>
-					<p class="text-[11px] uppercase tracking-[0.28em] text-foreground/70">Planning flow</p>
+					<p class="text-[11px] uppercase tracking-[0.28em] text-foreground/70">How booking works</p>
 					<h2 class="mt-5 max-w-xl text-4xl leading-tight tracking-tight sm:text-5xl">
-						A simple way to lock it in.
+						A few steps, then we confirm with you
 					</h2>
 				</Reveal>
 
@@ -413,6 +378,16 @@
 						</Reveal>
 					{/each}
 				</div>
+
+				<Reveal direction="up" delay={420} skewX={0}>
+					<a
+						href="/birthdays/book"
+						class="mt-8 inline-flex flex-row items-center justify-center gap-2 whitespace-nowrap rounded-full bg-accent px-6 py-3.5 text-sm uppercase tracking-[0.18em] text-white transition-transform duration-300 hover:-translate-y-0.5 hover:bg-accent/90"
+					>
+						Calculate price and book
+						<ArrowRight size={16} />
+					</a>
+				</Reveal>
 			</div>
 		</div>
 	</section>
@@ -421,8 +396,8 @@
 		<div class="mx-auto max-w-6xl rounded-[2.5rem] border border-foreground/8 bg-white px-7 py-8 shadow-[0_24px_80px_foreground/8] sm:px-10 sm:py-10 lg:px-12">
 			<div class="grid gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
 				<Reveal direction="up" skewX={0}>
-					<p class="text-[11px] uppercase tracking-[0.28em] text-accent">Family words</p>
-					<h2 class="mt-4 text-3xl leading-tight tracking-tight sm:text-4xl">Parents remember the feeling as much as the birthday itself.</h2>
+					<p class="text-[11px] uppercase tracking-[0.28em] text-accent">From other parents</p>
+					<h2 class="mt-4 text-3xl leading-tight tracking-tight sm:text-4xl">A day that feels easy and special</h2>
 				</Reveal>
 
 				<Reveal direction="up" delay={90} skewX={0}>
@@ -431,7 +406,7 @@
 							<div>
 								<p class="text-lg font-medium text-foreground">{review.author}</p>
 								<div class="mt-2 flex items-center gap-1 text-primary">
-									{#each Array(review.rating) as _}
+									{#each Array(review.rating) as _, index (index)}
 										<Star size={15} fill="currentColor" class="stroke-primary" />
 									{/each}
 								</div>
@@ -462,12 +437,13 @@
 			<div class="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
 				<div>
 					<Reveal direction="up" skewX={0}>
-						<p class="text-[11px] uppercase tracking-[0.28em] text-primary">Ready to shape it</p>
+						<p class="text-[11px] uppercase tracking-[0.28em] text-primary">Ready to book</p>
 						<h2 class="mt-4 max-w-2xl text-4xl leading-tight tracking-tight sm:text-5xl">
-							Let us turn the next birthday into a beautiful family day.
+							Tell us about your child’s birthday
 						</h2>
 						<p class="mt-5 max-w-2xl text-base leading-relaxed text-background/75 sm:text-lg">
-							Message us with your preferred date, age, and guest rhythm, and we will help shape the best version of it at {BUSINESS_INFO.name}.
+							Use the booking form for your preferred date, guest count, and options. We will get back to you
+							to confirm at {BUSINESS_INFO.name}.
 						</p>
 					</Reveal>
 				</div>
@@ -482,17 +458,23 @@
 						</div>
 						<div class="mt-6 flex flex-col gap-3">
 							<a
+								href="/birthdays/book"
+								class="inline-flex flex-row items-center justify-center gap-2 whitespace-nowrap rounded-full bg-primary px-5 py-3.5 text-sm uppercase tracking-[0.18em] text-primary-foreground transition-transform duration-300 hover:-translate-y-0.5 hover:opacity-90"
+							>
+								Book now
+							</a>
+							<a
 								href={SOCIAL_LINKS.instagram}
 								target="_blank"
 								rel="noreferrer"
-								class="inline-flex items-center justify-center gap-2 rounded-full bg-background px-5 py-3 text-sm uppercase tracking-[0.18em] text-foreground transition-transform duration-300 hover:-translate-y-0.5 hover:bg-primary"
+								class="inline-flex flex-row items-center justify-center gap-2 whitespace-nowrap rounded-full bg-background px-5 py-3 text-sm uppercase tracking-[0.18em] text-foreground transition-transform duration-300 hover:-translate-y-0.5 hover:bg-primary"
 							>
 								<Instagram size={16} />
 								Message on Instagram
 							</a>
 							<a
 								href={`mailto:${BUSINESS_INFO.email}`}
-								class="inline-flex items-center justify-center rounded-full border border-white/14 px-5 py-3 text-sm uppercase tracking-[0.18em] text-background transition-colors duration-300 hover:border-primary hover:text-primary"
+								class="inline-flex items-center justify-center whitespace-nowrap rounded-full border border-white/14 px-5 py-3 text-sm uppercase tracking-[0.18em] text-background transition-colors duration-300 hover:border-primary hover:text-primary"
 							>
 								{BUSINESS_INFO.email}
 							</a>
