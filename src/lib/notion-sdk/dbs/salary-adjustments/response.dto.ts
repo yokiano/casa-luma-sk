@@ -63,7 +63,6 @@ export class SalaryAdjustmentsPropertiesResponseDTO {
     this.__data = {
       adjustmentType: this.__props['Adjustment Type'],
       employee: this.__props['Employee'],
-      appliedToPayment: this.__props['Applied to Payment'],
       notes: this.__props['Notes'],
       approvedBy: this.__props['Approved By'],
       date: this.__props['Date'],
@@ -79,11 +78,6 @@ export class SalaryAdjustmentsPropertiesResponseDTO {
 
   get employeeIds() {
     return (this.__props['Employee']?.relation as unknown as Array<{ id: string }>).map((item) => item.id)  
-  }
-
-
-  get appliedToPaymentIds() {
-    return (this.__props['Applied to Payment']?.relation as unknown as Array<{ id: string }>).map((item) => item.id)  
   }
 
 

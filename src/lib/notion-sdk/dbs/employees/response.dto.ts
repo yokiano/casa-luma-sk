@@ -63,7 +63,6 @@ export class EmployeesPropertiesResponseDTO {
     this.__data = {
       visaExpiry: this.__props['Visa Expiry'],
       workPermitExpiry: this.__props['Work Permit Expiry'],
-      photo: this.__props['Photo'],
       salaryThb: this.__props['Salary (THB)'],
       languages: this.__props['Languages'],
       employmentType: this.__props['Employment Type'],
@@ -106,15 +105,6 @@ export class EmployeesPropertiesResponseDTO {
   get workPermitExpiry() {
     return this.__props['Work Permit Expiry']?.date
   }
-
-  get photo() {
-    return {
-      urls: this.__props['Photo'].files.map((item) => 
-        item.type === 'external' ? item.external.url : item.type === 'file' ? item.file.url : undefined
-      ),
-    }
-  }
-
 
   get salaryThb() {
     return this.__props['Salary (THB)']?.number

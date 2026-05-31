@@ -8,7 +8,6 @@ type TypeFromRecord<Obj, Type> = Obj extends Record<string, infer T> ? Extract<T
 export type SalaryAdjustmentsPropertiesPatch = {
   adjustmentType?: SalaryAdjustmentsResponse['properties']['Adjustment Type']['select']['name']
   employee?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'relation' }>['relation']
-  appliedToPayment?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'relation' }>['relation']
   notes?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   approvedBy?: SalaryAdjustmentsResponse['properties']['Approved By']['select']['name']
   date?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'date' }>['date']
@@ -45,13 +44,6 @@ export class SalaryAdjustmentsPatchDTO {
       this.__data.properties['FmEN'] = {
         type: 'relation',
         relation: props.employee,
-      }
-    }
-
-    if (props?.appliedToPayment !== undefined) {
-      this.__data.properties['T%5D%40%5E'] = {
-        type: 'relation',
-        relation: props.appliedToPayment,
       }
     }
 

@@ -8,7 +8,6 @@ type TypeFromRecord<Obj, Type> = Obj extends Record<string, infer T> ? Extract<T
 export type EmployeesPropertiesPatch = {
   visaExpiry?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'date' }>['date']
   workPermitExpiry?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'date' }>['date']
-  photo?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'files' }>['files']
   salaryThb?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'number' }>['number']
   languages?: EmployeesResponse['properties']['Languages']['multi_select'][number]['name'][]
   employmentType?: EmployeesResponse['properties']['Employment Type']['select']['name']
@@ -71,13 +70,6 @@ export class EmployeesPatchDTO {
       this.__data.properties['%3D%3EfR'] = {
         type: 'date',
         date: props.workPermitExpiry,
-      }
-    }
-
-    if (props?.photo !== undefined) {
-      this.__data.properties['%3FOvv'] = {
-        type: 'files',
-        files: props.photo,
       }
     }
 

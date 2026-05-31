@@ -31,6 +31,10 @@
     {
       "name": "HR Documents ",
       "id": "364fc77d-b4f3-8059-9605-f39574660507"
+    },
+    {
+      "name": "🎟️ Flexi Passes duplicate archived",
+      "id": "81b2e172-fe5a-4870-8e36-41ed03b1a42f"
     }
   ],
   "databases": {
@@ -1025,12 +1029,6 @@
           "_name": "Work Permit Expiry",
           "_type": "date",
           "varName": "workPermitExpiry",
-          "readOnly": false
-        },
-        "%3FOvv": {
-          "_name": "Photo",
-          "_type": "files",
-          "varName": "photo",
           "readOnly": false
         },
         "%3FdnC": {
@@ -2255,12 +2253,6 @@
           "varName": "employee",
           "readOnly": false
         },
-        "T%5D%40%5E": {
-          "_name": "Applied to Payment",
-          "_type": "relation",
-          "varName": "appliedToPayment",
-          "readOnly": false
-        },
         "a%3A%3Ag": {
           "_name": "Notes",
           "_type": "rich_text",
@@ -2508,6 +2500,176 @@
           "_name": "Recipient Match",
           "_type": "title",
           "varName": "recipientMatch",
+          "readOnly": false
+        }
+      }
+    },
+    "bb838f91-3dee-433c-92a9-b239ae86709c": {
+      "_name": "Balance Snapshots",
+      "varName": "balanceSnapshots",
+      "pathName": "balance-snapshots",
+      "properties": {
+        "D%7Dok": {
+          "_name": "Status",
+          "_type": "status",
+          "varName": "status",
+          "readOnly": false
+        },
+        "%5CR~f": {
+          "_name": "Notes",
+          "_type": "rich_text",
+          "varName": "notes",
+          "readOnly": false
+        },
+        "hXKN": {
+          "_name": "Balance THB",
+          "_type": "number",
+          "varName": "balanceThb",
+          "readOnly": false
+        },
+        "iS%3D%7B": {
+          "_name": "Observed At",
+          "_type": "date",
+          "varName": "observedAt",
+          "readOnly": false
+        },
+        "leRN": {
+          "_name": "Account",
+          "_type": "select",
+          "varName": "account",
+          "readOnly": false
+        },
+        "w%3Ejf": {
+          "_name": "Proof",
+          "_type": "files",
+          "varName": "proof",
+          "readOnly": false
+        },
+        "xmeg": {
+          "_name": "Snapshot Role",
+          "_type": "select",
+          "varName": "snapshotRole",
+          "readOnly": false
+        },
+        "%7BYc%7B": {
+          "_name": "Source",
+          "_type": "select",
+          "varName": "source",
+          "readOnly": false
+        },
+        "title": {
+          "_name": "Name",
+          "_type": "title",
+          "varName": "name",
+          "readOnly": false
+        }
+      }
+    },
+    "b1e1d005-eaf0-4dc3-9d25-8d7df3404b36": {
+      "_name": "🎟️ Flexi Passes",
+      "varName": "flexiPasses",
+      "pathName": "flexi-passes",
+      "properties": {
+        "%3A%3CsL": {
+          "_name": "Source Receipt Key",
+          "_type": "rich_text",
+          "varName": "sourceReceiptKey",
+          "readOnly": false
+        },
+        "%3BTRk": {
+          "_name": "Entries Granted",
+          "_type": "number",
+          "varName": "entriesGranted",
+          "readOnly": false
+        },
+        "Adwh": {
+          "_name": "Source Item IDs",
+          "_type": "rich_text",
+          "varName": "sourceItemIds",
+          "readOnly": false
+        },
+        "C_jo": {
+          "_name": "Loyverse Customer ID",
+          "_type": "rich_text",
+          "varName": "loyverseCustomerId",
+          "readOnly": false
+        },
+        "EKnt": {
+          "_name": "Source Line Indexes",
+          "_type": "rich_text",
+          "varName": "sourceLineIndexes",
+          "readOnly": false
+        },
+        "PTUE": {
+          "_name": "Notes",
+          "_type": "rich_text",
+          "varName": "notes",
+          "readOnly": false
+        },
+        "RPwP": {
+          "_name": "Family",
+          "_type": "relation",
+          "varName": "family",
+          "readOnly": false
+        },
+        "RXPv": {
+          "_name": "Entries Left",
+          "_type": "number",
+          "varName": "entriesLeft",
+          "readOnly": false
+        },
+        "S%7CrF": {
+          "_name": "Valid From",
+          "_type": "date",
+          "varName": "validFrom",
+          "readOnly": false
+        },
+        "ZNOW": {
+          "_name": "Source Receipt URL",
+          "_type": "url",
+          "varName": "sourceReceiptUrl",
+          "readOnly": false
+        },
+        "ZR%60%7B": {
+          "_name": "Source Receipt Number",
+          "_type": "rich_text",
+          "varName": "sourceReceiptNumber",
+          "readOnly": false
+        },
+        "aSvg": {
+          "_name": "Card Count",
+          "_type": "number",
+          "varName": "cardCount",
+          "readOnly": false
+        },
+        "peHm": {
+          "_name": "Refund Receipt Number",
+          "_type": "rich_text",
+          "varName": "refundReceiptNumber",
+          "readOnly": false
+        },
+        "zT%3By": {
+          "_name": "Entries Used",
+          "_type": "number",
+          "varName": "entriesUsed",
+          "readOnly": false
+        },
+        "zXVG": {
+          "_name": "Valid Until",
+          "_type": "date",
+          "varName": "validUntil",
+          "readOnly": false
+        },
+        "z%7Cw%5B": {
+          "_name": "Automation Status",
+          "_type": "select",
+          "varName": "automationStatus",
+          "readOnly": false
+        },
+        "title": {
+          "_name": "Name",
+          "_type": "title",
+          "varName": "name",
           "readOnly": false
         }
       }

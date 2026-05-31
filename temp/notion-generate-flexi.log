@@ -1,0 +1,51 @@
+$ dotenv -- npx notion-ts-client generate
+Config file
+Fetching databases from Notion...
+(node:3482496) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Parsing Notion databases into config...
+Ignoring database: 🎟️ Flexi Passes (81b2e172-fe5a-4870-8e36-41ed03b1a42f)
+Ignoring database: Document Hub (26ffc77d-b4f3-803e-98ba-edc0d7ec0e16)
+Ignoring database: Department Category Mapping (9a4c14fe-df4b-44dd-a928-b1a06ee759b6)
+Ignoring database: Job Prospects (505310d2-281e-44f1-9392-034539d209cf)
+Ignoring database: HR Documents  (364fc77d-b4f3-8059-9605-f39574660507)
+Ignoring database: 📄 Templates Library (f7b23692-5454-44de-b671-f741a9276c55)
+Ignoring database: Branding Assets (36b36604-dae8-440a-813d-802610ac868a)
+Ignoring database: Tasks Pre Launch (26ffc77d-b4f3-8071-99dc-ef5139bbb69a)
+No changes detected. Not updating the config file.
+
+SDK
+Generating SDK for database: Website Images in src/lib/notion-sdk/dbs/website-images
+Generating SDK for database: Procurement in src/lib/notion-sdk/dbs/procurement
+Generating SDK for database: Menu Items in src/lib/notion-sdk/dbs/menu-items
+Generating SDK for database: Job Openings in src/lib/notion-sdk/dbs/job-openings
+Generating SDK for database: Casa Luma Events in src/lib/notion-sdk/dbs/casa-luma-events
+Generating SDK for database: Casa Luma RSVPs in src/lib/notion-sdk/dbs/casa-luma-rsv-ps
+Generating SDK for database: Casa Luma Waitlist in src/lib/notion-sdk/dbs/casa-luma-waitlist
+Generating SDK for database: Signage & Print in src/lib/notion-sdk/dbs/signage
+Generating SDK for database: Pay-for-Play Items in src/lib/notion-sdk/dbs/pay-for-play-items
+Generating SDK for database: Open Play POS Items in src/lib/notion-sdk/dbs/open-play-pos-items
+Generating SDK for database: Employees in src/lib/notion-sdk/dbs/employees
+Generating SDK for database: Shifts in src/lib/notion-sdk/dbs/shifts
+Generating SDK for database: POS Modifiers in src/lib/notion-sdk/dbs/pos-modifiers
+Generating SDK for database: POS Discounts in src/lib/notion-sdk/dbs/pos-discounts
+Generating SDK for database: Store Items in src/lib/notion-sdk/dbs/store-items
+Generating SDK for database: End of Shift Reports in src/lib/notion-sdk/dbs/end-of-shift-reports
+Generating SDK for database: Family Members in src/lib/notion-sdk/dbs/family-members
+Generating SDK for database: Families in src/lib/notion-sdk/dbs/families
+Generating SDK for database: SOP Catalog in src/lib/notion-sdk/dbs/sop-catalog
+Generating SDK for database: Memberships in src/lib/notion-sdk/dbs/memberships
+Generating SDK for database: Expenses Tracker in src/lib/notion-sdk/dbs/expenses-tracker
+Generating SDK for database: Recipe Lines in src/lib/notion-sdk/dbs/recipe-lines
+Generating SDK for database: Ingredients in src/lib/notion-sdk/dbs/ingredients
+Generating SDK for database: Recipes in src/lib/notion-sdk/dbs/recipes
+Generating SDK for database: Suppliers in src/lib/notion-sdk/dbs/suppliers
+Generating SDK for database: Roles in src/lib/notion-sdk/dbs/roles
+Generating SDK for database: Salary Adjustments in src/lib/notion-sdk/dbs/salary-adjustments
+Generating SDK for database: Salary Payments in src/lib/notion-sdk/dbs/salary-payments
+Generating SDK for database: Company Ledger in src/lib/notion-sdk/dbs/company-ledger
+Generating SDK for database: Expense Scan Rules in src/lib/notion-sdk/dbs/expense-scan-rules
+Generating SDK for database: Balance Snapshots in src/lib/notion-sdk/dbs/balance-snapshots
+Generating SDK for database: 🎟️ Flexi Passes in src/lib/notion-sdk/dbs/flexi-passes
+
+Notion Typescript clients have been generated in ./src/lib/notion-sdk

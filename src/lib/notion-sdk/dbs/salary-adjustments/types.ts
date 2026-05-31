@@ -23,9 +23,8 @@ export interface SalaryAdjustmentsResponse extends WithOptional<Omit<DatabaseObj
   properties: {
     "Adjustment Type": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'Advance', color: 'default' } | { id: StringRequest, name: 'Deduction', color: 'default' } | { id: StringRequest, name: 'Bonus', color: 'default' } | { id: StringRequest, name: 'Reimbursement', color: 'default' } | { id: StringRequest, name: 'Loan Repayment', color: 'default' } | { id: StringRequest, name: 'Late Penalty', color: 'default' }},
     "Employee": RelationPropertyItemObjectResponse,
-    "Applied to Payment": RelationPropertyItemObjectResponse,
     "Notes": RichTextPropertyItemObjectResponse,
-    "Approved By": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'Yarden', color: 'default' } | { id: StringRequest, name: 'Ohad', color: 'default' } | { id: StringRequest, name: 'Karni', color: 'default' } | { id: StringRequest, name: 'Roza', color: 'default' }},
+    "Approved By": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'Kwan', color: 'orange' } | { id: StringRequest, name: 'Yarden', color: 'default' } | { id: StringRequest, name: 'Ohad', color: 'default' } | { id: StringRequest, name: 'Karni', color: 'default' } | { id: StringRequest, name: 'Roza', color: 'default' }},
     "Date": DatePropertyItemObjectResponse,
     "Amount (THB)": NumberPropertyItemObjectResponse,
     "Adjustment Title": TitlePropertyItemObjectResponse
@@ -48,7 +47,6 @@ type SalaryAdjustmentsAdjustmentTypePropertyFilter =
   | ExistencePropertyFilter      
 
 type SalaryAdjustmentsEmployeePropertyFilter = RelationPropertyFilter
-type SalaryAdjustmentsAppliedToPaymentPropertyFilter = RelationPropertyFilter
 type SalaryAdjustmentsNotesPropertyFilter = TextPropertyFilter
 
 export type SalaryAdjustmentsApprovedByPropertyType = SalaryAdjustmentsResponse['properties']['Approved By']['select']['name']
@@ -66,7 +64,7 @@ type SalaryAdjustmentsDatePropertyFilter = DatePropertyFilter
 type SalaryAdjustmentsAmountThbPropertyFilter = NumberPropertyFilter
 type SalaryAdjustmentsAdjustmentTitlePropertyFilter = TextPropertyFilter
 
-export type SalaryAdjustmentsPropertyFilter = { adjustmentType: SalaryAdjustmentsAdjustmentTypePropertyFilter } | { employee: SalaryAdjustmentsEmployeePropertyFilter } | { appliedToPayment: SalaryAdjustmentsAppliedToPaymentPropertyFilter } | { notes: SalaryAdjustmentsNotesPropertyFilter } | { approvedBy: SalaryAdjustmentsApprovedByPropertyFilter } | { date: SalaryAdjustmentsDatePropertyFilter } | { amountThb: SalaryAdjustmentsAmountThbPropertyFilter } | { adjustmentTitle: SalaryAdjustmentsAdjustmentTitlePropertyFilter }
+export type SalaryAdjustmentsPropertyFilter = { adjustmentType: SalaryAdjustmentsAdjustmentTypePropertyFilter } | { employee: SalaryAdjustmentsEmployeePropertyFilter } | { notes: SalaryAdjustmentsNotesPropertyFilter } | { approvedBy: SalaryAdjustmentsApprovedByPropertyFilter } | { date: SalaryAdjustmentsDatePropertyFilter } | { amountThb: SalaryAdjustmentsAmountThbPropertyFilter } | { adjustmentTitle: SalaryAdjustmentsAdjustmentTitlePropertyFilter }
 
 export type SalaryAdjustmentsQuery = Omit<QueryDatabaseBodyParameters, 'filter' | 'sorts'> & {
   sorts?: Array<

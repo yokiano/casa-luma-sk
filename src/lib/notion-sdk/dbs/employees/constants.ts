@@ -48,7 +48,6 @@ export const EMPLOYEES_PROP_VALUES = {
 export const EMPLOYEES_PROPS_TO_IDS = {
   "visaExpiry": "%3CK%5BF",
   "workPermitExpiry": "%3D%3EfR",
-  "photo": "%3FOvv",
   "salaryThb": "%3FdnC",
   "languages": "B%5C%7BK",
   "employmentType": "Bop%3E",
@@ -84,7 +83,6 @@ export const EMPLOYEES_PROPS_TO_IDS = {
 export const EMPLOYEES_IDS_TO_PROPS = {
   "%3CK%5BF": "visaExpiry",
   "%3D%3EfR": "workPermitExpiry",
-  "%3FOvv": "photo",
   "%3FdnC": "salaryThb",
   "B%5C%7BK": "languages",
   "Bop%3E": "employmentType",
@@ -120,7 +118,6 @@ export const EMPLOYEES_IDS_TO_PROPS = {
 export const EMPLOYEES_PROPS_TO_TYPES = {
   "visaExpiry": "date",
   "workPermitExpiry": "date",
-  "photo": "files",
   "salaryThb": "number",
   "languages": "multi_select",
   "employmentType": "select",
