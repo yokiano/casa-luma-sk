@@ -109,7 +109,14 @@
   }
 </script>
 
-<div class="h-dvh w-full bg-background">
+<div class="relative h-dvh w-full bg-background">
+  <a
+    href="/"
+    class="fixed left-4 top-4 z-40 rounded-full bg-background/80 px-3 py-2 text-xs font-semibold text-muted-foreground shadow-sm ring-1 ring-border backdrop-blur transition-colors hover:text-foreground sm:left-6 sm:top-6 sm:text-sm"
+  >
+    ← Back to home page
+  </a>
+
   {#if formState.success}
     <div 
       in:fly={{ y: 20, duration: 500, easing: cubicOut }}
