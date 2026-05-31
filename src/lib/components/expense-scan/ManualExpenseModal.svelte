@@ -13,9 +13,10 @@
     onSupplierCreated?: (newSupplier: { id: string; name: string }) => void;
     bankAccounts: string[];
     paymentMethods: string[];
+    expenseTypes: string[];
   };
 
-  let { open, onClose, categories, departments, suppliers, onSupplierCreated, bankAccounts, paymentMethods }: Props = $props();
+  let { open, onClose, categories, departments, suppliers, onSupplierCreated, bankAccounts, paymentMethods, expenseTypes }: Props = $props();
 
   let isSubmitting = $state(false);
 
@@ -26,6 +27,7 @@
     category: '',
     department: '',
     supplierId: '',
+    ledgerType: 'Scan Expense',
     bankAccount: '',
     paymentMethod: 'Cash',
     referenceNumber: '',
@@ -34,7 +36,7 @@
 
   async function handleSubmit(e: SubmitEvent) {
     e.preventDefault();
-    if (!form.title || !form.amount || !form.date || !form.category || !form.department) {
+    if (!form.title || !form.amount || !form.date || !form.category || !form.department || !form.ledgerType) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -48,6 +50,7 @@
         category: form.category,
         department: form.department,
         supplierId: form.supplierId || undefined,
+        ledgerType: form.ledgerType || undefined,
         bankAccount: form.bankAccount || undefined,
         paymentMethod: form.paymentMethod || undefined,
         transactionId: form.referenceNumber || undefined,
@@ -64,6 +67,7 @@
         category: '',
         department: '',
         supplierId: '',
+        ledgerType: 'Scan Expense',
         bankAccount: '',
         paymentMethod: 'Cash',
         referenceNumber: '',
@@ -174,6 +178,24 @@
             {onSupplierCreated}
             placeholder="None"
           />
+        </div>
+
+        <div class="space-y-2">
+          <label for="ledger-type" class="text-sm font-semibold text-[#5c4a3d]">Expense Type *</label>
+          <select
+            id="ledger-type"
+            bind:value={form.ledgerType}
+            required
+            class="w-full rounded-2xl border border-[#d9d0c7] bg-white px-4 py-2 text-sm outline-none focus:border-[#7a6550]"
+          >
+            {#if expenseTypes.length === 0}
+              <option value="" disabled>No expense types configured</option>
+            {:else}
+              {#each expenseTypes as type}
+                <option value={type}>{type}</option>
+              {/each}
+            {/if}
+          </select>
         </div>
 
         <div class="space-y-2">

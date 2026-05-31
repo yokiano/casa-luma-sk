@@ -9,7 +9,7 @@ The system follows a 4-step process:
 1.  **Image Upload**: The user drops one or more image files (JPG/PNG) into the UI.
 2.  **OCR Processing**: OCR runs in the browser with **Tesseract.js**, using `eng` and `tha`.
 3.  **Parsing**: The raw OCR text is passed through a chain of specialized parsers that identify the slip type and extract key fields using regex and line-by-line analysis.
-4.  **Notion Sync**: After the user verifies and completes the metadata (Category, Department), the data is sent to `CompanyLedgerDatabase`. The system checks duplicate `Reference Number`s to prevent double-entry.
+4.  **Notion Sync**: After the user verifies and completes the metadata (Category, Department), the data is sent to `CompanyLedgerDatabase` with `Type = Scan Expense`. The system checks duplicate `Reference Number`s to prevent double-entry.
 
 ---
 
@@ -87,6 +87,8 @@ Before creating a new page in Notion, `submitExpenseSlip` queries for an existin
 ### Field Mapping
 | Slip Field | Notion Property |
 | :--- | :--- |
+| automatic slip submit | `Type = Scan Expense` |
+| manual expense submit | `Type` selected by the user from configured Notion expense types |
 | `memo` | `Expense` (Title) |
 | `amount` | `Amount (THB)` |
 | `date` | `Date` |

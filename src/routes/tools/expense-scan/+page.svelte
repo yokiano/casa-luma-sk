@@ -137,6 +137,7 @@
     onSupplierCreated={(s) => suppliers = [...suppliers, s].sort((a, b) => a.name.localeCompare(b.name))}
     bankAccounts={data.bankAccounts}
     paymentMethods={data.paymentMethods}
+    expenseTypes={data.expenseTypes}
   />
 
   {#if activeTab === 'upload'}

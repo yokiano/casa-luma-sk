@@ -10,12 +10,17 @@ export const load = async () => {
     sorts: [{ timestamp: 'last_edited_time', direction: 'descending' }]
   });
 
+  const expenseTypes = (COMPANY_LEDGER_PROP_VALUES.type as readonly string[]).filter((type) =>
+    type.toLowerCase().includes('expense')
+  );
+
   return {
     suppliers,
     categories: COMPANY_LEDGER_PROP_VALUES.category as unknown as string[],
     departments: COMPANY_LEDGER_PROP_VALUES.department as unknown as string[],
     bankAccounts: COMPANY_LEDGER_PROP_VALUES.bankAccount as unknown as string[],
     paymentMethods: COMPANY_LEDGER_PROP_VALUES.paymentMethod as unknown as string[],
+    expenseTypes,
     rules: rules.results.map(r => ({
       id: r.id,
       match: r.properties["Recipient Match"]?.title?.[0]?.plain_text || '',

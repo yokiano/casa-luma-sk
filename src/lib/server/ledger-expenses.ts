@@ -9,8 +9,7 @@ export const COMPANY_LEDGER_EXPENSE_TYPES = {
   scan: 'Scan Expense'
 } as const satisfies Record<string, CompanyLedgerResponse['properties']['Type']['select']['name']>;
 
-export type CompanyLedgerExpenseType =
-  (typeof COMPANY_LEDGER_EXPENSE_TYPES)[keyof typeof COMPANY_LEDGER_EXPENSE_TYPES];
+export type CompanyLedgerExpenseType = CompanyLedgerResponse['properties']['Type']['select']['name'];
 
 export type CompanyLedgerExpenseInput = {
   ledgerType: CompanyLedgerExpenseType;
