@@ -12,10 +12,10 @@ const moneyField = v.pipe(
 
 const SubmitCloseShiftExpenseSchema = v.object({
   id: v.string(),
-  title: v.string(),
+  title: v.pipe(v.string(), v.trim(), v.minLength(1, 'Expense title is required.')),
   amount: moneyField,
-  category: v.string(),
-  department: v.string(),
+  category: v.optional(v.string()),
+  department: v.optional(v.string()),
   supplierId: v.optional(v.string()),
   notes: v.optional(v.string()),
   shiftDate: v.string(),
@@ -24,11 +24,14 @@ const SubmitCloseShiftExpenseSchema = v.object({
 });
 
 export const submitCloseShiftExpense = command(SubmitCloseShiftExpenseSchema, async (data) => {
-  if (!(COMPANY_LEDGER_PROP_VALUES.category as readonly string[]).includes(data.category)) {
-    throw error(400, { message: `Invalid expense category: ${data.category}` });
+  const category = data.category?.trim() || undefined;
+  const department = data.department?.trim() || undefined;
+
+  if (category && !(COMPANY_LEDGER_PROP_VALUES.category as readonly string[]).includes(category)) {
+    throw error(400, { message: `Invalid expense category: ${category}` });
   }
-  if (!(COMPANY_LEDGER_PROP_VALUES.department as readonly string[]).includes(data.department)) {
-    throw error(400, { message: `Invalid expense department: ${data.department}` });
+  if (department && !(COMPANY_LEDGER_PROP_VALUES.department as readonly string[]).includes(department)) {
+    throw error(400, { message: `Invalid expense department: ${department}` });
   }
 
   const notes = [
@@ -45,8 +48,8 @@ export const submitCloseShiftExpense = command(SubmitCloseShiftExpenseSchema, as
     title: data.title.trim(),
     amount: data.amount,
     date: data.shiftDate,
-    category: data.category,
-    department: data.department,
+    category,
+    department,
     supplierId: data.supplierId || undefined,
     transactionId: data.closeShiftReportId ? `close-shift:${data.closeShiftReportId}:${data.id}` : undefined,
     bankAccount: 'Cash Register',

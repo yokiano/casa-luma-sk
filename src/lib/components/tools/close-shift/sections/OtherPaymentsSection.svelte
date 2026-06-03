@@ -1,4 +1,7 @@
 <script lang="ts">
+	import FieldError from '$lib/components/ui/FieldError.svelte';
+	import type { SubmitValidationIssue } from '$lib/close-shift/validation';
+
 	type CloseShiftStateLike = {
 		paymentMethods: {
 			scan: number | undefined;
@@ -9,9 +12,12 @@
 
 	type Props = {
 		shiftState: CloseShiftStateLike;
+		validationIssues?: SubmitValidationIssue[];
 	};
 
-	let { shiftState }: Props = $props();
+	let { shiftState, validationIssues = [] }: Props = $props();
+
+	const errorFor = (fieldId: string) => validationIssues.find((issue) => issue.fieldId === fieldId)?.message;
 </script>
 
 <section class="space-y-4 bg-white p-6 rounded-2xl border border-[#e6e1db] shadow-sm">
@@ -33,9 +39,12 @@
 					step="0.01"
 					bind:value={shiftState.paymentMethods.scan}
 					onblur={() => shiftState.normalizePaymentMethod('scan')}
-					class="w-full rounded-xl border border-input bg-background pl-8 pr-3 py-3 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+					aria-invalid={Boolean(errorFor('scanPayments'))}
+					aria-describedby={errorFor('scanPayments') ? 'scanPayments-error' : undefined}
+					class="w-full rounded-xl border bg-background pl-8 pr-3 py-3 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 {errorFor('scanPayments') ? 'border-red-500' : 'border-input'}"
 				/>
 			</div>
+			<FieldError forId="scanPayments" message={errorFor('scanPayments')} />
 		</div>
 
 		<div class="space-y-2">
@@ -50,10 +59,12 @@
 					step="0.01"
 					bind:value={shiftState.paymentMethods.card}
 					onblur={() => shiftState.normalizePaymentMethod('card')}
-					class="w-full rounded-xl border border-input bg-background pl-8 pr-3 py-3 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+					aria-invalid={Boolean(errorFor('cardPayments'))}
+					aria-describedby={errorFor('cardPayments') ? 'cardPayments-error' : undefined}
+					class="w-full rounded-xl border bg-background pl-8 pr-3 py-3 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 {errorFor('cardPayments') ? 'border-red-500' : 'border-input'}"
 				/>
 			</div>
+			<FieldError forId="cardPayments" message={errorFor('cardPayments')} />
 		</div>
 	</div>
 </section>
-

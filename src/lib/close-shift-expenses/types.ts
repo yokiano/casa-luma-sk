@@ -24,8 +24,8 @@ export type ShiftExpenseSubmitInput = {
   id: string;
   title: string;
   amount: number;
-  category: string;
-  department: string;
+  category?: string;
+  department?: string;
   supplierId?: string;
   notes?: string;
   shiftDate: string;

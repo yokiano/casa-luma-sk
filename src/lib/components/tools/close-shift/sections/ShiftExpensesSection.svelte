@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import SupplierSelector from '$lib/components/suppliers/SupplierSelector.svelte';
+	import FieldError from '$lib/components/ui/FieldError.svelte';
 	import type { ShiftExpenseDraft, ShiftExpensePreset } from '$lib/close-shift-expenses/types';
+	import type { SubmitValidationIssue } from '$lib/close-shift/validation';
 	import {
 		findPresetForTitle,
 		presetToDraft,
@@ -29,14 +31,16 @@
 		departments: string[];
 		suppliers: SupplierOption[];
 		onSupplierCreated?: (supplier: SupplierOption) => void;
+		validationIssues?: SubmitValidationIssue[];
 	};
 
-	let { shiftState, categories, departments, suppliers, onSupplierCreated }: Props = $props();
+	let { shiftState, categories, departments, suppliers, onSupplierCreated, validationIssues = [] }: Props = $props();
 
 	let presets = $state<ShiftExpensePreset[]>([]);
 	let selectedPresetId = $state('');
 
 	const sortedPresets = $derived(sortPresetsForPicker(presets));
+	const errorFor = (fieldId: string) => validationIssues.find((issue) => issue.fieldId === fieldId)?.message;
 
 	onMount(() => {
 		presets = loadShiftExpensePresets();
@@ -117,25 +121,32 @@
 	{:else}
 		<div class="space-y-4">
 			{#each shiftState.expenses as expense (expense.id)}
+				{@const titleFieldId = `expense-title-${expense.id}`}
+				{@const amountFieldId = `expense-amount-${expense.id}`}
+				{@const categoryFieldId = `expense-category-${expense.id}`}
+				{@const departmentFieldId = `expense-department-${expense.id}`}
 				<div class="space-y-3 rounded-xl border border-[#e6e1db] bg-[#fbfaf8] p-4">
 					<div class="grid gap-3 sm:grid-cols-[1fr_8rem]">
 						<div class="space-y-1">
-							<label for={`expense-title-${expense.id}`} class="text-xs font-medium">Description</label>
+							<label for={titleFieldId} class="text-xs font-medium">Title</label>
 							<input
-								id={`expense-title-${expense.id}`}
+								id={titleFieldId}
 								type="text"
 								bind:value={expense.title}
 								onblur={() => applyTitlePreset(expense)}
 								placeholder="Ice, shop supplies..."
-								class="w-full rounded-xl border border-input bg-white px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+								aria-invalid={Boolean(errorFor(titleFieldId))}
+								aria-describedby={errorFor(titleFieldId) ? `${titleFieldId}-error` : undefined}
+								class="w-full rounded-xl border bg-white px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 {errorFor(titleFieldId) ? 'border-red-500' : 'border-input'}"
 							/>
+							<FieldError forId={titleFieldId} message={errorFor(titleFieldId)} />
 						</div>
 						<div class="space-y-1">
-							<label for={`expense-amount-${expense.id}`} class="text-xs font-medium">Amount</label>
+							<label for={amountFieldId} class="text-xs font-medium">Amount</label>
 							<div class="relative">
 								<span class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">฿</span>
 								<input
-									id={`expense-amount-${expense.id}`}
+									id={amountFieldId}
 									type="number"
 									inputmode="decimal"
 									min="0"
@@ -143,40 +154,49 @@
 									bind:value={expense.amount}
 									onblur={() => shiftState.normalizeExpenseAmount(expense.id)}
 									placeholder="0.00"
-									class="w-full rounded-xl border border-input bg-white pl-8 pr-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+									aria-invalid={Boolean(errorFor(amountFieldId))}
+									aria-describedby={errorFor(amountFieldId) ? `${amountFieldId}-error` : undefined}
+									class="w-full rounded-xl border bg-white pl-8 pr-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 {errorFor(amountFieldId) ? 'border-red-500' : 'border-input'}"
 								/>
 							</div>
+							<FieldError forId={amountFieldId} message={errorFor(amountFieldId)} />
 						</div>
 					</div>
 
 					<div class="grid gap-3 sm:grid-cols-2">
 						<div class="space-y-1">
-							<label for={`expense-category-${expense.id}`} class="text-xs font-medium">Category</label>
+							<label for={categoryFieldId} class="text-xs font-medium">Category (optional)</label>
 							<select
-								id={`expense-category-${expense.id}`}
+								id={categoryFieldId}
 								bind:value={expense.category}
 								onchange={() => saveDraftAsPreset(expense)}
-								class="w-full rounded-xl border border-input bg-white px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+								aria-invalid={Boolean(errorFor(categoryFieldId))}
+								aria-describedby={errorFor(categoryFieldId) ? `${categoryFieldId}-error` : undefined}
+								class="w-full rounded-xl border bg-white px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 {errorFor(categoryFieldId) ? 'border-red-500' : 'border-input'}"
 							>
-								<option value="">Select category...</option>
+								<option value="">Unclassified</option>
 								{#each categories as category}
 									<option value={category}>{category}</option>
 								{/each}
 							</select>
+							<FieldError forId={categoryFieldId} message={errorFor(categoryFieldId)} />
 						</div>
 						<div class="space-y-1">
-							<label for={`expense-department-${expense.id}`} class="text-xs font-medium">Department</label>
+							<label for={departmentFieldId} class="text-xs font-medium">Department (optional)</label>
 							<select
-								id={`expense-department-${expense.id}`}
+								id={departmentFieldId}
 								bind:value={expense.department}
 								onchange={() => saveDraftAsPreset(expense)}
-								class="w-full rounded-xl border border-input bg-white px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+								aria-invalid={Boolean(errorFor(departmentFieldId))}
+								aria-describedby={errorFor(departmentFieldId) ? `${departmentFieldId}-error` : undefined}
+								class="w-full rounded-xl border bg-white px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 {errorFor(departmentFieldId) ? 'border-red-500' : 'border-input'}"
 							>
-								<option value="">Select department...</option>
+								<option value="">Unclassified</option>
 								{#each departments as department}
 									<option value={department}>{department}</option>
 								{/each}
 							</select>
+							<FieldError forId={departmentFieldId} message={errorFor(departmentFieldId)} />
 						</div>
 					</div>
 

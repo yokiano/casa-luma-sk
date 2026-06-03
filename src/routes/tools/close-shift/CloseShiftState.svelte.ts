@@ -1,6 +1,7 @@
 import { submitCloseShift } from '$lib/close-shift.remote';
 import { submitCloseShiftExpense } from '$lib/close-shift-expenses/submit.remote';
 import type { ShiftExpenseDraft } from '$lib/close-shift-expenses/types';
+import type { SubmitValidationIssue } from '$lib/close-shift/validation';
 import { SvelteDate } from 'svelte/reactivity';
 
 type Denomination = '1000' | '500' | '100' | '50' | '20' | '10' | '5' | '2' | '1';
@@ -153,13 +154,15 @@ export class CloseShiftState {
     this.normalizePaidOut();
   }
 
-  getValidationError(options: SubmitValidationOptions = {}) {
-    if (!this.closerName.trim()) return 'Closer name is required.';
-    if (numberOrZero(this.expectedCash) < 0) return 'Expected cash cannot be negative.';
-    if (numberOrZero(this.paymentMethods.scan) < 0) return 'Scan / transfer total cannot be negative.';
-    if (numberOrZero(this.paymentMethods.card) < 0) return 'Credit card total cannot be negative.';
-    if (numberOrZero(this.cashIn) < 0) return 'Cash In cannot be negative.';
-    if (numberOrZero(this.paidOut) < 0) return 'Paid Out cannot be negative.';
+  getValidationIssues(options: SubmitValidationOptions = {}): SubmitValidationIssue[] {
+    const issues: SubmitValidationIssue[] = [];
+
+    if (!this.closerName.trim()) issues.push({ fieldId: 'closerName', message: 'Closer name is required.' });
+    if (numberOrZero(this.expectedCash) < 0) issues.push({ fieldId: 'expectedCash', message: 'Expected cash cannot be negative.' });
+    if (numberOrZero(this.paymentMethods.scan) < 0) issues.push({ fieldId: 'scanPayments', message: 'Scan / transfer total cannot be negative.' });
+    if (numberOrZero(this.paymentMethods.card) < 0) issues.push({ fieldId: 'cardPayments', message: 'Credit card total cannot be negative.' });
+    if (numberOrZero(this.cashIn) < 0) issues.push({ fieldId: 'cashIn', message: 'Cash In cannot be negative.' });
+    if (numberOrZero(this.paidOut) < 0) issues.push({ fieldId: 'paidOut', message: 'Paid Out cannot be negative.' });
 
     const validCategories = new Set(options.categories ?? []);
     const validDepartments = new Set(options.departments ?? []);
@@ -177,34 +180,32 @@ export class CloseShiftState {
 
       if (!hasAnyField) continue;
 
-      if (!title) return 'Each shift expense needs a description.';
-      if (amount <= 0) return `Expense "${title}" needs an amount greater than zero.`;
-      if (!expense.category) return `Expense "${title}" needs a category.`;
-      if (!expense.department) return `Expense "${title}" needs a department.`;
-      if (validCategories.size > 0 && !validCategories.has(expense.category)) {
-        return `Expense "${title}" uses an old or invalid category. Please choose a current category.`;
+      if (!title) {
+        issues.push({ fieldId: `expense-title-${expense.id}`, message: 'Add a title for this expense.' });
       }
-      if (validDepartments.size > 0 && !validDepartments.has(expense.department)) {
-        return `Expense "${title}" uses an old or invalid department. Please choose a current department.`;
+      if (amount <= 0) {
+        issues.push({ fieldId: `expense-amount-${expense.id}`, message: 'Enter an amount greater than zero.' });
       }
-    }
-
-    if (this.expensesTotal > 0 && numberOrZero(this.paidOut) <= 0) {
-      return 'Paid Out from the POS shift report is required when shift expenses are entered.';
-    }
-
-    if (this.expensesTotal > 0 && this.paidOutDifference !== 0 && !this.notes.trim()) {
-      return 'Please explain the Paid Out difference in Notes before submitting.';
+      if (expense.category && validCategories.size > 0 && !validCategories.has(expense.category)) {
+        issues.push({ fieldId: `expense-category-${expense.id}`, message: 'Choose a current category, or leave it blank.' });
+      }
+      if (expense.department && validDepartments.size > 0 && !validDepartments.has(expense.department)) {
+        issues.push({ fieldId: `expense-department-${expense.id}`, message: 'Choose a current department, or leave it blank.' });
+      }
     }
 
     for (const denom of Object.keys(this.billCounts) as Denomination[]) {
       const count = numberOrZero(this.billCounts[denom]);
       const label = DENOMINATION_LABELS[denom];
-      if (count < 0) return `${label} count cannot be negative.`;
-      if (!Number.isInteger(count)) return `${label} count must be a whole number.`;
+      if (count < 0) issues.push({ fieldId: `denom-${denom}`, message: `${label} count cannot be negative.` });
+      if (!Number.isInteger(count)) issues.push({ fieldId: `denom-${denom}`, message: `${label} count must be a whole number.` });
     }
 
-    return null;
+    return issues;
+  }
+
+  getValidationError(options: SubmitValidationOptions = {}) {
+    return this.getValidationIssues(options)[0]?.message ?? null;
   }
 
   setBillCount(denom: Denomination, value: number | undefined) {
@@ -252,8 +253,8 @@ export class CloseShiftState {
             id: expense.id,
             title: expense.title,
             amount: numberOrZero(expense.amount),
-            category: expense.category,
-            department: expense.department,
+            category: expense.category || undefined,
+            department: expense.department || undefined,
             supplierId: expense.supplierId || undefined,
             notes: expense.notes || undefined,
             shiftDate,

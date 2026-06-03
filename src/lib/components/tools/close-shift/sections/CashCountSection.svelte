@@ -1,4 +1,7 @@
 <script lang="ts">
+	import FieldError from '$lib/components/ui/FieldError.svelte';
+	import type { SubmitValidationIssue } from '$lib/close-shift/validation';
+
 	type CloseShiftStateLike = {
 		actualCash: number;
 		billCounts: Record<string, number | undefined>;
@@ -9,9 +12,12 @@
 	type Props = {
 		shiftState: CloseShiftStateLike;
 		denominations: readonly string[];
+		validationIssues?: SubmitValidationIssue[];
 	};
 
-	let { shiftState, denominations }: Props = $props();
+	let { shiftState, denominations, validationIssues = [] }: Props = $props();
+
+	const errorFor = (fieldId: string) => validationIssues.find((issue) => issue.fieldId === fieldId)?.message;
 </script>
 
 <section class="space-y-4 bg-white p-6 rounded-2xl border border-[#e6e1db] shadow-sm">
@@ -39,6 +45,7 @@
 
 	<div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
 		{#each denominations as denom (denom)}
+			{@const fieldId = `denom-${denom}`}
 			<div class="bg-gray-50 p-3 rounded-xl border border-gray-200 hover:border-[#5c4a3d]/30 transition-all flex flex-col gap-2 relative">
 				{#if (shiftState.billCounts[denom] ?? 0) > 0}
 					<button
@@ -50,10 +57,10 @@
 						✕
 					</button>
 				{/if}
-				<label for="denom-{denom}" class="text-center font-bold text-[#5c4a3d] text-lg block">{denom}</label>
+				<label for={fieldId} class="text-center font-bold text-[#5c4a3d] text-lg block">{denom}</label>
 
 				<input
-					id="denom-{denom}"
+					id={fieldId}
 					type="number"
 					inputmode="numeric"
 					min="0"
@@ -61,9 +68,12 @@
 					placeholder="0"
 					bind:value={shiftState.billCounts[denom]}
 					onblur={() => shiftState.normalizeBillCount(denom)}
-					class="w-full bg-white border border-gray-300 rounded-lg py-2 px-1 text-center text-xl font-medium focus:outline-none focus:ring-2 focus:ring-[#5c4a3d]/20 focus:border-[#5c4a3d]"
+					aria-invalid={Boolean(errorFor(fieldId))}
+					aria-describedby={errorFor(fieldId) ? `${fieldId}-error` : undefined}
+					class="w-full bg-white border rounded-lg py-2 px-1 text-center text-xl font-medium focus:outline-none focus:ring-2 focus:ring-[#5c4a3d]/20 focus:border-[#5c4a3d] {errorFor(fieldId) ? 'border-red-500' : 'border-gray-300'}"
 					onfocus={(e) => e.currentTarget.select()}
 				/>
+				<FieldError forId={fieldId} message={errorFor(fieldId)} />
 
 				<div class="text-center text-xs text-muted-foreground font-mono">
 					= ฿{((shiftState.billCounts[denom] ?? 0) * Number(denom)).toLocaleString()}
@@ -72,4 +82,3 @@
 		{/each}
 	</div>
 </section>
-

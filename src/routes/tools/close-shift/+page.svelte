@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { tick } from 'svelte';
+  import { focusValidationField } from '$lib/forms/validation-focus';
   import { CloseShiftState } from './CloseShiftState.svelte';
   import GeneralInfoSection from '$lib/components/tools/close-shift/sections/GeneralInfoSection.svelte';
   import CashCountSection from '$lib/components/tools/close-shift/sections/CashCountSection.svelte';
@@ -14,16 +16,33 @@
   const shiftState = new CloseShiftState();
   let suppliers = $state(data.suppliers);
   let uploadedFile = $state<string | null>(null);
-  const submitBlocker = $derived(shiftState.getValidationError({ categories: data.categories, departments: data.departments }));
+  let submitAttempted = $state(false);
+  const validationIssues = $derived(
+    submitAttempted ? shiftState.getValidationIssues({ categories: data.categories, departments: data.departments }) : []
+  );
 
   // Define denominations for ordered iteration (High to Low)
   const denominations = ['1000', '500', '100', '50', '20', '10', '5', '2', '1'] as const;
 
+  async function focusValidationIssue(fieldId: string) {
+    await tick();
+    await focusValidationField(fieldId);
+  }
+
   async function handleSubmit() {
     if (shiftState.isSubmitting) return;
 
+    submitAttempted = true;
+    const issues = shiftState.getValidationIssues({ categories: data.categories, departments: data.departments });
+    if (issues.length > 0) {
+      toast.error(issues[0].message);
+      await focusValidationIssue(issues[0].fieldId);
+      return;
+    }
+
     const result = await shiftState.submit({ categories: data.categories, departments: data.departments });
     if (result?.success) {
+      submitAttempted = false;
       toast.success('Shift closed successfully!');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else if (shiftState.error) {
@@ -35,6 +54,7 @@
     if (confirm('Are you sure you want to reset the form?')) {
       shiftState.reset();
       uploadedFile = null;
+      submitAttempted = false;
       toast.info('Form reset');
     }
   }
@@ -69,13 +89,13 @@
       <!-- Left Column: Inputs -->
       <div class="space-y-8">
         <!-- Step 1: General Info -->
-        <GeneralInfoSection shiftState={shiftState} />
+        <GeneralInfoSection shiftState={shiftState} validationIssues={validationIssues} />
 
         <!-- Step 2: Cash Count -->
-        <CashCountSection shiftState={shiftState} {denominations} />
+        <CashCountSection shiftState={shiftState} {denominations} validationIssues={validationIssues} />
 
         <!-- Step 3: Other Payments -->
-        <OtherPaymentsSection shiftState={shiftState} />
+        <OtherPaymentsSection shiftState={shiftState} validationIssues={validationIssues} />
 
         <!-- Step 4: Shift Expenses -->
         <ShiftExpensesSection
@@ -84,12 +104,13 @@
           departments={data.departments}
           {suppliers}
           onSupplierCreated={(supplier) => suppliers = [...suppliers, supplier].sort((a, b) => a.name.localeCompare(b.name))}
+          validationIssues={validationIssues}
         />
       </div>
 
       <!-- Right Column: Summary & Submit -->
       <div class="space-y-8">
-        <SummarySection shiftState={shiftState} bind:uploadedFile onSubmit={handleSubmit} disabledReason={submitBlocker} />
+        <SummarySection shiftState={shiftState} bind:uploadedFile onSubmit={handleSubmit} />
       </div>
     </div>
   {/if}

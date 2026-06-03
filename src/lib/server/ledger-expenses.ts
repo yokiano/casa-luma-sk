@@ -16,8 +16,8 @@ export type CompanyLedgerExpenseInput = {
   title: string;
   amount: number;
   date: string;
-  category: string;
-  department: string;
+  category?: string;
+  department?: string;
   supplierId?: string;
   transactionId?: string;
   sourceFileName?: string;
@@ -67,19 +67,19 @@ export async function createCompanyLedgerExpense(data: CompanyLedgerExpenseInput
       throw error(400, { message: `Duplicate: An expense with Reference Number ${tid} already exists in Notion.` });
     }
   } else {
-    // 1b. Soft duplicate check for same amount, date and department if no transactionId
+    // 1b. Soft duplicate check for same amount/date, scoped by department when available.
     const existing = await db.query({
       filter: {
         and: [
           { amountThb: { equals: data.amount } },
           { date: { equals: normalizedDate } },
-          { department: { equals: data.department as any } }
+          ...(data.department ? [{ department: { equals: data.department as any } }] : [])
         ]
       }
     });
 
     if (existing.results.length > 0) {
-      throw error(400, { message: `Potential Duplicate: An expense with the same amount (${data.amount}) and date already exists in the same department.` });
+      throw error(400, { message: `Potential Duplicate: An expense with the same amount (${data.amount}) and date already exists${data.department ? ' in the same department' : ''}.` });
     }
   }
 
