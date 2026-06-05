@@ -1,7 +1,8 @@
 <script lang="ts">
   import BalanceReconciliationPanel from '$lib/components/mgmt-dashboard/BalanceReconciliationPanel.svelte';
-  import { getBalanceReconciliationDashboard, getDailyMeetingDashboard, getTodayDashboardOverview } from '$lib/mgmt-dashboard.remote';
-  import { CalendarDays, ExternalLink, Gift, ListChecks, NotebookText, ReceiptText, Users } from 'lucide-svelte';
+  import { approveLedgerExpense, getBalanceReconciliationDashboard, getDailyMeetingDashboard, getTodayDashboardOverview } from '$lib/mgmt-dashboard.remote';
+  import { AlertTriangle, CalendarDays, CheckCircle2, ExternalLink, Gift, ListChecks, NotebookText, ReceiptText, Users } from 'lucide-svelte';
+  import { toast } from 'svelte-sonner';
 
   const meeting = getDailyMeetingDashboard();
   const reconciliation = getBalanceReconciliationDashboard();
@@ -24,8 +25,33 @@
           .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
           .join(' ');
 
+  let approvingExpenseIds = $state(new Set<string>());
+  let locallyApprovedExpenseIds = $state(new Set<string>());
+
   const openLinkClass =
     'inline-flex items-center gap-1.5 rounded-full border border-[#dfd2c5] bg-white px-3 py-1.5 text-xs font-bold text-[#7a6550] transition hover:border-[#7a6550] hover:text-[#2c2925]';
+
+  const isExpenseApproved = (expense: { id: string; owner: string | null }) =>
+    Boolean(expense.owner) || locallyApprovedExpenseIds.has(expense.id);
+
+  const expenseApprovedBy = (expense: { id: string; owner: string | null }) =>
+    expense.owner ?? (locallyApprovedExpenseIds.has(expense.id) ? 'Yarden' : null);
+
+  async function approveExpense(expense: { id: string; title: string }) {
+    approvingExpenseIds = new Set(approvingExpenseIds).add(expense.id);
+
+    try {
+      const result = await approveLedgerExpense({ expenseId: expense.id });
+      locallyApprovedExpenseIds = new Set(locallyApprovedExpenseIds).add(expense.id);
+      toast.success('Expense approved', { description: `${expense.title} approved by ${result.approvedBy}.` });
+    } catch (error) {
+      toast.error('Failed to approve expense', { description: error instanceof Error ? error.message : String(error) });
+    } finally {
+      const next = new Set(approvingExpenseIds);
+      next.delete(expense.id);
+      approvingExpenseIds = next;
+    }
+  }
 </script>
 
 <section class="space-y-6">
@@ -65,6 +91,9 @@
             <p class="text-xs font-bold uppercase tracking-[0.18em] text-[#7a6550]/60">1. Expenses</p>
             <h2 class="mt-1 text-2xl font-bold tracking-tight">Company Ledger</h2>
             <p class="mt-1 text-sm text-[#7a6550]">Ledger records dated {daily?.yesterday} through {daily?.today}.</p>
+            <p class="mt-1 text-xs text-[#7a6550]/70">
+              Note: approvals are temporarily recorded as Yarden. Once auth is implemented, this should use the logged-in user.
+            </p>
           </div>
         </div>
         <a class={openLinkClass} href={daily?.links.companyLedger} target="_blank" rel="noreferrer">
@@ -74,20 +103,55 @@
 
       <div class="mt-5 space-y-3">
         {#each daily?.expenses ?? [] as expense}
-          <a href={expense.url} target="_blank" rel="noreferrer" class="block rounded-2xl border border-[#eadfd3] bg-[#fffaf4] p-4 transition hover:border-[#7a6550]/50">
-            <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <article class="rounded-2xl border p-4 transition {expense.missingFields.length ? 'border-red-300 bg-red-50/80' : 'border-[#eadfd3] bg-[#fffaf4]'}">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <p class="font-semibold text-[#2c2925]">{expense.title}</p>
+                <a href={expense.url} target="_blank" rel="noreferrer" class="font-semibold text-[#2c2925] transition hover:text-[#7a6550] hover:underline">
+                  {expense.title}
+                </a>
                 <p class="mt-1 text-xs text-[#7a6550]/75">
                   {expense.date} · {expense.type ?? 'Ledger'} · {expense.department ?? 'No department'} · {expense.category ?? 'No category'}
                 </p>
+                {#if expense.missingFields.length}
+                  <p class="mt-2 inline-flex items-center gap-1.5 rounded-full bg-red-100 px-2.5 py-1 text-xs font-bold text-red-700">
+                    <AlertTriangle size={13} /> Missing: {expense.missingFields.join(', ')}
+                  </p>
+                {/if}
               </div>
               <div class="text-left sm:text-right">
                 <p class="font-bold tabular-nums">{formatMoney(expense.amountThb)}</p>
                 <p class="mt-1 text-xs text-[#7a6550]/75">{expense.status ?? 'No status'}</p>
+                <p class="mt-1 text-xs font-semibold {isExpenseApproved(expense) ? 'text-emerald-700' : 'text-[#7a6550]/75'}">
+                  {#if isExpenseApproved(expense)}
+                    Approved by {expenseApprovedBy(expense)}
+                  {:else}
+                    Not approved
+                  {/if}
+                </p>
+                <div class="mt-3 flex justify-start gap-2 sm:justify-end">
+                  <a class="inline-flex items-center gap-1.5 rounded-full border border-[#dfd2c5] bg-white px-3 py-1.5 text-xs font-bold text-[#7a6550] transition hover:border-[#7a6550] hover:text-[#2c2925]" href={expense.url} target="_blank" rel="noreferrer">
+                    Open <ExternalLink size={12} />
+                  </a>
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition disabled:cursor-not-allowed disabled:opacity-60 {isExpenseApproved(expense) ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-[#7a6550] bg-[#7a6550] text-white hover:bg-[#2c2925]'}"
+                    disabled={isExpenseApproved(expense) || approvingExpenseIds.has(expense.id)}
+                    onclick={() => approveExpense(expense)}
+                    title="Temporarily approves as Yarden until authentication is implemented."
+                  >
+                    <CheckCircle2 size={13} />
+                    {#if approvingExpenseIds.has(expense.id)}
+                      Approving…
+                    {:else if isExpenseApproved(expense)}
+                      Approved
+                    {:else}
+                      Approve
+                    {/if}
+                  </button>
+                </div>
               </div>
             </div>
-          </a>
+          </article>
         {:else}
           <p class="rounded-2xl border border-dashed border-[#dfd2c5] p-4 text-sm text-[#7a6550]">
             No Company Ledger records found for the last two days.

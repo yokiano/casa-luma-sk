@@ -5,7 +5,9 @@ import * as v from 'valibot';
 import { db, getDatabaseEnvKey } from '$lib/server/db/client';
 import { incidentReporter } from '$lib/server/incidents';
 import { buildReceiptReportUrl } from '$lib/server/incidents/urls';
+import { error } from '@sveltejs/kit';
 import { CompanyLedgerDatabase } from '$lib/notion-sdk/dbs/company-ledger/db';
+import { CompanyLedgerPatchDTO } from '$lib/notion-sdk/dbs/company-ledger/patch.dto';
 import { CompanyLedgerResponseDTO } from '$lib/notion-sdk/dbs/company-ledger/response.dto';
 import { SalaryAdjustmentsDatabase } from '$lib/notion-sdk/dbs/salary-adjustments/db';
 import { SalaryAdjustmentsResponseDTO } from '$lib/notion-sdk/dbs/salary-adjustments/response.dto';
@@ -38,6 +40,7 @@ const TEST_ALERT_TYPES = [
   'forced_test_failure',
   'validation_engine_error'
 ] as const;
+const DASHBOARD_APPROVER = 'Yarden' as const; // TODO(auth): use the logged-in user's Approved By select value once auth is implemented.
 
 type Department = (typeof DEPARTMENTS)[number];
 type DashboardDepartment = Department | typeof UNKNOWN_DEPARTMENT;
@@ -123,6 +126,25 @@ const toIsoOrNull = (value: unknown) => {
 
 const parseNumber = (value: unknown) => Number(value ?? 0);
 const normalizeCategory = (value: string) => value.trim().toLowerCase();
+
+const buildExpenseMissingFields = (expense: CompanyLedgerResponseDTO) => {
+  const missing: string[] = [];
+  const props = expense.properties;
+
+  if (!props.description.text?.trim()) missing.push('description');
+  if (props.amountThb === null || props.amountThb === undefined) missing.push('amount');
+  if (!props.date?.start) missing.push('date');
+  if (!props.type?.name) missing.push('type');
+  if (!props.status?.name) missing.push('status');
+  if (!props.department?.name) missing.push('department');
+  if (!props.category?.name) missing.push('category');
+  if (!props.supplierIds.length) missing.push('supplier');
+  if (!props.invoiceReceipt.urls.filter(Boolean).length) missing.push('receipt scan');
+  if (!props.paymentMethod?.name) missing.push('payment method');
+  if (!props.bankAccount?.name) missing.push('bank account');
+
+  return missing;
+};
 
 const buildFallbackDepartmentMapping = (): DepartmentMapping => {
   const categoryToDepartment = new Map<string, Department>();
@@ -399,6 +421,7 @@ export const getDailyMeetingDashboard = query(async () => {
         department: expense.properties.department?.name ?? null,
         category: expense.properties.category?.name ?? null,
         owner: expense.properties.owner?.name ?? null,
+        missingFields: buildExpenseMissingFields(expense),
         url: expense.url
       };
     });
@@ -454,6 +477,25 @@ export const getDailyMeetingDashboard = query(async () => {
       error: serializeError(error).message
     };
   }
+});
+
+const ApproveExpenseSchema = v.object({
+  expenseId: v.pipe(v.string(), v.trim(), v.minLength(1))
+});
+
+export const approveLedgerExpense = command(ApproveExpenseSchema, async ({ expenseId }) => {
+  const notionSecret = getNotionSecret();
+  if (!notionSecret) throw error(500, { message: 'NOTION_API_KEY is not configured.' });
+
+  const companyLedgerDb = new CompanyLedgerDatabase({ notionSecret });
+  await companyLedgerDb.updatePage(
+    expenseId,
+    new CompanyLedgerPatchDTO({
+      properties: { owner: DASHBOARD_APPROVER }
+    })
+  );
+
+  return { id: expenseId, approvedBy: DASHBOARD_APPROVER };
 });
 
 export const getBalanceReconciliationDashboard = query(async () => getBalanceReconciliationSummary({ asOf: new Date() }));
