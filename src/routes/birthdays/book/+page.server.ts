@@ -41,7 +41,7 @@ export const actions: Actions = {
       const bookingReference = generateBookingReference(payload.childName);
 
       const packageLabel =
-        BIRTHDAY_PACKAGE_NOTION_LABELS[payload.selectedPackage] || 'Smaller Setup';
+        BIRTHDAY_PACKAGE_NOTION_LABELS[payload.selectedPackage] || BIRTHDAY_PACKAGE_NOTION_LABELS['smaller-setup'];
 
       const capacityBucket =
         payload.selectedPackage === 'smaller-setup' ? 'up-to-8' : 'up-to-15';

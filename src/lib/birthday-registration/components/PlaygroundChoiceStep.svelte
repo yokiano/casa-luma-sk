@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Blocks, TreePine } from 'lucide-svelte';
   import {
+    BIRTHDAY_PLAYGROUND_PRICING,
     getPlaygroundAddonPreview,
     formatThb,
     type BirthdayCapacityBucket
@@ -44,12 +45,22 @@
         Guaranteed indoor playground access for your party guests.
       </p>
       {#if preview.label}
-        <span class="inline-block px-2 py-0.5 rounded-md bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wide">
+        <span class="inline-block px-2 py-0.5 rounded-md bg-foreground text-background text-[10px] font-bold uppercase tracking-wide shadow-sm">
           {preview.label}
         </span>
       {/if}
     </div>
   </button>
+
+  <div class="rounded-2xl border border-primary/10 bg-primary/5 px-4 py-3 text-xs sm:text-sm leading-relaxed text-muted-foreground">
+    <strong class="text-primary">Playground pricing:</strong>
+    {#if capacityBucket === 'up-to-15'}
+      Full Hosted parties pay {formatThb(BIRTHDAY_PLAYGROUND_PRICING.fullHosted.flat)} flat, plus {formatThb(BIRTHDAY_PLAYGROUND_PRICING.fullHosted.extraChildAbove15)} for each child above 15.
+    {:else}
+      Simple Table parties pay {formatThb(BIRTHDAY_PLAYGROUND_PRICING.simpleTable.perChild)} per child.
+    {/if}
+    Final per-child charges are confirmed on-site after Casa Luma counts actual child attendance.
+  </div>
 
   <button
     type="button"

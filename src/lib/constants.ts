@@ -83,12 +83,13 @@ export const SITE_MENU_ITEMS: readonly MenuItem[] = [
 	// { id: 'home', label: 'Home', href: '/', inHeader: true },
 	// { id: 'open-play', label: 'Open Play', href: '/open-play', inHeader: true, inFooter: true },
 	// { id: 'pricing', label: 'Pricing', href: '/pricing', inHeader: true, inFooter: true },
-	// {
-	// 	id: 'birthdays',
-	// 	label: 'Birthdays',
-	// 	href: '/birthdays',
-	// 	inHeader: true
-	// },
+	{
+		id: 'birthdays',
+		label: 'Birthdays',
+		href: '/birthdays',
+		inHeader: true,
+		inFooter: true
+	},
 	// { id: 'workshops', label: 'Workshops', href: '/workshops3', inFooter: true },
 	// { id: 'careers', label: 'Careers', href: '/careers', inFooter: true },
 	// { id: 'about', label: 'About', href: '/about', inHeader: true, inFooter: true },

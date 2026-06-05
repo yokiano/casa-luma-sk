@@ -65,7 +65,7 @@ ${track !== 'smaller-setup' || b.upgrades.some(u => u.includes('Buffet')) ? `- *
 ---
 
 #### Notes & Venue Policies
-- Base packages include up to 15 children.${extraChildRate ? ` Extra kids incur a surcharge of ${extraChildRate} THB per child.` : ''}
+- Base packages include up to 15 children.${extraChildRate ? ` Extra kids incur a surcharge of ${extraChildRate} THB per child.` : ''} Final per-child charges are confirmed on-site after Casa Luma counts actual child attendance.
 - Please arrive 15 minutes early for welcoming and setup.
 - Parents/hosts are responsible for supervising children at all times.
 - Outside catering is not permitted without prior venue authorization.
@@ -445,7 +445,7 @@ ${track !== 'smaller-setup' || b.upgrades.some(u => u.includes('Buffet')) ? `- *
   <div class="border-t pt-4 flex justify-between items-center mb-12">
     <div>
       <p class="text-xs font-bold text-black uppercase">Estimated Total Cost Quote</p>
-      <p class="text-[9px] text-gray-400 font-semibold">*Final formal invoice will be issued separately upon contract review</p>
+      <p class="text-[9px] text-gray-400 font-semibold">*Final price is confirmed on-site after actual child attendance count</p>
     </div>
     <span class="text-xl font-black text-black">{b.estimatedTotal.toLocaleString()} THB</span>
   </div>

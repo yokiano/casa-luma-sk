@@ -20,7 +20,11 @@
     },
     {
       title: 'Guest Count & Safety Caps',
-      desc: 'Base packages include up to 15 children. Additional child guests will incur a charge based on your selected package to maintain safety and comfort ratios.'
+      desc: 'Full Hosted includes up to 15 children. If more children arrive, each additional child is charged according to the selected package.'
+    },
+    {
+      title: 'Additional Food Orders',
+      desc: 'If the party needs more food, Casa Luma may prepare additional items at a fixed cost per item ordered.'
     }
   ];
 </script>
@@ -57,7 +61,7 @@
         {/if}
       </div>
       <span class="text-sm sm:text-base font-extrabold text-foreground text-left leading-tight">
-        I have read and agree to all venue rules mentioned above
+        I have read and agree to all venue rules above, including extra child charges above 15 kids for Full Hosted and any additional food items ordered.
       </span>
     </button>
   </div>

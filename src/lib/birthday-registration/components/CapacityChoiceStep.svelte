@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Users, UsersRound } from 'lucide-svelte';
-  import { BIRTHDAY_BASE_PRICING, formatThb } from '$lib/birthday-pricing';
+  import { BIRTHDAY_BASE_PRICING, BIRTHDAY_PACKAGE_DISPLAY_NAMES, formatThb } from '$lib/birthday-pricing';
 
   interface Props {
     selected: 'up-to-8' | 'up-to-15' | null;
@@ -13,16 +13,16 @@
   const options = $derived([
     {
       id: 'up-to-8',
-      title: 'Up to 8 kids',
-      description: 'Lighter parent-led setup with a dedicated garden table. Ideal for small, intimate gatherings.',
+      title: BIRTHDAY_PACKAGE_DISPLAY_NAMES.simpleTable,
+      description: 'Parent-led garden table for up to 8 kids. Buffet and playground are optional and charged per child when selected.',
       priceImpact: `${formatThb(BIRTHDAY_BASE_PRICING.simpleTable.base)} base fee`,
-      extraInfo: 'Garden table setup',
+      extraInfo: 'Buffet +500 THB/child • Playground +320 THB/child',
       icon: Users
     },
     {
       id: 'up-to-15',
-      title: 'Up to 15 kids',
-      description: 'Full hosted birthday experience including food, cake, decorations, and a dedicated waiter.',
+      title: BIRTHDAY_PACKAGE_DISPLAY_NAMES.fullHosted,
+      description: 'Hosted birthday for up to 15 kids including garden & pool, 3 hours, buffet food, cake, decorations, dedicated waiter, and background music.',
       priceImpact: isSunday
         ? `Base price: ${formatThb(BIRTHDAY_BASE_PRICING.fullHosted.sunday)}`
         : `Base price: ${formatThb(BIRTHDAY_BASE_PRICING.fullHosted.monSat)}`,
@@ -59,11 +59,15 @@
           {opt.description}
         </p>
         <div class="pt-1">
-          <span class="inline-block px-2 py-0.5 rounded-md bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wide">
+          <span class="inline-block px-2 py-0.5 rounded-md bg-foreground text-background text-[10px] font-bold uppercase tracking-wide shadow-sm">
             {opt.extraInfo}
           </span>
         </div>
+        <p class="text-[11px] text-muted-foreground/80 leading-snug">
+          Per-child charges are finalized on-site after Casa Luma counts actual child attendance.
+        </p>
       </div>
     </button>
   {/each}
+
 </div>

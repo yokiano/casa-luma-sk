@@ -3,12 +3,16 @@
   import { cubicOut } from 'svelte/easing';
   import { toast } from 'svelte-sonner';
   import confetti from 'canvas-confetti';
-  import { CheckCircle2, RefreshCw, PartyPopper, FileText } from 'lucide-svelte';
+  import { Check, CheckCircle2, RefreshCw, PartyPopper, FileText } from 'lucide-svelte';
   import { deserialize } from '$app/forms';
 
   import {
     BIRTHDAY_ACTIVITY_ADDONS,
+    BIRTHDAY_BASE_PRICING,
     BIRTHDAY_MAIN_COURSES,
+    BIRTHDAY_PACKAGE_DISPLAY_NAMES,
+    BIRTHDAY_PLAYGROUND_PRICING,
+    BIRTHDAY_SIMPLE_TABLE_UPGRADES,
     formatThb,
     isSundayBirthdayDate
   } from '$lib/birthday-pricing';
@@ -21,6 +25,8 @@
   const formState = new BirthdayFormState();
 
   const isSundayDate = $derived(isSundayBirthdayDate(formState.eventDate));
+
+  const simpleTableBuffetPrice = BIRTHDAY_SIMPLE_TABLE_UPGRADES.find((upgrade) => upgrade.id === 'buffet')?.pricePerChild ?? 500;
 
   const timeOptions = Array.from({ length: 25 }, (_, i) => {
     const hour = Math.floor(i / 2) + 8;
@@ -89,6 +95,24 @@
       toast.error('Failed to submit booking. Please check your network.');
     } finally {
       formState.submitting = false;
+    }
+  }
+
+  function getNextLabel() {
+    switch (formState.currentStepDef.id) {
+      case 'derived-track-summary':
+        if (formState.capacityBucket === 'up-to-15') return 'Choose main course';
+        return 'Choose upgrades';
+      case 'simple-table-upgrades':
+        return formState.simpleTableBuffet ? 'Choose main course' : 'Continue';
+      case 'buffet-menu':
+        return 'Choose add-ons';
+      case 'add-on-activities':
+        return 'Add notes';
+      case 'notes':
+        return 'Review rules';
+      default:
+        return undefined;
     }
   }
 
@@ -197,6 +221,7 @@
           showBack={formState.currentStepIndex > 0}
           showSkip={!formState.currentStepDef.required}
           nextDisabled={!formState.canProceed}
+          nextLabel={getNextLabel()}
           onNext={handleNext}
           onSkip={() => formState.skip()}
           onBack={() => formState.back()}
@@ -322,20 +347,24 @@
                 <div class="p-4 rounded-2xl bg-primary/5 border border-primary/10 text-center space-y-2">
                   <p class="text-sm font-bold text-primary">
                     {#if formState.capacityBucket === 'up-to-8'}
-                      Simple Table Setup
+                      {BIRTHDAY_PACKAGE_DISPLAY_NAMES.simpleTable}
                     {:else}
-                      Full Hosted Birthday
+                      {BIRTHDAY_PACKAGE_DISPLAY_NAMES.fullHosted}
                     {/if}
                   </p>
                   <p class="text-xs text-muted-foreground leading-relaxed max-w-sm mx-auto">
                     {#if formState.capacityBucket === 'up-to-15'}
-                      Base package includes up to 15 children. 
+                      Hosted birthdays include up to 15 children. Extra children are added to the quote at
+                      {isSundayDate ? formatThb(BIRTHDAY_BASE_PRICING.fullHosted.extraChildSunday) : formatThb(BIRTHDAY_BASE_PRICING.fullHosted.extraChildMonSat)} / child.
+                      {#if formState.includePlayground}
+                        Playground also adds {formatThb(BIRTHDAY_PLAYGROUND_PRICING.fullHosted.extraChildAbove15)} / child above 15.
+                      {/if}
                       {#if (formState.kidsCount || 0) > 15}
                         <br />
-                        <span class="text-primary font-bold">{(formState.kidsCount || 0) - 15} extra children</span> added to quote.
+                        <span class="text-foreground font-bold">{(formState.kidsCount || 0) - 15} extra children</span> currently added to quote.
                       {/if}
                     {:else if formState.capacityBucket === 'up-to-8'}
-                      Table bookings are sized for up to 8 kids. 
+                      Simple Table bookings are sized for up to 8 kids. Buffet is {formatThb(simpleTableBuffetPrice)} / child if selected, and playground is {formatThb(BIRTHDAY_PLAYGROUND_PRICING.simpleTable.perChild)} / child if selected, including any accepted children above 8.
                       {#if (formState.kidsCount || 0) > 8}
                         <br />
                         <span class="text-amber-600 font-bold">Note:</span> More than 8 kids usually requires a Full Hosted package.
@@ -359,11 +388,11 @@
                     <span class="text-sm font-bold text-muted-foreground uppercase tracking-wider">Selected setup</span>
                     <span class="text-lg font-black text-primary">
                       {#if formState.derivedTrack === 'mon-sat'}
-                        Mon–Sat full hosted
+                        Mon–Sat {BIRTHDAY_PACKAGE_DISPLAY_NAMES.fullHosted}
                       {:else if formState.derivedTrack === 'sunday'}
-                        Sunday full hosted
+                        Sunday {BIRTHDAY_PACKAGE_DISPLAY_NAMES.fullHosted}
                       {:else if formState.derivedTrack === 'smaller-setup'}
-                        Simple table setup
+                        {BIRTHDAY_PACKAGE_DISPLAY_NAMES.simpleTable}
                       {/if}
                     </span>
                   </div>
@@ -382,11 +411,39 @@
                     {/each}
                   </div>
 
-                  <div class="flex justify-between items-center border-t border-primary/10 pt-4">
-                    <span class="text-sm font-bold uppercase tracking-wider text-muted-foreground">Estimated total</span>
-                    <span class="text-xl font-black text-primary">{formatThb(formState.estimatedTotal)}</span>
+                  <div class="border-t border-primary/10 pt-4 space-y-1.5">
+                    <div class="flex justify-between items-center gap-4">
+                      <span class="text-sm font-bold uppercase tracking-wider text-muted-foreground">Estimated total*</span>
+                      <span class="text-xl font-black text-primary">{formatThb(formState.estimatedTotal)}</span>
+                    </div>
+                    <p class="text-[11px] leading-snug text-muted-foreground/80">
+                      *Final price is confirmed on-site after Casa Luma counts actual child attendance.
+                    </p>
                   </div>
                 </div>
+
+                {#if formState.capacityBucket === 'up-to-15'}
+                  <div class="rounded-3xl border border-primary/10 bg-primary/5 p-5 space-y-3">
+                    <p class="text-[11px] font-bold uppercase tracking-[0.22em] text-primary/70">Included in every hosted party</p>
+                    <ul class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-muted-foreground">
+                      <li class="flex items-center gap-2"><Check class="size-4 text-primary" /> Garden & Pool</li>
+                      <li class="flex items-center gap-2"><Check class="size-4 text-primary" /> 3 hours duration</li>
+                      <li class="flex items-center gap-2"><Check class="size-4 text-primary" /> Buffet food</li>
+                      <li class="flex items-center gap-2"><Check class="size-4 text-primary" /> Birthday cake</li>
+                      <li class="flex items-center gap-2"><Check class="size-4 text-primary" /> Decorations</li>
+                      <li class="flex items-center gap-2"><Check class="size-4 text-primary" /> Dedicated waiter</li>
+                      <li class="flex items-center gap-2"><Check class="size-4 text-primary" /> Background music</li>
+                    </ul>
+                    <p class="text-xs leading-relaxed text-muted-foreground">
+                      The Full Hosted base includes up to 15 kids. Extra children are charged separately, playground extra-child pricing applies only if playground is selected, and final per-child charges are confirmed after the on-site attendance count.
+                    </p>
+                  </div>
+                {:else}
+                  <div class="rounded-3xl border border-muted bg-muted/20 p-5 space-y-2 text-sm leading-relaxed text-muted-foreground">
+                    <p class="font-bold text-foreground">{BIRTHDAY_PACKAGE_DISPLAY_NAMES.simpleTable} is parent-led.</p>
+                    <p>Casa Luma provides the garden table. Buffet, cake, decorations, and playground are optional add-ons, so you only pay for what you select.</p>
+                  </div>
+                {/if}
 
                 <div class="grid grid-cols-1 gap-3">
                   <div class="flex items-center justify-between p-4 rounded-2xl bg-muted/30 border border-muted">
@@ -404,6 +461,10 @@
             {:else if formState.currentStepDef.id === 'simple-table-upgrades'}
               <!-- Step: Table upgrades for small booking -->
               <div class="space-y-4">
+                <div class="rounded-2xl border border-primary/10 bg-primary/5 px-4 py-3 text-xs sm:text-sm leading-relaxed text-muted-foreground">
+                  Simple Table upgrades are optional. Buffet is charged at {formatThb(simpleTableBuffetPrice)} per child based on your guest count, including any accepted children above 8; playground is handled separately at {formatThb(BIRTHDAY_PLAYGROUND_PRICING.simpleTable.perChild)} per child if selected. Final per-child charges are confirmed after the on-site attendance count.
+                </div>
+
                 <button
                   onclick={() => { formState.simpleTableBuffet = !formState.simpleTableBuffet; }}
                   class="w-full p-4 sm:p-5 rounded-2xl border text-left flex items-center justify-between gap-4 transition-all hover:bg-muted/10 hover:border-primary/30
@@ -411,7 +472,7 @@
                 >
                   <div class="space-y-0.5">
                     <span class="text-sm sm:text-base font-bold block">Include Buffet Menu</span>
-                    <span class="text-xs text-muted-foreground">Add buffet menu for {formState.kidsCount || 0} kids (+500 THB / kid)</span>
+                    <span class="text-xs text-muted-foreground">Add buffet menu for {formState.kidsCount || 0} kids (+{formatThb(simpleTableBuffetPrice)} / kid)</span>
                   </div>
                   <div class="size-6 rounded-full border-2 flex items-center justify-center transition-colors shrink-0
                     {formState.simpleTableBuffet ? 'bg-primary border-primary text-primary-foreground' : 'border-muted-foreground/30'}"
@@ -461,6 +522,15 @@
             {:else if formState.currentStepDef.id === 'buffet-menu'}
               <!-- Step: Buffet Menu Selection -->
               <div class="space-y-4">
+                <div class="rounded-2xl border border-muted bg-muted/20 px-4 py-3 text-xs sm:text-sm leading-relaxed text-muted-foreground">
+                  {#if formState.capacityBucket === 'up-to-15'}
+                    The buffet is included in hosted birthdays for up to 15 kids. Extra hosted children are charged separately at the child price shown in your quote.
+                  {:else}
+                    Buffet was added as a Simple Table upgrade and is charged at {formatThb(simpleTableBuffetPrice)} per child. Final per-child charges use the on-site attendance count.
+                  {/if}
+                  If the party needs more food, Casa Luma can prepare additional items at a fixed cost per item ordered.
+                </div>
+
                 {#each BIRTHDAY_MAIN_COURSES as item (item.value)}
                   <button
                     onclick={() => { formState.mainCourse = item.value; }}

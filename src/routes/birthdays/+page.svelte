@@ -5,6 +5,7 @@
 		BIRTHDAY_ACTIVITY_ADDONS,
 		BIRTHDAY_BASE_PRICING,
 		BIRTHDAY_BUFFET_SECTIONS,
+		BIRTHDAY_PACKAGE_DISPLAY_NAMES,
 		BIRTHDAY_PLAYGROUND_ADDON_COPY,
 		BIRTHDAY_PLAYGROUND_PRICING,
 		BIRTHDAY_SIMPLE_TABLE_NOTES,
@@ -34,7 +35,7 @@
 		},
 		{
 			title: 'You choose the shape',
-			text: 'A full hosted party for up to 15 children, a smaller garden table for up to 8, and optional playground access.'
+			text: 'A Full Hosted party for up to 15 children, a Simple Table for up to 8, and optional playground access.'
 		}
 	];
 
@@ -148,16 +149,17 @@
 					<p class="text-[11px] uppercase tracking-[0.28em] text-foreground/70">Packages</p>
 					<h2 class="mt-4 text-4xl leading-tight tracking-tight sm:text-5xl">What is included in the base price</h2>
 					<p class="mt-4 text-base leading-relaxed text-foreground/68">
-						Full hosted birthdays cover garden and pool for three hours, with food, cake, decorations, waiter,
-						and music. Weekdays and Saturdays start lower; Sundays start higher because they are usually busier.
+						{BIRTHDAY_PACKAGE_DISPLAY_NAMES.fullHosted} birthdays cover garden and pool for three hours, with food, cake,
+						decorations, waiter, and music. Weekdays and Saturdays start lower; Sundays start higher because they are usually busier.
 					</p>
 				</div>
 			</Reveal>
 
 			<div class="grid gap-6 lg:grid-cols-2">
 				<Reveal direction="up" class="rounded-[2.3rem] border border-foreground/8 bg-white p-8 shadow-[0_24px_80px_foreground/8] sm:p-10" skewX={0}>
-					<p class="text-[11px] uppercase tracking-[0.26em] text-accent">Full hosted birthday</p>
-					<h3 class="mt-5 text-3xl leading-tight tracking-tight sm:text-4xl">Up to 15 children</h3>
+					<p class="text-[11px] uppercase tracking-[0.26em] text-accent">Birthday package</p>
+					<h3 class="mt-5 text-3xl leading-tight tracking-tight sm:text-4xl">{BIRTHDAY_PACKAGE_DISPLAY_NAMES.fullHosted}</h3>
+					<p class="mt-2 text-xs uppercase tracking-[0.2em] text-foreground/45">Up to 15 children</p>
 					<p class="mt-4 text-sm leading-relaxed text-foreground/70">
 						Best when you want Casa Luma to host the day: garden, pool, food, cake, decorations,
 						waiter, and music for three hours.
@@ -205,6 +207,9 @@
 									Mon–Sat: +{BIRTHDAY_BASE_PRICING.fullHosted.extraChildMonSat} THB<br />
 									Sunday: +{BIRTHDAY_BASE_PRICING.fullHosted.extraChildSunday} THB
 								</p>
+								<p class="mt-2 text-xs leading-relaxed text-foreground/55">
+									Final per-child charges are confirmed on-site after Casa Luma counts actual child attendance.
+								</p>
 							</div>
 							<div class="rounded-[1.4rem] border border-accent/15 bg-accent/5 p-4">
 								<p class="text-[10px] uppercase tracking-[0.2em] text-accent/70">Indoor playground</p>
@@ -217,8 +222,9 @@
 				</Reveal>
 
 				<Reveal direction="up" delay={80} class="rounded-[2.3rem] bg-foreground p-8 text-background shadow-[0_28px_80px_foreground/20] sm:p-10" skewX={0}>
-					<p class="text-[11px] uppercase tracking-[0.26em] text-primary">Smaller setup</p>
-					<h3 class="mt-5 text-3xl leading-tight tracking-tight sm:text-4xl">Up to 8 children</h3>
+					<p class="text-[11px] uppercase tracking-[0.26em] text-primary">Birthday package</p>
+					<h3 class="mt-5 text-3xl leading-tight tracking-tight sm:text-4xl">{BIRTHDAY_PACKAGE_DISPLAY_NAMES.simpleTable}</h3>
+					<p class="mt-2 text-xs uppercase tracking-[0.2em] text-background/45">Up to 8 children</p>
 					<p class="mt-4 text-sm leading-relaxed text-background/75">
 						A dedicated table in the garden. You bring decorations and cake, or add ours as upgrades.
 					</p>
@@ -237,7 +243,7 @@
 							Starts from {BIRTHDAY_PLAYGROUND_PRICING.simpleTable.perChild} THB per child
 						</p>
 						<p class="mt-1 text-xs text-background/50 italic">
-							(Assuming indoor playground add-on)
+							(Assuming indoor playground add-on; final per-child charges are confirmed on-site after attendance count.)
 						</p>
 					</div>
 				</Reveal>
@@ -282,7 +288,7 @@
 				<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
 					<p class="text-[11px] uppercase tracking-[0.28em] text-accent">Buffet menu</p>
 					<p class="text-[10px] uppercase tracking-[0.15em] text-foreground/40 bg-muted/50 px-3 py-1 rounded-full">
-						Included in all Full Hosted birthdays
+						Included in all {BIRTHDAY_PACKAGE_DISPLAY_NAMES.fullHosted} birthdays
 					</p>
 				</div>
 				<div class="grid gap-6 sm:grid-cols-2">
@@ -318,7 +324,7 @@
 					</div>
 
 					<div class="pt-6 border-t border-foreground/10">
-						<p class="text-[10px] uppercase tracking-[0.2em] text-foreground/40 mb-3">For Smaller Setup</p>
+						<p class="text-[10px] uppercase tracking-[0.2em] text-foreground/40 mb-3">For {BIRTHDAY_PACKAGE_DISPLAY_NAMES.simpleTable}</p>
 						<ul class="space-y-3 text-base leading-relaxed text-foreground/78">
 							{#each BIRTHDAY_SIMPLE_TABLE_UPGRADES as upgrade (upgrade.id)}
 								<li>

@@ -16,6 +16,7 @@
     totalSteps: number;
     estimatedTotal: number;
     showPrice?: boolean;
+    nextLabel?: string;
     children: Snippet;
   }
 
@@ -33,6 +34,7 @@
     totalSteps,
     estimatedTotal = 0,
     showPrice = true,
+    nextLabel,
     children
   }: Props = $props();
 
@@ -91,11 +93,16 @@
   <div class="flex-shrink-0 p-4 sm:p-6 border-t bg-background/80 backdrop-blur-md space-y-4">
     <!-- Live Estimator HUD -->
     {#if showPrice && estimatedTotal > 0}
-      <div class="max-w-xl mx-auto flex items-center justify-between px-4 py-2 sm:py-3 bg-primary/5 border border-primary/10 rounded-2xl animate-in fade-in slide-in-from-bottom-2 duration-300">
-        <span class="text-xs sm:text-sm font-semibold text-muted-foreground uppercase tracking-wider">Estimated Total</span>
-        <span class="text-lg sm:text-2xl font-black text-primary tracking-tight">
-          {estimatedTotal.toLocaleString()} THB
-        </span>
+      <div class="max-w-xl mx-auto px-4 py-2 sm:py-3 bg-primary/5 border border-primary/10 rounded-2xl animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-1.5">
+        <div class="flex items-center justify-between gap-4">
+          <span class="text-xs sm:text-sm font-semibold text-muted-foreground uppercase tracking-wider">Estimated Total*</span>
+          <span class="text-lg sm:text-2xl font-black text-primary tracking-tight">
+            {estimatedTotal.toLocaleString()} THB
+          </span>
+        </div>
+        <p class="text-[10px] sm:text-xs leading-snug text-muted-foreground/80">
+          *Final price is confirmed on-site after Casa Luma counts actual child attendance.
+        </p>
       </div>
     {/if}
 
@@ -133,7 +140,7 @@
               {#if nextDisabled && currentStep === totalSteps - 1}
                 Approve rules to submit
               {:else}
-                {currentStep === totalSteps - 1 ? 'Submit booking' : 'Next'}
+                {nextLabel ?? (currentStep === totalSteps - 1 ? 'Submit booking' : 'Next')}
               {/if}
             </span>
             <ChevronRight class="size-4 sm:size-5" />

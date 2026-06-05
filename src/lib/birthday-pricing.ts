@@ -4,8 +4,8 @@ export type BirthdayMainCourse = 'nuggets-fries' | 'hot-dogs' | 'sandwiches';
 
 export const BIRTHDAY_BASE_PRICING = {
 	fullHosted: {
-		monSat: 6_000,
-		sunday: 8_000,
+		monSat: 8_000,
+		sunday: 10_000,
 		includedChildren: 15,
 		extraChildMonSat: 400,
 		extraChildSunday: 500
@@ -24,6 +24,11 @@ export const BIRTHDAY_PLAYGROUND_PRICING = {
 	simpleTable: {
 		perChild: 320
 	}
+} as const;
+
+export const BIRTHDAY_PACKAGE_DISPLAY_NAMES = {
+	fullHosted: 'Full Hosted',
+	simpleTable: 'Simple Table'
 } as const;
 
 export const BIRTHDAY_MAIN_COURSES: { value: BirthdayMainCourse; label: string; desc?: string }[] = [
@@ -122,9 +127,16 @@ export const BIRTHDAY_SIMPLE_TABLE_NOTES = [
 ] as const;
 
 export const BIRTHDAY_PACKAGE_NOTION_LABELS: Record<BirthdayTrack, string> = {
-	'mon-sat': 'Mon–Sat Package',
-	sunday: 'Sunday Package',
-	'smaller-setup': 'Smaller Setup'
+	'mon-sat': 'Mon–Sat Full Hosted',
+	sunday: 'Sunday Full Hosted',
+	'smaller-setup': BIRTHDAY_PACKAGE_DISPLAY_NAMES.simpleTable
+};
+
+const LEGACY_BIRTHDAY_PACKAGE_LABELS: Record<string, BirthdayTrack> = {
+	'Mon–Sat Package': 'mon-sat',
+	'Sunday Package': 'sunday',
+	'Smaller Setup': 'smaller-setup',
+	'Simple table setup': 'smaller-setup'
 };
 
 export function packageLabelToTrack(label: string): BirthdayTrack | null {
@@ -132,7 +144,7 @@ export function packageLabelToTrack(label: string): BirthdayTrack | null {
 		return label;
 	}
 	const entry = Object.entries(BIRTHDAY_PACKAGE_NOTION_LABELS).find(([, v]) => v === label);
-	return entry ? (entry[0] as BirthdayTrack) : null;
+	return entry ? (entry[0] as BirthdayTrack) : LEGACY_BIRTHDAY_PACKAGE_LABELS[label] ?? null;
 }
 
 export function upgradesIncludePlayground(upgrades: string[]): boolean {
@@ -259,7 +271,7 @@ export function calculateBirthdayQuote(input: BirthdayQuoteInput): BirthdayQuote
 
 	if (track === 'mon-sat') {
 		lineItems.push({
-			label: 'Full hosted birthday (Mon–Sat)',
+			label: 'Full Hosted (Mon–Sat)',
 			amount: BIRTHDAY_BASE_PRICING.fullHosted.monSat
 		});
 		if (kids > BIRTHDAY_BASE_PRICING.fullHosted.includedChildren) {
@@ -273,7 +285,7 @@ export function calculateBirthdayQuote(input: BirthdayQuoteInput): BirthdayQuote
 		}
 	} else if (track === 'sunday') {
 		lineItems.push({
-			label: 'Full hosted birthday (Sunday)',
+			label: 'Full Hosted (Sunday)',
 			amount: BIRTHDAY_BASE_PRICING.fullHosted.sunday
 		});
 		if (kids > BIRTHDAY_BASE_PRICING.fullHosted.includedChildren) {
@@ -287,7 +299,7 @@ export function calculateBirthdayQuote(input: BirthdayQuoteInput): BirthdayQuote
 		}
 	} else {
 		lineItems.push({
-			label: 'Simple table setup',
+			label: BIRTHDAY_PACKAGE_DISPLAY_NAMES.simpleTable,
 			amount: BIRTHDAY_BASE_PRICING.simpleTable.base
 		});
 		if (input.simpleTableBuffet && kids > 0) {
