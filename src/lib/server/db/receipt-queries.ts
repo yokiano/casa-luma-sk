@@ -215,16 +215,37 @@ const hydrateReceiptRows = async (selectedRows: (typeof receipts.$inferSelect)[]
     return [];
   }
 
-  const [lineItems, lineModifiers, lineDiscountRows, lineTaxRows, discountRows, taxRows, paymentRows] =
-    await Promise.all([
-      db.select().from(receiptLineItems).where(inArray(receiptLineItems.receiptKey, receiptKeys)),
-      db.select().from(receiptLineModifiers).where(inArray(receiptLineModifiers.receiptKey, receiptKeys)),
-      db.select().from(receiptLineDiscounts).where(inArray(receiptLineDiscounts.receiptKey, receiptKeys)),
-      db.select().from(receiptLineTaxes).where(inArray(receiptLineTaxes.receiptKey, receiptKeys)),
-      db.select().from(receiptDiscounts).where(inArray(receiptDiscounts.receiptKey, receiptKeys)),
-      db.select().from(receiptTaxes).where(inArray(receiptTaxes.receiptKey, receiptKeys)),
-      db.select().from(receiptPayments).where(inArray(receiptPayments.receiptKey, receiptKeys))
-    ]);
+  // Run the hydration lookups sequentially. Issuing all seven relation queries concurrently
+  // opens multiple Neon/Postgres requests per receipts page and can intermittently fail the
+  // page load even though each individual lookup is valid.
+  const lineItems = await db
+    .select()
+    .from(receiptLineItems)
+    .where(inArray(receiptLineItems.receiptKey, receiptKeys));
+  const lineModifiers = await db
+    .select()
+    .from(receiptLineModifiers)
+    .where(inArray(receiptLineModifiers.receiptKey, receiptKeys));
+  const lineDiscountRows = await db
+    .select()
+    .from(receiptLineDiscounts)
+    .where(inArray(receiptLineDiscounts.receiptKey, receiptKeys));
+  const lineTaxRows = await db
+    .select()
+    .from(receiptLineTaxes)
+    .where(inArray(receiptLineTaxes.receiptKey, receiptKeys));
+  const discountRows = await db
+    .select()
+    .from(receiptDiscounts)
+    .where(inArray(receiptDiscounts.receiptKey, receiptKeys));
+  const taxRows = await db
+    .select()
+    .from(receiptTaxes)
+    .where(inArray(receiptTaxes.receiptKey, receiptKeys));
+  const paymentRows = await db
+    .select()
+    .from(receiptPayments)
+    .where(inArray(receiptPayments.receiptKey, receiptKeys));
 
   const lineItemsByReceipt = new Map<string, typeof lineItems>();
   for (const row of lineItems) {

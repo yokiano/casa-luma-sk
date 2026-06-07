@@ -36,25 +36,64 @@ const getConnectionString = () => {
   return connectionString;
 };
 
-let cachedDb: ReturnType<typeof drizzle<typeof schema>> | null = null;
+type DrizzleDatabase = ReturnType<typeof drizzle<typeof schema>>;
+type PostgresClient = ReturnType<typeof postgres>;
 
-const createDb = () => {
-  const sql = postgres(getConnectionString(), {
+interface CachedDatabaseClient {
+  connectionString: string;
+  sql: PostgresClient;
+  db: DrizzleDatabase;
+}
+
+declare global {
+  // Keep a single Postgres pool across Vite SSR module reloads. Without this,
+  // every HMR edit can leave another pool alive until its idle timeout, which
+  // can exhaust Neon/Postgres connections and make even simple receipt queries fail.
+  // eslint-disable-next-line no-var
+  var __casaLumaDatabaseClient: CachedDatabaseClient | undefined;
+}
+
+let cachedClient: CachedDatabaseClient | null = null;
+
+const createClient = (connectionString: string): CachedDatabaseClient => {
+  const sql = postgres(connectionString, {
     max: 10,
     idle_timeout: 20,
     connect_timeout: 10,
     prepare: false
   });
 
-  return drizzle(sql, { schema });
+  return {
+    connectionString,
+    sql,
+    db: drizzle(sql, { schema })
+  };
 };
 
-const getDb = () => {
-  cachedDb ??= createDb();
-  return cachedDb;
+const getClient = () => {
+  const connectionString = getConnectionString();
+  const existing = globalThis.__casaLumaDatabaseClient ?? cachedClient;
+  if (existing?.connectionString === connectionString) {
+    cachedClient = existing;
+    globalThis.__casaLumaDatabaseClient = existing;
+    return existing;
+  }
+
+  if (existing) {
+    void existing.sql.end({ timeout: 5 }).catch(() => {
+      // Ignore cleanup errors; the replacement client below is what the request needs.
+    });
+  }
+
+  const nextClient = createClient(connectionString);
+  cachedClient = nextClient;
+  globalThis.__casaLumaDatabaseClient = nextClient;
+  return nextClient;
 };
 
-export const db = new Proxy({} as ReturnType<typeof drizzle<typeof schema>>, {
+const getDb = () => getClient().db;
+
+export const db = new Proxy({} as DrizzleDatabase, {
   get(_target, property, receiver) {
     return Reflect.get(getDb(), property, receiver);
   }
