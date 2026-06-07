@@ -26,6 +26,12 @@ For client-triggered actions after page load, use the project’s remote-functio
 
 Generated Notion database clients live in `src/lib/notion-sdk/dbs/*`. Prefer these over raw Notion property objects when the database already exists.
 
+Current tool docs include:
+
+- [`memberships.md`](./memberships.md) for `/tools/memberships` weekly/monthly membership and flexi pass records.
+- [`mgmt-dashboard.md`](./mgmt-dashboard.md) for management dashboard operations.
+- [`expense-scan.md`](./expense-scan.md) and [`close-shift-expenses.md`](./close-shift-expenses.md) for expense workflows.
+
 Common pattern:
 
 1. Instantiate the generated DB with `NOTION_API_KEY`.

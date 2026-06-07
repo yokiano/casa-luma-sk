@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { Baby, ExternalLink, Hash, Heart, Mail, Phone, User, Users } from 'lucide-svelte';
+  import { Baby, Hash, Heart, Mail, Phone, User, Users } from 'lucide-svelte';
+  import CustomerReceiptsLink from '$lib/components/CustomerReceiptsLink.svelte';
 
   type FamilySummary = {
     id: string;
@@ -24,12 +25,6 @@
   }
 
   let { family, customerId = null }: Props = $props();
-
-  const receiptsHref = $derived.by(() => {
-    if (!customerId) return '/tools/receipts';
-    const params = new URLSearchParams({ customerId, tab: 'receipts', view: 'compact', sortOrder: 'desc' });
-    return `/tools/receipts?${params.toString()}`;
-  });
 
   const getMemberIcon = (type: string | null) => {
     const normalized = type?.toLowerCase() ?? '';
@@ -94,15 +89,7 @@
       {/if}
     </div>
 
-    {#if customerId}
-      <a
-        class="inline-flex items-center gap-2 rounded-full bg-[#7a6550] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#6a5847]"
-        href={receiptsHref}
-      >
-        View customer receipts
-        <ExternalLink size={14} />
-      </a>
-    {/if}
+    <CustomerReceiptsLink {customerId} />
   </div>
 
   {#if family && family.members.length}

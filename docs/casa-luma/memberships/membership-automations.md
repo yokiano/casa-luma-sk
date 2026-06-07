@@ -6,6 +6,7 @@ Current automations:
 
 - Create Notion `🎫 Memberships` rows from eligible weekly/monthly membership purchase receipts.
 - Create structured Notion `🎟️ Flexi Passes` rows from eligible `Flexible Resident` / `flexible Regular` flexi purchase receipts.
+- Synchronize Notion `🎟️ Flexi Passes` `Entries Used` / `Entries Left` counters from `Flexi Single Entrance` usage receipts.
 
 ## Current webhook context
 
@@ -15,7 +16,7 @@ Current flow:
 
 1. Parse receipt webhook payloads.
 2. Ingest each receipt into Neon through `src/lib/server/db/ingest-receipt-webhook.ts`.
-3. Run receipt automations: membership creation first, then flexi pass purchase creation.
+3. Run receipt automations: membership creation first, then flexi pass purchase creation, then flexi pass usage counter synchronization.
 4. Run receipt validation rules and report violations.
 
 Receipt automations should run only for receipts whose ingestion result is `processed`. Duplicate and stale webhook events should not create or update memberships or flexi pass records.
@@ -55,7 +56,16 @@ Flexi pass purchase automation writes to the dedicated `🎟️ Flexi Passes` da
 - Missing customer or missing Family fails and alerts, matching weekly/monthly membership behavior.
 - Cancelled receipts are skipped and alerted for review.
 - Refund receipts mark matching flexi pass rows as `Refunded`, set `Entries Left = 0`, and store refund receipt metadata.
-- Usage allocation, validation replacement, UI display refinements, and backfill/import are later milestones.
+
+Flexi pass usage automation runs on `Flexi Single Entrance` receipts:
+
+- Uses Neon receipt history as the idempotent source of truth for cumulative entries used by the Loyverse customer.
+- Finds non-refunded Flexi Passes records for that Loyverse customer whose `Valid From` is on/before the receipt date.
+- Allocates cumulative used entries oldest pass first.
+- Updates each affected Notion row's `Entries Used` and `Entries Left` only when the stored counters differ.
+- Skips missing-customer/no-pass cases without writing; receipt validation still raises the operational warning.
+
+Validation replacement and backfill/import are later milestones.
 
 ## Idempotency
 
@@ -83,9 +93,11 @@ src/lib/receipts/automations/
   index.ts
   membership-items.ts
   membership-creation.ts
+  flexi-pass-purchase.ts
+  flexi-pass-usage.ts
 ```
 
-This keeps the webhook route from becoming membership-specific and leaves room for later automations, such as membership renewal, extension, refund handling, or reminder tasks.
+This keeps the webhook route from becoming membership-specific and leaves room for later automations, such as membership renewal, extension, refund handling, backfill/reconciliation, or reminder tasks.
 
 ## Information still needed
 

@@ -36,7 +36,7 @@ Validation steps:
 6. Because webhook validation runs after ingestion, compute balance before the current receipt by adding the current receipt's flexi quantity back to the aggregate after-current balance.
 7. Alert when the balance before the current receipt is lower than the current receipt's flexi entry quantity.
 
-Note: flexi card purchase automation now writes structured rows to the dedicated `🎟️ Flexi Passes` database. This validation rule still uses receipt-history balance until the next validation pass switches to `Flexi Passes` as primary and uses receipt history only as fallback/reconciliation.
+Note: flexi card purchase automation writes structured rows to the dedicated `🎟️ Flexi Passes` database, and flexi usage automation synchronizes each active pass row's `Entries Used` / `Entries Left` counters after usage receipts are ingested. This validation rule still uses Neon receipt-history balance as the source of truth so alerts remain idempotent and independent from Notion counter drift. A future validation pass may use `Flexi Passes` as primary and receipt history as fallback/reconciliation.
 
 Finding reasons:
 

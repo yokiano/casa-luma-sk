@@ -203,6 +203,6 @@ describe('flexi pass purchase automation', () => {
 
   it('keeps the default automation suite importable with generated flexi SDK files', async () => {
     const module = await import('$lib/server/membership-automation');
-    expect(module.createDefaultReceiptAutomationSuite()).toHaveLength(2);
+    expect(module.createDefaultReceiptAutomationSuite()).toHaveLength(3);
   });
 });

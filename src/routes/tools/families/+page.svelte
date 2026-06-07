@@ -2,6 +2,7 @@
 	import { toast } from 'svelte-sonner';
 	import { searchFamilies, syncFamilyToLoyverse } from '$lib/tools/families/families.remote';
 	import type { FamilySummary } from '$lib/tools/families/families.server';
+	import CustomerReceiptsLink from '$lib/components/CustomerReceiptsLink.svelte';
 	import { Search, Users, Phone, Mail, Hash, User, Baby, Heart, Info, Loader2 } from 'lucide-svelte';
 
 	let searchValue = $state('');
@@ -156,7 +157,14 @@
 										{/if}
 									</div>
 								</div>
-								{#if !family.loyverseCustomerId}
+								{#if family.loyverseCustomerId}
+									<CustomerReceiptsLink
+										customerId={family.loyverseCustomerId}
+										label="Receipts"
+										variant="subtle"
+										class="shrink-0 text-xs uppercase tracking-wide"
+									/>
+								{:else}
 									<button
 										type="button"
 										class="inline-flex shrink-0 items-center gap-2 rounded-xl border border-[#d8c7b8] bg-[#faf6f2] px-3 py-2 text-xs font-semibold uppercase tracking-wide text-[#7a6550] transition hover:border-[#b99d85] hover:bg-[#f4ece4] disabled:cursor-not-allowed disabled:opacity-60"

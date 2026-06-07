@@ -22,6 +22,12 @@ import {
   type ExistingFlexiPassRecordQuery,
   type FlexiPassPurchaseAutomationDeps
 } from '$lib/receipts/automations/flexi-pass-purchase';
+import {
+  createFlexiPassUsageAutomation,
+  type FlexiPassUsageAutomationDeps,
+  type FlexiPassUsageRecord
+} from '$lib/receipts/automations/flexi-pass-usage';
+import { queryFlexiPassBalanceForCustomer } from '$lib/server/db/flexi-pass-queries';
 import type { ReceiptAutomation } from '$lib/receipts/automations/types';
 
 const normalizeId = (value: string) => value.trim();
@@ -50,6 +56,17 @@ const flexiRecordMatchesReceipt = (dto: FlexiPassesResponseDTO, query: ExistingF
 const toExistingFlexiPassRecord = (dto: FlexiPassesResponseDTO) => ({
   id: dto.id,
   name: dto.properties.name?.text ?? 'Untitled Flexi Pass'
+});
+
+const toFlexiPassUsageRecord = (dto: FlexiPassesResponseDTO): FlexiPassUsageRecord => ({
+  id: dto.id,
+  name: dto.properties.name?.text ?? 'Untitled Flexi Pass',
+  entriesGranted: dto.properties.entriesGranted ?? 0,
+  entriesUsed: dto.properties.entriesUsed ?? 0,
+  entriesLeft: dto.properties.entriesLeft ?? 0,
+  validFrom: dto.properties.validFrom?.start ?? null,
+  validUntil: dto.properties.validUntil?.start ?? null,
+  createdTime: dto.createdTime
 });
 
 const notesContainReceiptProvenance = (notes: string | null | undefined, query: ExistingMembershipQuery) => {
@@ -310,11 +327,50 @@ export const createNotionFlexiPassAutomationDeps = (
   }
 });
 
+export const createNotionFlexiPassUsageAutomationDeps = (): FlexiPassUsageAutomationDeps => ({
+  lookupFlexiBalance: queryFlexiPassBalanceForCustomer,
+
+  async findFlexiPassRecordsForUsage({ loyverseCustomerId, at }) {
+    const flexiDb = new FlexiPassesDatabase({ notionSecret: NOTION_API_KEY });
+    const response = await flexiDb.query({
+      page_size: 100,
+      filter: { loyverseCustomerId: { contains: normalizeId(loyverseCustomerId) } },
+      sorts: [{ property: 'Valid From', direction: 'ascending' }]
+    } as any);
+    const atDate = at.slice(0, 10);
+    const normalizedCustomerId = normalizeId(loyverseCustomerId);
+
+    return response.results
+      .map((result) => new FlexiPassesResponseDTO(result as any))
+      .filter((dto) => {
+        const status = dto.properties.automationStatus?.name ?? '';
+        const customerId = normalizeId(dto.properties.loyverseCustomerId.text ?? '');
+        const validFrom = dto.properties.validFrom?.start ?? null;
+        return customerId === normalizedCustomerId &&
+          status !== FLEXI_PASS_REFUNDED_STATUS &&
+          (!validFrom || validFrom <= atDate);
+      })
+      .map(toFlexiPassUsageRecord);
+  },
+
+  async updateFlexiPassUsage(input) {
+    const flexiDb = new FlexiPassesDatabase({ notionSecret: NOTION_API_KEY });
+    const updated = await flexiDb.updatePage(input.recordId, new FlexiPassesPatchDTO({
+      properties: {
+        entriesUsed: input.entriesUsed,
+        entriesLeft: input.entriesLeft
+      }
+    }));
+    return toFlexiPassUsageRecord(new FlexiPassesResponseDTO(updated as any));
+  }
+});
+
 export const createDefaultReceiptAutomationSuite = (): ReceiptAutomation[] => {
   const notionMembershipDeps = createNotionMembershipAutomationDeps();
 
   return [
     createMembershipFromReceiptAutomation({ deps: notionMembershipDeps }),
-    createFlexiPassPurchaseAutomation({ deps: createNotionFlexiPassAutomationDeps(notionMembershipDeps) })
+    createFlexiPassPurchaseAutomation({ deps: createNotionFlexiPassAutomationDeps(notionMembershipDeps) }),
+    createFlexiPassUsageAutomation({ deps: createNotionFlexiPassUsageAutomationDeps() })
   ];
 };

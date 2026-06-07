@@ -3,19 +3,22 @@
 	import { toast } from 'svelte-sonner';
 	import { getMemberships, deleteMembership, getFamilyDetails } from '$lib/memberships.remote';
 	import MembershipDialog from './MembershipDialog.svelte';
+	import CustomerReceiptsLink from '$lib/components/CustomerReceiptsLink.svelte';
 	import { ChevronDown, ChevronUp, MoreVertical, Pencil, Trash2, Loader2, ArrowUpDown, CalendarDays, ExternalLink } from 'lucide-svelte';
 
 	type FamilySummary = {
 		id: string;
 		familyName: string;
 		customerCode: string | null;
+		loyverseCustomerId: string | null;
 		mainPhone: string | null;
 	};
 
 	type MembershipItem = {
 		id: string;
+		kind: 'membership' | 'flexi-pass';
 		name: string;
-		type: 'Weekly' | 'Monthly' | null;
+		type: 'Weekly' | 'Monthly' | 'Flexi Pass' | null;
 		numberOfKids: number | null;
 		startDate: string | null;
 		endDate: string | null;
@@ -24,6 +27,10 @@
 		receipt: string | null;
 		createdTime: string;
 		family: FamilySummary | null;
+		cardCount?: number | null;
+		entriesGranted?: number | null;
+		entriesUsed?: number | null;
+		entriesLeft?: number | null;
 	};
 
 	let { data }: { data: PageData } = $props();
@@ -190,12 +197,22 @@
 			}
 		}
 		
+		if (membership.kind === 'flexi-pass') {
+			toast.error('Flexi passes are read-only here. Update them from the Flexi Passes Notion database or receipt automation.');
+			return;
+		}
+
 		editingMembership = membership;
 		editDialogOpen = true;
 	};
 
 	const handleDelete = async (membership: MembershipItem) => {
 		openMenuId = null;
+		if (membership.kind === 'flexi-pass') {
+			toast.error('Flexi passes are read-only here. Update them from the Flexi Passes Notion database or receipt automation.');
+			return;
+		}
+
 		if (!confirm(`Delete membership for "${membership.family?.familyName ?? 'Unknown Family'}"? This cannot be undone.`)) {
 			return;
 		}
@@ -221,7 +238,7 @@
 
 	// Check if family has full details (customerCode or mainPhone loaded)
 	const hasFamilyDetails = (membership: MembershipItem) => {
-		return membership.family?.customerCode !== null || membership.family?.mainPhone !== null;
+		return membership.family?.customerCode !== null || membership.family?.mainPhone !== null || membership.family?.loyverseCustomerId !== null;
 	};
 
 	const loadFamilyDetails = async (membership: MembershipItem) => {
@@ -384,13 +401,20 @@
 									</span>
 								{/if}
 								{#if membership.type}
-									<span class="rounded-full bg-[#e3d7cc]/50 px-2.5 py-0.5 text-xs font-medium uppercase tracking-wide text-[#5c4a3d]">
+									<span class={membership.kind === 'flexi-pass'
+										? 'rounded-full bg-sky-50 px-2.5 py-0.5 text-xs font-medium uppercase tracking-wide text-sky-700'
+										: 'rounded-full bg-[#e3d7cc]/50 px-2.5 py-0.5 text-xs font-medium uppercase tracking-wide text-[#5c4a3d]'}>
 										{membership.type}
 									</span>
 								{/if}
 								{#if membership.numberOfKids !== null && membership.numberOfKids !== undefined}
 									<span class="rounded-full bg-[#e3d7cc]/50 px-2.5 py-0.5 text-xs font-medium text-[#5c4a3d]">
 										{membership.numberOfKids} {membership.numberOfKids === 1 ? 'kid' : 'kids'}
+									</span>
+								{/if}
+								{#if membership.kind === 'flexi-pass'}
+									<span class="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
+										{membership.entriesLeft ?? 0}/{membership.entriesGranted ?? 0} entries left
 									</span>
 								{/if}
 								{#if membership.startDate}
@@ -418,6 +442,13 @@
 							</div>
 						</button>
 
+						<CustomerReceiptsLink
+							customerId={membership.family?.loyverseCustomerId}
+							label="Receipts"
+							variant="subtle"
+							class="text-xs"
+						/>
+
 						{#if membership.receipt}
 							<a
 								href={membership.receipt}
@@ -443,22 +474,26 @@
 							</button>
 							{#if isMenuOpen}
 								<div class="absolute right-0 top-full z-50 mt-1 w-40 rounded-2xl border border-[#e3d7cc] bg-white py-1 shadow-lg">
-									<button
-										type="button"
-										onclick={() => handleEdit(membership)}
-										class="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-[#5c4a3d] transition hover:bg-[#fdfbf9]"
-									>
-										<Pencil class="h-4 w-4" />
-										Edit
-									</button>
-									<button
-										type="button"
-										onclick={() => handleDelete(membership)}
-										class="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 transition hover:bg-red-50"
-									>
-										<Trash2 class="h-4 w-4" />
-										Delete
-									</button>
+									{#if membership.kind === 'membership'}
+										<button
+											type="button"
+											onclick={() => handleEdit(membership)}
+											class="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-[#5c4a3d] transition hover:bg-[#fdfbf9]"
+										>
+											<Pencil class="h-4 w-4" />
+											Edit
+										</button>
+										<button
+											type="button"
+											onclick={() => handleDelete(membership)}
+											class="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 transition hover:bg-red-50"
+										>
+											<Trash2 class="h-4 w-4" />
+											Delete
+										</button>
+									{:else}
+										<div class="px-4 py-2 text-xs text-[#7a6550]/70">Flexi pass records are read-only here.</div>
+									{/if}
 								</div>
 							{/if}
 						</div>
@@ -495,14 +530,22 @@
 											<span>Loading details...</span>
 										</div>
 									</div>
-								{:else if membership.family?.customerCode || membership.family?.mainPhone}
-									<div class="rounded-2xl border border-[#f0e6db] bg-[#fdfbf9] px-4 py-3 text-xs text-[#7a6550]/80">
-										{#if membership.family?.customerCode}
-											<p>Customer Code: {membership.family.customerCode}</p>
-										{/if}
-										{#if membership.family?.mainPhone}
-											<p>Phone: {membership.family.mainPhone}</p>
-										{/if}
+								{:else if membership.family?.customerCode || membership.family?.mainPhone || membership.family?.loyverseCustomerId}
+									<div class="flex flex-col items-start gap-3 rounded-2xl border border-[#f0e6db] bg-[#fdfbf9] px-4 py-3 text-xs text-[#7a6550]/80">
+										<div>
+											{#if membership.family?.customerCode}
+												<p>Customer Code: {membership.family.customerCode}</p>
+											{/if}
+											{#if membership.family?.mainPhone}
+												<p>Phone: {membership.family.mainPhone}</p>
+											{/if}
+										</div>
+										<CustomerReceiptsLink
+											customerId={membership.family?.loyverseCustomerId}
+											label="View customer receipts"
+											variant="subtle"
+											class="text-xs"
+										/>
 									</div>
 								{/if}
 							</div>
@@ -521,6 +564,27 @@
 									<p class="mt-1">{formatDate(membership.createdTime)}</p>
 								</div>
 							</div>
+
+							{#if membership.kind === 'flexi-pass'}
+								<div class="mt-4 grid gap-3 text-sm text-[#5c4a3d] sm:grid-cols-4">
+									<div class="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3">
+										<p class="text-xs uppercase tracking-wide text-emerald-700/70">Cards</p>
+										<p class="mt-1 text-lg font-semibold text-emerald-800">{membership.cardCount ?? 0}</p>
+									</div>
+									<div class="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3">
+										<p class="text-xs uppercase tracking-wide text-emerald-700/70">Granted</p>
+										<p class="mt-1 text-lg font-semibold text-emerald-800">{membership.entriesGranted ?? 0}</p>
+									</div>
+									<div class="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3">
+										<p class="text-xs uppercase tracking-wide text-amber-700/70">Used</p>
+										<p class="mt-1 text-lg font-semibold text-amber-800">{membership.entriesUsed ?? 0}</p>
+									</div>
+									<div class="rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3">
+										<p class="text-xs uppercase tracking-wide text-sky-700/70">Left</p>
+										<p class="mt-1 text-lg font-semibold text-sky-800">{membership.entriesLeft ?? 0}</p>
+									</div>
+								</div>
+							{/if}
 
 							{#if membership.receipt}
 								<div class="mt-4 rounded-2xl border border-[#f0e6db] bg-[#fdfbf9] px-4 py-3 text-sm text-[#5c4a3d]/90">
@@ -551,7 +615,7 @@
 					onclick={loadMore}
 					disabled={isLoadingMore}
 				>
-					{isLoadingMore ? 'Loading...' : 'Load more memberships'}
+					{isLoadingMore ? 'Loading...' : 'Load more records'}
 				</button>
 			</div>
 		{/if}

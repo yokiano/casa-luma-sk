@@ -8,6 +8,7 @@
 		id: string;
 		familyName: string;
 		customerCode: string | null;
+		loyverseCustomerId: string | null;
 		mainPhone: string | null;
 		members?: {
 			id: string;

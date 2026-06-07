@@ -10,13 +10,15 @@
 		id: string;
 		familyName: string;
 		customerCode: string | null;
+		loyverseCustomerId: string | null;
 		mainPhone: string | null;
 	};
 
 	type MembershipItem = {
 		id: string;
+		kind: 'membership' | 'flexi-pass';
 		name: string;
-		type: 'Weekly' | 'Monthly' | null;
+		type: 'Weekly' | 'Monthly' | 'Flexi Pass' | null;
 		numberOfKids: number | null;
 		startDate: string | null;
 		endDate: string | null;
@@ -114,7 +116,7 @@
 			return;
 		}
 		selectedFamily = m.family;
-		membershipType = m.type ?? MEMBERSHIPS_PROP_VALUES.type[0];
+		membershipType = m.type === 'Weekly' || m.type === 'Monthly' ? m.type : MEMBERSHIPS_PROP_VALUES.type[0];
 		numberOfKids = m.numberOfKids ?? 1;
 		startDate = m.startDate ?? getTodayDate();
 		// If the existing end date differs from calculated, it was overridden
