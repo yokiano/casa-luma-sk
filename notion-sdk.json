@@ -35,6 +35,10 @@
     {
       "name": "🎟️ Flexi Passes duplicate archived",
       "id": "81b2e172-fe5a-4870-8e36-41ed03b1a42f"
+    },
+    {
+      "name": "Birthday Bookings",
+      "id": "ee484a74-61bb-4585-9a0b-9b5d0a9c02f3"
     }
   ],
   "databases": {
@@ -379,6 +383,18 @@
           "_name": "Add-ons",
           "_type": "relation",
           "varName": "addOns",
+          "readOnly": false
+        },
+        "Npis": {
+          "_name": "Exclude From Menu",
+          "_type": "checkbox",
+          "varName": "excludeFromMenu",
+          "readOnly": false
+        },
+        "vxzf": {
+          "_name": "Internal Notes",
+          "_type": "rich_text",
+          "varName": "internalNotes",
           "readOnly": false
         },
         "avHW": {
@@ -2566,7 +2582,7 @@
       }
     },
     "b1e1d005-eaf0-4dc3-9d25-8d7df3404b36": {
-      "_name": "🎟️ Flexi Passes",
+      "_name": " Flexi Passes",
       "varName": "flexiPasses",
       "pathName": "flexi-passes",
       "properties": {

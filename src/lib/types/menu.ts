@@ -46,6 +46,7 @@ export interface MenuItem {
 	highlight: boolean;
 	recommended: boolean;
 	isAvailable: boolean;
+	excludeFromMenu?: boolean;
 	status: MenuItemStatus;
 	availabilityWindow?: MenuAvailability;
 	image?: string;

@@ -116,4 +116,71 @@ describe('preparePublicMenuSummary', () => {
 		expect(prepared.grandCategories[0].sections[0].items).toHaveLength(2);
 		expect(prepared.grandCategories[0].sections[0].items[0].name).toBe('Margherita');
 	});
+
+	it('excludes items marked excludeFromMenu in Notion', () => {
+		const menu: MenuSummary = {
+			grandCategories: [
+				{
+					id: 'food',
+					name: 'Food',
+					sections: [
+						{
+							id: 'pizza',
+							name: 'Pizza',
+							order: 1,
+							items: [
+								{
+									id: '1',
+									name: 'Visible Pizza',
+									slug: 'visible-pizza',
+									section: 'Pizza',
+									grandCategory: 'Food',
+									category: 'Pizza',
+									description: '',
+									price: 100,
+									dietaryTags: [],
+									allergens: [],
+									highlight: false,
+									recommended: false,
+									isAvailable: true,
+									excludeFromMenu: false,
+									status: 'Active',
+									tags: [],
+									order: 1
+								},
+								{
+									id: '2',
+									name: 'Hidden Pizza',
+									slug: 'hidden-pizza',
+									section: 'Pizza',
+									grandCategory: 'Food',
+									category: 'Pizza',
+									description: '',
+									price: 120,
+									dietaryTags: [],
+									allergens: [],
+									highlight: false,
+									recommended: false,
+									isAvailable: true,
+									excludeFromMenu: true,
+									status: 'Active',
+									tags: [],
+									order: 2
+								}
+							]
+						}
+					]
+				}
+			],
+			sections: [],
+			highlights: [],
+			tags: [],
+			dietaryTags: [],
+			allModifiers: []
+		};
+
+		const prepared = preparePublicMenuSummary(menu);
+		expect(prepared.grandCategories[0].sections[0].items).toHaveLength(1);
+		expect(prepared.grandCategories[0].sections[0].items[0].name).toBe('Visible Pizza');
+	});
 });

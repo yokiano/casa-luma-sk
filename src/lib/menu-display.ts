@@ -23,7 +23,7 @@ export function normalizeSectionKey(value: string | undefined): string {
 }
 
 export function isPublicMenuItem(item: MenuItem): boolean {
-	return item.status === 'Active' && item.isAvailable;
+	return item.status === 'Active' && item.isAvailable && !item.excludeFromMenu;
 }
 
 function sortItems(items: MenuItem[]) {

@@ -43,7 +43,8 @@ const MENU_PROPERTIES = {
 	sectionAccent: 'Section Accent Color',
 	sectionBackground: 'Section Background',
 	modifiers: 'Modifiers',
-	sectionModifiers: 'Section Modifiers'
+	sectionModifiers: 'Section Modifiers',
+	excludeFromMenu: 'Exclude From Menu'
 } as const;
 
 const ensureMenuConfigured = () => {
@@ -120,6 +121,9 @@ const toMenuItem = (page: any, modifiersMap?: Map<string, MenuModifier>): MenuIt
 		isAvailable: props[MENU_PROPERTIES.available]
 			? getCheckboxValue(props[MENU_PROPERTIES.available])
 			: true,
+		excludeFromMenu: props[MENU_PROPERTIES.excludeFromMenu]
+			? getCheckboxValue(props[MENU_PROPERTIES.excludeFromMenu])
+			: false,
 		status: normalizeStatus(statusRaw),
 		availabilityWindow: availabilityValue
 			? (availabilityValue as MenuItem['availabilityWindow'])

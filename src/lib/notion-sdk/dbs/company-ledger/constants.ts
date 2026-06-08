@@ -1,12 +1,12 @@
 export const COMPANY_LEDGER_PROP_VALUES = {
 "type": [
-  "Bank Transfer Expense",
   "Credit Card Income",
   "Scan Income",
   "Bank Deposit Income",
-  "Expense from Backup",
   "Scan Expense",
   "Register Expense",
+  "Expense from Backup",
+  "Bank Transfer Expense",
   "Refund",
   "Owner Draw",
   "Owner Contribution",

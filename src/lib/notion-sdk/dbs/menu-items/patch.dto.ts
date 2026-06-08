@@ -30,6 +30,8 @@ export type MenuItemsPropertiesPatch = {
   recommended?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'checkbox' }>['checkbox']
   thaiDescription?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
   addOns?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'relation' }>['relation']
+  excludeFromMenu?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'checkbox' }>['checkbox']
+  internalNotes?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
 }
 
   
@@ -365,6 +367,35 @@ export class MenuItemsPatchDTO {
       this.__data.properties['owUh'] = {
         type: 'relation',
         relation: props.addOns,
+      }
+    }
+
+    if (props?.excludeFromMenu !== undefined) {
+      this.__data.properties['Npis'] = {
+        type: 'checkbox',
+        checkbox: props.excludeFromMenu,
+      }
+    }
+
+    if (props?.internalNotes !== undefined) {
+      this.__data.properties['vxzf'] = {
+        type: 'rich_text',
+        rich_text: typeof props.internalNotes === 'string' 
+          ? [{ type: 'text', text: { content: props.internalNotes } }]
+          : Array.isArray(props.internalNotes)
+            ? props.internalNotes
+            : props.internalNotes === null
+              ? []
+              : [
+                  {
+                    type: 'text',
+                    text: {
+                      content: props.internalNotes.text,
+                      link: props.internalNotes?.url ? { url: props.internalNotes.url } : undefined
+                    },
+                    annotations: props.internalNotes.annotations
+                  },
+                ]
       }
     }
   }

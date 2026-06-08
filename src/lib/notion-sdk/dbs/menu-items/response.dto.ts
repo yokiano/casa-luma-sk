@@ -85,6 +85,8 @@ export class MenuItemsPropertiesResponseDTO {
       recommended: this.__props['Recommended'],
       thaiDescription: this.__props['Thai Description'],
       addOns: this.__props['Add-ons'],
+      excludeFromMenu: this.__props['Exclude From Menu'],
+      internalNotes: this.__props['Internal Notes'],
       createdTime: this.__props['Created time'],
     }
   }
@@ -238,6 +240,18 @@ export class MenuItemsPropertiesResponseDTO {
     return (this.__props['Add-ons']?.relation as unknown as Array<{ id: string }>).map((item) => item.id)  
   }
 
+
+  get excludeFromMenu() {
+    return this.__props['Exclude From Menu']?.checkbox
+  }
+
+  get internalNotes() {
+    return {
+      text: this.__props['Internal Notes']?.rich_text ? this.__props['Internal Notes'].rich_text.reduce((acc, item) => acc + item.plain_text, '') : undefined,
+      links: this.__props['Internal Notes']?.rich_text ? this.__props['Internal Notes'].rich_text.filter((item) => item.href?.length).map((item) => item.href) : [],
+      rich_text: this.__props['Internal Notes']?.rich_text,
+    }
+  }
 
   get createdTime() {
     return this.__props['Created time']?.created_time
