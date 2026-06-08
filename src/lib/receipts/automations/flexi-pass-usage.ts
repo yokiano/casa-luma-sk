@@ -146,11 +146,17 @@ export const createFlexiPassUsageAutomation = (options: FlexiPassUsageAutomation
         ]);
 
         if (!records.length) {
+          const hasPurchasedFlexiEntries = balance.entriesPurchased > 0;
+
           return skipped('No Flexi Passes Notion records found for this usage receipt.', {
             reason: 'no_flexi_pass_records',
+            ...(hasPurchasedFlexiEntries ? { incidentCode: 'FLEXI_PASS_USAGE_NO_NOTION_RECORDS' } : {}),
             receiptNumber: receipt.receipt_number,
             customerId,
-            currentReceiptEntries
+            currentReceiptEntries,
+            entriesPurchased: balance.entriesPurchased,
+            entriesUsedIncludingCurrent: balance.entriesUsedIncludingCurrent,
+            remainingAfterCurrentReceipt: balance.remainingAfterCurrentReceipt
           });
         }
 

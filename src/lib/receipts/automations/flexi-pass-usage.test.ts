@@ -106,6 +106,53 @@ describe('flexi pass usage automation', () => {
     expect(deps.updateFlexiPassUsage).not.toHaveBeenCalled();
   });
 
+  it('flags missing Notion flexi records when Neon shows purchased entries', async () => {
+    const deps = createDeps({ findFlexiPassRecordsForUsage: vi.fn().mockResolvedValue([]) });
+
+    const results = await runAutomation(createReceipt(), deps);
+
+    expect(results[0]).toMatchObject({
+      status: 'skipped',
+      details: {
+        reason: 'no_flexi_pass_records',
+        incidentCode: 'FLEXI_PASS_USAGE_NO_NOTION_RECORDS',
+        entriesPurchased: 11,
+        entriesUsedIncludingCurrent: 3
+      }
+    });
+    expect(deps.updateFlexiPassUsage).not.toHaveBeenCalled();
+  });
+
+  it('skips missing Notion flexi records quietly when Neon shows no purchased entries', async () => {
+    const deps = createDeps({
+      lookupFlexiBalance: vi.fn().mockResolvedValue({
+        customerId: 'cust-1',
+        passEntriesPerCard: 11,
+        cardsPurchased: 0,
+        entriesPurchased: 0,
+        entriesUsedIncludingCurrent: 1,
+        currentReceiptEntries: 1,
+        remainingBeforeCurrentReceipt: 0,
+        remainingAfterCurrentReceipt: -1,
+        firstPurchaseAt: null,
+        lastPurchaseAt: null
+      }),
+      findFlexiPassRecordsForUsage: vi.fn().mockResolvedValue([])
+    });
+
+    const results = await runAutomation(createReceipt(), deps);
+
+    expect(results[0]).toMatchObject({
+      status: 'skipped',
+      details: {
+        reason: 'no_flexi_pass_records',
+        entriesPurchased: 0
+      }
+    });
+    expect(results[0].details?.incidentCode).toBeUndefined();
+    expect(deps.updateFlexiPassUsage).not.toHaveBeenCalled();
+  });
+
   it('skips non-usage receipts', async () => {
     const deps = createDeps();
 

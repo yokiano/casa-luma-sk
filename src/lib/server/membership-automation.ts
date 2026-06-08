@@ -335,7 +335,7 @@ export const createNotionFlexiPassUsageAutomationDeps = (): FlexiPassUsageAutoma
     const response = await flexiDb.query({
       page_size: 100,
       filter: { loyverseCustomerId: { contains: normalizeId(loyverseCustomerId) } },
-      sorts: [{ property: 'Valid From', direction: 'ascending' }]
+      sorts: [{ property: 'validFrom', direction: 'ascending' }]
     } as any);
     const atDate = at.slice(0, 10);
     const normalizedCustomerId = normalizeId(loyverseCustomerId);
