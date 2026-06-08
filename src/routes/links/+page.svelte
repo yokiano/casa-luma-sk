@@ -3,7 +3,7 @@
 	import logoSymbol from '$lib/assets/logo/logo-black-on-transparent-only-symbol.png';
 
 	const links = [
-		{ title: 'Menu', href: '#', status: 'Coming soon', icon: UtensilsCrossed, comingSoon: true },
+		{ title: 'Our Menu', href: '/menu', status: 'Open', icon: UtensilsCrossed, comingSoon: false },
 		{ title: 'Birthday', href: '/birthdays', status: 'Open', icon: PartyPopper, comingSoon: false },
 		{ title: 'Workshops', href: '#', status: 'Coming soon', icon: CalendarDays, comingSoon: true }
 	];

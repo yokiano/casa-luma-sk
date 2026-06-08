@@ -84,6 +84,13 @@ export const SITE_MENU_ITEMS: readonly MenuItem[] = [
 	// { id: 'open-play', label: 'Open Play', href: '/open-play', inHeader: true, inFooter: true },
 	// { id: 'pricing', label: 'Pricing', href: '/pricing', inHeader: true, inFooter: true },
 	{
+		id: 'menu',
+		label: 'Our Menu',
+		href: '/menu',
+		inHeader: true,
+		inFooter: true
+	},
+	{
 		id: 'birthdays',
 		label: 'Birthdays',
 		href: '/birthdays',
