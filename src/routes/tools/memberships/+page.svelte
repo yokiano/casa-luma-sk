@@ -4,7 +4,7 @@
 	import { getMemberships, deleteMembership, getFamilyDetails } from '$lib/memberships.remote';
 	import MembershipDialog from './MembershipDialog.svelte';
 	import CustomerReceiptsLink from '$lib/components/CustomerReceiptsLink.svelte';
-	import { ChevronDown, ChevronUp, MoreVertical, Pencil, Trash2, Loader2, ArrowUpDown, CalendarDays, ExternalLink } from 'lucide-svelte';
+	import { ChevronDown, ChevronUp, MoreVertical, Pencil, Trash2, Loader2, ArrowUpDown, CalendarDays, ExternalLink, Printer } from 'lucide-svelte';
 
 	type FamilySummary = {
 		id: string;
@@ -286,7 +286,16 @@
 				Manage active memberships, link them to families, and track durations.
 			</p>
 		</div>
-		<MembershipDialog mode="create" onSaved={handleCreated} />
+		<div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+			<a
+				href="/tools/memberships/print-check-in-paper"
+				class="inline-flex items-center justify-center gap-2 rounded-full border border-[#d9d0c7] bg-white px-4 py-2 text-sm font-medium text-[#7a6550] transition hover:bg-[#fdfbf9]"
+			>
+				<Printer class="h-4 w-4" />
+				<span>Print check-in paper</span>
+			</a>
+			<MembershipDialog mode="create" onSaved={handleCreated} />
+		</div>
 	</div>
 
 	<div class="flex flex-col gap-4 rounded-3xl border border-[#e3d7cc] bg-[#faf6f2] p-4">
