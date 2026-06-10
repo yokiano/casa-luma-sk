@@ -71,6 +71,7 @@
 		]
 	},
 	"dependencies": {
+		"@keyv/postgres": "^2.2.3",
 		"@neondatabase/serverless": "^1.0.2",
 		"@notionhq/client": "^5.1.0",
 		"@types/qrcode": "^1.5.6",
@@ -78,6 +79,7 @@
 		"d3-scale": "^4.0.2",
 		"dotenv": "^16.4.5",
 		"drizzle-orm": "^0.45.1",
+		"keyv": "^5.6.0",
 		"mindee": "^4.36.3",
 		"modern-screenshot": "^4.6.6",
 		"postgres": "^3.4.8",
@@ -86,5 +88,6 @@
 		"tesseract.js": "^7.0.0",
 		"valibot": "^1.1.0",
 		"ws": "^8.19.0"
-	}
+	},
+	"packageManager": "pnpm@10.30.1"
 }

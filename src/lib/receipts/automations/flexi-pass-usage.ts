@@ -22,6 +22,11 @@ export type UpdateFlexiPassUsageInput = {
   receiptKey?: string;
 };
 
+export type FlexiPassFamilyMatch = {
+  id: string;
+  name: string;
+};
+
 export type FlexiPassUsageAutomationDeps = {
   lookupFlexiBalance(input: {
     customerId: string;
@@ -31,6 +36,7 @@ export type FlexiPassUsageAutomationDeps = {
     currentReceiptEntries: number;
   }): Promise<FlexiPassBalance>;
   findFlexiPassRecordsForUsage(input: { loyverseCustomerId: string; at: string }): Promise<FlexiPassUsageRecord[]>;
+  findFamilyByLoyverseCustomerId?(input: { loyverseCustomerId: string }): Promise<FlexiPassFamilyMatch | null>;
   updateFlexiPassUsage(input: UpdateFlexiPassUsageInput): Promise<FlexiPassUsageRecord>;
 };
 
@@ -147,16 +153,25 @@ export const createFlexiPassUsageAutomation = (options: FlexiPassUsageAutomation
 
         if (!records.length) {
           const hasPurchasedFlexiEntries = balance.entriesPurchased > 0;
+          const family = options.deps.findFamilyByLoyverseCustomerId
+            ? await options.deps.findFamilyByLoyverseCustomerId({ loyverseCustomerId: customerId })
+            : null;
 
           return skipped('No Flexi Passes Notion records found for this usage receipt.', {
             reason: 'no_flexi_pass_records',
             ...(hasPurchasedFlexiEntries ? { incidentCode: 'FLEXI_PASS_USAGE_NO_NOTION_RECORDS' } : {}),
             receiptNumber: receipt.receipt_number,
             customerId,
+            familyId: family?.id,
+            familyName: family?.name,
             currentReceiptEntries,
+            cardsPurchased: balance.cardsPurchased,
             entriesPurchased: balance.entriesPurchased,
             entriesUsedIncludingCurrent: balance.entriesUsedIncludingCurrent,
-            remainingAfterCurrentReceipt: balance.remainingAfterCurrentReceipt
+            remainingBeforeCurrentReceipt: balance.remainingBeforeCurrentReceipt,
+            remainingAfterCurrentReceipt: balance.remainingAfterCurrentReceipt,
+            firstPurchaseAt: balance.firstPurchaseAt,
+            lastPurchaseAt: balance.lastPurchaseAt
           });
         }
 
@@ -193,11 +208,17 @@ export const createFlexiPassUsageAutomation = (options: FlexiPassUsageAutomation
           }
         };
       } catch (error) {
+        const family = options.deps.findFamilyByLoyverseCustomerId
+          ? await options.deps.findFamilyByLoyverseCustomerId({ loyverseCustomerId: customerId })
+          : null;
+
         return failed('Failed to synchronize Flexi Passes Notion usage counters.', {
           reason: 'notion_usage_update_failed',
           incidentCode: 'FLEXI_PASS_USAGE_NOTION_UPDATE_FAILED',
           receiptNumber: receipt.receipt_number,
           customerId,
+          familyId: family?.id,
+          familyName: family?.name,
           currentReceiptEntries,
           errorMessage: error instanceof Error ? error.message : String(error)
         });

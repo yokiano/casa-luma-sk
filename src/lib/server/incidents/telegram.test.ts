@@ -297,10 +297,44 @@ describe('incident telegram payload formatter', () => {
     expect(payload.body).toContain('<b>Flexi Pass Created Automatically</b>');
     expect(payload.body).toContain('🧾 Receipt: <code>R-FLEXI-AUTO</code>');
     expect(payload.body).toContain('Family: Test Family');
-    expect(payload.body).toContain('Cards: 2');
+    expect(payload.body).toContain('Cards on receipt: 2');
     expect(payload.body).toContain('Entries granted: 22');
     expect(payload.body).toContain('Valid: 2026-01-12 → 2026-03-12');
     expect(payload.body).toContain('<a href="https://admin.example.com/tools/receipts/R-FLEXI-AUTO">Open receipt</a>');
+  });
+
+  it('formats flexi pass usage review incidents with balance context', () => {
+    const payload = buildIncidentAlertPayload({
+      source: 'receipt-webhook',
+      code: 'FLEXI_PASS_USAGE_NO_NOTION_RECORDS',
+      severity: 'warning',
+      message: 'No Flexi Passes Notion records found for this usage receipt.',
+      context: {
+        receiptNumber: '1-5148',
+        familyName: 'Kracoff',
+        customerId: '844a9a3e-b3a5-4b49-bb3f-1dfc75c7e422',
+        automationCode: 'FLEXI_PASS_USAGE_SKIPPED',
+        reason: 'no_flexi_pass_records',
+        cardsPurchased: 2,
+        entriesPurchased: 22,
+        currentReceiptEntries: 1,
+        entriesUsedIncludingCurrent: 12,
+        remainingBeforeCurrentReceipt: 11,
+        remainingAfterCurrentReceipt: 10,
+        firstPurchaseAt: '2026-03-10T10:37:30.000Z',
+        lastPurchaseAt: '2026-05-10T05:28:45.000Z',
+        receiptUrl: 'https://admin.example.com/tools/receipts/1-5148'
+      }
+    });
+
+    expect(payload.title).toBe('⚠️ Flexi pass automation');
+    expect(payload.body).toContain('<b>Flexi Pass Automation Needs Review</b>');
+    expect(payload.body).toContain('Family: Kracoff');
+    expect(payload.body).toContain('Loyverse customer: 844a9a3e-b3a5-4b49-bb3f-1dfc75c7e422');
+    expect(payload.body).toContain('Entries purchased (history): 22');
+    expect(payload.body).toContain('Entries used incl. this receipt: 12');
+    expect(payload.body).toContain('Remaining after receipt: 10');
+    expect(payload.body).toContain('Reason: no flexi pass records');
   });
 
   it('formats membership automation review incidents', () => {

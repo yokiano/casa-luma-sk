@@ -1,4 +1,4 @@
-import { NOTION_API_KEY } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 import { FamiliesDatabase } from '$lib/notion-sdk/dbs/families/db';
 import { FamiliesResponseDTO } from '$lib/notion-sdk/dbs/families/response.dto';
 import { MembershipsDatabase } from '$lib/notion-sdk/dbs/memberships/db';
@@ -29,6 +29,12 @@ import {
 } from '$lib/receipts/automations/flexi-pass-usage';
 import { queryFlexiPassBalanceForCustomer } from '$lib/server/db/flexi-pass-queries';
 import type { ReceiptAutomation } from '$lib/receipts/automations/types';
+
+const getNotionSecret = () => {
+  const value = env.NOTION_API_KEY?.trim() || process.env.NOTION_API_KEY?.trim();
+  if (!value) throw new Error('NOTION_API_KEY is not configured');
+  return value;
+};
 
 const normalizeId = (value: string) => value.trim();
 
@@ -121,7 +127,7 @@ const appendRefundNote = (notes: string | null | undefined, input: {
 export const createNotionMembershipAutomationDeps = (): MembershipAutomationDeps => ({
   async findFamilyByLoyverseCustomerId({ loyverseCustomerId }) {
     const normalizedCustomerId = normalizeId(loyverseCustomerId);
-    const familiesDb = new FamiliesDatabase({ notionSecret: NOTION_API_KEY });
+    const familiesDb = new FamiliesDatabase({ notionSecret: getNotionSecret() });
     const familyResponse = await familiesDb.query({
       page_size: 5,
       filter: {
@@ -143,7 +149,7 @@ export const createNotionMembershipAutomationDeps = (): MembershipAutomationDeps
   },
 
   async findExistingAutomatedMembership(query) {
-    const membershipsDb = new MembershipsDatabase({ notionSecret: NOTION_API_KEY });
+    const membershipsDb = new MembershipsDatabase({ notionSecret: getNotionSecret() });
     const membershipResponse = await membershipsDb.query({
       page_size: 100,
       filter: {
@@ -166,7 +172,7 @@ export const createNotionMembershipAutomationDeps = (): MembershipAutomationDeps
   },
 
   async findAutomatedMembershipsByReceiptNumber({ receiptNumber, itemIds }) {
-    const membershipsDb = new MembershipsDatabase({ notionSecret: NOTION_API_KEY });
+    const membershipsDb = new MembershipsDatabase({ notionSecret: getNotionSecret() });
     const membershipResponse = await membershipsDb.query({
       page_size: 100,
       filter: {
@@ -188,7 +194,7 @@ export const createNotionMembershipAutomationDeps = (): MembershipAutomationDeps
   },
 
   async markMembershipRefunded(input) {
-    const membershipsDb = new MembershipsDatabase({ notionSecret: NOTION_API_KEY });
+    const membershipsDb = new MembershipsDatabase({ notionSecret: getNotionSecret() });
     const current = await membershipsDb.getPage(input.membershipId);
     const currentDto = new MembershipsResponseDTO(current as any);
     const currentMembership = toExistingMembership(currentDto);
@@ -208,7 +214,7 @@ export const createNotionMembershipAutomationDeps = (): MembershipAutomationDeps
   },
 
   async createMembership(input) {
-    const membershipsDb = new MembershipsDatabase({ notionSecret: NOTION_API_KEY });
+    const membershipsDb = new MembershipsDatabase({ notionSecret: getNotionSecret() });
     const name = toMembershipName(input);
     const patch = new MembershipsPatchDTO({
       properties: {
@@ -239,7 +245,7 @@ export const createNotionFlexiPassAutomationDeps = (
   findFamilyByLoyverseCustomerId: familyDeps.findFamilyByLoyverseCustomerId,
 
   async findExistingFlexiPassRecord(query) {
-    const flexiDb = new FlexiPassesDatabase({ notionSecret: NOTION_API_KEY });
+    const flexiDb = new FlexiPassesDatabase({ notionSecret: getNotionSecret() });
     const response = await flexiDb.query({
       page_size: 100,
       filter: query.sourceReceiptKey
@@ -255,7 +261,7 @@ export const createNotionFlexiPassAutomationDeps = (
   },
 
   async findFlexiPassRecordsByReceiptNumber({ receiptNumber, itemIds }) {
-    const flexiDb = new FlexiPassesDatabase({ notionSecret: NOTION_API_KEY });
+    const flexiDb = new FlexiPassesDatabase({ notionSecret: getNotionSecret() });
     const response = await flexiDb.query({
       page_size: 100,
       filter: { sourceReceiptNumber: { equals: receiptNumber } }
@@ -273,7 +279,7 @@ export const createNotionFlexiPassAutomationDeps = (
   },
 
   async markFlexiPassRecordRefunded(input) {
-    const flexiDb = new FlexiPassesDatabase({ notionSecret: NOTION_API_KEY });
+    const flexiDb = new FlexiPassesDatabase({ notionSecret: getNotionSecret() });
     const current = await flexiDb.getPage(input.recordId);
     const currentDto = new FlexiPassesResponseDTO(current as any);
     const updated = await flexiDb.updatePage(input.recordId, new FlexiPassesPatchDTO({
@@ -298,7 +304,7 @@ export const createNotionFlexiPassAutomationDeps = (
   },
 
   async createFlexiPassRecord(input) {
-    const flexiDb = new FlexiPassesDatabase({ notionSecret: NOTION_API_KEY });
+    const flexiDb = new FlexiPassesDatabase({ notionSecret: getNotionSecret() });
     const name = toFlexiPassName(input);
     const patch = new FlexiPassesPatchDTO({
       properties: {
@@ -327,11 +333,14 @@ export const createNotionFlexiPassAutomationDeps = (
   }
 });
 
-export const createNotionFlexiPassUsageAutomationDeps = (): FlexiPassUsageAutomationDeps => ({
+export const createNotionFlexiPassUsageAutomationDeps = (
+  familyDeps: Pick<MembershipAutomationDeps, 'findFamilyByLoyverseCustomerId'> = createNotionMembershipAutomationDeps()
+): FlexiPassUsageAutomationDeps => ({
   lookupFlexiBalance: queryFlexiPassBalanceForCustomer,
+  findFamilyByLoyverseCustomerId: familyDeps.findFamilyByLoyverseCustomerId,
 
   async findFlexiPassRecordsForUsage({ loyverseCustomerId, at }) {
-    const flexiDb = new FlexiPassesDatabase({ notionSecret: NOTION_API_KEY });
+    const flexiDb = new FlexiPassesDatabase({ notionSecret: getNotionSecret() });
     const response = await flexiDb.query({
       page_size: 100,
       filter: { loyverseCustomerId: { contains: normalizeId(loyverseCustomerId) } },
@@ -354,7 +363,7 @@ export const createNotionFlexiPassUsageAutomationDeps = (): FlexiPassUsageAutoma
   },
 
   async updateFlexiPassUsage(input) {
-    const flexiDb = new FlexiPassesDatabase({ notionSecret: NOTION_API_KEY });
+    const flexiDb = new FlexiPassesDatabase({ notionSecret: getNotionSecret() });
     const updated = await flexiDb.updatePage(input.recordId, new FlexiPassesPatchDTO({
       properties: {
         entriesUsed: input.entriesUsed,
@@ -371,6 +380,6 @@ export const createDefaultReceiptAutomationSuite = (): ReceiptAutomation[] => {
   return [
     createMembershipFromReceiptAutomation({ deps: notionMembershipDeps }),
     createFlexiPassPurchaseAutomation({ deps: createNotionFlexiPassAutomationDeps(notionMembershipDeps) }),
-    createFlexiPassUsageAutomation({ deps: createNotionFlexiPassUsageAutomationDeps() })
+    createFlexiPassUsageAutomation({ deps: createNotionFlexiPassUsageAutomationDeps(notionMembershipDeps) })
   ];
 };

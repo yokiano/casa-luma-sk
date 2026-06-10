@@ -1,15 +1,25 @@
 import { NOTION_API_KEY } from '$env/static/private';
-import { dev } from '$app/environment';
 import { WebsiteImagesDatabase } from '$lib/notion-sdk/dbs/website-images/db';
 import { WebsiteImagesResponseDTO } from '$lib/notion-sdk/dbs/website-images/response.dto';
+import { cachedNotionRead } from '$lib/server/cache/notion-cache';
+import { buildNotionCacheKey } from '$lib/server/cache/notion-cache-keys';
+import type { NotionCacheStore } from '$lib/server/cache/keyv';
 import type { WebsiteImageAsset, WebsiteImageMap, WebsiteImageSlug } from '$lib/types/website-media';
 
 const websiteImagesDb = new WebsiteImagesDatabase({ notionSecret: NOTION_API_KEY });
 const WEBSITE_IMAGES_CACHE_TTL_MS = 5 * 60 * 1000;
+const WEBSITE_IMAGES_QUERY = {
+	filter: { active: { equals: true } },
+	sorts: [{ timestamp: 'created_time', direction: 'ascending' }],
+	page_size: 100
+} as const;
+const WEBSITE_IMAGES_CACHE_KEY = buildNotionCacheKey({
+	operation: 'websiteImages.queryActive',
+	id: 'website-images',
+	params: WEBSITE_IMAGES_QUERY
+});
 
-let cachedImages: WebsiteImageMap | null = null;
-let cachedAt = 0;
-let pendingImagesRequest: Promise<WebsiteImageMap> | null = null;
+type WebsiteImagesQueryResponse = Awaited<ReturnType<WebsiteImagesDatabase['query']>>;
 
 function toWebsiteImageAsset(image: WebsiteImagesResponseDTO): WebsiteImageAsset | null {
 	const slug = image.properties.slug.text?.trim();
@@ -33,13 +43,11 @@ function toWebsiteImageAsset(image: WebsiteImagesResponseDTO): WebsiteImageAsset
 	};
 }
 
-async function fetchWebsiteImagesMap(): Promise<WebsiteImageMap> {
-	const result = await websiteImagesDb.query({
-		filter: { active: { equals: true } },
-		sorts: [{ timestamp: 'created_time', direction: 'ascending' }],
-		page_size: 100
-	});
+async function fetchWebsiteImagesResponse(): Promise<WebsiteImagesQueryResponse> {
+	return websiteImagesDb.query(WEBSITE_IMAGES_QUERY as unknown as Parameters<WebsiteImagesDatabase['query']>[0]);
+}
 
+function toWebsiteImagesMap(result: WebsiteImagesQueryResponse): WebsiteImageMap {
 	return result.results.reduce<WebsiteImageMap>((images, image) => {
 		const asset = toWebsiteImageAsset(new WebsiteImagesResponseDTO(image));
 		if (asset) {
@@ -49,30 +57,24 @@ async function fetchWebsiteImagesMap(): Promise<WebsiteImageMap> {
 	}, {});
 }
 
-export async function getWebsiteImagesMap(): Promise<WebsiteImageMap> {
-	if (dev) {
-		return fetchWebsiteImagesMap();
-	}
+export const createWebsiteImagesMapReader = (
+	cacheStore?: NotionCacheStore<WebsiteImagesQueryResponse>,
+	cacheEnabled?: boolean
+) =>
+	async (): Promise<WebsiteImageMap> => {
+		const result = await cachedNotionRead({
+			key: WEBSITE_IMAGES_CACHE_KEY,
+			op: 'websiteImages.queryActive',
+			ttlMs: WEBSITE_IMAGES_CACHE_TTL_MS,
+			store: cacheStore,
+			enabled: cacheEnabled,
+			fetcher: fetchWebsiteImagesResponse
+		});
 
-	const now = Date.now();
-	if (cachedImages && now - cachedAt < WEBSITE_IMAGES_CACHE_TTL_MS) {
-		return cachedImages;
-	}
+		return toWebsiteImagesMap(result);
+	};
 
-	if (!pendingImagesRequest) {
-		pendingImagesRequest = fetchWebsiteImagesMap()
-			.then((images) => {
-				cachedImages = images;
-				cachedAt = Date.now();
-				return images;
-			})
-			.finally(() => {
-				pendingImagesRequest = null;
-			});
-	}
-
-	return pendingImagesRequest;
-}
+export const getWebsiteImagesMap = createWebsiteImagesMapReader();
 
 export async function getWebsiteImageBySlug(slug: WebsiteImageSlug): Promise<WebsiteImageAsset | null> {
 	const images = await getWebsiteImagesMap();

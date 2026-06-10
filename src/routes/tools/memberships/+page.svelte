@@ -1,6 +1,7 @@
 <script lang="ts">
-	import type { PageData } from './$types';
+	import { onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
+	import { MEMBERSHIPS_RECENT_LIST_MONTHS } from '$lib/memberships.shared';
 	import { getMemberships, deleteMembership, getFamilyDetails } from '$lib/memberships.remote';
 	import MembershipDialog from './MembershipDialog.svelte';
 	import CustomerReceiptsLink from '$lib/components/CustomerReceiptsLink.svelte';
@@ -33,14 +34,14 @@
 		entriesLeft?: number | null;
 	};
 
-	let { data }: { data: PageData } = $props();
-
-	let memberships = $state<MembershipItem[]>(data.initialMemberships ?? []);
-	let nextCursor = $state<string | null>(data.nextCursor ?? null);
-	let hasMore = $state<boolean>(data.hasMore ?? false);
+	let memberships = $state<MembershipItem[]>([]);
+	let nextCursor = $state<string | null>(null);
+	let hasMore = $state<boolean>(false);
 	let searchValue = $state('');
 	let activeSearch = $state('');
+	let isInitialLoading = $state(true);
 	let isLoading = $state(false);
+	let loadGeneration = 0;
 	let isLoadingMore = $state(false);
 	let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 	let expandedMemberships = $state<Set<string>>(new Set());
@@ -109,21 +110,47 @@
 		}
 	};
 
-	const runSearch = async (query: string) => {
-		isLoading = true;
+	const applyMembershipsResponse = (
+		response: { items: MembershipItem[]; nextCursor: string | null; hasMore: boolean },
+		query: string
+	) => {
+		memberships = response.items;
+		nextCursor = response.nextCursor;
+		hasMore = response.hasMore;
+		activeSearch = query;
+	};
+
+	const loadMemberships = async (query: string, options?: { initial?: boolean }) => {
+		const generation = ++loadGeneration;
+		if (options?.initial) {
+			isInitialLoading = true;
+		} else {
+			isLoading = true;
+		}
+
 		try {
 			const response = await getMemberships({ search: query || undefined });
-			memberships = response.items;
-			nextCursor = response.nextCursor;
-			hasMore = response.hasMore;
-			activeSearch = query;
+			if (generation !== loadGeneration) return;
+			applyMembershipsResponse(response, query);
 		} catch (error) {
+			if (generation !== loadGeneration) return;
 			console.error('memberships: failed to load', error);
 			toast.error('Failed to load memberships.');
 		} finally {
-			isLoading = false;
+			if (generation !== loadGeneration) return;
+			if (options?.initial) {
+				isInitialLoading = false;
+			} else {
+				isLoading = false;
+			}
 		}
 	};
+
+	const runSearch = async (query: string) => loadMemberships(query);
+
+	onMount(() => {
+		void loadMemberships('', { initial: true });
+	});
 
 	const scheduleSearch = (value: string) => {
 		if (searchTimeout) {
@@ -362,24 +389,29 @@
 		{#if activeSearch}
 			Showing results for "{activeSearch}"
 		{:else}
-			Showing all memberships sorted by {sortBy === 'endDate'
+			Showing memberships from the last {MEMBERSHIPS_RECENT_LIST_MONTHS} months sorted by {sortBy === 'endDate'
 				? 'validity'
 				: sortBy === 'createdTime'
 					? 'creation date'
-					: 'family name'}
+					: 'family name'}. Search to find older records.
 		{/if}
 	</div>
 
-	{#if isLoading}
-		<div class="rounded-3xl border border-[#e3d7cc] bg-white/70 p-6 text-sm text-[#7a6550]/80">
-			Loading memberships...
+	{#if (isInitialLoading || isLoading) && memberships.length === 0}
+		<div class="grid gap-3">
+			{#each Array(6) as _}
+				<div class="h-24 animate-pulse rounded-3xl bg-[#e3d7cc]/25"></div>
+			{/each}
 		</div>
 	{:else if memberships.length === 0}
 		<div class="rounded-3xl border border-[#e3d7cc] bg-white/70 p-6 text-sm text-[#7a6550]/80">
 			No memberships found. Try a different search or close an eligible membership receipt.
 		</div>
 	{:else}
-		<div class="grid gap-3">
+		<div class="relative grid gap-3">
+			{#if isLoading}
+				<div class="pointer-events-none absolute inset-0 z-10 rounded-3xl bg-white/40 backdrop-blur-[1px]"></div>
+			{/if}
 			{#each sortedMemberships as membership (membership.id)}
 				{@const isExpanded = expandedMemberships.has(membership.id)}
 				{@const isMenuOpen = openMenuId === membership.id}

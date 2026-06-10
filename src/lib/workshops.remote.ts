@@ -2,6 +2,12 @@
 import { query, command } from '$app/server';
 import { error } from '@sveltejs/kit';
 import { notion, NOTION_DBS, validateNotionConfig } from '$lib/server/notion';
+import {
+	createEventPagesByDateRangeReader,
+	createEventPagesBySlugReader,
+	createEventPagesByTypeReader,
+	createUpcomingEventPagesReader
+} from '$lib/server/workshops-cache';
 import * as v from 'valibot';
 import type { Event, RSVPFormData, RSVPResponse } from '$lib/types/workshops';
 import {
@@ -34,6 +40,11 @@ const RSVPFormSchema = v.object({
 	source: v.optional(v.string()),
 	acceptTerms: v.literal(true, 'You must accept terms and conditions')
 });
+
+const readUpcomingEventPages = createUpcomingEventPagesReader();
+const readEventPagesBySlug = createEventPagesBySlugReader();
+const readEventPagesByType = createEventPagesByTypeReader();
+const readEventPagesByDateRange = createEventPagesByDateRangeReader();
 
 // Transform Notion page to Event
 const transformNotionPageToEvent = (page: any): Event => {
@@ -70,55 +81,21 @@ const transformNotionPageToEvent = (page: any): Event => {
  * Get all upcoming published events
  */
 export const getUpcomingEvents = query(async () => {
-	validateNotionConfig();
-
-	const response = await notion.dataSources.query({
-		data_source_id: NOTION_DBS.EVENTS,
-		filter: {
-			and: [
-				{
-					property: 'Date',
-					date: { on_or_after: new Date().toISOString() }
-				},
-				{
-					property: 'Status',
-					select: { equals: 'Published' }
-				}
-			]
-		},
-		sorts: [{ property: 'Date', direction: 'ascending' }]
-	});
-
-	return response.results.map(transformNotionPageToEvent);
+	const pages = await readUpcomingEventPages();
+	return pages.map(transformNotionPageToEvent);
 });
 
 /**
  * Get single event by slug
  */
 export const getEvent = query(SlugSchema, async (slug) => {
-	validateNotionConfig();
+	const pages = await readEventPagesBySlug(slug);
 
-	const response = await notion.dataSources.query({
-		data_source_id: NOTION_DBS.EVENTS,
-		filter: {
-			and: [
-				{
-					property: 'Slug',
-					formula: { string: { equals: slug } }
-				},
-				{
-					property: 'Status',
-					select: { equals: 'Published' }
-				}
-			]
-		}
-	});
-
-	if (response.results.length === 0) {
+	if (pages.length === 0) {
 		throw error(404, { message: 'Event not found' });
 	}
 
-	return transformNotionPageToEvent(response.results[0]);
+	return transformNotionPageToEvent(pages[0]);
 });
 
 /**
@@ -141,30 +118,8 @@ export const getAllEvents = query(async () => {
 export const getEventsByType = query(
 	v.pipe(v.string(), v.minLength(1)),
 	async (eventType) => {
-		validateNotionConfig();
-
-		const response = await notion.dataSources.query({
-			data_source_id: NOTION_DBS.EVENTS,
-			filter: {
-				and: [
-					{
-						property: 'Event Type',
-						select: { equals: eventType }
-					},
-					{
-						property: 'Status',
-						select: { equals: 'Published' }
-					},
-					{
-						property: 'Date',
-						date: { on_or_after: new Date().toISOString() }
-					}
-				]
-			},
-			sorts: [{ property: 'Date', direction: 'ascending' }]
-		});
-
-		return response.results.map(transformNotionPageToEvent);
+		const pages = await readEventPagesByType(eventType);
+		return pages.map(transformNotionPageToEvent);
 	}
 );
 
@@ -178,39 +133,8 @@ export const getEventsByDateRange = query(
 		eventType: v.optional(v.pipe(v.string(), v.minLength(1)))
 	}),
 	async ({ startDate, endDate, eventType }) => {
-		validateNotionConfig();
-
-		const filters: any[] = [
-			{
-				property: 'Status',
-				select: { equals: 'Published' }
-			},
-			{
-				property: 'Date',
-				date: { on_or_after: startDate }
-			},
-			{
-				property: 'Date',
-				date: { before: endDate }
-			}
-		];
-
-		if (eventType && eventType !== 'All') {
-			filters.push({
-				property: 'Event Type',
-				select: { equals: eventType }
-			});
-		}
-
-		const response = await notion.dataSources.query({
-			data_source_id: NOTION_DBS.EVENTS,
-			filter: {
-				and: filters
-			},
-			sorts: [{ property: 'Date', direction: 'ascending' }]
-		});
-
-		return response.results.map(transformNotionPageToEvent);
+		const pages = await readEventPagesByDateRange({ startDate, endDate, eventType });
+		return pages.map(transformNotionPageToEvent);
 	}
 );
 

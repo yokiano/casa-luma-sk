@@ -5,7 +5,7 @@ Route: `/tools/memberships`
 Source files:
 
 - `src/routes/tools/memberships/+page.svelte`
-- `src/routes/tools/memberships/+page.server.ts`
+- `src/lib/server/memberships-cache.ts`
 - `src/lib/server/memberships.ts`
 - `src/lib/memberships.remote.ts`
 
@@ -43,6 +43,12 @@ Flexi pass records are shown alongside memberships as read-only list items:
 Flexi pass list data comes from `FlexiPassesDatabase` through `getMembershipsData()` and is merged with membership records by creation time.
 
 Flexi pass records are read-only in this tool because their lifecycle is driven by receipt automation and the dedicated Notion `🎟️ Flexi Passes` database.
+
+## Initial load and pagination
+
+The page shell renders immediately. Recent memberships load through the remote `getMemberships` query while skeleton placeholders are shown.
+
+The default list (no search) only fetches records created in the last 2 months from both Notion databases. Use search to find older records.
 
 ## Search and pagination
 

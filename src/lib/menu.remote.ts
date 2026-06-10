@@ -1,5 +1,4 @@
 import { query } from '$app/server';
-import { NOTION_DBS, notion, validateNotionConfig } from '$lib/server/notion';
 import {
 	getCheckboxValue,
 	getFilesUrls,
@@ -12,6 +11,7 @@ import {
 	getUrlValue,
 	getRelationIds
 } from '$lib/server/notion';
+import { createCategoryOrderMapReader, createMenuPagesReader } from '$lib/server/menu-cache';
 import type { MenuGrandCategory, MenuItem, MenuSummary, StructuredMenuSection, MenuModifier } from '$lib/types/menu';
 import * as v from 'valibot';
 import { getActiveModifiers } from './modifiers.remote';
@@ -46,13 +46,6 @@ const MENU_PROPERTIES = {
 	sectionModifiers: 'Section Modifiers',
 	excludeFromMenu: 'Exclude From Menu'
 } as const;
-
-const ensureMenuConfigured = () => {
-	validateNotionConfig();
-	if (!NOTION_DBS.MENU) {
-		throw new Error('NOTION_MENU_DB_ID is not defined');
-	}
-};
 
 const fallbackCurrency = 'THB';
 
@@ -288,56 +281,8 @@ const buildSummary = (pages: any[], categoryOrder: Map<string, number>, modifier
 	};
 };
 
-const queryMenuPages = async () => {
-	ensureMenuConfigured();
-	// Notion queries are paginated (max 100 results per request).
-	// Without pagination, items can "disappear" from the menu once you have enough Active entries.
-	const allResults: any[] = [];
-	let startCursor: string | undefined = undefined;
-
-	// eslint-disable-next-line no-constant-condition
-	while (true) {
-		const response: any = await (notion as any).dataSources.query({
-			data_source_id: NOTION_DBS.MENU,
-			filter: {
-				property: MENU_PROPERTIES.status,
-				status: { equals: 'Active' }
-			},
-			sorts: [{ property: MENU_PROPERTIES.name, direction: 'ascending' }],
-			page_size: 100,
-			...(startCursor ? { start_cursor: startCursor } : {})
-		});
-
-		allResults.push(...(response.results ?? []));
-
-		if (!response.has_more || !response.next_cursor) break;
-		startCursor = response.next_cursor;
-	}
-
-	return allResults;
-};
-
-const getCategoryOrderMap = async (): Promise<Map<string, number>> => {
-	try {
-		// Use dataSources.retrieve since NOTION_DBS.MENU is a Data Source ID
-		const ds = await (notion as any).dataSources.retrieve({ data_source_id: NOTION_DBS.MENU });
-		const props = ds.properties;
-		
-		// The property is named 'Category' in this Data Source
-		const categoryProp = props[MENU_PROPERTIES.section] || props[MENU_PROPERTIES.category];
-		
-		if (categoryProp && categoryProp.type === 'select' && categoryProp.select?.options) {
-			const orderMap = new Map<string, number>();
-			categoryProp.select.options.forEach((opt: any, index: number) => {
-				orderMap.set(opt.name, index);
-			});
-			return orderMap;
-		}
-	} catch (e) {
-		console.error('Failed to fetch category order from Notion:', e);
-	}
-	return new Map();
-};
+const queryMenuPages = createMenuPagesReader();
+const getCategoryOrderMap = createCategoryOrderMapReader();
 
 export const getMenuSummary = query(async () => {
 	const [pages, categoryOrder] = await Promise.all([
