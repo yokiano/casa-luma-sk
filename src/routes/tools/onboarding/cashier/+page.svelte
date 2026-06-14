@@ -184,6 +184,130 @@
 				</div>
 			</section>
 
+			<!-- Section 4: What to Teach During Training -->
+			<section class="bg-white/70 border border-[#d3c5b8] rounded-3xl p-6 shadow-sm">
+				<h2 class="text-lg font-semibold text-[#2c2925] flex items-center gap-3 border-b border-[#e6ddd4] pb-3 mb-4">
+					<span class="w-2 h-2 rounded-full bg-sky-600"></span>
+					Training Checklist
+				</h2>
+				<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm text-[#5c4a3d]">
+					<div class="rounded-2xl bg-[#f6f1eb] border border-[#e6ddd4] p-4">
+						<h3 class="font-semibold text-[#2c2925]">Customer Flow</h3>
+						<p class="mt-1 text-xs leading-relaxed">Greeting, first-time vs returning families, family code, and when to call a manager.</p>
+					</div>
+					<div class="rounded-2xl bg-[#f6f1eb] border border-[#e6ddd4] p-4">
+						<h3 class="font-semibold text-[#2c2925]">Registration</h3>
+						<p class="mt-1 text-xs leading-relaxed">QR code, why we need contact details, screenshot/card reminder, and Loyverse search.</p>
+					</div>
+					<div class="rounded-2xl bg-[#f6f1eb] border border-[#e6ddd4] p-4">
+						<h3 class="font-semibold text-[#2c2925]">Check-in</h3>
+						<p class="mt-1 text-xs leading-relaxed">Attach customer, ring the correct play/member/flexi item, close check-in before they play.</p>
+					</div>
+					<div class="rounded-2xl bg-[#f6f1eb] border border-[#e6ddd4] p-4">
+						<h3 class="font-semibold text-[#2c2925]">Checkout</h3>
+						<p class="mt-1 text-xs leading-relaxed">Open tabs, time rules, 1-hour grace period, split receipts, and unpaid ticket handling.</p>
+					</div>
+					<div class="rounded-2xl bg-[#f6f1eb] border border-[#e6ddd4] p-4">
+						<h3 class="font-semibold text-[#2c2925]">Memberships</h3>
+						<p class="mt-1 text-xs leading-relaxed">Family-based access, flexi punches, automatic records, expiration/missing-record escalation.</p>
+					</div>
+					<div class="rounded-2xl bg-[#f6f1eb] border border-[#e6ddd4] p-4">
+						<h3 class="font-semibold text-[#2c2925]">Receipt & House Rules</h3>
+						<p class="mt-1 text-xs leading-relaxed">Customer on every ticket, card fee notice, add-on charges, discounts, and cafe/playground rules.</p>
+					</div>
+				</div>
+			</section>
+
+			<!-- Section 5: Decision Flow -->
+			<section class="bg-white/70 border border-[#d3c5b8] rounded-3xl p-6 shadow-sm overflow-hidden">
+				<div class="border-b border-[#e6ddd4] pb-3 mb-5">
+					<h2 class="text-lg font-semibold text-[#2c2925] flex items-center gap-3">
+						<span class="w-2 h-2 rounded-full bg-rose-600"></span>
+						Cashier Decision Flow
+					</h2>
+					<p class="mt-2 text-xs leading-relaxed text-[#7a6550]">
+						Use this as the floor script: identify the family, register or find them, check entry immediately, then keep every cafe/play ticket linked to a customer.
+					</p>
+				</div>
+
+				<div class="space-y-5 text-sm text-[#5c4a3d]">
+					<div class="mx-auto max-w-md rounded-3xl border-2 border-[#7a6550] bg-[#f6f1eb] p-5 text-center shadow-sm">
+						<p class="text-xs font-semibold uppercase tracking-[0.16em] text-[#7a6550]">Start</p>
+						<h3 class="mt-1 text-lg font-semibold text-[#2c2925]">Customer Comes In</h3>
+						<p class="mt-2 text-xs leading-relaxed">Smile, greet them, and make them feel remembered. Ask if they have registered before / know their family code.</p>
+					</div>
+
+					<div class="flex justify-center text-[#b29d8b] print:text-black/40">↓</div>
+
+					<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div class="rounded-3xl border border-sky-200 bg-sky-50/70 p-5 shadow-sm">
+							<p class="text-xs font-semibold uppercase tracking-[0.14em] text-sky-800">First time / not found</p>
+							<h3 class="mt-1 font-semibold text-[#2c2925]">Register with QR Code</h3>
+							<ul class="mt-3 list-disc space-y-2 pl-5 text-xs leading-relaxed">
+								<li><strong>What to say:</strong> “We register every family so we have a contact number if something happens with a child, and so orders/loyalty can connect to your family.”</li>
+								<li>After completion, ask them to screenshot the registration-complete page or photograph the yellow family card.</li>
+								<li>If time allows, give a short tour or ask a manager to help.</li>
+							</ul>
+						</div>
+
+						<div class="rounded-3xl border border-emerald-200 bg-emerald-50/70 p-5 shadow-sm">
+							<p class="text-xs font-semibold uppercase tracking-[0.14em] text-emerald-800">Returning family</p>
+							<h3 class="mt-1 font-semibold text-[#2c2925]">Find Customer Profile</h3>
+							<ul class="mt-3 list-disc space-y-2 pl-5 text-xs leading-relaxed">
+								<li>Ask for family code first. If they forgot, search family name and remind them of the code.</li>
+								<li>Use purchase history when helpful to make the customer feel remembered.</li>
+								<li>If registered but not visible in Loyverse, restart Loyverse. If still missing, call manager.</li>
+							</ul>
+						</div>
+					</div>
+
+					<div class="flex justify-center text-[#b29d8b] print:text-black/40">↓</div>
+
+					<div class="rounded-3xl border border-amber-200 bg-amber-50/70 p-5 shadow-sm">
+						<p class="text-xs font-semibold uppercase tracking-[0.14em] text-amber-800">Decide entry type</p>
+						<h3 class="mt-1 font-semibold text-[#2c2925]">What are they here for?</h3>
+						<div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+							<div class="rounded-2xl bg-white/70 border border-amber-100 p-4">
+								<h4 class="font-semibold text-[#2c2925]">Open Play</h4>
+								<p class="mt-1 text-xs leading-relaxed">Add the correct play item per kid/family rule, attach customer, then track the 1-hour grace period.</p>
+							</div>
+							<div class="rounded-2xl bg-white/70 border border-amber-100 p-4">
+								<h4 class="font-semibold text-[#2c2925]">Membership / Flexi</h4>
+								<p class="mt-1 text-xs leading-relaxed">Check in immediately with the correct 0-baht item before play. If expired/missing/no punches, call manager or sell paid entry/new card.</p>
+							</div>
+							<div class="rounded-2xl bg-white/70 border border-amber-100 p-4">
+								<h4 class="font-semibold text-[#2c2925]">Cafe / Food Only</h4>
+								<p class="mt-1 text-xs leading-relaxed">Attach the family customer. If truly not applicable, use the correct ZZ special customer. Explain extra charges before ordering.</p>
+							</div>
+						</div>
+					</div>
+
+					<div class="flex justify-center text-[#b29d8b] print:text-black/40">↓</div>
+
+					<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div class="rounded-3xl border border-indigo-200 bg-indigo-50/70 p-5 shadow-sm">
+							<p class="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-800">During visit</p>
+							<h3 class="mt-1 font-semibold text-[#2c2925]">Keep Tickets Clean</h3>
+							<ul class="mt-3 list-disc space-y-2 pl-5 text-xs leading-relaxed">
+								<li>Every ticket needs a customer profile before closing.</li>
+								<li>Tell customers about 3% credit-card charge and paid add-ons before they are surprised.</li>
+								<li>If an item is missing, a request is unusual, or kitchen clarification is needed, call manager / kitchen.</li>
+							</ul>
+						</div>
+
+						<div class="rounded-3xl border border-rose-200 bg-rose-50/70 p-5 shadow-sm">
+							<p class="text-xs font-semibold uppercase tracking-[0.14em] text-rose-800">Checkout / exception</p>
+							<h3 class="mt-1 font-semibold text-[#2c2925]">Close Correctly or Escalate</h3>
+							<ul class="mt-3 list-disc space-y-2 pl-5 text-xs leading-relaxed">
+								<li>More than 1 hour + 15 minutes means change 1-hour play to 1-day play.</li>
+								<li>No 100% discount or discount over ฿400 without manager approval.</li>
+								<li>If a customer insists they already paid an unpaid ticket, call to confirm; if they insist, leave it and notify manager.</li>
+							</ul>
+						</div>
+					</div>
+				</div>
+			</section>
+
 			<!-- Call to Action -->
 			<div class="flex justify-center pt-4">
 				<button 
