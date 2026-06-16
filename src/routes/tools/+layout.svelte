@@ -72,16 +72,16 @@
         {/if}
       </div>
       {#if currentPath !== '/tools/login'}
-        <nav class="mx-auto flex max-w-6xl flex-col gap-6 px-6 pb-6 print:hidden">
-          <div class="flex flex-col gap-2">
-            <span class="text-[10px] font-bold uppercase tracking-widest text-[#7a6550]/40 ml-1">
+        <nav class="mx-auto flex max-w-6xl flex-col gap-7 px-6 pb-6 print:hidden">
+          <div class="flex flex-col gap-3">
+            <span class="ml-1 text-[10px] font-bold uppercase tracking-widest text-[#7a6550]/40">
               Staff Tools
             </span>
-            <div class="flex flex-wrap gap-2">
+            <div class="flex flex-wrap gap-3">
               {#each staffTabs as tab}
                 <a
                   href={tab.href}
-                  class={`group rounded-full px-4 py-2 text-sm font-medium transition-colors duration-150 ${
+                  class={`group inline-flex min-h-12 items-center justify-center rounded-full px-5 py-3 text-base font-medium leading-none transition-colors duration-150 sm:min-h-11 sm:px-4 sm:py-2.5 sm:text-sm ${
                     isActive(tab.href)
                       ? 'bg-[#7a6550] text-white shadow'
                       : 'text-[#7a6550]/65 hover:bg-white hover:text-[#7a6550]'
@@ -94,15 +94,15 @@
           </div>
 
           {#if hasManagerTools}
-            <div class="flex flex-col gap-2">
-              <span class="text-[10px] font-bold uppercase tracking-widest text-[#7a6550]/40 ml-1">
+            <div class="flex flex-col gap-3">
+              <span class="ml-1 text-[10px] font-bold uppercase tracking-widest text-[#7a6550]/40">
                 Manager Tools
               </span>
-              <div class="flex flex-wrap gap-2">
+              <div class="flex flex-wrap gap-3">
                 {#each managerTabs as tab}
                   <a
                     href={tab.href}
-                    class={`group rounded-full px-4 py-2 text-sm font-medium transition-colors duration-150 ${
+                    class={`group inline-flex min-h-12 items-center justify-center rounded-full px-5 py-3 text-base font-medium leading-none transition-colors duration-150 sm:min-h-11 sm:px-4 sm:py-2.5 sm:text-sm ${
                       isActive(tab.href)
                         ? 'bg-[#7a6550] text-white shadow'
                         : 'text-[#7a6550]/65 hover:bg-white hover:text-[#7a6550]'
