@@ -2,7 +2,7 @@
 	import { SalaryPaymentState } from './SalaryPaymentState.svelte';
 	import Payslip from '$lib/components/tools/salary-payment/Payslip.svelte';
 	import SaveToNotionDialog from '$lib/components/tools/salary-payment/SaveToNotionDialog.svelte';
-	import { LoaderCircle, Printer, ChevronLeft, ChevronRight, ChevronDown, User, CircleAlert, Info, CircleCheck, CloudUpload, Calendar } from 'lucide-svelte';
+	import { LoaderCircle, Printer, ChevronLeft, ChevronRight, ChevronDown, User, CircleAlert, Info, CircleCheck, CloudUpload } from 'lucide-svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
@@ -49,7 +49,6 @@
 	}
 
 	const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-	const daysFull = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 	const statusOptions = [
 		{ value: 'Completed', label: 'Completed', paid: true },
@@ -60,7 +59,6 @@
 		{ value: 'Sick Day (Unpaid)', label: 'Sick (Unpaid)', paid: false },
 		{ value: 'Day Off (Paid)', label: 'Day Off (Paid)', paid: true },
 		{ value: 'Day Off (Unpaid)', label: 'Day Off (Unpaid)', paid: false },
-		{ value: 'Business Day-Off', label: 'Business Day-Off', paid: true },
 		{ value: 'No Data', label: 'No Data (Unpaid)', paid: false }
 	];
 </script>
@@ -152,22 +150,6 @@
 						</div>
 					</div>
 
-					<div class="h-10 w-[2px] bg-[#d3c5b8]/30 self-center mx-2"></div>
-
-					<div class="space-y-2">
-						<label for="business-day-off" class="block text-[10px] font-bold uppercase tracking-widest text-[#7a6550]/60 ml-1">Business Day-Off</label>
-						<select 
-							id="business-day-off"
-							bind:value={state.businessDayOff}
-							onchange={() => state.fetchData()}
-							class="bg-white border border-[#d3c5b8] rounded-2xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#7a6550]/20 transition-all"
-						>
-							{#each daysFull as day, i (day)}
-								<option value={i}>{day}</option>
-							{/each}
-						</select>
-					</div>
-
 					<div class="flex-grow"></div>
 					
 					{#if state.salaryData}
@@ -200,7 +182,7 @@
 								{#if state.salaryData.employee.salaryCalculation !== 'Daily'}
 									<span class="font-bold">Daily Rate:</span> {state.salaryResult?.dailyRate.toFixed(2)} THB |
 								{/if}
-								<span class="font-bold">Business Day-Off:</span> {daysFull[state.businessDayOff]}
+								<span class="font-bold">Weekly Day Off:</span> 1 paid day off per week inferred from missing shifts
 							</p>
 						</div>
 					</div>
@@ -261,7 +243,7 @@
 
 					{#if state.isAttendanceExpanded}
 						<div class="px-6 pb-6">
-							<p class="text-xs text-[#7a6550]/60 mb-4">Click on any day to override its status. {daysFull[state.businessDayOff]} is your business day-off (paid by default).</p>
+							<p class="text-xs text-[#7a6550]/60 mb-4">Click on any day to override its status. One missing shift per week is treated as the employee's expected paid day off; additional missing shifts remain unpaid.</p>
 							
 							<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2">
 								{#each state.effectiveCalendarDays as day (day.id)}
@@ -270,7 +252,7 @@
 									{@const hasOverride = !!state.overriddenDays[day.id]}
 									<div 
 										class={`p-3 rounded-xl border transition-all ${
-											day.isBusinessDayOff && !hasOverride ? 'bg-[#f6f1eb]/70 border-[#d3c5b8]' : 
+											day.isExpectedWeeklyDayOff && !hasOverride ? 'bg-[#f6f1eb]/70 border-[#d3c5b8]' : 
 											isPaid ? 'bg-white border-[#d3c5b8]/30' : 
 											'bg-amber-50/50 border-amber-200/50'
 										} ${hasOverride ? 'ring-2 ring-[#7a6550]/30' : ''}`}
@@ -280,8 +262,8 @@
 												{days[date.getDay()]} {date.getDate()}
 											</div>
 											<div class="flex gap-1">
-												{#if day.isBusinessDayOff && !hasOverride}
-													<div class="text-[7px] font-bold uppercase tracking-tight bg-[#7a6550] text-white px-1.5 py-0.5 rounded">Biz Off</div>
+												{#if day.isExpectedWeeklyDayOff && !hasOverride}
+													<div class="text-[7px] font-bold uppercase tracking-tight bg-[#7a6550] text-white px-1.5 py-0.5 rounded">Day Off</div>
 												{/if}
 												{#if day.hasShiftData}
 													<div class="text-[7px] font-bold uppercase tracking-tight bg-blue-500 text-white px-1.5 py-0.5 rounded">Shift</div>

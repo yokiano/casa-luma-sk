@@ -214,12 +214,12 @@
 				<p class="text-sm font-bold">{result.workedShifts}</p>
 			</div>
 			<div>
-				<p class="opacity-60 uppercase font-bold mb-1">Biz Day-Off</p>
-				<p class="text-sm font-bold">{result.businessDaysOff}</p>
+				<p class="opacity-60 uppercase font-bold mb-1">Weekly Off</p>
+				<p class="text-sm font-bold">{result.paidDaysOff}</p>
 			</div>
 			<div>
-				<p class="opacity-60 uppercase font-bold mb-1">Paid Leave</p>
-				<p class="text-sm font-bold">{result.paidSickDays + result.paidDaysOff}</p>
+				<p class="opacity-60 uppercase font-bold mb-1">Paid Sick</p>
+				<p class="text-sm font-bold">{result.paidSickDays}</p>
 			</div>
 			<div>
 				<p class="opacity-60 uppercase font-bold mb-1">Unpaid</p>

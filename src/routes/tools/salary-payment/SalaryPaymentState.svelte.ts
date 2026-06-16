@@ -18,7 +18,6 @@ export class SalaryPaymentState {
 	endDate = $state<string>(this.getEndDateForRun(this.isMidMonthRun));
 	
 	// Payroll Options
-	businessDayOff = $state(3); // Wednesday
 	sickDaysUsedYearToDate = $state(0);
 	
 	// Manual Overrides for Calendar Days (keyed by date string YYYY-MM-DD)
@@ -145,8 +144,7 @@ export class SalaryPaymentState {
 		return generateCalendarDays(
 			this.startDate,
 			this.endDate,
-			this.salaryData.shifts,
-			this.businessDayOff
+			this.salaryData.shifts
 		);
 	});
 
