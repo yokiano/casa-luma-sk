@@ -101,7 +101,7 @@
 			value={uploadedFile}
 		/>
 		<p class="text-xs text-muted-foreground text-center italic">
-			* File upload currently only for display, not yet saved.
+			* Uploaded with the report and hosted in Notion.
 		</p>
 	</div>
 

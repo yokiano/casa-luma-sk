@@ -11,9 +11,10 @@ type PaymentMethods = {
   card: number | undefined;
 };
 
-type SubmitValidationOptions = {
+type SubmitOptions = {
   categories?: string[];
   departments?: string[];
+  posSummaryDataUrl?: string | null;
 };
 
 const DEFAULT_BILL_COUNTS: BillCounts = {
@@ -154,7 +155,7 @@ export class CloseShiftState {
     this.normalizePaidOut();
   }
 
-  getValidationIssues(options: SubmitValidationOptions = {}): SubmitValidationIssue[] {
+  getValidationIssues(options: SubmitOptions = {}): SubmitValidationIssue[] {
     const issues: SubmitValidationIssue[] = [];
 
     if (!this.closerName.trim()) issues.push({ fieldId: 'closerName', message: 'Closer name is required.' });
@@ -204,7 +205,7 @@ export class CloseShiftState {
     return issues;
   }
 
-  getValidationError(options: SubmitValidationOptions = {}) {
+  getValidationError(options: SubmitOptions = {}) {
     return this.getValidationIssues(options)[0]?.message ?? null;
   }
 
@@ -216,7 +217,7 @@ export class CloseShiftState {
     this.billCounts = { ...DEFAULT_BILL_COUNTS };
   }
 
-  async submit(options: SubmitValidationOptions = {}) {
+  async submit(options: SubmitOptions = {}) {
     this.isSubmitting = true;
     this.error = null;
     this.sanitizeForSubmit();
@@ -244,7 +245,8 @@ export class CloseShiftState {
         closerPersonId: this.closerPersonId,
         closerName: this.closerName,
         notes: `${this.notes}${expenseSummary}`,
-        shiftDate
+        shiftDate,
+        posSummaryDataUrl: options.posSummaryDataUrl || undefined
       });
 
       for (const expense of expenseLines) {
