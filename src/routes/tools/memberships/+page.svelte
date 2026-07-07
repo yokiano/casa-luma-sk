@@ -47,6 +47,8 @@
 	let expandedMemberships = $state<Set<string>>(new Set());
 	let loadingFamilyDetails = $state<Set<string>>(new Set());
 
+	const RECENT_MEMBERSHIPS_PREVIEW_PAGE_SIZE = 10;
+
 	const getTodayDate = () => new Date().toISOString().split('T')[0];
 
 	// Sorting state
@@ -141,7 +143,12 @@
 		}
 
 		try {
-			const response = await getMemberships({ search: query || undefined });
+			const response = await getMemberships({
+				search: query || undefined,
+				// Keep navigation instant: the unsearched view is only a small recent preview.
+				// Users should search when they need older or less-recent memberships.
+				pageSize: query ? undefined : RECENT_MEMBERSHIPS_PREVIEW_PAGE_SIZE
+			});
 			if (generation !== loadGeneration) return;
 			applyMembershipsResponse(response, query);
 		} catch (error) {
@@ -196,7 +203,8 @@
 		try {
 			const response = await getMemberships({
 				cursor: nextCursor,
-				search: activeSearch || undefined
+				search: activeSearch || undefined,
+				pageSize: activeSearch ? undefined : RECENT_MEMBERSHIPS_PREVIEW_PAGE_SIZE
 			});
 			memberships = [...memberships, ...response.items];
 			nextCursor = response.nextCursor;
@@ -424,7 +432,7 @@
 		{#if activeSearch}
 			Showing results for "{activeSearch}"
 		{:else}
-			Showing memberships from the last {MEMBERSHIPS_RECENT_LIST_MONTHS} months sorted by {sortBy === 'endDate'
+			Showing the latest memberships from the last {MEMBERSHIPS_RECENT_LIST_MONTHS} months sorted by {sortBy === 'endDate'
 				? 'validity'
 				: sortBy === 'createdTime'
 					? 'creation date'
@@ -674,7 +682,7 @@
 			{/each}
 		</div>
 
-		{#if hasMore}
+		{#if hasMore && activeSearch}
 			<div class="flex justify-center pt-4">
 				<button
 					type="button"
