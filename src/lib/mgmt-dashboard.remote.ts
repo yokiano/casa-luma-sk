@@ -623,38 +623,54 @@ export const getMgmtDashboardAnalytics = query(DashboardAnalyticsSchema, async (
           r.receipt_key,
           bool_or(li.item_id = ${ONE_HOUR_ITEM_ID}) as has_one_hour,
           bool_or(li.item_id = ${ONE_HOUR_TO_DAY_ITEM_ID}) as converted,
-          coalesce(r.created_at, r.receipt_date) as receipt_time,
+          coalesce(r.created_at, r.receipt_date) as checkout_at,
           (
-            select match[1]
-            from regexp_matches(r."order", '(\\d{1,2}:[0-5]\\d)', 'g') with ordinality as matches(match, ord)
+            select match
+            from regexp_matches(r."order", '\\m(\\d{1,2}):([0-5]\\d)(?:\\s*([AaPp][Mm]))?\\M', 'g') with ordinality as matches(match, ord)
             order by ord desc
             limit 1
-          ) as order_start_time
+          ) as order_time_match
         from receipts r
         join receipt_line_items li on li.receipt_key = r.receipt_key
         where ${periodCondition}
           and r.receipt_type is distinct from 'REFUND'
           and li.item_id in (${ONE_HOUR_ITEM_ID}, ${ONE_HOUR_TO_DAY_ITEM_ID})
         group by r.receipt_key, r.created_at, r.receipt_date, r."order"
+      ), parsed_receipts as (
+        select
+          converted,
+          checkout_at,
+          case
+            when order_time_match is null then null
+            when order_time_match[3] is null and order_time_match[1]::int between 0 and 23 then order_time_match[1]::int
+            when upper(order_time_match[3]) = 'AM' and order_time_match[1]::int between 1 and 12 then case when order_time_match[1]::int = 12 then 0 else order_time_match[1]::int end
+            when upper(order_time_match[3]) = 'PM' and order_time_match[1]::int between 1 and 12 then case when order_time_match[1]::int = 12 then 12 else order_time_match[1]::int + 12 end
+            else null
+          end as start_hour,
+          case when order_time_match is null then null else order_time_match[2]::int end as start_minute
+        from candidate_receipts
+        where has_one_hour
       ), duration_receipts as (
         select
           converted,
           case
-            when order_start_time is null or receipt_time is null then null
+            when checkout_at is null or start_hour is null or start_minute is null then null
             else (
-              case
-                when extract(epoch from (receipt_time - (date_trunc('day', receipt_time) + (order_start_time::time)))) < 0
-                  then extract(epoch from (receipt_time - (date_trunc('day', receipt_time) + (order_start_time::time)))) + 86400
-                else extract(epoch from (receipt_time - (date_trunc('day', receipt_time) + (order_start_time::time))))
-              end
-            ) / 60
-          end as duration_minutes
-        from candidate_receipts
-        where has_one_hour and order_start_time ~ '^\\d{1,2}:[0-5]\\d'
+              (
+                extract(hour from checkout_at at time zone 'Asia/Bangkok')::int * 60 +
+                extract(minute from checkout_at at time zone 'Asia/Bangkok')::int
+              ) - (start_hour * 60 + start_minute)
+            )
+          end as raw_duration_minutes
+        from parsed_receipts
       )
-      select converted, duration_minutes::text
+      select
+        converted,
+        (case when raw_duration_minutes < 0 then raw_duration_minutes + 1440 else raw_duration_minutes end)::text as duration_minutes
       from duration_receipts
-      where duration_minutes is not null and duration_minutes >= 0 and duration_minutes < 720
+      where raw_duration_minutes is not null
+        and (case when raw_duration_minutes < 0 then raw_duration_minutes + 1440 else raw_duration_minutes end) >= 0
+        and (case when raw_duration_minutes < 0 then raw_duration_minutes + 1440 else raw_duration_minutes end) < 720
     `),
     getLoyverseCategoryMaps(),
     getDepartmentMapping()
@@ -807,8 +823,9 @@ export const getMgmtDashboardAnalytics = query(DashboardAnalyticsSchema, async (
     { bucketStartMinutes: number; label: string; oneHourOnlyCount: number; convertedCount: number; totalCount: number }
   >();
   const ensureDurationBucket = (durationMinutes: number) => {
+    if (durationMinutes < durationMinBucketMinutes) return null;
     const bucketStartMinutes = Math.min(
-      Math.floor(Math.max(durationMinutes, durationMinBucketMinutes) / durationBucketSizeMinutes) * durationBucketSizeMinutes,
+      Math.floor(durationMinutes / durationBucketSizeMinutes) * durationBucketSizeMinutes,
       durationMaxBucketMinutes
     );
     const current = durationBuckets.get(bucketStartMinutes);
@@ -829,10 +846,13 @@ export const getMgmtDashboardAnalytics = query(DashboardAnalyticsSchema, async (
     totalReceipts: 0,
     oneHourOnlyCount: 0,
     convertedCount: 0,
+    chartedReceipts: 0,
     oneHourOnlyAvgMinutes: null as number | null,
     convertedAvgMinutes: null as number | null,
+    under40Count: 0,
     oneHourOnlyOver75Count: 0,
-    convertedOver75Count: 0
+    convertedOver75Count: 0,
+    over240Count: 0
   };
   let oneHourOnlyDurationTotal = 0;
   let convertedDurationTotal = 0;
@@ -843,16 +863,21 @@ export const getMgmtDashboardAnalytics = query(DashboardAnalyticsSchema, async (
     const converted = Boolean(row.converted);
     const bucket = ensureDurationBucket(durationMinutes);
 
-    bucket.totalCount += 1;
     durationStats.totalReceipts += 1;
+    if (durationMinutes < durationMinBucketMinutes) durationStats.under40Count += 1;
+    if (durationMinutes >= durationMaxBucketMinutes) durationStats.over240Count += 1;
+    if (bucket) {
+      bucket.totalCount += 1;
+      durationStats.chartedReceipts += 1;
+    }
 
     if (converted) {
-      bucket.convertedCount += 1;
+      if (bucket) bucket.convertedCount += 1;
       durationStats.convertedCount += 1;
       convertedDurationTotal += durationMinutes;
       if (durationMinutes > 75) durationStats.convertedOver75Count += 1;
     } else {
-      bucket.oneHourOnlyCount += 1;
+      if (bucket) bucket.oneHourOnlyCount += 1;
       durationStats.oneHourOnlyCount += 1;
       oneHourOnlyDurationTotal += durationMinutes;
       if (durationMinutes > 75) durationStats.oneHourOnlyOver75Count += 1;

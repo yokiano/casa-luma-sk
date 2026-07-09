@@ -290,15 +290,16 @@
             <p class="text-sm font-semibold text-[#7a6550]">Open-play duration distribution</p>
             <h2 class="mt-1 text-2xl font-bold tracking-tight text-[#2c2925]">How long 1-hour ticket receipts stay</h2>
             <p class="mt-1 text-xs text-[#7a6550]/70">
-              10-minute buckets starting at 40-50m, split between tickets left as 1-hour only and tickets converted with the 1-hour → 1-day item.
+              10-minute buckets starting at 40-50m. Duration uses the same logic as receipt validation: last order time in the receipt name to Bangkok checkout time.
             </p>
           </div>
         </div>
 
         <div class="mt-5 grid gap-3 md:grid-cols-4">
           <div class="rounded-2xl border border-[#eadfd3] bg-[#fffaf4] p-4">
-            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-[#7a6550]/70">Parsed receipts</p>
-            <p class="mt-2 text-2xl font-bold text-[#2c2925]">{openPlayDurationStats?.totalReceipts ?? 0}</p>
+            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-[#7a6550]/70">Charted receipts</p>
+            <p class="mt-2 text-2xl font-bold text-[#2c2925]">{openPlayDurationStats?.chartedReceipts ?? 0}</p>
+            <p class="mt-1 text-xs text-[#7a6550]/70">{openPlayDurationStats?.totalReceipts ?? 0} parsed · {openPlayDurationStats?.under40Count ?? 0} under 40m</p>
           </div>
           <div class="rounded-2xl border border-[#eadfd3] bg-[#fffaf4] p-4">
             <p class="text-xs font-semibold uppercase tracking-[0.14em] text-[#7a6550]/70">1-hour only avg</p>
@@ -313,7 +314,7 @@
           <div class="rounded-2xl border border-[#eadfd3] bg-[#fffaf4] p-4">
             <p class="text-xs font-semibold uppercase tracking-[0.14em] text-[#7a6550]/70">Over 75m</p>
             <p class="mt-2 text-2xl font-bold text-[#2c2925]">{(openPlayDurationStats?.oneHourOnlyOver75Count ?? 0) + (openPlayDurationStats?.convertedOver75Count ?? 0)}</p>
-            <p class="mt-1 text-xs text-[#7a6550]/70">1-hour only {openPlayDurationStats?.oneHourOnlyOver75Count ?? 0} · converted {openPlayDurationStats?.convertedOver75Count ?? 0}</p>
+            <p class="mt-1 text-xs text-[#7a6550]/70">1-hour only {openPlayDurationStats?.oneHourOnlyOver75Count ?? 0} · converted {openPlayDurationStats?.convertedOver75Count ?? 0} · {openPlayDurationStats?.over240Count ?? 0} at 240m+</p>
           </div>
         </div>
 
@@ -344,7 +345,7 @@
           </Chart.Container>
         {:else}
           <p class="mt-5 rounded-2xl border border-dashed border-[#dfd2c5] p-4 text-sm text-[#7a6550]">
-            No 1-hour receipts with parsed order timing found for this period.
+            No 1-hour receipts with 40m+ parsed duration found for this period.
           </p>
         {/if}
       </article>
