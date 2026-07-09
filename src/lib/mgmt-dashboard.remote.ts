@@ -131,6 +131,7 @@ const toIsoOrNull = (value: unknown) => {
 };
 
 const parseNumber = (value: unknown) => Number(value ?? 0);
+const parseNullableNumber = (value: unknown) => (value === null || value === undefined ? null : Number(value));
 const normalizeCategory = (value: string) => value.trim().toLowerCase();
 
 const dashboardPeriodLabel = (period: DashboardPeriod) =>
@@ -556,7 +557,7 @@ export const getMgmtDashboardAnalytics = query(DashboardAnalyticsSchema, async (
   const periodCondition = dashboardPeriodCondition(period);
   const bucketExpression = dashboardBucketExpression(groupBy);
 
-  const [row, lineRows, passMixRows, categoryMaps, departmentMapping] = await Promise.all([
+  const [row, lineRows, passMixRows, openPlayDurationRows, categoryMaps, departmentMapping] = await Promise.all([
     rowsOf<{
       sales_total: string | number | null;
       refund_total: string | number | null;
@@ -612,6 +613,48 @@ export const getMgmtDashboardAnalytics = query(DashboardAnalyticsSchema, async (
         and li.item_id in (${ONE_HOUR_ITEM_ID}, ${ONE_HOUR_TO_DAY_ITEM_ID})
       group by ${bucketExpression}
       order by ${bucketExpression}
+    `),
+    rowsOf<{
+      converted: boolean | null;
+      duration_minutes: string | number | null;
+    }>(sql`
+      with candidate_receipts as (
+        select
+          r.receipt_key,
+          bool_or(li.item_id = ${ONE_HOUR_ITEM_ID}) as has_one_hour,
+          bool_or(li.item_id = ${ONE_HOUR_TO_DAY_ITEM_ID}) as converted,
+          coalesce(r.created_at, r.receipt_date) as receipt_time,
+          (
+            select match[1]
+            from regexp_matches(r."order", '(\\d{1,2}:[0-5]\\d)', 'g') with ordinality as matches(match, ord)
+            order by ord desc
+            limit 1
+          ) as order_start_time
+        from receipts r
+        join receipt_line_items li on li.receipt_key = r.receipt_key
+        where ${periodCondition}
+          and r.receipt_type is distinct from 'REFUND'
+          and li.item_id in (${ONE_HOUR_ITEM_ID}, ${ONE_HOUR_TO_DAY_ITEM_ID})
+        group by r.receipt_key, r.created_at, r.receipt_date, r."order"
+      ), duration_receipts as (
+        select
+          converted,
+          case
+            when order_start_time is null or receipt_time is null then null
+            else (
+              case
+                when extract(epoch from (receipt_time - (date_trunc('day', receipt_time) + (order_start_time::time)))) < 0
+                  then extract(epoch from (receipt_time - (date_trunc('day', receipt_time) + (order_start_time::time)))) + 86400
+                else extract(epoch from (receipt_time - (date_trunc('day', receipt_time) + (order_start_time::time))))
+              end
+            ) / 60
+          end as duration_minutes
+        from candidate_receipts
+        where has_one_hour and order_start_time ~ '^\\d{1,2}:[0-5]\\d'
+      )
+      select converted, duration_minutes::text
+      from duration_receipts
+      where duration_minutes is not null and duration_minutes >= 0 and duration_minutes < 720
     `),
     getLoyverseCategoryMaps(),
     getDepartmentMapping()
@@ -756,6 +799,67 @@ export const getMgmtDashboardAnalytics = query(DashboardAnalyticsSchema, async (
     };
   });
 
+  const durationBucketSizeMinutes = 15;
+  const durationMaxBucketMinutes = 240;
+  const durationBuckets = new Map<
+    number,
+    { bucketStartMinutes: number; label: string; oneHourOnlyCount: number; convertedCount: number; totalCount: number }
+  >();
+  const ensureDurationBucket = (durationMinutes: number) => {
+    const bucketStartMinutes = Math.min(Math.floor(durationMinutes / durationBucketSizeMinutes) * durationBucketSizeMinutes, durationMaxBucketMinutes);
+    const current = durationBuckets.get(bucketStartMinutes);
+    if (current) return current;
+    const nextStart = bucketStartMinutes + durationBucketSizeMinutes;
+    const created = {
+      bucketStartMinutes,
+      label: bucketStartMinutes >= durationMaxBucketMinutes ? '240m+' : `${bucketStartMinutes}-${nextStart}m`,
+      oneHourOnlyCount: 0,
+      convertedCount: 0,
+      totalCount: 0
+    };
+    durationBuckets.set(bucketStartMinutes, created);
+    return created;
+  };
+
+  const durationStats = {
+    totalReceipts: 0,
+    oneHourOnlyCount: 0,
+    convertedCount: 0,
+    oneHourOnlyAvgMinutes: null as number | null,
+    convertedAvgMinutes: null as number | null,
+    oneHourOnlyOver75Count: 0,
+    convertedOver75Count: 0
+  };
+  let oneHourOnlyDurationTotal = 0;
+  let convertedDurationTotal = 0;
+
+  for (const row of openPlayDurationRows) {
+    const durationMinutes = parseNullableNumber(row.duration_minutes);
+    if (durationMinutes === null || !Number.isFinite(durationMinutes)) continue;
+    const converted = Boolean(row.converted);
+    const bucket = ensureDurationBucket(durationMinutes);
+
+    bucket.totalCount += 1;
+    durationStats.totalReceipts += 1;
+
+    if (converted) {
+      bucket.convertedCount += 1;
+      durationStats.convertedCount += 1;
+      convertedDurationTotal += durationMinutes;
+      if (durationMinutes > 75) durationStats.convertedOver75Count += 1;
+    } else {
+      bucket.oneHourOnlyCount += 1;
+      durationStats.oneHourOnlyCount += 1;
+      oneHourOnlyDurationTotal += durationMinutes;
+      if (durationMinutes > 75) durationStats.oneHourOnlyOver75Count += 1;
+    }
+  }
+
+  durationStats.oneHourOnlyAvgMinutes = durationStats.oneHourOnlyCount > 0 ? oneHourOnlyDurationTotal / durationStats.oneHourOnlyCount : null;
+  durationStats.convertedAvgMinutes = durationStats.convertedCount > 0 ? convertedDurationTotal / durationStats.convertedCount : null;
+
+  const openPlayDurationDistribution = Array.from(durationBuckets.values()).sort((a, b) => a.bucketStartMinutes - b.bucketStartMinutes);
+
   return {
     date: new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok' }).format(new Date()),
     period,
@@ -795,7 +899,9 @@ export const getMgmtDashboardAnalytics = query(DashboardAnalyticsSchema, async (
       grossMargin,
       incomeToCogsRatio
     })),
-    passMix
+    passMix,
+    openPlayDurationDistribution,
+    openPlayDurationStats: durationStats
   };
 });
 

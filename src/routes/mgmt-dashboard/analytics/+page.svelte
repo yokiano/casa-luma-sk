@@ -19,6 +19,13 @@
   const formatMoney = (value: number | null | undefined) => (value === null || value === undefined ? '—' : money.format(value));
   const percent = (value: number | null | undefined) => `${(value ?? 0).toFixed(1)}%`;
   const ratio = (value: number | null | undefined) => (value === null || value === undefined ? '—' : `${value.toFixed(2)}×`);
+  const formatDuration = (minutes: number | null | undefined) => {
+    if (minutes === null || minutes === undefined) return '—';
+    const rounded = Math.round(minutes);
+    const hours = Math.floor(rounded / 60);
+    const mins = rounded % 60;
+    return hours > 0 ? `${hours}h ${mins.toString().padStart(2, '0')}m` : `${mins}m`;
+  };
   const errorMessage = (error: unknown) => (error instanceof Error ? error.message : error ? String(error) : null);
 
   const bangkokDateParts = (date: Date) => {
@@ -85,6 +92,8 @@
   });
 
   const selectedPassMix = $derived(data?.passMix ?? []);
+  const openPlayDurationDistribution = $derived(data?.openPlayDurationDistribution ?? []);
+  const openPlayDurationStats = $derived(data?.openPlayDurationStats);
   const revenueTrend = $derived(data?.revenueTrend ?? []);
   const profitabilityTrend = $derived(data?.profitabilityTrend ?? []);
   const maxChannelRevenue = $derived(Math.max(1, ...(data?.revenueChannels ?? []).map((row) => row.revenue)));
@@ -105,6 +114,11 @@
   const passMixSeries = [
     { key: 'oneHourQuantity', label: '1-hour qty', color: '#7a6550', value: (row: { oneHourQuantity: number }) => row.oneHourQuantity },
     { key: 'oneDayQuantity', label: '1-day qty', color: '#d79a5f', value: (row: { oneDayQuantity: number }) => row.oneDayQuantity }
+  ];
+
+  const openPlayDurationSeries = [
+    { key: 'oneHourOnlyCount', label: '1-hour only', color: '#7a6550', value: (row: { oneHourOnlyCount: number }) => row.oneHourOnlyCount },
+    { key: 'convertedCount', label: '1-hour → 1-day', color: '#d79a5f', value: (row: { convertedCount: number }) => row.convertedCount }
   ];
 
   const profitabilitySeries = [
@@ -268,41 +282,107 @@
       </aside>
     </section>
 
-    <section class="rounded-3xl border border-[#dfd2c5] bg-white p-6 shadow-sm" id="open-play" use:trackSection>
-      <div class="flex items-start gap-3">
-        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#efe6dc] text-[#7a6550]"><TrendingUp size={18} /></span>
-        <div>
-          <p class="text-sm font-semibold text-[#7a6550]">1-hour vs 1-day open-play mix</p>
-          <h2 class="mt-1 text-2xl font-bold tracking-tight text-[#2c2925]">Ticket quantity trend by {filters.groupBy}</h2>
-          <p class="mt-1 text-xs text-[#7a6550]/70">Lines show 1-hour and 1-day ticket volume for the selected global grouping.</p>
+    <section class="space-y-4" id="open-play" use:trackSection>
+      <article class="rounded-3xl border border-[#dfd2c5] bg-white p-6 shadow-sm">
+        <div class="flex items-start gap-3">
+          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#efe6dc] text-[#7a6550]"><TrendingUp size={18} /></span>
+          <div>
+            <p class="text-sm font-semibold text-[#7a6550]">Open-play duration distribution</p>
+            <h2 class="mt-1 text-2xl font-bold tracking-tight text-[#2c2925]">How long 1-hour ticket receipts stay</h2>
+            <p class="mt-1 text-xs text-[#7a6550]/70">
+              Receipts that include the 1-hour item, split between tickets left as 1-hour only and tickets converted with the 1-hour → 1-day item.
+            </p>
+          </div>
         </div>
-      </div>
-      {#if selectedPassMix.length}
-        <Chart.Container
-          config={{
-            oneHourQuantity: { label: '1-hour qty', color: '#7a6550' },
-            oneDayQuantity: { label: '1-day qty', color: '#d79a5f' }
-          }}
-          class="aspect-auto mt-5 h-[340px] w-full"
-        >
-          <LineChart
-            data={selectedPassMix}
-            x="label"
-            xScale={scalePoint().padding(0.5)}
-            series={passMixSeries}
-            legend
-            points={showPoints(selectedPassMix)}
-            padding={{ top: 24, right: 24, bottom: 34, left: 48 }}
-            props={{ xAxis: commonXAxisProps, yAxis: { ticks: 4, format: (value: number) => String(Math.round(value)) } }}
+
+        <div class="mt-5 grid gap-3 md:grid-cols-4">
+          <div class="rounded-2xl border border-[#eadfd3] bg-[#fffaf4] p-4">
+            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-[#7a6550]/70">Parsed receipts</p>
+            <p class="mt-2 text-2xl font-bold text-[#2c2925]">{openPlayDurationStats?.totalReceipts ?? 0}</p>
+          </div>
+          <div class="rounded-2xl border border-[#eadfd3] bg-[#fffaf4] p-4">
+            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-[#7a6550]/70">1-hour only avg</p>
+            <p class="mt-2 text-2xl font-bold text-[#2c2925]">{formatDuration(openPlayDurationStats?.oneHourOnlyAvgMinutes)}</p>
+            <p class="mt-1 text-xs text-[#7a6550]/70">{openPlayDurationStats?.oneHourOnlyCount ?? 0} receipts</p>
+          </div>
+          <div class="rounded-2xl border border-[#eadfd3] bg-[#fffaf4] p-4">
+            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-[#7a6550]/70">Converted avg</p>
+            <p class="mt-2 text-2xl font-bold text-[#2c2925]">{formatDuration(openPlayDurationStats?.convertedAvgMinutes)}</p>
+            <p class="mt-1 text-xs text-[#7a6550]/70">{openPlayDurationStats?.convertedCount ?? 0} receipts</p>
+          </div>
+          <div class="rounded-2xl border border-[#eadfd3] bg-[#fffaf4] p-4">
+            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-[#7a6550]/70">Over 75m</p>
+            <p class="mt-2 text-2xl font-bold text-[#2c2925]">{(openPlayDurationStats?.oneHourOnlyOver75Count ?? 0) + (openPlayDurationStats?.convertedOver75Count ?? 0)}</p>
+            <p class="mt-1 text-xs text-[#7a6550]/70">1-hour only {openPlayDurationStats?.oneHourOnlyOver75Count ?? 0} · converted {openPlayDurationStats?.convertedOver75Count ?? 0}</p>
+          </div>
+        </div>
+
+        {#if openPlayDurationDistribution.length}
+          <Chart.Container
+            config={{
+              oneHourOnlyCount: { label: '1-hour only', color: '#7a6550' },
+              convertedCount: { label: '1-hour → 1-day', color: '#d79a5f' }
+            }}
+            class="aspect-auto mt-5 h-[360px] w-full"
           >
-            {#snippet tooltip()}
-              <Chart.Tooltip labelKey="label" />
-            {/snippet}
-          </LineChart>
-        </Chart.Container>
-      {:else}
-        <p class="mt-5 rounded-2xl border border-dashed border-[#dfd2c5] p-4 text-sm text-[#7a6550]">No 1-hour or 1-day open-play items found for this period.</p>
-      {/if}
+            <LineChart
+              data={openPlayDurationDistribution}
+              x="label"
+              xScale={scalePoint().padding(0.5)}
+              series={openPlayDurationSeries}
+              legend
+              points
+              padding={{ top: 24, right: 24, bottom: 34, left: 48 }}
+              props={{ xAxis: { tickSpacing: 70, format: (value: string) => value, tickLabelProps: { class: 'text-[10px] fill-[#7a6550]/60' } }, yAxis: { ticks: 4, format: (value: number) => String(Math.round(value)) } }}
+            >
+              {#snippet tooltip()}
+                <Chart.Tooltip labelKey="label" />
+              {/snippet}
+            </LineChart>
+          </Chart.Container>
+        {:else}
+          <p class="mt-5 rounded-2xl border border-dashed border-[#dfd2c5] p-4 text-sm text-[#7a6550]">
+            No 1-hour receipts with parsed order timing found for this period.
+          </p>
+        {/if}
+      </article>
+
+      <article class="rounded-3xl border border-[#dfd2c5] bg-white p-6 shadow-sm">
+        <div class="flex items-start gap-3">
+          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#efe6dc] text-[#7a6550]"><TrendingUp size={18} /></span>
+          <div>
+            <p class="text-sm font-semibold text-[#7a6550]">1-hour vs 1-day open-play mix</p>
+            <h2 class="mt-1 text-2xl font-bold tracking-tight text-[#2c2925]">Ticket quantity trend by {filters.groupBy}</h2>
+            <p class="mt-1 text-xs text-[#7a6550]/70">Lines show 1-hour and 1-day ticket volume for the selected global grouping.</p>
+          </div>
+        </div>
+        {#if selectedPassMix.length}
+          <Chart.Container
+            config={{
+              oneHourQuantity: { label: '1-hour qty', color: '#7a6550' },
+              oneDayQuantity: { label: '1-day qty', color: '#d79a5f' }
+            }}
+            class="aspect-auto mt-5 h-[340px] w-full"
+          >
+            <LineChart
+              data={selectedPassMix}
+              x="label"
+              xScale={scalePoint().padding(0.5)}
+              series={passMixSeries}
+              legend
+              points={showPoints(selectedPassMix)}
+              padding={{ top: 24, right: 24, bottom: 34, left: 48 }}
+              props={{ xAxis: commonXAxisProps, yAxis: { ticks: 4, format: (value: number) => String(Math.round(value)) } }}
+            >
+              {#snippet tooltip()}
+                <Chart.Tooltip labelKey="label" />
+              {/snippet}
+            </LineChart>
+          </Chart.Container>
+        {:else}
+          <p class="mt-5 rounded-2xl border border-dashed border-[#dfd2c5] p-4 text-sm text-[#7a6550]">No 1-hour or 1-day open-play items found for this period.</p>
+        {/if}
+      </article>
     </section>
 
     <section class="grid gap-4" id="profitability" use:trackSection>
