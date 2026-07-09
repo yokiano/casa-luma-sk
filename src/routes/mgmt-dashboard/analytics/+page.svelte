@@ -7,8 +7,8 @@
   import { MgmtAnalyticsFilters, type MgmtAnalyticsPeriod } from '$lib/mgmt-dashboard/analytics-filters.svelte';
   import type { ReceiptAnalytics } from '$lib/receipts/analytics';
   import { BarChart3, TrendingUp, WalletCards } from 'lucide-svelte';
-  import { scalePoint } from 'd3-scale';
-  import { LineChart } from 'layerchart';
+  import { scaleBand, scalePoint } from 'd3-scale';
+  import { BarChart, LineChart } from 'layerchart';
   import { onMount } from 'svelte';
   import * as Chart from '$lib/components/ui/chart';
 
@@ -290,7 +290,7 @@
             <p class="text-sm font-semibold text-[#7a6550]">Open-play duration distribution</p>
             <h2 class="mt-1 text-2xl font-bold tracking-tight text-[#2c2925]">How long 1-hour ticket receipts stay</h2>
             <p class="mt-1 text-xs text-[#7a6550]/70">
-              Receipts that include the 1-hour item, split between tickets left as 1-hour only and tickets converted with the 1-hour → 1-day item.
+              10-minute buckets starting at 40-50m, split between tickets left as 1-hour only and tickets converted with the 1-hour → 1-day item.
             </p>
           </div>
         </div>
@@ -325,20 +325,22 @@
             }}
             class="aspect-auto mt-5 h-[360px] w-full"
           >
-            <LineChart
+            <BarChart
               data={openPlayDurationDistribution}
               x="label"
-              xScale={scalePoint().padding(0.5)}
+              y="totalCount"
+              xScale={scaleBand().padding(0.25)}
               series={openPlayDurationSeries}
               legend
-              points
-              padding={{ top: 24, right: 24, bottom: 34, left: 48 }}
-              props={{ xAxis: { tickSpacing: 70, format: (value: string) => value, tickLabelProps: { class: 'text-[10px] fill-[#7a6550]/60' } }, yAxis: { ticks: 4, format: (value: number) => String(Math.round(value)) } }}
+              labels={{ class: 'text-[9px] fill-[#7a6550]/60', format: (value: number) => (value > 0 ? String(value) : '') }}
+              padding={{ top: 24, right: 24, bottom: 42, left: 48 }}
+              axis="x"
+              props={{ xAxis: { tickSpacing: 64, format: (value: string) => value, tickLabelProps: { class: 'text-[10px] fill-[#7a6550]/60' } }, yAxis: { ticks: 4, format: (value: number) => String(Math.round(value)) } }}
             >
               {#snippet tooltip()}
                 <Chart.Tooltip labelKey="label" />
               {/snippet}
-            </LineChart>
+            </BarChart>
           </Chart.Container>
         {:else}
           <p class="mt-5 rounded-2xl border border-dashed border-[#dfd2c5] p-4 text-sm text-[#7a6550]">

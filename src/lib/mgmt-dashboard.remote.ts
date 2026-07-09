@@ -799,14 +799,18 @@ export const getMgmtDashboardAnalytics = query(DashboardAnalyticsSchema, async (
     };
   });
 
-  const durationBucketSizeMinutes = 15;
+  const durationBucketSizeMinutes = 10;
+  const durationMinBucketMinutes = 40;
   const durationMaxBucketMinutes = 240;
   const durationBuckets = new Map<
     number,
     { bucketStartMinutes: number; label: string; oneHourOnlyCount: number; convertedCount: number; totalCount: number }
   >();
   const ensureDurationBucket = (durationMinutes: number) => {
-    const bucketStartMinutes = Math.min(Math.floor(durationMinutes / durationBucketSizeMinutes) * durationBucketSizeMinutes, durationMaxBucketMinutes);
+    const bucketStartMinutes = Math.min(
+      Math.floor(Math.max(durationMinutes, durationMinBucketMinutes) / durationBucketSizeMinutes) * durationBucketSizeMinutes,
+      durationMaxBucketMinutes
+    );
     const current = durationBuckets.get(bucketStartMinutes);
     if (current) return current;
     const nextStart = bucketStartMinutes + durationBucketSizeMinutes;
@@ -857,6 +861,13 @@ export const getMgmtDashboardAnalytics = query(DashboardAnalyticsSchema, async (
 
   durationStats.oneHourOnlyAvgMinutes = durationStats.oneHourOnlyCount > 0 ? oneHourOnlyDurationTotal / durationStats.oneHourOnlyCount : null;
   durationStats.convertedAvgMinutes = durationStats.convertedCount > 0 ? convertedDurationTotal / durationStats.convertedCount : null;
+
+  const highestDurationBucket = Math.max(durationMinBucketMinutes, ...Array.from(durationBuckets.keys()));
+  if (durationStats.totalReceipts > 0) {
+    for (let bucketStart = durationMinBucketMinutes; bucketStart <= highestDurationBucket; bucketStart += durationBucketSizeMinutes) {
+      ensureDurationBucket(bucketStart);
+    }
+  }
 
   const openPlayDurationDistribution = Array.from(durationBuckets.values()).sort((a, b) => a.bucketStartMinutes - b.bucketStartMinutes);
 
