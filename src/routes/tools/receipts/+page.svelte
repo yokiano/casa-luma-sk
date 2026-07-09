@@ -1,10 +1,8 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
-  import { getReceiptAnalytics, getReceipts } from '$lib/receipts.remote';
-  import type { ReceiptAnalytics } from '$lib/receipts/analytics';
+  import { getReceipts } from '$lib/receipts.remote';
   import {
-    ReceiptsAnalytics,
     ReceiptsList,
     ReceiptsTabs,
     ReceiptsToolbar,
@@ -53,14 +51,8 @@
   let storeId = $state(page.url.searchParams.get('storeId') || '');
 
   let receipts = $state<ReceiptWithTools[]>([]);
-  let analyticsData = $state<ReceiptAnalytics | null>(null);
-  let analyticsLoadedInMs = $state<number | null>(null);
-  let analyticsStartedAt = $state<number | null>(null);
-  let analyticsElapsedMs = $state(0);
   let analyticsReceipts = $state<ReceiptWithTools[]>([]);
-  let analyticsRequestedKey = $state('');
   let toolsRequestedKey = $state('');
-  let analyticsLoading = $state(false);
   let toolsLoading = $state(false);
   let analyticsError = $state<string | null>(null);
   let analyticsLoadedCount = $state(0);
@@ -81,12 +73,6 @@
   });
 
   const analyticsKey = $derived.by(() => `${dateFrom}|${dateTo}|${storeId}|${customerId}`);
-
-  const formatElapsed = (ms: number | null) => {
-    if (ms === null) return '';
-    if (ms < 1000) return `${ms}ms`;
-    return `${(ms / 1000).toFixed(1)}s`;
-  };
 
   const updateReceiptSearchParams = () => {
     const url = new URL(page.url);
@@ -110,36 +96,6 @@
   const changeTab = (tab: ReceiptTab) => {
     activeTab = tab;
     updateReceiptSearchParams();
-  };
-
-  const loadAnalytics = async (key: string) => {
-    if (analyticsLoading) return;
-    analyticsLoading = true;
-    analyticsError = null;
-    analyticsData = null;
-    analyticsLoadedInMs = null;
-    analyticsStartedAt = performance.now();
-    analyticsElapsedMs = 0;
-
-    try {
-      const response = await getReceiptAnalytics({
-        dateFrom: dateFrom ? startOfDayIso(dateFrom) : undefined,
-        dateTo: dateTo ? endOfDayIso(dateTo) : undefined,
-        storeId: storeId.trim() || undefined,
-        customerId: customerId.trim() || undefined
-      });
-
-      if (analyticsRequestedKey === key) {
-        analyticsData = response;
-        analyticsLoadedInMs = Math.round(performance.now() - (analyticsStartedAt ?? performance.now()));
-      }
-    } catch (error) {
-      if (analyticsRequestedKey === key) analyticsError = error instanceof Error ? error.message : 'Failed to load analytics.';
-    } finally {
-      analyticsLoading = false;
-      analyticsStartedAt = null;
-      if (analyticsRequestedKey && analyticsRequestedKey !== key) loadAnalytics(analyticsRequestedKey);
-    }
   };
 
   const loadToolsReceipts = async (key: string) => {
@@ -230,21 +186,6 @@
   };
 
   $effect(() => {
-    if (!analyticsStartedAt) return;
-    const interval = window.setInterval(() => {
-      if (analyticsStartedAt) analyticsElapsedMs = Math.round(performance.now() - analyticsStartedAt);
-    }, 100);
-    return () => window.clearInterval(interval);
-  });
-
-  $effect(() => {
-    if (activeTab === 'analytics') {
-      if (analyticsRequestedKey === analyticsKey) return;
-      analyticsRequestedKey = analyticsKey;
-      loadAnalytics(analyticsKey);
-      return;
-    }
-
     if (activeTab === 'tools') {
       if (toolsRequestedKey === analyticsKey) return;
       toolsRequestedKey = analyticsKey;
@@ -279,25 +220,16 @@
   <div class="space-y-3">
     <ReceiptsTabs activeTab={activeTab} onChange={changeTab} />
     {#if activeTab === 'analytics'}
-      {#if analyticsError}
-        <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {analyticsError}
-        </div>
-      {/if}
-      {#if analyticsLoading}
-        <div class="rounded-xl border border-[#d8c9bb] bg-white/80 px-4 py-3 text-sm text-[#7a6550]">
-          Calculating analytics in Neon... {formatElapsed(analyticsElapsedMs)}
-        </div>
-      {:else if analyticsLoadedInMs !== null}
-        <p class="text-xs text-[#7a6550]/70">Analytics calculated in {formatElapsed(analyticsLoadedInMs)}.</p>
-      {/if}
-      {#if analyticsData}
-        <ReceiptsAnalytics analytics={analyticsData} />
-      {:else if !analyticsLoading && !analyticsError}
-        <div class="rounded-xl border border-[#d8c9bb] bg-white/80 px-4 py-3 text-sm text-[#7a6550]">
-          Choose filters and open analytics to calculate receipt trends.
-        </div>
-      {/if}
+      <div class="rounded-3xl border border-[#d8c9bb] bg-white/85 p-6 shadow-sm">
+        <p class="text-xs font-bold uppercase tracking-[0.18em] text-[#7a6550]/60">Analytics moved</p>
+        <h3 class="mt-2 text-xl font-semibold text-[#2c2925]">Receipt analytics now live in the management dashboard.</h3>
+        <p class="mt-2 max-w-2xl text-sm text-[#7a6550]">
+          Use the dedicated analytics section for revenue split, open-play mix, profitability, and legacy receipt trends.
+        </p>
+        <a class="mt-4 inline-flex items-center rounded-full border border-[#7a6550] bg-[#7a6550] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#2c2925]" href="/mgmt-dashboard/analytics">
+          Open management analytics
+        </a>
+      </div>
     {:else if activeTab === 'tools'}
       {#if analyticsError}
         <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">

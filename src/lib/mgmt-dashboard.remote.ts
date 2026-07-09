@@ -19,6 +19,7 @@ import { MembershipsDatabase } from '$lib/notion-sdk/dbs/memberships/db';
 import { MembershipsResponseDTO } from '$lib/notion-sdk/dbs/memberships/response.dto';
 import { bangkokDate, bangkokDateRangeUtc, compactDateLabel } from '$lib/mgmt-dashboard-dates';
 import { getBalanceReconciliationSummary } from '$lib/server/balance-reconciliation';
+import { ONE_HOUR_ITEM_ID, ONE_HOUR_TO_DAY_ITEM_ID } from '$lib/receipts/receipt-tools';
 
 type Row = Record<string, unknown>;
 
@@ -40,10 +41,15 @@ const TEST_ALERT_TYPES = [
   'forced_test_failure',
   'validation_engine_error'
 ] as const;
+const DASHBOARD_PERIODS = ['today', '7d', '30d', '90d', '12m'] as const;
+const DASHBOARD_GROUP_BY = ['day', 'week', 'month'] as const;
 const DASHBOARD_APPROVER = 'Yarden' as const; // TODO(auth): use the logged-in user's Approved By select value once auth is implemented.
 
 type Department = (typeof DEPARTMENTS)[number];
 type DashboardDepartment = Department | typeof UNKNOWN_DEPARTMENT;
+type DashboardPeriod = (typeof DASHBOARD_PERIODS)[number];
+type DashboardGroupBy = (typeof DASHBOARD_GROUP_BY)[number];
+type RevenueChannel = 'restaurant' | 'open-play' | 'store' | 'others';
 type TestAlertType = (typeof TEST_ALERT_TYPES)[number];
 
 type LoyverseItem = {
@@ -126,6 +132,47 @@ const toIsoOrNull = (value: unknown) => {
 
 const parseNumber = (value: unknown) => Number(value ?? 0);
 const normalizeCategory = (value: string) => value.trim().toLowerCase();
+
+const dashboardPeriodLabel = (period: DashboardPeriod) =>
+  period === 'today'
+    ? 'Today'
+    : period === '7d'
+      ? 'Last 7 days'
+      : period === '30d'
+        ? 'Last 30 days'
+        : period === '90d'
+          ? 'Last 90 days'
+          : 'Last 12 months';
+
+const dashboardPeriodCondition = (period: DashboardPeriod) => {
+  if (period === 'today') return sql`(r.created_at at time zone 'Asia/Bangkok')::date = (now() at time zone 'Asia/Bangkok')::date`;
+  if (period === '7d') return sql`(r.created_at at time zone 'Asia/Bangkok')::date >= (now() at time zone 'Asia/Bangkok')::date - interval '6 days'`;
+  if (period === '30d') return sql`(r.created_at at time zone 'Asia/Bangkok')::date >= (now() at time zone 'Asia/Bangkok')::date - interval '29 days'`;
+  if (period === '90d') return sql`(r.created_at at time zone 'Asia/Bangkok')::date >= (now() at time zone 'Asia/Bangkok')::date - interval '89 days'`;
+  return sql`(r.created_at at time zone 'Asia/Bangkok')::date >= (now() at time zone 'Asia/Bangkok')::date - interval '12 months'`;
+};
+
+const dashboardBucketExpression = (groupBy: DashboardGroupBy) => {
+  if (groupBy === 'month') return sql`date_trunc('month', r.created_at at time zone 'Asia/Bangkok')::date`;
+  if (groupBy === 'week') return sql`date_trunc('week', r.created_at at time zone 'Asia/Bangkok')::date`;
+  return sql`(r.created_at at time zone 'Asia/Bangkok')::date`;
+};
+
+const dashboardBucketLabel = (groupBy: DashboardGroupBy, bucketStart: unknown) => {
+  const raw = bucketStart instanceof Date ? bucketStart.toISOString().slice(0, 10) : String(bucketStart ?? '').slice(0, 10);
+  const date = new Date(`${raw}T00:00:00.000Z`);
+  if (Number.isNaN(date.getTime())) return raw || '—';
+  if (groupBy === 'month') return date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+  if (groupBy === 'week') return `Week of ${date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', timeZone: 'UTC' })}`;
+  return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', timeZone: 'UTC' });
+};
+
+const departmentToRevenueChannel = (department: DashboardDepartment): RevenueChannel => {
+  if (department === 'cafe') return 'restaurant';
+  if (department === 'playground') return 'open-play';
+  if (department === 'store') return 'store';
+  return 'others';
+};
 
 const buildExpenseMissingFields = (expense: CompanyLedgerResponseDTO) => {
   const missing: string[] = [];
@@ -500,8 +547,16 @@ export const approveLedgerExpense = command(ApproveExpenseSchema, async ({ expen
 
 export const getBalanceReconciliationDashboard = query(async () => getBalanceReconciliationSummary({ asOf: new Date() }));
 
-export const getTodayDashboardOverview = query(async () => {
-  const [row, lineRows, categoryMaps, departmentMapping] = await Promise.all([
+const DashboardAnalyticsSchema = v.object({
+  period: v.optional(v.picklist(DASHBOARD_PERIODS)),
+  groupBy: v.optional(v.picklist(DASHBOARD_GROUP_BY))
+});
+
+export const getMgmtDashboardAnalytics = query(DashboardAnalyticsSchema, async ({ period = 'today', groupBy = 'day' }) => {
+  const periodCondition = dashboardPeriodCondition(period);
+  const bucketExpression = dashboardBucketExpression(groupBy);
+
+  const [row, lineRows, passMixRows, categoryMaps, departmentMapping] = await Promise.all([
     rowsOf<{
       sales_total: string | number | null;
       refund_total: string | number | null;
@@ -517,10 +572,11 @@ export const getTodayDashboardOverview = query(async () => {
         count(*)::text as receipt_count,
         count(*) filter (where receipt_type is distinct from 'REFUND')::text as sale_count,
         count(*) filter (where receipt_type = 'REFUND')::text as refund_count
-      from receipts
-      where (created_at at time zone 'Asia/Bangkok')::date = (now() at time zone 'Asia/Bangkok')::date
+      from receipts r
+      where ${periodCondition}
     `).then((rows) => rows[0]),
     rowsOf<{
+      bucket_start: string | Date | null;
       item_id: string | null;
       variant_id: string | null;
       revenue: string | number | null;
@@ -528,6 +584,7 @@ export const getTodayDashboardOverview = query(async () => {
       line_count: string | number | null;
     }>(sql`
       select
+        ${bucketExpression} as bucket_start,
         li.item_id,
         li.variant_id,
         coalesce(sum(li.total_money), 0)::text as revenue,
@@ -535,8 +592,26 @@ export const getTodayDashboardOverview = query(async () => {
         count(*)::text as line_count
       from receipt_line_items li
       join receipts r on r.receipt_key = li.receipt_key
-      where (r.created_at at time zone 'Asia/Bangkok')::date = (now() at time zone 'Asia/Bangkok')::date
-      group by li.item_id, li.variant_id
+      where ${periodCondition} and r.receipt_type is distinct from 'REFUND'
+      group by ${bucketExpression}, li.item_id, li.variant_id
+      order by ${bucketExpression}
+    `),
+    rowsOf<{
+      bucket_start: string | Date | null;
+      one_hour_quantity: string | number | null;
+      one_day_quantity: string | number | null;
+    }>(sql`
+      select
+        ${bucketExpression} as bucket_start,
+        coalesce(sum(li.quantity) filter (where li.item_id = ${ONE_HOUR_ITEM_ID}), 0)::text as one_hour_quantity,
+        coalesce(sum(li.quantity) filter (where li.item_id = ${ONE_HOUR_TO_DAY_ITEM_ID}), 0)::text as one_day_quantity
+      from receipt_line_items li
+      join receipts r on r.receipt_key = li.receipt_key
+      where ${periodCondition}
+        and r.receipt_type is distinct from 'REFUND'
+        and li.item_id in (${ONE_HOUR_ITEM_ID}, ${ONE_HOUR_TO_DAY_ITEM_ID})
+      group by ${bucketExpression}
+      order by ${bucketExpression}
     `),
     getLoyverseCategoryMaps(),
     getDepartmentMapping()
@@ -558,6 +633,44 @@ export const getTodayDashboardOverview = query(async () => {
   for (const department of DEPARTMENTS) ensureDepartment(department);
   ensureDepartment(UNKNOWN_DEPARTMENT);
 
+  const channelBuckets = new Map<
+    string,
+    {
+      bucketStart: string;
+      label: string;
+      restaurant: number;
+      openPlay: number;
+      store: number;
+      others: number;
+      revenue: number;
+      cogs: number;
+      grossProfit: number;
+      grossMargin: number;
+      incomeToCogsRatio: number | null;
+    }
+  >();
+
+  const ensureBucket = (bucketStartValue: unknown) => {
+    const bucketStart = bucketStartValue instanceof Date ? bucketStartValue.toISOString().slice(0, 10) : String(bucketStartValue ?? '').slice(0, 10);
+    const current = channelBuckets.get(bucketStart);
+    if (current) return current;
+    const created = {
+      bucketStart,
+      label: dashboardBucketLabel(groupBy, bucketStartValue),
+      restaurant: 0,
+      openPlay: 0,
+      store: 0,
+      others: 0,
+      revenue: 0,
+      cogs: 0,
+      grossProfit: 0,
+      grossMargin: 0,
+      incomeToCogsRatio: null as number | null
+    };
+    channelBuckets.set(bucketStart, created);
+    return created;
+  };
+
   for (const line of lineRows) {
     const category =
       (line.item_id ? categoryMaps.categoryByItemId.get(line.item_id) : undefined) ??
@@ -567,12 +680,21 @@ export const getTodayDashboardOverview = query(async () => {
     const total = ensureDepartment(department);
     const revenue = parseNumber(line.revenue);
     const cogs = parseNumber(line.cogs);
+    const grossProfit = revenue - cogs;
+    const bucket = ensureBucket(line.bucket_start);
+    const channel = departmentToRevenueChannel(department);
 
     total.revenue += revenue;
     total.cogs += cogs;
-    total.grossProfit += revenue - cogs;
+    total.grossProfit += grossProfit;
     total.lineCount += parseNumber(line.line_count);
     total.categories.add(category);
+
+    if (channel === 'open-play') bucket.openPlay += revenue;
+    else bucket[channel] += revenue;
+    bucket.revenue += revenue;
+    bucket.cogs += cogs;
+    bucket.grossProfit += grossProfit;
   }
 
   const departments = Array.from(departmentTotals.values()).map((department) => ({
@@ -584,8 +706,76 @@ export const getTodayDashboardOverview = query(async () => {
     categories: Array.from(department.categories).sort((a, b) => a.localeCompare(b))
   }));
 
+  const channelTotals = new Map<
+    RevenueChannel,
+    { channel: RevenueChannel; revenue: number; cogs: number; grossProfit: number; lineCount: number }
+  >([
+    ['restaurant', { channel: 'restaurant', revenue: 0, cogs: 0, grossProfit: 0, lineCount: 0 }],
+    ['open-play', { channel: 'open-play', revenue: 0, cogs: 0, grossProfit: 0, lineCount: 0 }],
+    ['store', { channel: 'store', revenue: 0, cogs: 0, grossProfit: 0, lineCount: 0 }],
+    ['others', { channel: 'others', revenue: 0, cogs: 0, grossProfit: 0, lineCount: 0 }]
+  ]);
+
+  for (const department of departments) {
+    const channel = channelTotals.get(departmentToRevenueChannel(department.department));
+    if (!channel) continue;
+    channel.revenue += department.revenue;
+    channel.cogs += department.cogs;
+    channel.grossProfit += department.grossProfit;
+    channel.lineCount += department.lineCount;
+  }
+
+  const totalChannelRevenue = Array.from(channelTotals.values()).reduce((sum, channel) => sum + channel.revenue, 0);
+  const revenueChannels = Array.from(channelTotals.values()).map((channel) => ({
+    ...channel,
+    share: totalChannelRevenue > 0 ? (channel.revenue / totalChannelRevenue) * 100 : 0
+  }));
+
+  const revenueTrend = Array.from(channelBuckets.values())
+    .sort((a, b) => a.bucketStart.localeCompare(b.bucketStart))
+    .map((bucket) => {
+      bucket.grossMargin = bucket.revenue > 0 ? (bucket.grossProfit / bucket.revenue) * 100 : 0;
+      bucket.incomeToCogsRatio = bucket.cogs > 0 ? bucket.revenue / bucket.cogs : null;
+      return bucket;
+    });
+
+  const passMix = passMixRows.map((bucket) => {
+    const oneHourQuantity = parseNumber(bucket.one_hour_quantity);
+    const oneDayQuantity = parseNumber(bucket.one_day_quantity);
+    const totalQuantity = oneHourQuantity + oneDayQuantity;
+
+    return {
+      bucketStart: bucket.bucket_start instanceof Date ? bucket.bucket_start.toISOString().slice(0, 10) : String(bucket.bucket_start ?? '').slice(0, 10),
+      label: dashboardBucketLabel(groupBy, bucket.bucket_start),
+      oneHourQuantity,
+      oneDayQuantity,
+      totalQuantity,
+      oneHourShare: totalQuantity > 0 ? (oneHourQuantity / totalQuantity) * 100 : 0,
+      oneDayShare: totalQuantity > 0 ? (oneDayQuantity / totalQuantity) * 100 : 0,
+      oneHourToOneDayRatio: oneDayQuantity > 0 ? oneHourQuantity / oneDayQuantity : null
+    };
+  });
+
   return {
     date: new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok' }).format(new Date()),
+    period,
+    periodLabel: dashboardPeriodLabel(period),
+    filters: {
+      period,
+      groupBy,
+      label: dashboardPeriodLabel(period)
+    },
+    summary: {
+      grossRevenue: parseNumber(row?.sales_total),
+      netRevenue: parseNumber(row?.net_total),
+      refunds: parseNumber(row?.refund_total),
+      saleCount: parseNumber(row?.sale_count),
+      receiptCount: parseNumber(row?.receipt_count),
+      cogs: revenueChannels.reduce((sum, channel) => sum + channel.cogs, 0),
+      grossProfit: revenueChannels.reduce((sum, channel) => sum + channel.grossProfit, 0),
+      grossMargin: totalChannelRevenue > 0 ? (revenueChannels.reduce((sum, channel) => sum + channel.grossProfit, 0) / totalChannelRevenue) * 100 : 0,
+      incomeToCogsRatio: revenueChannels.reduce((sum, channel) => sum + channel.cogs, 0) > 0 ? totalChannelRevenue / revenueChannels.reduce((sum, channel) => sum + channel.cogs, 0) : null
+    },
     salesTotal: parseNumber(row?.sales_total),
     refundTotal: parseNumber(row?.refund_total),
     netTotal: parseNumber(row?.net_total),
@@ -593,7 +783,19 @@ export const getTodayDashboardOverview = query(async () => {
     saleCount: parseNumber(row?.sale_count),
     refundCount: parseNumber(row?.refund_count),
     departmentMappingSource: departmentMapping.source,
-    departments
+    departments,
+    revenueChannels,
+    revenueTrend,
+    profitabilityTrend: revenueTrend.map(({ bucketStart, label, revenue, cogs, grossProfit, grossMargin, incomeToCogsRatio }) => ({
+      bucketStart,
+      label,
+      revenue,
+      cogs,
+      grossProfit,
+      grossMargin,
+      incomeToCogsRatio
+    })),
+    passMix
   };
 });
 
