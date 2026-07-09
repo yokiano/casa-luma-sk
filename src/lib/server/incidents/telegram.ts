@@ -468,18 +468,45 @@ const buildMembershipAutomationAlertPayload = (input: ReportIncidentInput): Aler
   };
 };
 
+const formatIsoDate = (value: string | null): string | null => {
+  if (!value) return null;
+  const dateOnly = value.slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(dateOnly) ? dateOnly : value;
+};
+
 const buildFlexiPassAutomationAlertPayload = (input: ReportIncidentInput): AlertPublishPayload => {
   const receiptNumber = typeof input.context?.receiptNumber === 'string' ? input.context.receiptNumber : null;
   const receiptUrl = isHttpUrl(input.context?.receiptUrl) ? input.context.receiptUrl : null;
   const reportUrl = isHttpUrl(input.context?.reportUrl) ? input.context.reportUrl : null;
   const familyName = getString(input.context?.familyName);
+  const customerId = getString(input.context?.customerId);
   const recordName = getString(input.context?.recordName);
   const reason = getString(input.context?.reason);
+  const automationCode = getString(input.context?.automationCode);
+  const errorMessage = getString(input.context?.errorMessage);
   const validFrom = getString(input.context?.validFrom);
   const validUntil = getString(input.context?.validUntil);
+  const firstPurchaseAt = formatIsoDate(getString(input.context?.firstPurchaseAt));
+  const lastPurchaseAt = formatIsoDate(getString(input.context?.lastPurchaseAt));
+  const originalReceiptNumber = getString(input.context?.originalReceiptNumber);
+  const refundReceiptNumber = getString(input.context?.refundReceiptNumber);
   const cardCount = isFiniteNumber(input.context?.cardCount) ? input.context.cardCount : null;
+  const cardsPurchased = isFiniteNumber(input.context?.cardsPurchased) ? input.context.cardsPurchased : null;
   const entriesGranted = isFiniteNumber(input.context?.entriesGranted) ? input.context.entriesGranted : null;
   const entriesLeft = isFiniteNumber(input.context?.entriesLeft) ? input.context.entriesLeft : null;
+  const currentReceiptEntries = isFiniteNumber(input.context?.currentReceiptEntries)
+    ? input.context.currentReceiptEntries
+    : null;
+  const entriesPurchased = isFiniteNumber(input.context?.entriesPurchased) ? input.context.entriesPurchased : null;
+  const entriesUsedIncludingCurrent = isFiniteNumber(input.context?.entriesUsedIncludingCurrent)
+    ? input.context.entriesUsedIncludingCurrent
+    : null;
+  const remainingBeforeCurrentReceipt = isFiniteNumber(input.context?.remainingBeforeCurrentReceipt)
+    ? input.context.remainingBeforeCurrentReceipt
+    : null;
+  const remainingAfterCurrentReceipt = isFiniteNumber(input.context?.remainingAfterCurrentReceipt)
+    ? input.context.remainingAfterCurrentReceipt
+    : null;
 
   const isSuccess = input.code === 'FLEXI_PASSES_CREATED';
   const label = isSuccess ? 'Flexi Pass Created Automatically' : 'Flexi Pass Automation Needs Review';
@@ -487,12 +514,32 @@ const buildFlexiPassAutomationAlertPayload = (input: ReportIncidentInput): Alert
 
   const details = [
     familyName ? `Family: ${familyName}` : null,
-    cardCount !== null ? `Cards: ${formatNumber(cardCount)}` : null,
+    customerId ? `Loyverse customer: ${customerId}` : null,
+    automationCode ? `Automation: ${automationCode.replaceAll('_', ' ')}` : null,
+    cardCount !== null ? `Cards on receipt: ${formatNumber(cardCount)}` : null,
+    cardsPurchased !== null ? `Cards purchased (history): ${formatNumber(cardsPurchased)}` : null,
     entriesGranted !== null ? `Entries granted: ${formatNumber(entriesGranted)}` : null,
-    entriesLeft !== null ? `Entries left: ${formatNumber(entriesLeft)}` : null,
+    entriesPurchased !== null ? `Entries purchased (history): ${formatNumber(entriesPurchased)}` : null,
+    currentReceiptEntries !== null ? `Entries on this receipt: ${formatNumber(currentReceiptEntries)}` : null,
+    entriesUsedIncludingCurrent !== null
+      ? `Entries used incl. this receipt: ${formatNumber(entriesUsedIncludingCurrent)}`
+      : null,
+    remainingBeforeCurrentReceipt !== null
+      ? `Remaining before receipt: ${formatNumber(remainingBeforeCurrentReceipt)}`
+      : null,
+    remainingAfterCurrentReceipt !== null
+      ? `Remaining after receipt: ${formatNumber(remainingAfterCurrentReceipt)}`
+      : null,
+    entriesLeft !== null ? `Entries left (Notion): ${formatNumber(entriesLeft)}` : null,
     validFrom || validUntil ? `Valid: ${validFrom ?? 'unknown'} → ${validUntil ?? 'unknown'}` : null,
+    firstPurchaseAt || lastPurchaseAt
+      ? `Purchase window: ${firstPurchaseAt ?? 'unknown'} → ${lastPurchaseAt ?? 'unknown'}`
+      : null,
+    originalReceiptNumber ? `Original receipt: ${originalReceiptNumber}` : null,
+    refundReceiptNumber ? `Refund receipt: ${refundReceiptNumber}` : null,
     recordName ? `Flexi pass: ${recordName}` : null,
-    reason ? `Reason: ${reason.replaceAll('_', ' ')}` : null
+    reason ? `Reason: ${reason.replaceAll('_', ' ')}` : null,
+    errorMessage ? `Error: ${errorMessage}` : null
   ].filter((line): line is string => Boolean(line));
 
   const links = [

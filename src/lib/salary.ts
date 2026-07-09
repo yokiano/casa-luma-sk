@@ -38,7 +38,7 @@ export type CalendarDay = {
 	ot: number;
 	otType: '1.5' | '1.0' | '3.0';
 	hoursAbsent: number;
-	isBusinessDayOff: boolean;
+	isExpectedWeeklyDayOff: boolean;
 	isWeekend: boolean;
 	hasShiftData: boolean;
 };
@@ -102,12 +102,19 @@ export type SalaryResult = {
 export const STANDARD_MONTH_DAYS = 30;
 export const STANDARD_DAY_HOURS = 8;
 
+function getWeekKey(dateStr: string): string {
+	const date = new Date(`${dateStr}T00:00:00+07:00`);
+	const dayOfWeek = getBangkokDayOfWeek(date);
+	const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+	date.setUTCDate(date.getUTCDate() - daysSinceMonday);
+	return getBangkokDateStr(date);
+}
+
 // Generate all calendar days for the period
 export function generateCalendarDays(
 	startDate: string,
 	endDate: string,
-	shifts: SalaryShift[],
-	businessDayOff: number // 0-6 (e.g., 3 for Wednesday)
+	shifts: SalaryShift[]
 ): CalendarDay[] {
 	const days: CalendarDay[] = [];
 	
@@ -126,7 +133,6 @@ export function generateCalendarDays(
 	while (current <= endLimit) {
 		const dateStr = getBangkokDateStr(current);
 		const dayOfWeek = getBangkokDayOfWeek(current);
-		const isBusinessDayOff = dayOfWeek === businessDayOff;
 		const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
 		const shift = shiftsByDate.get(dateStr);
 		const hasShiftData = !!shift;
@@ -137,16 +143,14 @@ export function generateCalendarDays(
 		let hoursAbsent = 0;
 		
 		if (shift) {
-			// Use shift data
+			// Use shift data from Notion as-is; managers keep per-person days off up to date there.
 			status = (shift.status as CalendarDay['status']) || 'Completed';
 			ot = shift.ot || 0;
 			otType = shift.otType || '1.5';
 			hoursAbsent = shift.hoursAbsent || 0;
-		} else if (isBusinessDayOff) {
-			// Business day-off (e.g., Wednesday) - paid by default
-			status = 'Business Day-Off';
 		} else {
-			// No data - unpaid by default
+			// Missing shifts start unpaid; one missing day per week is converted below
+			// to the expected weekly day off so a 6-day week is not deducted.
 			status = 'No Data';
 		}
 		
@@ -159,12 +163,29 @@ export function generateCalendarDays(
 			ot,
 			otType,
 			hoursAbsent,
-			isBusinessDayOff,
+			isExpectedWeeklyDayOff: false,
 			isWeekend,
 			hasShiftData
 		});
 		
 		current.setUTCDate(current.getUTCDate() + 1);
+	}
+
+	const weeks = new Map<string, CalendarDay[]>();
+	for (const day of days) {
+		const weekKey = getWeekKey(day.date);
+		weeks.set(weekKey, [...(weeks.get(weekKey) || []), day]);
+	}
+
+	for (const weekDays of weeks.values()) {
+		const hasPaidDayOff = weekDays.some((day) => day.status === 'Day Off (Paid)' || day.status === 'Business Day-Off');
+		if (hasPaidDayOff) continue;
+
+		const expectedDayOff = weekDays.find((day) => !day.hasShiftData && day.status === 'No Data');
+		if (expectedDayOff) {
+			expectedDayOff.status = 'Day Off (Paid)';
+			expectedDayOff.isExpectedWeeklyDayOff = true;
+		}
 	}
 	
 	return days;
@@ -222,10 +243,11 @@ export function calculateSalary(
 				unpaidLeaveDays++;
 			}
 		} else if (day.status === 'Business Day-Off') {
+			// Legacy status kept compatible, but new payroll uses per-employee weekly days off.
 			if (!isDaily) {
 				businessDaysOff++;
 			} else {
-				// Daily workers don't get paid for business day off
+				// Daily workers don't get paid for a non-worked day.
 				unpaidLeaveDays++;
 			}
 		} else if (

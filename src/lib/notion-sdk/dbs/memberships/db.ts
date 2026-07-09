@@ -23,6 +23,10 @@ export class MembershipsDatabase extends GenericDatabaseClass<
       return undefined
     }
 
+    if ('timestamp' in filter) {
+      return filter
+    }
+
     const notionFilter = {} as Record<string, unknown>
 
     Object.entries(filter).forEach(([key, value]) => {

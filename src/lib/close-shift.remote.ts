@@ -4,6 +4,7 @@ import * as v from 'valibot';
 import { NOTION_API_KEY } from '$env/static/private';
 import { EndOfShiftReportsDatabase } from '$lib/notion-sdk/dbs/end-of-shift-reports/db';
 import { EndOfShiftReportsPatchDTO } from '$lib/notion-sdk/dbs/end-of-shift-reports/patch.dto';
+import { uploadToNotion } from '$lib/server/notion/upload';
 
 const moneyField = (label: string) =>
   v.optional(
@@ -34,6 +35,15 @@ const getErrorMessage = (e: unknown) => {
   return 'Unknown error';
 };
 
+const getDataUrlFileExtension = (dataUrl: string) => {
+  const mime = dataUrl.match(/^data:([^;,]+)[;,]/)?.[1]?.toLowerCase();
+  if (mime === 'image/jpeg' || mime === 'image/jpg') return 'jpg';
+  if (mime === 'image/webp') return 'webp';
+  if (mime === 'image/gif') return 'gif';
+  if (mime === 'image/png') return 'png';
+  return 'png';
+};
+
 // Define the validation schema for the close shift data
 const CloseShiftSchema = v.object({
   expectedCash: moneyField('Expected cash'),
@@ -58,7 +68,9 @@ const CloseShiftSchema = v.object({
   closerPersonId: v.optional(v.string()),
   closerName: v.string(),
   notes: v.optional(v.string(), ''),
-  shiftDate: v.string() // ISO date string
+  shiftDate: v.string(), // ISO date string
+  posSummaryDataUrl: v.optional(v.string()),
+  posSummaryFileName: v.optional(v.string())
 });
 
 export const submitCloseShift = command(
@@ -70,6 +82,14 @@ export const submitCloseShift = command(
     });
 
     try {
+      let posSummary = undefined;
+      if (data.posSummaryDataUrl) {
+        const fileName = data.posSummaryFileName || `close-shift-pos-summary-${data.shiftDate.slice(0, 10)}.${getDataUrlFileExtension(data.posSummaryDataUrl)}`;
+        // Store uploaded POS summary images in Notion, not as client-only previews.
+        const uploaded = await uploadToNotion(data.posSummaryDataUrl, fileName);
+        posSummary = [uploaded];
+      }
+
       // Create a new page in the End of Shift Reports database
       const response = await db.createPage(
         new EndOfShiftReportsPatchDTO({
@@ -78,6 +98,7 @@ export const submitCloseShift = command(
             date: { start: data.shiftDate },
             expectedCash: data.expectedCash,
             paidOut: data.paidOut,
+            posSummary: posSummary as any,
             
             // Closed By is a text property in Notion.
             closedBy: data.closerName.trim() || undefined,

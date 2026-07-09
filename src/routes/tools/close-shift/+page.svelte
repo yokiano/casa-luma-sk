@@ -40,7 +40,11 @@
       return;
     }
 
-    const result = await shiftState.submit({ categories: data.categories, departments: data.departments });
+    const result = await shiftState.submit({
+      categories: data.categories,
+      departments: data.departments,
+      posSummaryDataUrl: uploadedFile
+    });
     if (result?.success) {
       submitAttempted = false;
       toast.success('Shift closed successfully!');

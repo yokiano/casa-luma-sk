@@ -31,9 +31,10 @@ export const handle: Handle = async ({ event, resolve }) => {
 			authCookie = 'manager';
 		}
 
-		// If no cookie, redirect to login
+		// If no cookie, redirect to login and preserve the requested tools URL.
 		if (!authCookie) {
-			throw redirect(303, '/tools/login');
+			const continueTo = `${event.url.pathname}${event.url.search}`;
+			throw redirect(303, `/tools/login?continueTo=${encodeURIComponent(continueTo)}`);
 		}
 
 		// Role-based protection

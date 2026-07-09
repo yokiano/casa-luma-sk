@@ -1,10 +1,11 @@
 <script lang="ts">
-	import type { PageData } from './$types';
+	import { onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
+	import { MEMBERSHIPS_RECENT_LIST_MONTHS } from '$lib/memberships.shared';
 	import { getMemberships, deleteMembership, getFamilyDetails } from '$lib/memberships.remote';
 	import MembershipDialog from './MembershipDialog.svelte';
 	import CustomerReceiptsLink from '$lib/components/CustomerReceiptsLink.svelte';
-	import { ChevronDown, ChevronUp, MoreVertical, Pencil, Trash2, Loader2, ArrowUpDown, CalendarDays, ExternalLink, Printer } from 'lucide-svelte';
+	import { ChevronDown, ChevronUp, MoreVertical, Pencil, Trash2, Loader2, ArrowUpDown, CalendarDays, ExternalLink, Printer, RefreshCw } from 'lucide-svelte';
 
 	type FamilySummary = {
 		id: string;
@@ -33,40 +34,52 @@
 		entriesLeft?: number | null;
 	};
 
-	let { data }: { data: PageData } = $props();
-
-	let memberships = $state<MembershipItem[]>(data.initialMemberships ?? []);
-	let nextCursor = $state<string | null>(data.nextCursor ?? null);
-	let hasMore = $state<boolean>(data.hasMore ?? false);
+	let memberships = $state<MembershipItem[]>([]);
+	let nextCursor = $state<string | null>(null);
+	let hasMore = $state<boolean>(false);
 	let searchValue = $state('');
 	let activeSearch = $state('');
+	let isInitialLoading = $state(true);
 	let isLoading = $state(false);
+	let loadGeneration = 0;
 	let isLoadingMore = $state(false);
 	let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 	let expandedMemberships = $state<Set<string>>(new Set());
 	let loadingFamilyDetails = $state<Set<string>>(new Set());
 
+	const RECENT_MEMBERSHIPS_PREVIEW_PAGE_SIZE = 10;
+
+	const getTodayDate = () => new Date().toISOString().split('T')[0];
+
 	// Sorting state
-	let sortBy = $state<'endDate' | 'createdTime' | 'familyName'>('createdTime');
-	let sortOrder = $state<'asc' | 'desc'>('desc');
+	let sortBy = $state<'endDate' | 'createdTime' | 'familyName'>('endDate');
+	let sortOrder = $state<'asc' | 'desc'>('asc');
+
+	const getValiditySortRank = (endDate: string | null, today: string) => {
+		if (!endDate) return 1;
+		return endDate >= today ? 0 : 2;
+	};
+
+	const compareValues = (aVal: string, bVal: string) => {
+		if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1;
+		if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
+		return 0;
+	};
 
 	const sortedMemberships = $derived(
 		[...memberships].sort((a, b) => {
-			let aVal: string, bVal: string;
 			if (sortBy === 'endDate') {
-				aVal = a.endDate ?? '9999-12-31';
-				bVal = b.endDate ?? '9999-12-31';
-			} else if (sortBy === 'createdTime') {
-				aVal = a.createdTime;
-				bVal = b.createdTime;
-			} else {
-				aVal = a.family?.familyName ?? '';
-				bVal = b.family?.familyName ?? '';
+				const today = getTodayDate();
+				const aRank = getValiditySortRank(a.endDate, today);
+				const bRank = getValiditySortRank(b.endDate, today);
+				if (aRank !== bRank) return aRank - bRank;
+
+				return compareValues(a.endDate ?? '9999-12-31', b.endDate ?? '9999-12-31');
 			}
 
-			if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1;
-			if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
-			return 0;
+			const aVal = sortBy === 'createdTime' ? a.createdTime : (a.family?.familyName ?? '');
+			const bVal = sortBy === 'createdTime' ? b.createdTime : (b.family?.familyName ?? '');
+			return compareValues(aVal, bVal);
 		})
 	);
 
@@ -90,10 +103,12 @@
 		return date.toISOString().split('T')[0];
 	};
 
+	let validForDate = $state(getTodayDate());
 	let flexiPass30Date = $state(getFlexiPassDate(30));
 	let flexiPass60Date = $state(getFlexiPassDate(60));
 
 	const handleCalculateFlexiPass = async (days: number) => {
+		validForDate = getTodayDate();
 		const value = getFlexiPassDate(days);
 		if (days === 30) {
 			flexiPass30Date = value;
@@ -109,21 +124,64 @@
 		}
 	};
 
-	const runSearch = async (query: string) => {
-		isLoading = true;
+	const applyMembershipsResponse = (
+		response: { items: MembershipItem[]; nextCursor: string | null; hasMore: boolean },
+		query: string
+	) => {
+		memberships = response.items;
+		nextCursor = response.nextCursor;
+		hasMore = response.hasMore;
+		activeSearch = query;
+	};
+
+	const loadMemberships = async (query: string, options?: { initial?: boolean }) => {
+		const generation = ++loadGeneration;
+		if (options?.initial) {
+			isInitialLoading = true;
+		} else {
+			isLoading = true;
+		}
+
 		try {
-			const response = await getMemberships({ search: query || undefined });
-			memberships = response.items;
-			nextCursor = response.nextCursor;
-			hasMore = response.hasMore;
-			activeSearch = query;
+			const response = await getMemberships({
+				search: query || undefined,
+				// Keep navigation instant: the unsearched view is only a small recent preview.
+				// Users should search when they need older or less-recent memberships.
+				pageSize: query ? undefined : RECENT_MEMBERSHIPS_PREVIEW_PAGE_SIZE
+			});
+			if (generation !== loadGeneration) return;
+			applyMembershipsResponse(response, query);
 		} catch (error) {
+			if (generation !== loadGeneration) return;
 			console.error('memberships: failed to load', error);
 			toast.error('Failed to load memberships.');
 		} finally {
-			isLoading = false;
+			if (generation !== loadGeneration) return;
+			if (options?.initial) {
+				isInitialLoading = false;
+			} else {
+				isLoading = false;
+			}
 		}
 	};
+
+	const runSearch = async (query: string) => loadMemberships(query);
+
+	const refreshMembershipsAndValidity = async () => {
+		if (searchTimeout) {
+			clearTimeout(searchTimeout);
+			searchTimeout = null;
+		}
+
+		validForDate = getTodayDate();
+		flexiPass30Date = getFlexiPassDate(30);
+		flexiPass60Date = getFlexiPassDate(60);
+		await loadMemberships(searchValue.trim());
+	};
+
+	onMount(() => {
+		void loadMemberships('', { initial: true });
+	});
 
 	const scheduleSearch = (value: string) => {
 		if (searchTimeout) {
@@ -145,7 +203,8 @@
 		try {
 			const response = await getMemberships({
 				cursor: nextCursor,
-				search: activeSearch || undefined
+				search: activeSearch || undefined,
+				pageSize: activeSearch ? undefined : RECENT_MEMBERSHIPS_PREVIEW_PAGE_SIZE
 			});
 			memberships = [...memberships, ...response.items];
 			nextCursor = response.nextCursor;
@@ -298,34 +357,45 @@
 		</div>
 	</div>
 
-	<div class="flex flex-col gap-4 rounded-3xl border border-[#e3d7cc] bg-[#faf6f2] p-4">
-		<div>
-			<p class="text-xs font-semibold uppercase tracking-wide text-[#7a6550]">Validity calculation helper</p>
-		</div>
+	<div class="flex w-fit max-w-full flex-col gap-3 rounded-3xl border border-[#e3d7cc] bg-[#faf6f2] p-4">
 		<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 			<div>
-				<p class="text-sm text-[#5c4a3d]">30 days from today: <span class="font-semibold">{flexiPass30Date}</span></p>
+				<p class="text-xs font-semibold uppercase tracking-wide text-[#7a6550]">Validity helper</p>
+				<p class="mt-1 text-sm text-[#5c4a3d]">Current date - <span class="font-semibold">{validForDate}</span></p>
 			</div>
 			<button
 				type="button"
-				class="inline-flex items-center justify-center gap-2 rounded-2xl border border-[#d9d0c7] bg-white px-4 py-2 text-sm font-medium text-[#7a6550] transition hover:bg-[#fdfbf9]"
-				onclick={() => handleCalculateFlexiPass(30)}
+				class="inline-flex items-center justify-center gap-2 rounded-2xl border border-[#d9d0c7] bg-white px-3 py-2 text-sm font-medium text-[#7a6550] transition hover:bg-[#fdfbf9] disabled:cursor-not-allowed disabled:opacity-60"
+				onclick={refreshMembershipsAndValidity}
+				disabled={isInitialLoading || isLoading}
+				title="Refresh dates and memberships list"
 			>
-				<CalendarDays class="h-4 w-4" />
-				<span>Calculate Flexi 30 Days</span>
+				{#if isLoading && memberships.length > 0}
+					<Loader2 class="h-4 w-4 animate-spin" />
+				{:else}
+					<RefreshCw class="h-4 w-4" />
+				{/if}
+				<span>Refresh</span>
 			</button>
 		</div>
-		<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-			<div>
-				<p class="text-sm text-[#5c4a3d]">60 days from today: <span class="font-semibold">{flexiPass60Date}</span></p>
-			</div>
+		<div class="grid gap-2 sm:grid-cols-2">
 			<button
 				type="button"
-				class="inline-flex items-center justify-center gap-2 rounded-2xl border border-[#d9d0c7] bg-white px-4 py-2 text-sm font-medium text-[#7a6550] transition hover:bg-[#fdfbf9]"
-				onclick={() => handleCalculateFlexiPass(60)}
+				class="inline-flex items-center justify-between gap-3 rounded-2xl border border-[#d9d0c7] bg-white px-3 py-2 text-left text-sm text-[#5c4a3d] transition hover:bg-[#fdfbf9]"
+				onclick={() => handleCalculateFlexiPass(30)}
+				title="Copy 30-day flexi pass end date"
 			>
-				<CalendarDays class="h-4 w-4" />
-				<span>Calculate Flexi 60 Days</span>
+				<span>30 days</span>
+				<span class="inline-flex items-center gap-1 font-semibold text-[#7a6550]"><CalendarDays class="h-4 w-4" />{flexiPass30Date}</span>
+			</button>
+			<button
+				type="button"
+				class="inline-flex items-center justify-between gap-3 rounded-2xl border border-[#d9d0c7] bg-white px-3 py-2 text-left text-sm text-[#5c4a3d] transition hover:bg-[#fdfbf9]"
+				onclick={() => handleCalculateFlexiPass(60)}
+				title="Copy 60-day flexi pass end date"
+			>
+				<span>60 days</span>
+				<span class="inline-flex items-center gap-1 font-semibold text-[#7a6550]"><CalendarDays class="h-4 w-4" />{flexiPass60Date}</span>
 			</button>
 		</div>
 	</div>
@@ -371,24 +441,29 @@
 		{#if activeSearch}
 			Showing results for "{activeSearch}"
 		{:else}
-			Showing all memberships sorted by {sortBy === 'endDate'
+			Showing the latest memberships from the last {MEMBERSHIPS_RECENT_LIST_MONTHS} months sorted by {sortBy === 'endDate'
 				? 'validity'
 				: sortBy === 'createdTime'
 					? 'creation date'
-					: 'family name'}
+					: 'family name'}. Search to find older records.
 		{/if}
 	</div>
 
-	{#if isLoading}
-		<div class="rounded-3xl border border-[#e3d7cc] bg-white/70 p-6 text-sm text-[#7a6550]/80">
-			Loading memberships...
+	{#if (isInitialLoading || isLoading) && memberships.length === 0}
+		<div class="grid gap-3">
+			{#each Array(6) as _}
+				<div class="h-24 animate-pulse rounded-3xl bg-[#e3d7cc]/25"></div>
+			{/each}
 		</div>
 	{:else if memberships.length === 0}
 		<div class="rounded-3xl border border-[#e3d7cc] bg-white/70 p-6 text-sm text-[#7a6550]/80">
 			No memberships found. Try a different search or close an eligible membership receipt.
 		</div>
 	{:else}
-		<div class="grid gap-3">
+		<div class="relative grid gap-3">
+			{#if isLoading}
+				<div class="pointer-events-none absolute inset-0 z-10 rounded-3xl bg-white/40 backdrop-blur-[1px]"></div>
+			{/if}
 			{#each sortedMemberships as membership (membership.id)}
 				{@const isExpanded = expandedMemberships.has(membership.id)}
 				{@const isMenuOpen = openMenuId === membership.id}
@@ -616,7 +691,7 @@
 			{/each}
 		</div>
 
-		{#if hasMore}
+		{#if hasMore && activeSearch}
 			<div class="flex justify-center pt-4">
 				<button
 					type="button"

@@ -107,7 +107,10 @@ describe('flexi pass usage automation', () => {
   });
 
   it('flags missing Notion flexi records when Neon shows purchased entries', async () => {
-    const deps = createDeps({ findFlexiPassRecordsForUsage: vi.fn().mockResolvedValue([]) });
+    const deps = createDeps({
+      findFlexiPassRecordsForUsage: vi.fn().mockResolvedValue([]),
+      findFamilyByLoyverseCustomerId: vi.fn().mockResolvedValue({ id: 'family-1', name: 'Test Family' })
+    });
 
     const results = await runAutomation(createReceipt(), deps);
 
@@ -116,6 +119,7 @@ describe('flexi pass usage automation', () => {
       details: {
         reason: 'no_flexi_pass_records',
         incidentCode: 'FLEXI_PASS_USAGE_NO_NOTION_RECORDS',
+        familyName: 'Test Family',
         entriesPurchased: 11,
         entriesUsedIncludingCurrent: 3
       }

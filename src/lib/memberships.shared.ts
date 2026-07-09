@@ -1,0 +1,1 @@
+export const MEMBERSHIPS_RECENT_LIST_MONTHS = 2;
