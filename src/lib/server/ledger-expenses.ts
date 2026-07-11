@@ -1,15 +1,15 @@
 import { error } from '@sveltejs/kit';
 import { NOTION_API_KEY } from '$env/static/private';
-import { CompanyLedgerDatabase } from '$lib/notion-sdk/dbs/company-ledger/db';
-import { CompanyLedgerPatchDTO } from '$lib/notion-sdk/dbs/company-ledger/patch.dto';
-import type { CompanyLedgerResponse } from '$lib/notion-sdk/dbs/company-ledger/types';
+import { FinancialLedgerDatabase } from '$lib/notion-sdk/dbs/financial-ledger/db';
+import { FinancialLedgerPatchDTO } from '$lib/notion-sdk/dbs/financial-ledger/patch.dto';
+import type { FinancialLedgerResponse } from '$lib/notion-sdk/dbs/financial-ledger/types';
 
 export const COMPANY_LEDGER_EXPENSE_TYPES = {
   register: 'Register Expense',
   scan: 'Scan Expense'
-} as const satisfies Record<string, CompanyLedgerResponse['properties']['Type']['select']['name']>;
+} as const satisfies Record<string, FinancialLedgerResponse['properties']['Type']['select']['name']>;
 
-export type CompanyLedgerExpenseType = CompanyLedgerResponse['properties']['Type']['select']['name'];
+export type CompanyLedgerExpenseType = FinancialLedgerResponse['properties']['Type']['select']['name'];
 
 export type CompanyLedgerExpenseInput = {
   ledgerType: CompanyLedgerExpenseType;
@@ -46,7 +46,7 @@ function normalizeDate(dateStr: string): string {
 }
 
 export async function createCompanyLedgerExpense(data: CompanyLedgerExpenseInput) {
-  const db = new CompanyLedgerDatabase({
+  const db = new FinancialLedgerDatabase({
     notionSecret: NOTION_API_KEY
   });
 
@@ -101,7 +101,7 @@ export async function createCompanyLedgerExpense(data: CompanyLedgerExpenseInput
     : trimmedNotes || sourceFileNote || 'synced via expense tool';
 
   const response = await db.createPage(
-    new CompanyLedgerPatchDTO({
+    new FinancialLedgerPatchDTO({
       properties: {
         description: data.title,
         type: data.ledgerType,
@@ -114,7 +114,6 @@ export async function createCompanyLedgerExpense(data: CompanyLedgerExpenseInput
         paymentMethod: (data.paymentMethod as any) ?? 'Scan',
         bankAccount: (data.bankAccount as any) ?? undefined,
         notes: mergedNotes,
-        owner: undefined,
         supplier: data.supplierId ? [{ id: data.supplierId }] : undefined,
         invoiceReceipt
       }

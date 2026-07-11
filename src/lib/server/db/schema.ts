@@ -100,6 +100,15 @@ export const emailEvents = pgTable(
   ]
 );
 
+export const emailAutomationSettings = pgTable('email_automation_settings', {
+  id: integer('id').primaryKey().default(1),
+  automationEnabled: boolean('automation_enabled').notNull().default(true),
+  ledgerEnabled: boolean('ledger_enabled').notNull().default(false),
+  notificationsEnabled: boolean('notifications_enabled').notNull().default(true),
+  settings: jsonb('settings').notNull().default({}),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+});
+
 export const emailClassificationRules = pgTable(
   'email_classification_rules',
   {

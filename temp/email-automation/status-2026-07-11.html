@@ -34,7 +34,7 @@
     <div class="card"><div class="muted">Production webhook</div><div class="metric ok">Live</div><p>Returns <code>duplicate</code>, <code>eventId</code>, <code>processingState</code>, and <code>notificationState</code>.</p></div>
     <div class="card"><div class="muted">DB migration</div><div class="metric ok">Applied</div><p>Tables: <code>email_events</code>, <code>email_classification_rules</code>.</p></div>
     <div class="card"><div class="muted">Telegram</div><div class="metric ok">Sending</div><p>Dedicated env is configured in Vercel production.</p></div>
-    <div class="card"><div class="muted">Side-effect dispatch</div><div class="metric warn">Ledger off</div><p><code>EMAIL_AUTOMATION_LEDGER_ENABLED=false</code> in production. Classifier results carry generic handler keys for Ledger or future non-Ledger operations.</p></div>
+    <div class="card"><div class="muted">Side-effect dispatch</div><div class="metric ok">Settings-backed</div><p>Runtime switches now live in Neon <code>email_automation_settings</code>. Classifier results carry generic handler keys for Financial Ledger or future non-Ledger operations.</p></div>
   </section>
 
   <section class="card">
@@ -69,8 +69,8 @@
         <li>OTP/login/admin/security mail → ignored.</li>
         <li>Statements, e-documents, subscription renewals → review.</li>
         <li>Enabled <code>email_classification_rules</code> rows now match first by priority, then built-in defaults apply when no DB rule matches.</li>
-        <li>Ledger expense side effects require a ready expense classification plus <code>handler_key='company_ledger_expense'</code>, and still require <code>EMAIL_AUTOMATION_LEDGER_ENABLED=true</code>.</li>
-        <li>Dashboard now has classifier/rule overview sections for DB rules, built-in fallbacks, subtype outcomes, handler activity, and recent events.</li>
+        <li>Financial Ledger expense side effects require a ready expense classification plus <code>handler_key='company_ledger_expense'</code>, and still require Neon <code>ledger_enabled=true</code>.</li>
+        <li>Dashboard now has runtime settings, classifier/rule overview sections, Telegram preview, DB rules, built-in fallbacks, subtype outcomes, handler activity, and recent events.</li>
         <li>Everything else → review, with K BIZ-specific unrecognized subtype when applicable.</li>
       </ul>
     </div>

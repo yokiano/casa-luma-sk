@@ -31,6 +31,30 @@
     </p>
   </div>
 
+  <form method="POST" action="?/settings" class="rounded-3xl border border-[#dfd2c5] bg-white p-5 shadow-sm">
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+      <div>
+        <h2 class="font-semibold">Automation settings</h2>
+        <p class="mt-1 text-sm text-[#7a6550]">Runtime switches stored in Neon. These replace deploy-time env toggles for normal operations.</p>
+      </div>
+      <button class="rounded-full bg-[#2c2925] px-4 py-2 text-sm font-semibold text-white hover:bg-[#4a4037]" type="submit">Save settings</button>
+    </div>
+    <div class="mt-4 grid gap-3 md:grid-cols-3">
+      <label class="flex items-start gap-3 rounded-2xl border border-[#eee5dc] bg-[#fbf8f4] p-4 text-sm">
+        <input class="mt-1" type="checkbox" name="automationEnabled" checked={data.settings.automationEnabled} />
+        <span><b class="block text-[#2c2925]">Automation enabled</b><span class="text-[#7a6550]">When off, incoming emails are stored as ignored and no handlers run.</span></span>
+      </label>
+      <label class="flex items-start gap-3 rounded-2xl border border-[#eee5dc] bg-[#fbf8f4] p-4 text-sm">
+        <input class="mt-1" type="checkbox" name="ledgerEnabled" checked={data.settings.ledgerEnabled} />
+        <span><b class="block text-[#2c2925]">Ledger writes enabled</b><span class="text-[#7a6550]">Allows ready expense rules with the Ledger handler to create Financial Ledger rows.</span></span>
+      </label>
+      <label class="flex items-start gap-3 rounded-2xl border border-[#eee5dc] bg-[#fbf8f4] p-4 text-sm">
+        <input class="mt-1" type="checkbox" name="notificationsEnabled" checked={data.settings.notificationsEnabled} />
+        <span><b class="block text-[#2c2925]">Telegram notifications</b><span class="text-[#7a6550]">When off, events are stored but Telegram is not sent.</span></span>
+      </label>
+    </div>
+  </form>
+
   <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
     <div class="rounded-3xl border border-[#dfd2c5] bg-white p-5"><p class="text-xs font-bold uppercase tracking-wider text-[#7a6550]/60">Received</p><p class="mt-2 text-3xl font-semibold">{data.totals.total}</p></div>
     <div class="rounded-3xl border border-emerald-200 bg-emerald-50 p-5"><p class="text-xs font-bold uppercase tracking-wider text-emerald-800/60">Ready for action</p><p class="mt-2 text-3xl font-semibold text-emerald-900">{data.totals.ready}</p></div>
@@ -84,6 +108,12 @@
         </div>
       </div>
     </div>
+  </section>
+
+  <section class="rounded-3xl border border-[#dfd2c5] bg-white p-6 shadow-sm">
+    <h2 class="font-semibold">Telegram message preview</h2>
+    <p class="mt-1 text-sm text-[#7a6550]">Preview uses the same renderer as production notifications. Templates are currently code-backed; moving template bodies to Neon is the recommended next step when copy needs to change without deploys.</p>
+    <pre class="mt-4 whitespace-pre-wrap rounded-2xl bg-[#1f1b17] p-4 text-sm leading-6 text-[#f8f3ed]">{data.notificationPreview}</pre>
   </section>
 
   <div class="grid gap-4 xl:grid-cols-2">

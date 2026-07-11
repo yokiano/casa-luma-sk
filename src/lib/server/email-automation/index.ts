@@ -2,7 +2,7 @@ import { asc, desc, eq } from 'drizzle-orm';
 import { env } from '$env/dynamic/private';
 import { createTelegramAlertPublisher } from '$lib/server/alerts/telegram';
 import { db } from '$lib/server/db/client';
-import { emailClassificationRules, emailEvents } from '$lib/server/db/schema';
+import { emailAutomationSettings, emailClassificationRules, emailEvents } from '$lib/server/db/schema';
 import { createCompanyLedgerExpense, type CompanyLedgerExpenseType } from '$lib/server/ledger-expenses';
 import {
   classifyEmail,
@@ -15,6 +15,13 @@ import {
 } from './classifier';
 
 const MAX_SNIPPET_LENGTH = 500;
+
+const DEFAULT_SETTINGS = {
+  automationEnabled: true,
+  // DB settings are the runtime control. The env var is kept only as a pre-migration fallback.
+  ledgerEnabled: env.EMAIL_AUTOMATION_LEDGER_ENABLED === 'true',
+  notificationsEnabled: true
+};
 
 export type { EmailAutomationInput, EmailClassification } from './classifier';
 
@@ -48,9 +55,11 @@ const ledgerDefaults = (classification: Classification) => classification.ledger
   ? classification.ledgerDefaults as { ledgerType?: string; bankAccount?: string; paymentMethod?: string; category?: string; department?: string; supplierId?: string }
   : {};
 
-const createLedgerRecord = async (input: EmailAutomationInput, classification: Classification) => {
+const createLedgerRecord = async (input: EmailAutomationInput, classification: Classification, ledgerEnabled: boolean) => {
   if (!shouldCreateLedgerExpense(classification)) return null;
-  if (env.EMAIL_AUTOMATION_LEDGER_ENABLED !== 'true') return null;
+  if (!ledgerEnabled) return null;
+  const amountMinor = classification.amountMinor;
+  if (amountMinor === undefined) return null;
   const defaults = ledgerDefaults(classification);
   const isPromptPay = /prompt\s*pay|promptpay/i.test(classification.subtype);
   const ledgerType = (defaults.ledgerType ?? (isPromptPay ? 'Scan Expense' : 'Bank Transfer Expense')) as CompanyLedgerExpenseType;
@@ -58,7 +67,7 @@ const createLedgerRecord = async (input: EmailAutomationInput, classification: C
   return createCompanyLedgerExpense({
     ledgerType,
     title: input.subject,
-    amount: classification.amountMinor / 100,
+    amount: amountMinor / 100,
     date: input.receivedAt,
     transactionId: classification.externalRef,
     bankAccount: defaults.bankAccount ?? 'KBank',
@@ -70,22 +79,21 @@ const createLedgerRecord = async (input: EmailAutomationInput, classification: C
   });
 };
 
-const notify = async (input: EmailAutomationInput, event: Classification, _eventId: number, notionPageId?: string) => {
-  const botToken = env.TELEGRAM_BOT_TOKEN;
-  const chatId = env.EMAIL_AUTOMATION_TELEGRAM_CHAT_ID;
-  if (!botToken || !chatId) return 'not_configured';
+export const renderEmailAutomationNotification = (input: EmailAutomationInput, event: Classification, notionPageId?: string) => {
   const amount = formatMoney(event.amountMinor, event.currency);
   const title = notionPageId
     ? '✅ Expense recorded'
     : event.processingState === 'ready'
-      ? '✅ Expense ready'
+      ? '✅ Action ready'
       : '🔎 Review needed';
   const action = notionPageId
     ? 'Ledger page was created. Please attach the receipt or invoice if needed.'
     : event.processingState === 'ready'
-      ? 'Ledger creation is currently disabled. Review this email, then enable the Ledger module when ready.'
+      ? event.handlerKey === 'company_ledger_expense'
+        ? 'Ledger creation is disabled in automation settings. Review this email, then enable Ledger writes when ready.'
+        : 'Review the matched automation handler before enabling side effects.'
       : 'Please review this email before any automation runs.';
-  const lines = [
+  return [
     `<b>${title}</b>`,
     humanSubtype(event.subtype),
     detailBlock('Amount', amount),
@@ -94,8 +102,29 @@ const notify = async (input: EmailAutomationInput, event: Classification, _event
     detailBlock('Email', `${escapeHtml(input.from)}\n${escapeHtml(input.subject)}`),
     detailBlock('Next step', action)
   ].filter(Boolean).join('\n\n');
-  await createTelegramAlertPublisher({ botToken, chatId, messageThreadId: env.EMAIL_AUTOMATION_TELEGRAM_MESSAGE_THREAD_ID, timeoutMs: Number(env.TELEGRAM_ALERT_TIMEOUT_MS || 3000) }).publish({ title: '', body: lines, parseMode: 'HTML' });
+};
+
+const notify = async (input: EmailAutomationInput, event: Classification, _eventId: number, notionPageId?: string) => {
+  const botToken = env.TELEGRAM_BOT_TOKEN;
+  const chatId = env.EMAIL_AUTOMATION_TELEGRAM_CHAT_ID;
+  if (!botToken || !chatId) return 'not_configured';
+  const body = renderEmailAutomationNotification(input, event, notionPageId);
+  await createTelegramAlertPublisher({ botToken, chatId, messageThreadId: env.EMAIL_AUTOMATION_TELEGRAM_MESSAGE_THREAD_ID, timeoutMs: Number(env.TELEGRAM_ALERT_TIMEOUT_MS || 3000) }).publish({ title: '', body, parseMode: 'HTML' });
   return 'sent';
+};
+
+const loadAutomationSettings = async () => {
+  try {
+    const [settings] = await db.select({
+      automationEnabled: emailAutomationSettings.automationEnabled,
+      ledgerEnabled: emailAutomationSettings.ledgerEnabled,
+      notificationsEnabled: emailAutomationSettings.notificationsEnabled
+    }).from(emailAutomationSettings).limit(1);
+    return settings ?? DEFAULT_SETTINGS;
+  } catch (error) {
+    console.warn('Email automation settings unavailable; falling back to env defaults.', error);
+    return DEFAULT_SETTINGS;
+  }
 };
 
 const loadEnabledClassificationRules = async (): Promise<EmailClassificationRuleInput[]> => {
@@ -116,8 +145,11 @@ const loadEnabledClassificationRules = async (): Promise<EmailClassificationRule
 };
 
 export const ingestEmailAutomationEvent = async (input: EmailAutomationInput) => {
-  const rules = await loadEnabledClassificationRules();
-  const classification = classifyEmail(input, rules);
+  const settings = await loadAutomationSettings();
+  const rules = settings.automationEnabled ? await loadEnabledClassificationRules() : [];
+  const classification = settings.automationEnabled
+    ? classifyEmail(input, rules)
+    : { classification: 'ignore' as const, subtype: 'automation_disabled', processingState: 'ignored' as const, reviewReason: 'Email automation is disabled in dashboard settings.', notify: false };
   const hash = createEmailAutomationHash(input);
   const [created] = await db.insert(emailEvents).values({
     receivedAt: new Date(input.receivedAt), messageId: input.messageId, emailHash: hash,
@@ -127,7 +159,7 @@ export const ingestEmailAutomationEvent = async (input: EmailAutomationInput) =>
     externalRef: classification.externalRef, amountMinor: classification.amountMinor,
     currency: classification.currency, counterparty: classification.counterparty,
     reviewReason: classification.reviewReason,
-    notificationState: classification.notify ? 'pending' : 'not_needed',
+    notificationState: classification.notify && settings.notificationsEnabled ? 'pending' : 'not_needed',
     metadata: {
       textSnippet: compactSnippet(input.textBody),
       htmlSnippet: compactSnippet(input.htmlBody),
@@ -147,7 +179,7 @@ export const ingestEmailAutomationEvent = async (input: EmailAutomationInput) =>
   let notionPageId: string | undefined;
   if (classification.processingState === 'ready') {
     try {
-      const ledger = await createLedgerRecord(input, classification);
+      const ledger = await createLedgerRecord(input, classification, settings.ledgerEnabled);
       notionPageId = ledger?.id;
       if (notionPageId) {
         await db.update(emailEvents).set({ notionPageId, processingState: 'ledger_created' }).where(eq(emailEvents.id, created.id));
@@ -159,9 +191,9 @@ export const ingestEmailAutomationEvent = async (input: EmailAutomationInput) =>
     }
   }
 
-  let notificationState = classification.notify ? 'pending' : 'not_needed';
+  let notificationState = classification.notify && settings.notificationsEnabled ? 'pending' : 'not_needed';
   try {
-    if (classification.notify) notificationState = await notify(input, classification, created.id, notionPageId);
+    if (classification.notify && settings.notificationsEnabled) notificationState = await notify(input, classification, created.id, notionPageId);
     await db.update(emailEvents).set({ notificationState, processedAt: new Date(), attemptCount: 1 }).where(eq(emailEvents.id, created.id));
   } catch (error) {
     const lastError = error instanceof Error ? error.message : String(error);

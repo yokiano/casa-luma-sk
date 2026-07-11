@@ -15,7 +15,8 @@ Gmail filter / direct sender
   -> Worker: process-email-trigger
   -> POST /api/webhooks/email
   -> durable email event + classification
-  -> module handler (Ledger for confirmed expenses, or other handlers as added)
+  -> Neon runtime settings gate
+  -> module handler (Financial Ledger for confirmed expenses, or other handlers as added)
   -> readable Telegram notification when needed
 ```
 
@@ -42,7 +43,7 @@ Set this wherever the SvelteKit app runs:
   - `TELEGRAM_BOT_TOKEN`
   - `EMAIL_AUTOMATION_TELEGRAM_CHAT_ID`
   - optional `EMAIL_AUTOMATION_TELEGRAM_MESSAGE_THREAD_ID`
-  - `EMAIL_AUTOMATION_LEDGER_ENABLED=false` initially; set to `true` only after the parser/notification proof has been reviewed.
+  - `EMAIL_AUTOMATION_LEDGER_ENABLED` is now only a pre-migration fallback. Normal runtime control lives in Neon `email_automation_settings` and is editable from the dashboard.
 
 ### Cloudflare Worker
 
@@ -100,7 +101,7 @@ Gmail is a coarse filter only. The app webhook must remain the source of truth f
 Use local work for classifier and module changes. Keep the Cloudflare Worker URL pointed at production unless you specifically want live email routing to hit a preview/local tunnel.
 
 1. Make pure classifier changes in `src/lib/server/email-automation/classifier.ts`; keep DB loading, persistence, Telegram, and side-effect changes in `src/lib/server/email-automation/index.ts`.
-2. Keep the Ledger side effect disabled while testing notifications/parser behavior: `EMAIL_AUTOMATION_LEDGER_ENABLED=false` or unset.
+2. Use `/mgmt-dashboard/email-automation` to control automation, Financial Ledger writes, and Telegram notifications from Neon-backed runtime settings.
 3. Run the direct smoke test against a local or preview app URL:
 
 ```bash
@@ -124,7 +125,7 @@ pnpm tsx scripts/live-test-email-automation.ts --production --allow-ledger-risk
 4. Deploy Worker with `pnpm cf:email:deploy` only when Worker extraction/config changed. Classifier and Ledger/Notion module changes only require app deploy.
 5. Forward an original representative email to `automations@casalumakpg.com`.
 6. Confirm the Email automation dashboard shows the event/classification and Telegram receives an actionable result. A matching `Status ... (Approved)` email should be stored as ignored and should not notify.
-7. Only then set `EMAIL_AUTOMATION_LEDGER_ENABLED=true` and verify a unique success email creates one Company Ledger page.
+7. Only then enable Ledger writes in `/mgmt-dashboard/email-automation` and verify a unique success email creates one Financial Ledger page.
 
 For a pre-mail smoke test, post a normalized payload with a unique Message-ID to the production webhook from a machine where the secret is available. Keep Ledger creation disabled for this test:
 
@@ -149,7 +150,7 @@ Rule fields:
 - `body_patterns`: optional JSON. An array means all patterns must match the normalized text/html body. Use `{ "mode": "any", "patterns": ["statement", "e-document"] }` when any listed pattern is enough.
 - `classification`: one of `expense`, `income`, `ignore`, `review`.
 - `subtype`: stored on the event and used in Telegram labels.
-- `handler_key`: stored in the classifier result for side-effect dispatch. It is intentionally generic so future non-Ledger handlers can be routed from the classifier result. Ledger expense creation requires `handler_key='company_ledger_expense'` and remains gated by `EMAIL_AUTOMATION_LEDGER_ENABLED=true`.
+- `handler_key`: stored in the classifier result for side-effect dispatch. It is intentionally generic so future non-Ledger handlers can be routed from the classifier result. Financial Ledger expense creation requires `handler_key='company_ledger_expense'` and remains gated by the Neon-backed `ledger_enabled` setting.
 - `ledger_defaults`: reserved handler defaults for future Ledger dispatch refinements.
 - `notify_policy`: `review_and_success` by default. Also supports `never`, `always`, `review_only`, and `success_only`.
 
@@ -164,7 +165,7 @@ Current shape:
 1. Normalize email metadata and parsed body.
 2. Dedupe by a stable hash of `Message-ID`, sender, recipient, subject, and body preview.
 3. Match enabled DB rules, then built-in fallback rules.
-4. Dispatch to automation handlers; confirmed expenses are handled by the Company Ledger module only when `EMAIL_AUTOMATION_LEDGER_ENABLED=true`.
+4. Dispatch to automation handlers; confirmed expenses are handled by the Financial Ledger module only when `email_automation_settings.ledger_enabled=true`.
 5. Store result and notify Telegram only for success/review/failure depending on the rule.
 
 Do not put heavy parsing/OCR or business logic in the Worker.
