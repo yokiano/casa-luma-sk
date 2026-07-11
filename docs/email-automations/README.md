@@ -4,7 +4,7 @@
 
 Use Cloudflare Email Routing as the email interceptor, then forward matched emails into the app for automation dispatch.
 
-The app records every received email as an email-automation event, classifies it, and only notifies Telegram for actionable success/review outcomes. Email events are not incidents. Telegram messages should stay human-first: clear title, short type, then label/value blocks on separate lines instead of dense `Label: value` rows.
+The app records every received email as an email-automation event, classifies it with enabled database rules first, falls back to built-in safe defaults, and only notifies Telegram for actionable success/review outcomes. Email events are not incidents. Telegram messages should stay human-first: clear title, short type, then label/value blocks on separate lines instead of dense `Label: value` rows.
 
 ## Architecture
 
@@ -99,7 +99,7 @@ Gmail is a coarse filter only. The app webhook must remain the source of truth f
 
 Use local work for classifier and module changes. Keep the Cloudflare Worker URL pointed at production unless you specifically want live email routing to hit a preview/local tunnel.
 
-1. Make classifier or side-effect changes in `src/lib/server/email-automation/index.ts`.
+1. Make pure classifier changes in `src/lib/server/email-automation/classifier.ts`; keep DB loading, persistence, Telegram, and side-effect changes in `src/lib/server/email-automation/index.ts`.
 2. Keep the Ledger side effect disabled while testing notifications/parser behavior: `EMAIL_AUTOMATION_LEDGER_ENABLED=false` or unset.
 3. Run the direct smoke test against a local or preview app URL:
 
@@ -137,14 +137,34 @@ curl -X POST "https://www.casalumakpg.com/api/webhooks/email" \
 
 The first response must have `duplicate: false`; re-running the exact same request must return `duplicate: true` and must not produce another Telegram notification.
 
+## DB-backed classification rules
+
+The `email_classification_rules` table is now active. On every webhook intake the app loads enabled rows ordered by `priority` then `id`, tries those rules first, and falls back to built-in defaults when no row matches. This keeps production safe if the table is empty.
+
+Rule fields:
+
+- `enabled`: disabled rows are ignored.
+- `priority`: lower numbers match first.
+- `sender_pattern`, `subject_pattern`: optional case-insensitive patterns. Plain text means "contains". Use `regex:<expression>` or `/expression/flags` only when a regex is really needed; invalid regexes fail closed and do not match.
+- `body_patterns`: optional JSON. An array means all patterns must match the normalized text/html body. Use `{ "mode": "any", "patterns": ["statement", "e-document"] }` when any listed pattern is enough.
+- `classification`: one of `expense`, `income`, `ignore`, `review`.
+- `subtype`: stored on the event and used in Telegram labels.
+- `handler_key`: stored in the classifier result for side-effect dispatch. Ledger expense creation requires `handler_key='company_ledger_expense'` and remains gated by `EMAIL_AUTOMATION_LEDGER_ENABLED=true`.
+- `ledger_defaults`: reserved handler defaults for future Ledger dispatch refinements.
+- `notify_policy`: `review_and_success` by default. Also supports `never`, `always`, `review_only`, and `success_only`.
+
+For DB-backed `expense`/`income` rules, the classifier still extracts transaction reference and amount from the subject/body. Missing reference or amount keeps the event in `review` instead of `ready`.
+
+Current built-in fallback rules still cover K BIZ success emails, approved shadow messages, K SHOP/merchant fee failures, security/admin mail, statement/e-document review, and unrecognized fallback review.
+
 ## Automation dispatcher
 
-Planned shape:
+Current shape:
 
 1. Normalize email metadata and parsed body.
-2. Dedupe by `Message-ID` or a stable hash of sender/subject/date/body.
-3. Match against explicit rules, for example sender + subject + body keywords.
-4. Dispatch to automation handlers; confirmed expenses are handled by the Company Ledger module.
+2. Dedupe by a stable hash of `Message-ID`, sender, recipient, subject, and body preview.
+3. Match enabled DB rules, then built-in fallback rules.
+4. Dispatch to automation handlers; confirmed expenses are handled by the Company Ledger module only when `EMAIL_AUTOMATION_LEDGER_ENABLED=true`.
 5. Store result and notify Telegram only for success/review/failure depending on the rule.
 
 Do not put heavy parsing/OCR or business logic in the Worker.

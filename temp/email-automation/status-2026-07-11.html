@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Email automation implementation status</title>
+  <style>
+    :root { color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #29241f; background: #f8f3ed; }
+    body { margin: 0; padding: 32px; }
+    main { max-width: 1080px; margin: 0 auto; }
+    h1 { margin: 0 0 8px; font-size: 34px; letter-spacing: -0.03em; }
+    h2 { margin: 0 0 14px; font-size: 20px; }
+    p { line-height: 1.55; color: #69594a; }
+    .muted { color: #8a796a; font-size: 14px; }
+    .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin: 24px 0; }
+    .card { background: #fff; border: 1px solid #e2d5c8; border-radius: 22px; padding: 20px; box-shadow: 0 10px 28px rgba(71, 52, 35, 0.06); }
+    .metric { font-size: 34px; font-weight: 750; margin-top: 6px; }
+    .ok { color: #047857; } .warn { color: #b45309; } .stop { color: #b91c1c; }
+    ul { margin: 10px 0 0; padding-left: 20px; line-height: 1.7; color: #514438; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; overflow: hidden; border-radius: 16px; }
+    th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid #eee3d8; vertical-align: top; }
+    th { background: #fbf8f4; color: #7a6550; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+    code { background: #f3ebe2; padding: 2px 6px; border-radius: 8px; }
+    .pill { display: inline-block; border-radius: 999px; padding: 3px 9px; font-size: 12px; font-weight: 700; background: #f3ebe2; }
+  </style>
+</head>
+<body>
+<main>
+  <p class="muted">Temporary status page · 2026-07-11</p>
+  <h1>Email automation implementation status</h1>
+  <p>Current state after deployment: Cloudflare/Gmail intake is assumed working, the app webhook is live, database persistence and dedupe are active, DB-backed classification rules are functional with built-in safe fallbacks, and Telegram notifications are sending. Ledger/Notion side effects are intentionally disabled until the classifier output is trusted on real emails. Telegram formatting now uses short human-first titles and stacked label/value blocks instead of dense ID-heavy rows.</p>
+
+  <section class="grid">
+    <div class="card"><div class="muted">Production webhook</div><div class="metric ok">Live</div><p>Returns <code>duplicate</code>, <code>eventId</code>, <code>processingState</code>, and <code>notificationState</code>.</p></div>
+    <div class="card"><div class="muted">DB migration</div><div class="metric ok">Applied</div><p>Tables: <code>email_events</code>, <code>email_classification_rules</code>.</p></div>
+    <div class="card"><div class="muted">Telegram</div><div class="metric ok">Sending</div><p>Dedicated env is configured in Vercel production.</p></div>
+    <div class="card"><div class="muted">Ledger/Notion side effects</div><div class="metric warn">Off</div><p><code>EMAIL_AUTOMATION_LEDGER_ENABLED=false</code> in production.</p></div>
+  </section>
+
+  <section class="card">
+    <h2>Current production test data</h2>
+    <div class="grid">
+      <div><div class="muted">Total events</div><div class="metric">4</div></div>
+      <div><div class="muted">Telegram sent</div><div class="metric ok">3</div></div>
+      <div><div class="muted">Ready</div><div class="metric ok">1</div></div>
+      <div><div class="muted">Review</div><div class="metric warn">3</div></div>
+    </div>
+    <table>
+      <thead><tr><th>ID</th><th>Subject</th><th>Subtype</th><th>State</th><th>Notification</th></tr></thead>
+      <tbody>
+        <tr><td>5</td><td>[test] Statement available email-format-review-test-1783772480</td><td>statement_or_attachment</td><td><span class="pill">review</span></td><td>sent with new human-friendly format</td></tr>
+        <tr><td>3</td><td>[test] Result of PromptPay Funds Transfer (Success) email-automation-test-1783769406782</td><td>promptpay_transfer_success</td><td><span class="pill">ready</span></td><td>sent</td></tr>
+        <tr><td>2</td><td>[test] Statement available email-automation-review-test-1783769397</td><td>statement_or_attachment</td><td><span class="pill">review</span></td><td>sent</td></tr>
+        <tr><td>1</td><td>[test] Statement available email-automation-review-test-1783769194</td><td>statement_or_attachment</td><td><span class="pill">review</span></td><td>not_configured before env redeploy</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="grid">
+    <div class="card">
+      <h2>Classifiers currently implemented</h2>
+      <ul>
+        <li>K BIZ bill payment/top-up success → expense, ready if amount and reference are extracted.</li>
+        <li>K BIZ other-bank transfer success → expense, ready if amount and reference are extracted.</li>
+        <li>K BIZ PromptPay transfer success → expense, ready if amount and reference are extracted.</li>
+        <li><code>Status ... (Approved)</code> companion messages → ignored, no Telegram.</li>
+        <li>K SHOP settlement/deposit failures → review.</li>
+        <li>Merchant fee failures → review.</li>
+        <li>OTP/login/admin/security mail → ignored.</li>
+        <li>Statements, e-documents, subscription renewals → review.</li>
+        <li>Enabled <code>email_classification_rules</code> rows now match first by priority, then built-in defaults apply when no DB rule matches.</li>
+        <li>Ledger expense side effects require a ready expense classification plus <code>handler_key='company_ledger_expense'</code>, and still require <code>EMAIL_AUTOMATION_LEDGER_ENABLED=true</code>.</li>
+        <li>Everything else → review, with K BIZ-specific unrecognized subtype when applicable.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>Missing / next work</h2>
+      <ul>
+        <li>Deploy updated Worker body-decoding code when Cloudflare auth is available.</li>
+        <li>Validate parsing against original real bank emails, not only normalized smoke payloads.</li>
+        <li>Validate and optionally seed production DB rules for the bank email types after reviewing real messages.</li>
+        <li>Add dashboard management controls for creating, disabling, and reprioritizing DB rules.</li>
+        <li>Turn on Ledger creation only after reviewing real notification/parser output.</li>
+        <li>Optionally add a dashboard row-detail view with body snippets and retry controls.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Operational answers</h2>
+    <ul>
+      <li><strong>Cloudflare webhook URL:</strong> no change needed. Keep <code>https://www.casalumakpg.com/api/webhooks/email</code>.</li>
+      <li><strong>Where to keep working:</strong> pure classification logic in <code>src/lib/server/email-automation/classifier.ts</code>; DB loading, persistence, Telegram, and side-effect modules in <code>src/lib/server/email-automation/index.ts</code>.</li>
+      <li><strong>Local smoke test:</strong> set <code>EMAIL_AUTOMATION_TEST_WEBHOOK_URL</code> to local or preview app URL and run <code>pnpm tsx scripts/live-test-email-automation.ts</code>.</li>
+      <li><strong>Production smoke test:</strong> run <code>pnpm tsx scripts/live-test-email-automation.ts --production --allow-ledger-risk</code> only after confirming Ledger is disabled or accepting the risk.</li>
+    </ul>
+  </section>
+</main>
+</body>
+</html>
