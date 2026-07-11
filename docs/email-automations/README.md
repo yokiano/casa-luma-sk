@@ -15,7 +15,7 @@ Gmail filter / direct sender
   -> Worker: process-email-trigger
   -> POST /api/webhooks/email
   -> durable email event + classification
-  -> module handler (Ledger for confirmed expenses)
+  -> module handler (Ledger for confirmed expenses, or other handlers as added)
   -> readable Telegram notification when needed
 ```
 
@@ -27,7 +27,7 @@ Keep the Worker thin. It should only extract safe email metadata/body preview an
 - Worker config: `scripts/cloudflare/process-email-trigger/wrangler.toml`
 - App webhook: `src/routes/api/webhooks/email/+server.ts`
 - Email automation service/classifier: `src/lib/server/email-automation/index.ts`
-- Dashboard: `/mgmt-dashboard/email-automation`
+- Dashboard: `/mgmt-dashboard/email-automation` with intake totals, DB rule overview, fallback summary, subtype outcomes, handler activity, and recent events.
 - Smoke test script: `scripts/live-test-email-automation.ts`
 - This documentation: `docs/email-automations/README.md`
 
@@ -149,7 +149,7 @@ Rule fields:
 - `body_patterns`: optional JSON. An array means all patterns must match the normalized text/html body. Use `{ "mode": "any", "patterns": ["statement", "e-document"] }` when any listed pattern is enough.
 - `classification`: one of `expense`, `income`, `ignore`, `review`.
 - `subtype`: stored on the event and used in Telegram labels.
-- `handler_key`: stored in the classifier result for side-effect dispatch. Ledger expense creation requires `handler_key='company_ledger_expense'` and remains gated by `EMAIL_AUTOMATION_LEDGER_ENABLED=true`.
+- `handler_key`: stored in the classifier result for side-effect dispatch. It is intentionally generic so future non-Ledger handlers can be routed from the classifier result. Ledger expense creation requires `handler_key='company_ledger_expense'` and remains gated by `EMAIL_AUTOMATION_LEDGER_ENABLED=true`.
 - `ledger_defaults`: reserved handler defaults for future Ledger dispatch refinements.
 - `notify_policy`: `review_and_success` by default. Also supports `never`, `always`, `review_only`, and `success_only`.
 
