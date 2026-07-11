@@ -120,6 +120,14 @@ const emailHash = (input: EmailAutomationInput) => createHash('sha256')
 
 const formatMoney = (amountMinor?: number, currency?: string) => amountMinor === undefined ? null : `${currency ?? 'THB'} ${(amountMinor / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
 
+const humanSubtype = (subtype: string) => subtype
+  .replaceAll('_', ' ')
+  .replace(/\b\w/g, (letter) => letter.toUpperCase());
+
+const detailBlock = (label: string, value?: string | null) => value
+  ? `<b>${label}</b>\n${value}`
+  : null;
+
 const createLedgerRecord = async (input: EmailAutomationInput, classification: Classification) => {
   if (classification.processingState !== 'ready' || classification.amountMinor === undefined) return null;
   if (env.EMAIL_AUTOMATION_LEDGER_ENABLED !== 'true') return null;
@@ -138,23 +146,30 @@ const createLedgerRecord = async (input: EmailAutomationInput, classification: C
   });
 };
 
-const notify = async (input: EmailAutomationInput, event: Classification, eventId: number, notionPageId?: string) => {
+const notify = async (input: EmailAutomationInput, event: Classification, _eventId: number, notionPageId?: string) => {
   const botToken = env.TELEGRAM_BOT_TOKEN;
   const chatId = env.EMAIL_AUTOMATION_TELEGRAM_CHAT_ID;
   if (!botToken || !chatId) return 'not_configured';
   const amount = formatMoney(event.amountMinor, event.currency);
-  const title = notionPageId ? '✅ Email automation: expense recorded' : event.processingState === 'ready' ? '✅ Email automation: expense ready' : '🔎 Email automation: review needed';
+  const title = notionPageId
+    ? '✅ Expense recorded'
+    : event.processingState === 'ready'
+      ? '✅ Expense ready'
+      : '🔎 Review needed';
+  const action = notionPageId
+    ? 'Ledger page was created. Please attach the receipt or invoice if needed.'
+    : event.processingState === 'ready'
+      ? 'Ledger creation is currently disabled. Review this email, then enable the Ledger module when ready.'
+      : 'Please review this email before any automation runs.';
   const lines = [
     `<b>${title}</b>`,
-    `<b>Type:</b> ${event.subtype.replaceAll('_', ' ')}`,
-    `<b>From:</b> ${escapeHtml(input.from)}`,
-    `<b>Subject:</b> ${escapeHtml(input.subject)}`,
-    amount ? `<b>Amount:</b> ${amount}` : null,
-    event.externalRef ? `<b>Reference:</b> <code>${event.externalRef}</code>` : null,
-    event.reviewReason ? `<b>Why:</b> ${escapeHtml(event.reviewReason)}` : null,
-    notionPageId ? `<b>Ledger:</b> created (${notionPageId})` : event.processingState === 'ready' ? '<b>Ledger:</b> waiting for the Ledger handler to be enabled' : null,
-    `<b>Event:</b> #${eventId}`
-  ].filter(Boolean).join('\n');
+    humanSubtype(event.subtype),
+    detailBlock('Amount', amount),
+    detailBlock('Reference', event.externalRef ? `<code>${escapeHtml(event.externalRef)}</code>` : null),
+    detailBlock('Why', event.reviewReason ? escapeHtml(event.reviewReason) : null),
+    detailBlock('Email', `${escapeHtml(input.from)}\n${escapeHtml(input.subject)}`),
+    detailBlock('Next step', action)
+  ].filter(Boolean).join('\n\n');
   await createTelegramAlertPublisher({ botToken, chatId, messageThreadId: env.EMAIL_AUTOMATION_TELEGRAM_MESSAGE_THREAD_ID, timeoutMs: Number(env.TELEGRAM_ALERT_TIMEOUT_MS || 3000) }).publish({ title: '', body: lines, parseMode: 'HTML' });
   return 'sent';
 };

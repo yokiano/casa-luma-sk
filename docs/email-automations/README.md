@@ -4,7 +4,7 @@
 
 Use Cloudflare Email Routing as the email interceptor, then forward matched emails into the app for automation dispatch.
 
-The app records every received email as an email-automation event, classifies it, and only notifies Telegram for actionable success/review outcomes. Email events are not incidents.
+The app records every received email as an email-automation event, classifies it, and only notifies Telegram for actionable success/review outcomes. Email events are not incidents. Telegram messages should stay human-first: clear title, short type, then label/value blocks on separate lines instead of dense `Label: value` rows.
 
 ## Architecture
 
@@ -62,6 +62,8 @@ pnpm cf:email:secret
 The value must equal the app's `EMAIL_WEBHOOK_SECRET`.
 
 You do not need to change `EMAIL_WEBHOOK_URL` when changing classification or side-effect modules. Keep it pointed at the same app route. The Worker is only the intake transport; classification, dedupe, Telegram behavior, Ledger/Notion updates, and future modules live in the app.
+
+For deploys from a developer machine, either set `CLOUDFLARE_API_TOKEN` for non-interactive CI-style deploys or use Wrangler's browser OAuth flow (`pnpm dlx wrangler login`) and approve the login in Cloudflare. OAuth is fine for personal/local deploys; an API token is better for automation.
 
 ## Deploy/update Worker
 
