@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from '$app/state';
   import type { Snippet } from 'svelte';
-  import { Activity, AlertTriangle, BarChart3, HeartPulse, Scale, TrendingUp } from 'lucide-svelte';
+  import { Activity, AlertTriangle, BarChart3, HeartPulse, Mail, Scale, TrendingUp } from 'lucide-svelte';
 
   let { children }: { children?: Snippet } = $props();
 
@@ -9,6 +9,7 @@
     { href: '/mgmt-dashboard', label: 'Daily meeting', icon: BarChart3 },
     { href: '/mgmt-dashboard/reconciliation', label: 'Reconciliation', icon: Scale },
     { href: '/mgmt-dashboard/analytics', label: 'Analytics', icon: TrendingUp },
+    { href: '/mgmt-dashboard/email-automation', label: 'Email automation', icon: Mail },
     { href: '/mgmt-dashboard/violations', label: 'Violations', icon: AlertTriangle },
     { href: '/mgmt-dashboard/health', label: 'Health checks', icon: HeartPulse }
   ];

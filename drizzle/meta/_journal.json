@@ -22,6 +22,13 @@
       "when": 1771670000000,
       "tag": "0002_receipt_analytics_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1783612800000,
+      "tag": "0003_email_automation",
+      "breakpoints": true
     }
   ]
 }

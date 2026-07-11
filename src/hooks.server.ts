@@ -8,7 +8,8 @@ export const handle: Handle = async ({ event, resolve }) => {
 	// Bypass CSRF checks for external webhook endpoints.
 	if (
 		event.url.pathname.startsWith('/api/customer') ||
-		event.url.pathname.startsWith('/api/webhooks/receipt')
+		event.url.pathname.startsWith('/api/webhooks/receipt') ||
+		event.url.pathname.startsWith('/api/webhooks/email')
 	) {
 		// SvelteKit's CSRF protection expects the Origin header to match the request URL.
 		// Webhooks from external services (like Loyverse) often don't include an Origin header
@@ -16,8 +17,8 @@ export const handle: Handle = async ({ event, resolve }) => {
 		event.request.headers.set('origin', event.url.origin);
 	}
 
-	// Only protect /tools routes
-	if (event.url.pathname.startsWith('/tools')) {
+	// Protect staff/internal surfaces with the shared tools auth cookie.
+	if (event.url.pathname.startsWith('/tools') || event.url.pathname.startsWith('/mgmt-dashboard')) {
 		const isBypass = MANAGER_PASSWORD_BYPASS === '1';
 
 		// Skip protection for the login page itself to avoid infinite loops
@@ -43,7 +44,8 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 		// List of routes that require manager access
 		const managerOnlyRoutes = [
-			'/tools/salary-payment'
+			'/tools/salary-payment',
+			'/mgmt-dashboard'
 		];
 
 		if (managerOnlyRoutes.some(route => event.url.pathname.startsWith(route)) && !isManager) {

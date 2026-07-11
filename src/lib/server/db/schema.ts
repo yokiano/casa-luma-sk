@@ -61,6 +61,67 @@ export const reportedErrors = pgTable(
   ]
 );
 
+/**
+ * Email automations are operational intake records, deliberately separate from
+ * reported_errors (which is reserved for application/validation incidents).
+ */
+export const emailEvents = pgTable(
+  'email_events',
+  {
+    id: bigint('id', { mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    receivedAt: timestamp('received_at', { withTimezone: true }).notNull(),
+    messageId: text('message_id'),
+    emailHash: text('email_hash').notNull(),
+    fromAddress: text('from_address').notNull(),
+    toAddress: text('to_address').notNull(),
+    subject: text('subject').notNull(),
+    attachmentCount: integer('attachment_count').notNull().default(0),
+    classification: text('classification').notNull(),
+    subtype: text('subtype').notNull(),
+    processingState: text('processing_state').notNull(),
+    externalRef: text('external_ref'),
+    amountMinor: bigint('amount_minor', { mode: 'number' }),
+    currency: text('currency'),
+    counterparty: text('counterparty'),
+    reviewReason: text('review_reason'),
+    notionPageId: text('notion_page_id'),
+    notificationState: text('notification_state').notNull().default('not_needed'),
+    attemptCount: integer('attempt_count').notNull().default(0),
+    lastError: text('last_error'),
+    processedAt: timestamp('processed_at', { withTimezone: true }),
+    metadata: jsonb('metadata').notNull().default({})
+  },
+  (table) => [
+    uniqueIndex('email_events_email_hash_uidx').on(table.emailHash),
+    index('email_events_received_at_idx').on(table.receivedAt),
+    index('email_events_state_received_idx').on(table.processingState, table.receivedAt),
+    index('email_events_external_ref_idx').on(table.externalRef)
+  ]
+);
+
+export const emailClassificationRules = pgTable(
+  'email_classification_rules',
+  {
+    id: bigint('id', { mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    enabled: boolean('enabled').notNull().default(true),
+    priority: integer('priority').notNull().default(100),
+    name: text('name').notNull(),
+    classification: text('classification').notNull(),
+    subtype: text('subtype').notNull(),
+    senderPattern: text('sender_pattern'),
+    subjectPattern: text('subject_pattern'),
+    bodyPatterns: jsonb('body_patterns').notNull().default([]),
+    handlerKey: text('handler_key').notNull(),
+    ledgerDefaults: jsonb('ledger_defaults').notNull().default({}),
+    notifyPolicy: text('notify_policy').notNull().default('review_and_success')
+  },
+  (table) => [
+    index('email_classification_rules_enabled_priority_idx').on(table.enabled, table.priority)
+  ]
+);
+
 export const receipts = pgTable(
   'receipts',
   {
