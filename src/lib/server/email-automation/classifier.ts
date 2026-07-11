@@ -143,7 +143,7 @@ const shouldNotify = (policy: string | null | undefined, classification: EmailCl
   }
 };
 
-const classificationFromRule = (input: EmailAutomationInput, rule: EmailClassificationRuleInput): EmailClassification | null => {
+export const classificationFromRule = (input: EmailAutomationInput, rule: EmailClassificationRuleInput): EmailClassification | null => {
   const classification = normalizeClassification(rule.classification);
   if (!classification) return null;
   const subject = normalize(input.subject);
@@ -205,6 +205,18 @@ const classificationFromRule = (input: EmailAutomationInput, rule: EmailClassifi
   };
 };
 
+/**
+ * Built-in fallback classifier.
+ *
+ * DEPRECATION INTENTION: The specific matchers below (bill payment, other-bank
+ * transfer, PromptPay success, approved shadow, K SHOP settlement failure,
+ * merchant fee failure, security/admin, statement/e-document) are now mirrored
+ * as DB rules in migration `drizzle/0005_email_classification_rules_dummy_input.sql`
+ * (see `seed-rules.ts`). DB rules run first, so these matchers are effectively
+ * dead code once the seeded rules are applied and proven. The plan is to remove
+ * the duplicated matchers from here and keep ONLY the final `unrecognized_*`
+ * catch-all fallback, so all editable classification logic lives in the DB.
+ */
 const builtInClassify = (input: EmailAutomationInput): EmailClassification => {
   const subject = normalize(input.subject);
   const text = `${subject} ${bodyText(input)}`;

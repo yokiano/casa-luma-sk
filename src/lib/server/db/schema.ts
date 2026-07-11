@@ -124,7 +124,9 @@ export const emailClassificationRules = pgTable(
     bodyPatterns: jsonb('body_patterns').notNull().default([]),
     handlerKey: text('handler_key').notNull(),
     ledgerDefaults: jsonb('ledger_defaults').notNull().default({}),
-    notifyPolicy: text('notify_policy').notNull().default('review_and_success')
+    notifyPolicy: text('notify_policy').notNull().default('review_and_success'),
+    /** Sample email input used for dashboard previews and "Send test". Nullable; null means no preview is available. */
+    dummyInput: jsonb('dummy_input')
   },
   (table) => [
     index('email_classification_rules_enabled_priority_idx').on(table.enabled, table.priority)

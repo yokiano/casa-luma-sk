@@ -22,76 +22,107 @@
     th { background: #fbf8f4; color: #7a6550; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
     code { background: #f3ebe2; padding: 2px 6px; border-radius: 8px; }
     .pill { display: inline-block; border-radius: 999px; padding: 3px 9px; font-size: 12px; font-weight: 700; background: #f3ebe2; }
+    .pill-warn { background: #fef3c7; color: #92400e; } .pill-ok { background: #d1fae5; color: #065f46; }
   </style>
 </head>
 <body>
 <main>
-  <p class="muted">Temporary status page · 2026-07-11</p>
+  <p class="muted">Temporary status page · updated 2026-07-11</p>
   <h1>Email automation implementation status</h1>
-  <p>Current state after deployment: Cloudflare/Gmail intake is assumed working, the app webhook is live, database persistence and dedupe are active, DB-backed classification rules are functional with built-in safe fallbacks, and Telegram notifications are sending. Ledger/Notion side effects are intentionally disabled until the classifier output is trusted on real emails. Telegram formatting now uses short human-first titles and stacked label/value blocks instead of dense ID-heavy rows.</p>
+  <p>This update adds modular Telegram notification templates, seeds default DB classification rules (mirroring the built-in matchers) with a <code>dummy_input</code> column, and gives the dashboard rule management: enable/disable, priority reorder, per-rule Telegram preview, and a Send-test button that posts a demo message to the production Telegram chat. The built-in code matchers are now deprecated and slated for removal once the seeded DB rules are proven; only the <code>unrecognized_*</code> catch-all fallback will remain in code.</p>
 
   <section class="grid">
     <div class="card"><div class="muted">Production webhook</div><div class="metric ok">Live</div><p>Returns <code>duplicate</code>, <code>eventId</code>, <code>processingState</code>, and <code>notificationState</code>.</p></div>
-    <div class="card"><div class="muted">DB migration</div><div class="metric ok">Applied</div><p>Tables: <code>email_events</code>, <code>email_classification_rules</code>.</p></div>
-    <div class="card"><div class="muted">Telegram</div><div class="metric ok">Sending</div><p>Dedicated env is configured in Vercel production.</p></div>
-    <div class="card"><div class="muted">Side-effect dispatch</div><div class="metric ok">Settings-backed</div><p>Runtime switches now live in Neon <code>email_automation_settings</code>. Classifier results carry generic handler keys for Financial Ledger or future non-Ledger operations.</p></div>
+    <div class="card"><div class="muted">DB migration</div><div class="metric warn">0004 + 0005 pending</div><p><code>0004</code> adds <code>email_automation_settings</code>. <code>0005</code> adds <code>dummy_input</code> and seeds 8 default rules. Both still need to be applied to production (CI auto-runs <code>db:migrate</code> on push to <code>drizzle/**</code>).</p></div>
+    <div class="card"><div class="muted">Telegram</div><div class="metric ok">Sending</div><p>Dedicated env configured in Vercel production. Send test posts to the same chat with a <code>🧪 TEST</code> banner.</p></div>
+    <div class="card"><div class="muted">Side-effect dispatch</div><div class="metric ok">Settings-backed</div><p>Runtime switches in Neon <code>email_automation_settings</code>. <code>ledger_enabled</code> defaults to <code>false</code>.</p></div>
   </section>
 
   <section class="card">
-    <h2>Current production test data</h2>
-    <div class="grid">
-      <div><div class="muted">Total events</div><div class="metric">4</div></div>
-      <div><div class="muted">Telegram sent</div><div class="metric ok">3</div></div>
-      <div><div class="muted">Ready</div><div class="metric ok">1</div></div>
-      <div><div class="muted">Review</div><div class="metric warn">3</div></div>
-    </div>
+    <h2>What changed in this update</h2>
+    <ul>
+      <li><strong>Modular notifications:</strong> the large <code>renderEmailAutomationNotification</code> was split into <code>src/lib/server/email-automation/notifications/</code> with one template per kind (<code>expenseRecorded</code>, <code>actionReady</code>, <code>reviewNeeded</code>, <code>ignored</code>) in <code>templates.ts</code>, a dispatcher in <code>render.ts</code>, a sender in <code>send.ts</code>, shared helpers in <code>helpers.ts</code>, and built-in dummy inputs in <code>builtin-dummies.ts</code>. Templates stay code-backed (no DB templates).</li>
+      <li><strong>Dashboard rule controls:</strong> enable/disable and up/down priority reorder for DB rules, with per-rule Telegram preview rendered from each rule's <code>dummy_input</code>.</li>
+      <li><strong>Per-rule preview + Send test:</strong> every DB rule and every built-in classifier shows its Telegram message and has a Send-test button that posts a real demo message to the production Telegram chat.</li>
+      <li><strong>dummy_input column + seed:</strong> migration <code>0005</code> adds <code>email_classification_rules.dummy_input</code> (JSONB) and seeds 8 default rules from <code>seed-rules.ts</code>, each with a sample input derived from the real <code>.eml</code> fixtures in <code>temp/emails-for-automations/</code>.</li>
+      <li><strong>Deprecation intention:</strong> built-in matchers in <code>builtInClassify</code> are marked deprecated; the plan is to remove them and keep only the <code>unrecognized_*</code> catch-all in code.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2>Seeded DB rules (migration 0005)</h2>
     <table>
-      <thead><tr><th>ID</th><th>Subject</th><th>Subtype</th><th>State</th><th>Notification</th></tr></thead>
+      <thead><tr><th>Priority</th><th>Name</th><th>Class · subtype</th><th>Handler</th><th>Notify</th><th>dummy_input</th></tr></thead>
       <tbody>
-        <tr><td>5</td><td>[test] Statement available email-format-review-test-1783772480</td><td>statement_or_attachment</td><td><span class="pill">review</span></td><td>sent with new human-friendly format</td></tr>
-        <tr><td>3</td><td>[test] Result of PromptPay Funds Transfer (Success) email-automation-test-1783769406782</td><td>promptpay_transfer_success</td><td><span class="pill">ready</span></td><td>sent</td></tr>
-        <tr><td>2</td><td>[test] Statement available email-automation-review-test-1783769397</td><td>statement_or_attachment</td><td><span class="pill">review</span></td><td>sent</td></tr>
-        <tr><td>1</td><td>[test] Statement available email-automation-review-test-1783769194</td><td>statement_or_attachment</td><td><span class="pill">review</span></td><td>not_configured before env redeploy</td></tr>
+        <tr><td>10</td><td>Approved companion message</td><td>ignore · approved_shadow</td><td>none</td><td>never</td><td>Status of Promptpay Funds Transfer (Approved)</td></tr>
+        <tr><td>20</td><td>Bill payment / top-up success</td><td>expense · bill_payment_success</td><td>company_ledger_expense</td><td>review_and_success</td><td>BILS260709267019809 / 5,776.31</td></tr>
+        <tr><td>30</td><td>Other-bank transfer success</td><td>expense · other_bank_transfer_success</td><td>company_ledger_expense</td><td>review_and_success</td><td>TRTS260709267002259 / 1,025.00</td></tr>
+        <tr><td>40</td><td>PromptPay transfer success</td><td>expense · promptpay_transfer_success</td><td>company_ledger_expense</td><td>review_and_success</td><td>PPFS260707254721403 / 4,000.00</td></tr>
+        <tr><td>50</td><td>K SHOP settlement failure</td><td>review · kshop_settlement_failed</td><td>notify_only</td><td>review_only</td><td>"could not be deposited" + "K SHOP"</td></tr>
+        <tr><td>60</td><td>Merchant fee failure</td><td>review · merchant_fee_failed</td><td>notify_only</td><td>review_only</td><td>"merchant fee unsuccessful"</td></tr>
+        <tr><td>70</td><td>Security / admin / OTP</td><td>ignore · security_or_admin</td><td>none</td><td>never</td><td>login / OTP notification</td></tr>
+        <tr><td>80</td><td>Statement / e-document / renewal</td><td>review · statement_or_attachment</td><td>notify_only</td><td>review_only</td><td>E-document statement</td></tr>
+      </tbody>
+    </table>
+    <p class="muted" style="margin-top:12px">The seed only runs when the table is empty, so re-applying is safe and manual rules are never clobbered. <code>seed-rules.test.ts</code> guards equivalence between each seeded rule and the built-in classifier for its dummy input.</p>
+  </section>
+
+  <section class="card">
+    <h2>Notification template kinds</h2>
+    <table>
+      <thead><tr><th>Kind</th><th>When</th><th>Blocks</th></tr></thead>
+      <tbody>
+        <tr><td><code>expenseRecorded</code></td><td>notionPageId present (Ledger page created)</td><td>✅ Expense recorded · type · amount · reference · ledger page · email · next step</td></tr>
+        <tr><td><code>actionReady</code></td><td>processingState ready, no Ledger page</td><td>✅ Action ready · type · amount · reference · email · next step (Ledger disabled note)</td></tr>
+        <tr><td><code>reviewNeeded</code></td><td>processingState review</td><td>🔎 Review needed · type · amount · reference · why · email · next step</td></tr>
+        <tr><td><code>ignored</code></td><td>classification ignore (preview only)</td><td>🤫 Ignored · type · why · email</td></tr>
       </tbody>
     </table>
   </section>
 
   <section class="grid">
     <div class="card">
-      <h2>Classifiers currently implemented</h2>
+      <h2>Classifiers covered</h2>
       <ul>
-        <li>K BIZ bill payment/top-up success → expense, ready if amount and reference are extracted.</li>
-        <li>K BIZ other-bank transfer success → expense, ready if amount and reference are extracted.</li>
-        <li>K BIZ PromptPay transfer success → expense, ready if amount and reference are extracted.</li>
+        <li>K BIZ bill payment / other-bank / PromptPay success → expense, ready if amount and reference are extracted.</li>
         <li><code>Status ... (Approved)</code> companion messages → ignored, no Telegram.</li>
-        <li>K SHOP settlement/deposit failures → review.</li>
+        <li>K SHOP settlement / deposit failures → review.</li>
         <li>Merchant fee failures → review.</li>
-        <li>OTP/login/admin/security mail → ignored.</li>
+        <li>OTP / login / admin / security mail → ignored.</li>
         <li>Statements, e-documents, subscription renewals → review.</li>
-        <li>Enabled <code>email_classification_rules</code> rows now match first by priority, then built-in defaults apply when no DB rule matches.</li>
-        <li>Financial Ledger expense side effects require a ready expense classification plus <code>handler_key='company_ledger_expense'</code>, and still require Neon <code>ledger_enabled=true</code>.</li>
-        <li>Dashboard now has runtime settings, classifier/rule overview sections, Telegram preview, DB rules, built-in fallbacks, subtype outcomes, handler activity, and recent events.</li>
-        <li>Everything else → review, with K BIZ-specific unrecognized subtype when applicable.</li>
+        <li>Enabled <code>email_classification_rules</code> rows match first by priority; built-in defaults apply when no DB rule matches.</li>
+        <li>Financial Ledger side effects require a ready expense + <code>handler_key='company_ledger_expense'</code> + Neon <code>ledger_enabled=true</code>.</li>
+        <li>Everything else → review, with K BIZ-specific <code>unrecognized_kbiz</code> subtype when applicable.</li>
       </ul>
     </div>
     <div class="card">
       <h2>Missing / next work</h2>
       <ul>
-        <li>Deploy updated Worker body-decoding code when Cloudflare auth is available.</li>
+        <li><strong>Apply migrations 0004 and 0005 to production</strong> (CI auto-runs on push to <code>drizzle/**</code>).</li>
+        <li>Verify the dashboard shows 8 seeded rules with previews after migration.</li>
+        <li>Use Send test per rule to confirm Telegram formatting end-to-end.</li>
         <li>Validate parsing against original real bank emails, not only normalized smoke payloads.</li>
-        <li>Validate and optionally seed production DB rules for the bank email types after reviewing real messages.</li>
-        <li>Add dashboard management controls for creating, disabling, and reprioritizing DB rules.</li>
+        <li>Once seeded DB rules are proven, remove the deprecated built-in matchers from <code>builtInClassify</code> (keep the <code>unrecognized_*</code> catch-all).</li>
         <li>Turn on Ledger creation only after reviewing real notification/parser output.</li>
-        <li>Optionally add a dashboard row-detail view with body snippets and retry controls.</li>
+        <li>Optionally add dashboard row-detail view with body snippets and retry controls.</li>
       </ul>
     </div>
+  </section>
+
+  <section class="card">
+    <h2>Test status</h2>
+    <ul>
+      <li><code>pnpm vitest --run src/lib/server/email-automation/classifier.test.ts</code> → 8 passed</li>
+      <li><code>pnpm vitest --run src/lib/server/email-automation/seed-rules.test.ts</code> → 6 passed (seed/built-in equivalence + dummy input classification)</li>
+      <li><code>pnpm vitest --run src/lib/server/email-automation/notifications/templates.test.ts</code> → 8 passed (modular templates, dispatcher, TEST banner, HTML escaping)</li>
+    </ul>
   </section>
 
   <section class="card">
     <h2>Operational answers</h2>
     <ul>
       <li><strong>Cloudflare webhook URL:</strong> no change needed. Keep <code>https://www.casalumakpg.com/api/webhooks/email</code>.</li>
-      <li><strong>Where to keep working:</strong> pure classification logic in <code>src/lib/server/email-automation/classifier.ts</code>; DB loading, persistence, Telegram, and side-effect modules in <code>src/lib/server/email-automation/index.ts</code>.</li>
+      <li><strong>Where to keep working:</strong> pure classification logic in <code>classifier.ts</code>; seed/defaults in <code>seed-rules.ts</code>; templates in <code>notifications/</code>; DB loading, persistence, and side-effect dispatch in <code>index.ts</code>.</li>
       <li><strong>Local smoke test:</strong> set <code>EMAIL_AUTOMATION_TEST_WEBHOOK_URL</code> to local or preview app URL and run <code>pnpm tsx scripts/live-test-email-automation.ts</code>.</li>
       <li><strong>Production smoke test:</strong> run <code>pnpm tsx scripts/live-test-email-automation.ts --production --allow-ledger-risk</code> only after confirming Ledger is disabled or accepting the risk.</li>
     </ul>

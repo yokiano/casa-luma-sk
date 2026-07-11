@@ -27,8 +27,11 @@ Keep the Worker thin. It should only extract safe email metadata/body preview an
 - Cloudflare Worker source: `scripts/cloudflare/process-email-trigger/src/index.ts`
 - Worker config: `scripts/cloudflare/process-email-trigger/wrangler.toml`
 - App webhook: `src/routes/api/webhooks/email/+server.ts`
-- Email automation service/classifier: `src/lib/server/email-automation/index.ts`
-- Dashboard: `/mgmt-dashboard/email-automation` with intake totals, DB rule overview, fallback summary, subtype outcomes, handler activity, and recent events.
+- Email automation service: `src/lib/server/email-automation/index.ts`
+- Pure classifier: `src/lib/server/email-automation/classifier.ts`
+- Default seed rules (mirror the built-in matchers): `src/lib/server/email-automation/seed-rules.ts`
+- Modular Telegram templates: `src/lib/server/email-automation/notifications/` (`templates.ts`, `render.ts`, `send.ts`, `helpers.ts`, `builtin-dummies.ts`)
+- Dashboard: `/mgmt-dashboard/email-automation` with intake totals, DB rule management (enable/disable, reorder, preview, Send test), built-in classifier previews, subtype outcomes, handler activity, and recent events.
 - Smoke test script: `scripts/live-test-email-automation.ts`
 - This documentation: `docs/email-automations/README.md`
 
@@ -153,10 +156,39 @@ Rule fields:
 - `handler_key`: stored in the classifier result for side-effect dispatch. It is intentionally generic so future non-Ledger handlers can be routed from the classifier result. Financial Ledger expense creation requires `handler_key='company_ledger_expense'` and remains gated by the Neon-backed `ledger_enabled` setting.
 - `ledger_defaults`: reserved handler defaults for future Ledger dispatch refinements.
 - `notify_policy`: `review_and_success` by default. Also supports `never`, `always`, `review_only`, and `success_only`.
+- `dummy_input`: optional JSON sample email (`from`, `to`, `subject`, `textBody`, `messageId`, `attachmentCount`, `receivedAt`) used by the dashboard for per-rule Telegram previews and the "Send test" button.
 
 For DB-backed `expense`/`income` rules, the classifier still extracts transaction reference and amount from the subject/body. Missing reference or amount keeps the event in `review` instead of `ready`.
 
-Current built-in fallback rules still cover K BIZ success emails, approved shadow messages, K SHOP/merchant fee failures, security/admin mail, statement/e-document review, and unrecognized fallback review.
+### Default seed rules
+
+Migration `drizzle/0005_email_classification_rules_dummy_input.sql` adds the `dummy_input` column and seeds eight default rules that mirror the built-in matchers (approved shadow, bill payment, other-bank transfer, PromptPay transfer, K SHOP settlement failure, merchant fee failure, security/admin, statement/e-document). The seed only runs when the table is empty, so it is safe to re-apply and never clobbers manually-added rules. The seeded definitions live in `src/lib/server/email-automation/seed-rules.ts`; keep that file in sync with the migration INSERT.
+
+### Deprecation intention for built-in matchers
+
+The specific matchers in `builtInClassify` (`classifier.ts`) are now mirrored as DB rules. DB rules run first, so those built-in matchers are effectively dead code once the seed is applied. The plan is to remove the duplicated matchers from `builtInClassify` and keep only the final `unrecognized_*` catch-all fallback, so all editable classification logic lives in the DB. The deprecation note in `classifier.ts` and the `deprecated` flag on the built-in classifier registry (`notifications/builtin-dummies.ts`) track this.
+
+## Notification templates
+
+Telegram messages are rendered by modular, code-backed templates in `src/lib/server/email-automation/notifications/`. Templates stay in code (not the DB) so changes are version-controlled and tested. Each notification kind has its own template function in `templates.ts`:
+
+- `expenseRecorded` - a Ledger page was created
+- `actionReady` - classified and ready, but side effects are still disabled
+- `reviewNeeded` - needs a human decision
+- `ignored` - intentionally quiet (shown in dashboard previews only; production never sends these because `notify=false`)
+
+`render.ts` selects the template from the classification outcome. `send.ts` publishes to Telegram using the same publisher as production, and `sendEmailAutomationTestNotification` wraps the body with a visible `🧪 TEST` banner for dashboard Send-test buttons. `builtin-dummies.ts` holds the sample inputs used for built-in classifier previews and tests.
+
+## Dashboard rule management
+
+The Email automation dashboard lets you:
+
+- Toggle DB rules on/off (enable/disable) without touching SQL.
+- Reorder rules with up/down buttons, which swap priorities so DB rules match in the intended order.
+- See a per-rule Telegram preview rendered with the exact same code as production, using each rule's `dummy_input`.
+- Send a real demo message to the Telegram group (`EMAIL_AUTOMATION_TELEGRAM_CHAT_ID`) for any DB rule or built-in classifier, wrapped with a `🧪 TEST` banner so it is clearly not a live automation message.
+
+Send test posts to the same chat as production. If `TELEGRAM_BOT_TOKEN` or `EMAIL_AUTOMATION_TELEGRAM_CHAT_ID` are missing, the action reports `not_configured` instead of sending.
 
 ## Automation dispatcher
 

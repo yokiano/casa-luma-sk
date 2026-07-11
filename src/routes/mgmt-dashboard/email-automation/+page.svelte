@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { PageData } from './$types';
-  let { data }: { data: PageData } = $props();
+  import type { ActionData, PageData } from './$types';
+  let { data, form }: { data: PageData; form: ActionData } = $props();
 
   const dateTime = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short' });
   const when = (value: string | Date) => dateTime.format(new Date(value));
@@ -20,6 +20,13 @@
     Array.isArray(rule.bodyPatterns) && rule.bodyPatterns.length > 0 ? `body: ${rule.bodyPatterns.length} all-match` : null,
     rule.bodyPatterns && !Array.isArray(rule.bodyPatterns) && typeof rule.bodyPatterns === 'object' ? 'body: custom match' : null
   ].filter(Boolean).join(' · ') || 'No pattern restrictions';
+
+  const testResultMessage = () => {
+    if (!form || form.action !== 'sendTest') return null;
+    if (!form.ok) return { ok: false, text: form.error ?? 'Test send failed.' };
+    if (form.sent === 'not_configured') return { ok: false, text: `Telegram not configured (missing bot token or chat id). Test for "${form.target}" was not sent.` };
+    return { ok: true, text: `Test message sent to Telegram for "${form.target}".` };
+  };
 </script>
 
 <section class="space-y-6">
@@ -30,6 +37,12 @@
       Selected operational emails are recorded here, classified, and routed to the right automation handler. Some classifications only notify or review; Ledger creation is just one handler and stays disabled unless explicitly enabled. Unclear emails stay in review and do not run side effects automatically.
     </p>
   </div>
+
+  {#if testResultMessage()}
+    <div class={`rounded-2xl border p-4 text-sm ${testResultMessage()!.ok ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-red-200 bg-red-50 text-red-800'}`}>
+      {testResultMessage()!.text}
+    </div>
+  {/if}
 
   <form method="POST" action="?/settings" class="rounded-3xl border border-[#dfd2c5] bg-white p-5 shadow-sm">
     <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -65,54 +78,98 @@
   <section class="rounded-3xl border border-[#dfd2c5] bg-white p-6 shadow-sm">
     <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
       <div>
-        <h2 class="text-lg font-semibold">Classifier overview</h2>
-        <p class="mt-1 text-sm text-[#7a6550]">Enabled DB rules match first by priority. Built-in safe fallbacks still apply when no DB rule matches.</p>
+        <h2 class="text-lg font-semibold">Classifier rules</h2>
+        <p class="mt-1 text-sm text-[#7a6550]">DB rules match first by priority. Enable, disable, and reorder them here. Each rule shows a Telegram preview rendered with the same code as production, and a Send test button that posts a demo message to the Telegram group.</p>
       </div>
       <div class="flex gap-2 text-xs font-bold uppercase tracking-wider">
-        <span class="rounded-full bg-emerald-50 px-3 py-1 text-emerald-800">{activeRules().length} active DB rules</span>
+        <span class="rounded-full bg-emerald-50 px-3 py-1 text-emerald-800">{activeRules().length} active</span>
         <span class="rounded-full bg-slate-100 px-3 py-1 text-slate-700">{disabledRules().length} disabled</span>
       </div>
     </div>
 
-    <div class="mt-5 grid gap-4 lg:grid-cols-2">
-      <div class="rounded-2xl border border-[#eee5dc] p-4">
-        <h3 class="font-semibold">DB-backed rules</h3>
-        {#if data.rules.length === 0}
-          <p class="mt-3 text-sm text-[#7a6550]">No DB rules yet. The classifier is using built-in fallbacks only.</p>
-        {:else}
-          <div class="mt-3 space-y-3">
-            {#each data.rules as rule}
-              <div class="rounded-2xl border border-[#eee5dc] bg-[#fbf8f4] p-3">
-                <div class="flex items-start justify-between gap-3">
-                  <div>
-                    <p class="font-medium text-[#2c2925]">{rule.priority}. {rule.name}</p>
-                    <p class="mt-1 text-xs text-[#7a6550]">{rule.classification} · {human(rule.subtype)} · handler: {rule.handlerKey}</p>
-                  </div>
-                  <span class={`rounded-full px-2.5 py-1 text-xs font-bold ${rule.enabled ? 'bg-emerald-50 text-emerald-800' : 'bg-slate-100 text-slate-600'}`}>{rule.enabled ? 'enabled' : 'disabled'}</span>
-                </div>
-                <p class="mt-2 text-xs text-[#7a6550]">{patternSummary(rule)}</p>
-                <p class="mt-1 text-xs text-[#7a6550]">Notify: {rule.notifyPolicy}</p>
+    {#if data.rules.length === 0}
+      <p class="mt-5 text-sm text-[#7a6550]">No DB rules yet. Apply migration <code>0005</code> to seed the default rules, or insert rows manually. The classifier is using built-in fallbacks only until then.</p>
+    {:else}
+      <div class="mt-5 space-y-3">
+        {#each data.rules as rule, i (rule.id)}
+          <div class="rounded-2xl border border-[#eee5dc] bg-[#fbf8f4] p-4">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div class="min-w-0">
+                <p class="font-medium text-[#2c2925]">{rule.priority}. {rule.name}</p>
+                <p class="mt-1 text-xs text-[#7a6550]">{rule.classification} · {human(rule.subtype)} · handler: {rule.handlerKey} · notify: {rule.notifyPolicy}</p>
+                <p class="mt-1 text-xs text-[#7a6550]">{patternSummary(rule)}</p>
               </div>
-            {/each}
-          </div>
-        {/if}
-      </div>
+              <div class="flex items-center gap-2">
+                <form method="POST" action="?/moveRule" class="contents"><input type="hidden" name="ruleId" value={rule.id} /><button class="rounded-full border border-[#eee5dc] bg-white px-2.5 py-1 text-xs font-semibold text-[#2c2925] hover:bg-[#eee5dc] disabled:opacity-40" name="direction" value="up" disabled={i === 0} aria-label="Move up">↑</button></form>
+                <form method="POST" action="?/moveRule" class="contents"><input type="hidden" name="ruleId" value={rule.id} /><button class="rounded-full border border-[#eee5dc] bg-white px-2.5 py-1 text-xs font-semibold text-[#2c2925] hover:bg-[#eee5dc] disabled:opacity-40" name="direction" value="down" disabled={i === data.rules.length - 1} aria-label="Move down">↓</button></form>
+                <form method="POST" action="?/toggleRule" class="contents">
+                  <input type="hidden" name="ruleId" value={rule.id} />
+                  <button class={`rounded-full px-3 py-1 text-xs font-semibold ${rule.enabled ? 'bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100' : 'bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200'}`} type="submit">{rule.enabled ? 'Enabled' : 'Disabled'}</button>
+                </form>
+              </div>
+            </div>
 
-      <div class="rounded-2xl border border-[#eee5dc] p-4">
-        <h3 class="font-semibold">Built-in fallback rules</h3>
-        <div class="mt-3 grid gap-3 text-sm text-[#7a6550]">
-          <p><b class="text-[#2c2925]">Expenses:</b> K BIZ bill payment, other-bank transfer, and PromptPay success results. These route to the Ledger handler only when Ledger is enabled.</p>
-          <p><b class="text-[#2c2925]">Ignore:</b> matching “Approved” companion messages and security/admin mail. These are stored but do not notify.</p>
-          <p><b class="text-[#2c2925]">Review:</b> unrecognised mail, failed K SHOP settlements, failed merchant fees, statements, and renewal notices. These notify the group.</p>
-          <p><b class="text-[#2c2925]">Generic routing:</b> classifier results carry classification, subtype, notification policy, and handler key so non-Ledger operations can be added without changing the Worker.</p>
-        </div>
+            <div class="mt-3 grid gap-3 lg:grid-cols-2">
+              <div>
+                <p class="text-xs font-bold uppercase tracking-wider text-[#7a6550]/60">Telegram preview</p>
+                {#if rule.preview}
+                  <pre class="mt-2 whitespace-pre-wrap rounded-xl bg-[#1f1b17] p-3 text-xs leading-5 text-[#f8f3ed]">{rule.preview}</pre>
+                {:else}
+                  <p class="mt-2 rounded-xl border border-dashed border-[#eee5dc] bg-white p-3 text-xs text-[#7a6550]">{rule.previewNote ?? 'No preview available.'}</p>
+                {/if}
+              </div>
+              <div class="flex flex-col justify-between gap-2">
+                <p class="text-xs text-[#7a6550]">{rule.hasDummyInput ? 'Preview uses the rule\'s stored dummy_input.' : 'Add a dummy_input to enable preview and test-send.'}</p>
+                <form method="POST" action="?/sendTest" class="contents">
+                  <input type="hidden" name="scope" value="rule" />
+                  <input type="hidden" name="ruleId" value={rule.id} />
+                  <button class="self-start rounded-full bg-[#2c2925] px-4 py-2 text-xs font-semibold text-white hover:bg-[#4a4037] disabled:opacity-40" type="submit" disabled={!rule.hasDummyInput || !rule.preview}>Send test to Telegram</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        {/each}
       </div>
+    {/if}
+  </section>
+
+  <section class="rounded-3xl border border-[#dfd2c5] bg-white p-6 shadow-sm">
+    <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+      <div>
+        <h2 class="text-lg font-semibold">Built-in fallback classifiers</h2>
+        <p class="mt-1 text-sm text-[#7a6550]">Code-backed matchers in <code>classifier.ts</code>. The deprecated ones are mirrored as DB rules above and run first; they stay here so previews/tests remain available and are slated for removal once the DB rules are proven. The two unrecognised fallbacks are not mirrored and remain the final catch-all.</p>
+      </div>
+    </div>
+
+    <div class="mt-5 grid gap-3 lg:grid-cols-2">
+      {#each data.builtinPreviews as entry (entry.key)}
+        <div class="rounded-2xl border border-[#eee5dc] bg-[#fbf8f4] p-4">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <p class="font-medium text-[#2c2925]">{entry.label}</p>
+              <p class="mt-1 text-xs text-[#7a6550]">{entry.classification} · {human(entry.subtype)}</p>
+            </div>
+            {#if entry.deprecated}
+              <span class="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-800 border border-amber-200">deprecated</span>
+            {:else}
+              <span class="rounded-full bg-sky-50 px-2.5 py-1 text-xs font-bold text-sky-800 border border-sky-200">fallback</span>
+            {/if}
+          </div>
+          <p class="mt-2 text-xs text-[#7a6550]">{entry.description}</p>
+          <pre class="mt-2 whitespace-pre-wrap rounded-xl bg-[#1f1b17] p-3 text-xs leading-5 text-[#f8f3ed]">{entry.preview}</pre>
+          <form method="POST" action="?/sendTest" class="mt-3 contents">
+            <input type="hidden" name="scope" value="builtin" />
+            <input type="hidden" name="key" value={entry.key} />
+            <button class="rounded-full bg-[#2c2925] px-4 py-2 text-xs font-semibold text-white hover:bg-[#4a4037]" type="submit">Send test to Telegram</button>
+          </form>
+        </div>
+      {/each}
     </div>
   </section>
 
   <section class="rounded-3xl border border-[#dfd2c5] bg-white p-6 shadow-sm">
-    <h2 class="font-semibold">Telegram message preview</h2>
-    <p class="mt-1 text-sm text-[#7a6550]">Preview uses the same renderer as production notifications. Templates are currently code-backed; moving template bodies to Neon is the recommended next step when copy needs to change without deploys.</p>
+    <h2 class="font-semibold">Default Telegram message preview</h2>
+    <p class="mt-1 text-sm text-[#7a6550]">A sample ready expense rendered with the same modular templates as production. Per-rule previews above use the exact same renderer.</p>
     <pre class="mt-4 whitespace-pre-wrap rounded-2xl bg-[#1f1b17] p-4 text-sm leading-6 text-[#f8f3ed]">{data.notificationPreview}</pre>
   </section>
 

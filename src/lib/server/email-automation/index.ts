@@ -1,6 +1,5 @@
 import { asc, desc, eq } from 'drizzle-orm';
 import { env } from '$env/dynamic/private';
-import { createTelegramAlertPublisher } from '$lib/server/alerts/telegram';
 import { db } from '$lib/server/db/client';
 import { emailAutomationSettings, emailClassificationRules, emailEvents } from '$lib/server/db/schema';
 import { createCompanyLedgerExpense, type CompanyLedgerExpenseType } from '$lib/server/ledger-expenses';
@@ -13,6 +12,10 @@ import {
   type EmailClassification,
   type EmailClassificationRuleInput
 } from './classifier';
+import { sendEmailAutomationNotification } from './notifications';
+
+export type { EmailAutomationInput, EmailClassification } from './classifier';
+export { renderEmailAutomationNotification } from './notifications';
 
 const MAX_SNIPPET_LENGTH = 500;
 
@@ -23,33 +26,13 @@ const DEFAULT_SETTINGS = {
   notificationsEnabled: true
 };
 
-export type { EmailAutomationInput, EmailClassification } from './classifier';
-
 type Classification = EmailClassification;
-
-const escapeHtml = (value: string) => value
-  .replace(/&/g, '&amp;')
-  .replace(/</g, '&lt;')
-  .replace(/>/g, '&gt;')
-  .replace(/"/g, '&quot;')
-  .replace(/'/g, '&#39;');
 
 const compactSnippet = (value?: string) => {
   if (!value) return undefined;
   const result = normalize(value);
   return result ? result.slice(0, MAX_SNIPPET_LENGTH) : undefined;
 };
-
-
-const formatMoney = (amountMinor?: number, currency?: string) => amountMinor === undefined ? null : `${currency ?? 'THB'} ${(amountMinor / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
-
-const humanSubtype = (subtype: string) => subtype
-  .replaceAll('_', ' ')
-  .replace(/\b\w/g, (letter) => letter.toUpperCase());
-
-const detailBlock = (label: string, value?: string | null) => value
-  ? `<b>${label}</b>\n${value}`
-  : null;
 
 const ledgerDefaults = (classification: Classification) => classification.ledgerDefaults && typeof classification.ledgerDefaults === 'object'
   ? classification.ledgerDefaults as { ledgerType?: string; bankAccount?: string; paymentMethod?: string; category?: string; department?: string; supplierId?: string }
@@ -79,39 +62,8 @@ const createLedgerRecord = async (input: EmailAutomationInput, classification: C
   });
 };
 
-export const renderEmailAutomationNotification = (input: EmailAutomationInput, event: Classification, notionPageId?: string) => {
-  const amount = formatMoney(event.amountMinor, event.currency);
-  const title = notionPageId
-    ? '✅ Expense recorded'
-    : event.processingState === 'ready'
-      ? '✅ Action ready'
-      : '🔎 Review needed';
-  const action = notionPageId
-    ? 'Ledger page was created. Please attach the receipt or invoice if needed.'
-    : event.processingState === 'ready'
-      ? event.handlerKey === 'company_ledger_expense'
-        ? 'Ledger creation is disabled in automation settings. Review this email, then enable Ledger writes when ready.'
-        : 'Review the matched automation handler before enabling side effects.'
-      : 'Please review this email before any automation runs.';
-  return [
-    `<b>${title}</b>`,
-    humanSubtype(event.subtype),
-    detailBlock('Amount', amount),
-    detailBlock('Reference', event.externalRef ? `<code>${escapeHtml(event.externalRef)}</code>` : null),
-    detailBlock('Why', event.reviewReason ? escapeHtml(event.reviewReason) : null),
-    detailBlock('Email', `${escapeHtml(input.from)}\n${escapeHtml(input.subject)}`),
-    detailBlock('Next step', action)
-  ].filter(Boolean).join('\n\n');
-};
-
-const notify = async (input: EmailAutomationInput, event: Classification, _eventId: number, notionPageId?: string) => {
-  const botToken = env.TELEGRAM_BOT_TOKEN;
-  const chatId = env.EMAIL_AUTOMATION_TELEGRAM_CHAT_ID;
-  if (!botToken || !chatId) return 'not_configured';
-  const body = renderEmailAutomationNotification(input, event, notionPageId);
-  await createTelegramAlertPublisher({ botToken, chatId, messageThreadId: env.EMAIL_AUTOMATION_TELEGRAM_MESSAGE_THREAD_ID, timeoutMs: Number(env.TELEGRAM_ALERT_TIMEOUT_MS || 3000) }).publish({ title: '', body, parseMode: 'HTML' });
-  return 'sent';
-};
+const notify = async (input: EmailAutomationInput, event: Classification, eventId: number, notionPageId?: string) =>
+  sendEmailAutomationNotification(input, event, eventId, notionPageId);
 
 const loadAutomationSettings = async () => {
   try {
