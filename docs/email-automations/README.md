@@ -30,8 +30,11 @@ Keep the Worker thin. It should only extract safe email metadata/body preview an
 - Email automation service: `src/lib/server/email-automation/index.ts`
 - Pure classifier: `src/lib/server/email-automation/classifier.ts`
 - Default seed rules (mirror the built-in matchers): `src/lib/server/email-automation/seed-rules.ts`
+- Dashboard data + mutations: `src/lib/server/email-automation/dashboard.ts`
+- Runtime settings loader: `src/lib/server/email-automation/settings.ts`
+- Remote functions (dashboard commands): `src/lib/email-automation.remote.ts`
 - Modular Telegram templates: `src/lib/server/email-automation/notifications/` (`templates.ts`, `render.ts`, `send.ts`, `helpers.ts`, `builtin-dummies.ts`)
-- Dashboard: `/mgmt-dashboard/email-automation` with intake totals, DB rule management (enable/disable, reorder, preview, Send test), built-in classifier previews, subtype outcomes, handler activity, and recent events.
+- Dashboard: `/mgmt-dashboard/email-automation` with collapsible cards, compact classifier rule table with expandable rows (enable/disable, reorder, preview, Send test), built-in classifier previews, subtype outcomes, handler activity, and recent events (ignored hidden behind a toggle).
 - Smoke test script: `scripts/live-test-email-automation.ts`
 - This documentation: `docs/email-automations/README.md`
 
@@ -181,14 +184,17 @@ Telegram messages are rendered by modular, code-backed templates in `src/lib/ser
 
 ## Dashboard rule management
 
-The Email automation dashboard lets you:
+The Email automation dashboard uses SvelteKit remote functions (`src/lib/email-automation.remote.ts`) for all mutations, so toggling, reordering, saving settings, and sending tests happen without a page refresh. Toast notifications (`svelte-sonner`, mounted in the mgmt-dashboard layout) confirm each action. All cards are collapsible (`<details>`), and the classifier rules section is a compact data table with expandable rows.
+
+The dashboard lets you:
 
 - Toggle DB rules on/off (enable/disable) without touching SQL.
 - Reorder rules with up/down buttons, which swap priorities so DB rules match in the intended order.
-- See a per-rule Telegram preview rendered with the exact same code as production, using each rule's `dummy_input`.
+- See a per-rule Telegram preview rendered with the exact same code as production, using each rule's `dummy_input`. Previews are rendered with `{@html}` so the HTML formatting displays correctly.
 - Send a real demo message to the Telegram group (`EMAIL_AUTOMATION_TELEGRAM_CHAT_ID`) for any DB rule or built-in classifier, wrapped with a `🧪 TEST` banner so it is clearly not a live automation message.
+- Hide ignored email events behind a "Show ignored" toggle at the bottom of the recent events section.
 
-Send test posts to the same chat as production. If `TELEGRAM_BOT_TOKEN` or `EMAIL_AUTOMATION_TELEGRAM_CHAT_ID` are missing, the action reports `not_configured` instead of sending.
+Send test posts to the same chat as production. It reads the current automation settings so the rendered template matches production behavior (e.g. shows "Expense recorded" when Ledger is enabled, not the "Ledger disabled" message). No actual side effects (Ledger pages, DB events) are created by the test. If `TELEGRAM_BOT_TOKEN` or `EMAIL_AUTOMATION_TELEGRAM_CHAT_ID` are missing, the action reports `not_configured` instead of sending.
 
 ## Automation dispatcher
 

@@ -17,6 +17,26 @@ export const selectTemplateKind = (classification: EmailClassification, notionPa
   return 'reviewNeeded';
 };
 
+/**
+ * Selects the template kind for a *simulated* outcome (dashboard Send test).
+ * Unlike `selectTemplateKind`, this does not require a real Ledger page: when
+ * the classification is a ready expense and Ledger writes are enabled in
+ * settings, it renders the `expenseRecorded` template so the preview matches
+ * what production WOULD send. No actual Ledger page is created by the test.
+ */
+export const selectTemplateKindForSimulation = (
+  classification: EmailClassification,
+  ledgerEnabled: boolean
+): NotificationKind => {
+  if (classification.processingState === 'ready'
+    && classification.classification === 'expense'
+    && classification.handlerKey === 'company_ledger_expense'
+    && ledgerEnabled) {
+    return 'expenseRecorded';
+  }
+  return selectTemplateKind(classification);
+};
+
 export const renderEmailAutomationNotification = (
   input: EmailAutomationInput,
   classification: EmailClassification,
@@ -28,13 +48,30 @@ export const renderEmailAutomationNotification = (
 };
 
 /**
- * Wraps the normal render with a visible "TEST" banner so demo messages sent
+ * Renders the notification that WOULD be sent under the given settings, without
+ * creating any side effects. Used by the dashboard Send-test button so the
+ * preview matches production behavior (e.g. shows "Expense recorded" when
+ * Ledger is enabled, not the "Ledger disabled" message).
+ */
+export const renderSimulatedEmailAutomationNotification = (
+  input: EmailAutomationInput,
+  classification: EmailClassification,
+  ledgerEnabled: boolean
+): string => {
+  const kind = selectTemplateKindForSimulation(classification, ledgerEnabled);
+  const template = notificationTemplateByKind[kind];
+  return template(input, classification).filter(Boolean).join('\n\n');
+};
+
+/**
+ * Wraps the simulated render with a visible "TEST" banner so demo messages sent
  * from the dashboard are obviously not real automation output.
  */
 export const renderTestEmailAutomationNotification = (
   input: EmailAutomationInput,
-  classification: EmailClassification
+  classification: EmailClassification,
+  ledgerEnabled: boolean
 ): string => [
   '<b>🧪 TEST — dashboard preview</b>',
-  renderEmailAutomationNotification(input, classification)
+  renderSimulatedEmailAutomationNotification(input, classification, ledgerEnabled)
 ].join('\n\n');

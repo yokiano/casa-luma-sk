@@ -2,6 +2,7 @@
   import { page } from '$app/state';
   import type { Snippet } from 'svelte';
   import { Activity, AlertTriangle, BarChart3, HeartPulse, Mail, Scale, TrendingUp } from 'lucide-svelte';
+  import { Toaster } from '$lib/components/ui/sonner';
 
   let { children }: { children?: Snippet } = $props();
 
@@ -22,6 +23,18 @@
 <svelte:head>
   <title>Mgmt Dashboard · Casa Luma</title>
 </svelte:head>
+
+<Toaster
+  richColors
+  theme="light"
+  toastOptions={{
+    classes: {
+      toast: "rounded-3xl border-[#d9d0c7] shadow-xl",
+      title: "text-[#2c2925] font-semibold",
+      description: "text-[#5c4a3d] font-medium"
+    }
+  }}
+/>
 
 <div class="min-h-screen bg-[#f6f1eb] text-[#2c2925]">
   <div class="mx-auto flex min-h-screen max-w-7xl flex-col lg:flex-row">

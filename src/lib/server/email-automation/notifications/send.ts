@@ -1,5 +1,6 @@
 import { env } from '$env/dynamic/private';
 import { createTelegramAlertPublisher } from '$lib/server/alerts/telegram';
+import { loadAutomationSettings } from '../settings';
 import type { EmailAutomationInput, EmailClassification } from '../classifier';
 import { renderEmailAutomationNotification, renderTestEmailAutomationNotification } from './render';
 
@@ -32,12 +33,16 @@ export const sendEmailAutomationNotification = async (
 /**
  * Sends a demo message to the same Telegram chat as production so the dashboard
  * "Send test" button shows exactly what a real notification would look like.
- * The body is wrapped with a visible TEST banner.
+ * Reads the current automation settings so the rendered template matches
+ * production behavior (e.g. shows "Expense recorded" when Ledger is enabled).
+ * No actual side effects (Ledger pages, DB events) are created. The body is
+ * wrapped with a visible TEST banner.
  */
 export const sendEmailAutomationTestNotification = async (
   input: EmailAutomationInput,
   classification: EmailClassification
 ): Promise<NotificationSendResult> => {
-  const body = renderTestEmailAutomationNotification(input, classification);
+  const settings = await loadAutomationSettings();
+  const body = renderTestEmailAutomationNotification(input, classification, settings.ledgerEnabled);
   return publish(body);
 };

@@ -6,6 +6,7 @@ import {
   ignoredTemplate,
   notificationTemplateByKind,
   renderEmailAutomationNotification,
+  renderSimulatedEmailAutomationNotification,
   renderTestEmailAutomationNotification,
   reviewNeededTemplate,
   selectTemplateKind
@@ -102,6 +103,37 @@ describe('notification templates', () => {
     const message = renderTestEmailAutomationNotification(input, readyExpense);
     expect(blocks(message)[0]).toBe('<b>🧪 TEST — dashboard preview</b>');
     expect(message).toBe(`<b>🧪 TEST — dashboard preview</b>\n\n${rendered}`);
+  });
+
+  it('renders the action-ready template when Ledger is disabled (simulation)', () => {
+    const message = renderSimulatedEmailAutomationNotification(input, readyExpense, false);
+    expect(blocks(message)[0]).toBe('<b>✅ Action ready</b>');
+    expect(message).toContain('Ledger creation is disabled in automation settings.');
+  });
+
+  it('renders the expense-recorded template when Ledger is enabled (simulation)', () => {
+    const message = renderSimulatedEmailAutomationNotification(input, readyExpense, true);
+    expect(blocks(message)[0]).toBe('<b>✅ Expense recorded</b>');
+    expect(message).toContain('Ledger page was created.');
+    // No real notionPageId in simulation, so the ledger page block is omitted.
+    expect(message).not.toContain('notion-page');
+  });
+
+  it('test render respects Ledger enabled setting for ready expenses', () => {
+    const disabled = renderTestEmailAutomationNotification(input, readyExpense, false);
+    expect(blocks(disabled)[0]).toBe('<b>🧪 TEST — dashboard preview</b>');
+    expect(blocks(disabled)[1]).toBe('<b>✅ Action ready</b>');
+    expect(disabled).toContain('Ledger creation is disabled');
+
+    const enabled = renderTestEmailAutomationNotification(input, readyExpense, true);
+    expect(blocks(enabled)[1]).toBe('<b>✅ Expense recorded</b>');
+    expect(enabled).not.toContain('Ledger creation is disabled');
+  });
+
+  it('simulation does not show expense-recorded for non-ledger ready classifications', () => {
+    const notifyOnly: EmailClassification = { ...readyExpense, handlerKey: 'notify_only' };
+    const message = renderSimulatedEmailAutomationNotification(input, notifyOnly, true);
+    expect(blocks(message)[0]).toBe('<b>✅ Action ready</b>');
   });
 
   it('escapes HTML in review reasons and email metadata', () => {

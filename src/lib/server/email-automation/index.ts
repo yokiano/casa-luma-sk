@@ -1,7 +1,6 @@
 import { asc, desc, eq } from 'drizzle-orm';
-import { env } from '$env/dynamic/private';
 import { db } from '$lib/server/db/client';
-import { emailAutomationSettings, emailClassificationRules, emailEvents } from '$lib/server/db/schema';
+import { emailClassificationRules, emailEvents } from '$lib/server/db/schema';
 import { createCompanyLedgerExpense, type CompanyLedgerExpenseType } from '$lib/server/ledger-expenses';
 import {
   classifyEmail,
@@ -13,18 +12,12 @@ import {
   type EmailClassificationRuleInput
 } from './classifier';
 import { sendEmailAutomationNotification } from './notifications';
+import { loadAutomationSettings } from './settings';
 
 export type { EmailAutomationInput, EmailClassification } from './classifier';
 export { renderEmailAutomationNotification } from './notifications';
 
 const MAX_SNIPPET_LENGTH = 500;
-
-const DEFAULT_SETTINGS = {
-  automationEnabled: true,
-  // DB settings are the runtime control. The env var is kept only as a pre-migration fallback.
-  ledgerEnabled: env.EMAIL_AUTOMATION_LEDGER_ENABLED === 'true',
-  notificationsEnabled: true
-};
 
 type Classification = EmailClassification;
 
@@ -64,20 +57,6 @@ const createLedgerRecord = async (input: EmailAutomationInput, classification: C
 
 const notify = async (input: EmailAutomationInput, event: Classification, eventId: number, notionPageId?: string) =>
   sendEmailAutomationNotification(input, event, eventId, notionPageId);
-
-const loadAutomationSettings = async () => {
-  try {
-    const [settings] = await db.select({
-      automationEnabled: emailAutomationSettings.automationEnabled,
-      ledgerEnabled: emailAutomationSettings.ledgerEnabled,
-      notificationsEnabled: emailAutomationSettings.notificationsEnabled
-    }).from(emailAutomationSettings).limit(1);
-    return settings ?? DEFAULT_SETTINGS;
-  } catch (error) {
-    console.warn('Email automation settings unavailable; falling back to env defaults.', error);
-    return DEFAULT_SETTINGS;
-  }
-};
 
 const loadEnabledClassificationRules = async (): Promise<EmailClassificationRuleInput[]> => {
   const rows = await db.select({

@@ -27,9 +27,9 @@
 </head>
 <body>
 <main>
-  <p class="muted">Temporary status page · updated 2026-07-11</p>
+  <p class="muted">Temporary status page · updated 2026-07-11 (rev 2)</p>
   <h1>Email automation implementation status</h1>
-  <p>This update adds modular Telegram notification templates, seeds default DB classification rules (mirroring the built-in matchers) with a <code>dummy_input</code> column, and gives the dashboard rule management: enable/disable, priority reorder, per-rule Telegram preview, and a Send-test button that posts a demo message to the production Telegram chat. The built-in code matchers are now deprecated and slated for removal once the seeded DB rules are proven; only the <code>unrecognized_*</code> catch-all fallback will remain in code.</p>
+  <p>This update adds modular Telegram notification templates, seeds default DB classification rules (mirroring the built-in matchers) with a <code>dummy_input</code> column, and gives the dashboard rule management: enable/disable, priority reorder, per-rule Telegram preview, and a Send-test button that posts a demo message to the production Telegram chat. The built-in code matchers are now deprecated and slated for removal once the seeded DB rules are proven; only the <code>unrecognized_*</code> catch-all fallback will remain in code. The dashboard now uses SvelteKit remote functions (no page refresh), toast notifications, collapsible cards, a compact expandable classifier table, and settings-aware test sends.</p>
 
   <section class="grid">
     <div class="card"><div class="muted">Production webhook</div><div class="metric ok">Live</div><p>Returns <code>duplicate</code>, <code>eventId</code>, <code>processingState</code>, and <code>notificationState</code>.</p></div>
@@ -39,11 +39,14 @@
   </section>
 
   <section class="card">
-    <h2>What changed in this update</h2>
+    <h2>What changed in this update (rev 2)</h2>
     <ul>
       <li><strong>Modular notifications:</strong> the large <code>renderEmailAutomationNotification</code> was split into <code>src/lib/server/email-automation/notifications/</code> with one template per kind (<code>expenseRecorded</code>, <code>actionReady</code>, <code>reviewNeeded</code>, <code>ignored</code>) in <code>templates.ts</code>, a dispatcher in <code>render.ts</code>, a sender in <code>send.ts</code>, shared helpers in <code>helpers.ts</code>, and built-in dummy inputs in <code>builtin-dummies.ts</code>. Templates stay code-backed (no DB templates).</li>
-      <li><strong>Dashboard rule controls:</strong> enable/disable and up/down priority reorder for DB rules, with per-rule Telegram preview rendered from each rule's <code>dummy_input</code>.</li>
-      <li><strong>Per-rule preview + Send test:</strong> every DB rule and every built-in classifier shows its Telegram message and has a Send-test button that posts a real demo message to the production Telegram chat.</li>
+      <li><strong>Dashboard rule controls:</strong> enable/disable and up/down priority reorder for DB rules, with per-rule Telegram preview rendered from each rule's <code>dummy_input</code>. All cards are collapsible; the classifier section is now a compact data table with expandable rows.</li>
+      <li><strong>Per-rule preview + Send test:</strong> every DB rule and every built-in classifier shows its Telegram message (rendered with <code>{@html}</code> so formatting displays) and has a Send-test button in the action row.</li>
+      <li><strong>Settings-aware test send:</strong> the test send now reads the current <code>ledger_enabled</code> setting and renders the correct template (shows "Expense recorded" when Ledger is enabled, not the hardcoded "Ledger disabled" message). No actual side effects are created by the test. This was a bug fix — the previous test send always showed the "disabled" message regardless of settings.</li>
+      <li><strong>Remote functions + toasts:</strong> all dashboard mutations use SvelteKit remote functions (<code>src/lib/email-automation.remote.ts</code>) instead of form actions, so there is no page refresh. Toast notifications (<code>svelte-sonner</code>, mounted in the mgmt-dashboard layout) confirm each action.</li>
+      <li><strong>Ignored emails hidden:</strong> ignored email events are behind a "Show ignored" toggle at the bottom of the recent events section.</li>
       <li><strong>dummy_input column + seed:</strong> migration <code>0005</code> adds <code>email_classification_rules.dummy_input</code> (JSONB) and seeds 8 default rules from <code>seed-rules.ts</code>, each with a sample input derived from the real <code>.eml</code> fixtures in <code>temp/emails-for-automations/</code>.</li>
       <li><strong>Deprecation intention:</strong> built-in matchers in <code>builtInClassify</code> are marked deprecated; the plan is to remove them and keep only the <code>unrecognized_*</code> catch-all in code.</li>
     </ul>
@@ -114,7 +117,7 @@
     <ul>
       <li><code>pnpm vitest --run src/lib/server/email-automation/classifier.test.ts</code> → 8 passed</li>
       <li><code>pnpm vitest --run src/lib/server/email-automation/seed-rules.test.ts</code> → 6 passed (seed/built-in equivalence + dummy input classification)</li>
-      <li><code>pnpm vitest --run src/lib/server/email-automation/notifications/templates.test.ts</code> → 8 passed (modular templates, dispatcher, TEST banner, HTML escaping)</li>
+      <li><code>pnpm vitest --run src/lib/server/email-automation/notifications/templates.test.ts</code> → 12 passed (modular templates, dispatcher, TEST banner, HTML escaping, settings-aware simulation)</li>
     </ul>
   </section>
 
