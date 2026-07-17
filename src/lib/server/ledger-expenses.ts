@@ -11,6 +11,8 @@ export const COMPANY_LEDGER_EXPENSE_TYPES = {
 
 export type CompanyLedgerExpenseType = FinancialLedgerResponse['properties']['Type']['select']['name'];
 
+const notionPageUrl = (id: string, apiUrl?: string) => apiUrl || `https://www.notion.so/${id.replaceAll('-', '')}`;
+
 export type CompanyLedgerExpenseInput = {
   ledgerType: CompanyLedgerExpenseType;
   title: string;
@@ -45,6 +47,20 @@ function normalizeDate(dateStr: string): string {
   return iso;
 }
 
+export async function findCompanyLedgerExpenseByReference(transactionId: string, expectedAmount?: number) {
+  const ledger = new FinancialLedgerDatabase({ notionSecret: NOTION_API_KEY });
+  const response = await ledger.query({ filter: { referenceNumber: { equals: transactionId.trim() } } });
+  const matches = response.results.filter((page) => {
+    if (expectedAmount === undefined) return true;
+    const amount = page.properties['Amount (THB)']?.number;
+    return amount === expectedAmount;
+  });
+  if (response.results.length > 1) return { state: 'ambiguous' as const };
+  if (matches.length === 1) return { state: 'verified' as const, id: matches[0].id, externalUrl: notionPageUrl(matches[0].id, matches[0].url) };
+  if (response.results.length === 1) return { state: 'amount_mismatch' as const };
+  return { state: 'missing' as const };
+}
+
 export async function createCompanyLedgerExpense(data: CompanyLedgerExpenseInput) {
   const db = new FinancialLedgerDatabase({
     notionSecret: NOTION_API_KEY
@@ -63,8 +79,19 @@ export async function createCompanyLedgerExpense(data: CompanyLedgerExpenseInput
       }
     });
 
-    if (existing.results.length > 0) {
-      throw error(400, { message: `Duplicate: An expense with Reference Number ${tid} already exists in Notion.` });
+    if (existing.results.length === 1) {
+      const existingAmount = existing.results[0].properties['Amount (THB)']?.number;
+      // A reference alone is not enough to reconcile a retry. A different amount
+      // must never be accepted as the same financial action.
+      if (existingAmount !== data.amount) {
+        throw error(400, { message: `Potential Duplicate: Reference Number ${tid} already exists with a different or unverifiable amount.` });
+      }
+      // A previous attempt may have created this page before its local result was persisted.
+      // The verified reference and amount make this a safe reconciliation, not a retry error.
+      return { id: existing.results[0].id, externalUrl: notionPageUrl(existing.results[0].id, existing.results[0].url), reconciled: true as const };
+    }
+    if (existing.results.length > 1) {
+      throw error(400, { message: `Potential Duplicate: More than one expense has Reference Number ${tid}.` });
     }
   } else {
     // 1b. Soft duplicate check for same amount/date, scoped by department when available.
@@ -120,5 +147,5 @@ export async function createCompanyLedgerExpense(data: CompanyLedgerExpenseInput
     })
   );
 
-  return { id: response.id };
+  return { id: response.id, externalUrl: notionPageUrl(response.id, response.url), reconciled: false as const };
 }

@@ -23,6 +23,8 @@
 		"receipts:backfill": "NODE_OPTIONS='--no-network-family-autoselection --dns-result-order=ipv4first' tsx scripts/backfill-loyverse-receipts.ts",
 		"receipts:reconcile": "NODE_OPTIONS='--no-network-family-autoselection --dns-result-order=ipv4first' tsx scripts/reconcile-loyverse-receipts.ts",
 		"close-shift:live-test": "tsx scripts/live-test-close-shift-submit.ts",
+		"telegram:chat-ids": "tsx scripts/email-automations/telegram-list-chat-ids.ts",
+		"email:test-eml": "tsx scripts/email-automations/test-email-automation-eml-telegram.ts",
 		"cf:email:deploy": "pnpm dlx wrangler@latest deploy --config scripts/cloudflare/process-email-trigger/wrangler.toml",
 		"cf:email:secret": "pnpm dlx wrangler@latest secret put EMAIL_WEBHOOK_SECRET --config scripts/cloudflare/process-email-trigger/wrangler.toml"
 	},

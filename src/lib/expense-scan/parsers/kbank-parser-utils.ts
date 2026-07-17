@@ -21,24 +21,30 @@ export function extractAmount(rawText: string): number | null {
   return null;
 }
 
-export function extractMemo(rawText: string): string | null {
-  const inlineMatch = rawText.match(/Memo\s+(.+)/i);
-  if (inlineMatch?.[1]) {
-    const memo = inlineMatch[1].trim();
-    if (memo) return memo;
-  }
+const memoValueBoundary = String.raw`(?=\r?\n|\s+(?:ผู้ทำรายการ|ผู้อนุมัติรายการ|transaction\s+(?:maker|user|by)|approved\s+by|issued\s+by|creator|authorizer|user|approver)\s*[:：-]?|$)`;
+const thaiMemoLabel = String.raw`(?:บ\s*ั\s*น\s*ท\s*ึ\s*ก\s*ช\s*่\s*ว\s*ย\s*จ\s*(?:ำ|ํ\s*า)|บ\s*ั\s*น\s*ท\s*ึ\s*ก\s*ข\s*อ\s*ง\s*ท\s*่\s*า\s*น)`;
 
-  const lines = splitLines(rawText);
-  for (let i = 0; i < lines.length; i++) {
-    if (lines[i].toLowerCase().includes('memo') && i + 1 < lines.length) {
-      const nextLine = lines[i + 1].trim();
-      if (nextLine && !nextLine.toLowerCase().includes('issued by')) {
-        return nextLine;
-      }
-    }
-  }
+/** Extracts memo/note labels emitted by KBank slips and K BIZ emails. */
+export function extractMemo(rawText: string): string | null {
+  const englishMatch = rawText.match(new RegExp(
+    String.raw`(?:Memo|Your\s+(?:Note|Memo))\s*(?:[:：-]\s*|\s+)(.+?)${memoValueBoundary}`,
+    'iu'
+  ));
+  if (englishMatch?.[1]?.trim()) return englishMatch[1].trim();
+
+  const thaiMatch = rawText.match(new RegExp(
+    String.raw`${thaiMemoLabel}\s*(?:[:：-]\s*|\s+)(.+?)${memoValueBoundary}`,
+    'iu'
+  ));
+  if (thaiMatch?.[1]?.trim()) return thaiMatch[1].trim();
 
   return null;
+}
+
+/** Extracts KBank reference numbers from Thai or English labels. */
+export function extractTransactionReference(rawText: string): string | null {
+  const match = rawText.match(/(?:หมายเลข\s*อ้างอิง|reference\s*(?:number|no\.?)?|transaction\s*(?:id|no\.?|number|ref(?:erence)?)|ref(?:erence)?)\s*[:#-]?\s*([A-Z0-9-]{6,})/iu);
+  return match?.[1]?.toUpperCase() ?? null;
 }
 
 export function extractSlashDate(rawText: string): string | null {

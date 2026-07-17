@@ -17,14 +17,14 @@ describe('seed classification rules', () => {
     }
   });
 
-  it('seed DB rules are equivalent to the built-in classifier for each dummy_input', () => {
+  it('seed DB rules use the same final MIME safety policy as built-in classification', () => {
     for (const rule of SEED_CLASSIFICATION_RULES) {
-      const fromRule = classificationFromRule(rule.dummyInput, rule);
+      const fromRule = classifyEmail(rule.dummyInput, [rule]);
       const fromBuiltin = classifyEmail(rule.dummyInput, []);
-      expect(fromRule?.classification).toBe(fromBuiltin.classification);
-      expect(fromRule?.subtype).toBe(fromBuiltin.subtype);
-      expect(fromRule?.processingState).toBe(fromBuiltin.processingState);
-      expect(fromRule?.notify).toBe(fromBuiltin.notify);
+      expect(fromRule.classification).toBe(fromBuiltin.classification);
+      expect(fromRule.subtype).toBe(fromBuiltin.subtype);
+      expect(fromRule.processingState).toBe(fromBuiltin.processingState);
+      expect(fromRule.notify).toBe(fromBuiltin.notify);
     }
   });
 

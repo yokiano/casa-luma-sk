@@ -5,6 +5,7 @@ import {
   expenseRecordedTemplate,
   ignoredTemplate,
   notificationTemplateByKind,
+  renderDurableEmailAutomationNotification,
   renderEmailAutomationNotification,
   renderSimulatedEmailAutomationNotification,
   renderTestEmailAutomationNotification,
@@ -58,30 +59,76 @@ const blocks = (message: string) => message.split('\n\n');
 describe('notification templates', () => {
   it('renders the expense-recorded template when a Ledger page exists', () => {
     const message = renderEmailAutomationNotification(input, readyExpense, 'notion-page-abc');
-    expect(blocks(message)[0]).toBe('<b>✅ Expense recorded</b>');
+    expect(blocks(message)[0]).toBe('<b>✅ Expense email - recorded</b>');
     expect(message).toContain('THB 123.45');
     expect(message).toContain('<code>PPFS260711TEST01</code>');
     expect(message).toContain('<code>notion-page-abc</code>');
   });
 
+  it('links a valid Notion Ledger page ID from the expense template', () => {
+    const pageId = '01234567-89ab-cdef-0123-456789abcdef';
+    const message = renderEmailAutomationNotification(input, readyExpense, pageId);
+    expect(message).toContain('<a href="https://www.notion.so/0123456789abcdef0123456789abcdef">Open Ledger page</a>');
+  });
+
   it('renders the action-ready template for ready expenses without a Ledger page', () => {
     const message = renderEmailAutomationNotification(input, readyExpense);
-    expect(blocks(message)[0]).toBe('<b>✅ Action ready</b>');
+    expect(blocks(message)[0]).toBe('<b>✅ Expense email - ready</b>');
     expect(message).toContain('Ledger creation is disabled in automation settings.');
     expect(message).not.toContain('notion-page-abc');
   });
 
+  it('puts extracted monetary details immediately after the title', () => {
+    const message = renderEmailAutomationNotification(input, {
+      ...readyExpense,
+      description: 'Makto',
+      counterparty: 'Makto merchant',
+      ledgerDefaults: { category: 'Food & Groceries' }
+    });
+    expect(blocks(message).slice(0, 6)).toEqual([
+      '<b>✅ Expense email - ready</b>',
+      '<b>Amount</b>\nTHB 123.45',
+      '<b>Category</b>\nFood &amp; Groceries',
+      '<b>Description</b>\nMakto',
+      '<b>Counterparty</b>\nMakto merchant',
+      '<b>Reference</b>\n<code>PPFS260711TEST01</code>'
+    ]);
+  });
+
   it('renders the review-needed template for review classifications', () => {
     const message = renderEmailAutomationNotification(input, reviewClassification);
-    expect(blocks(message)[0]).toBe('<b>🔎 Review needed</b>');
+    expect(blocks(message)[0]).toBe('<b>🔎 Email - review needed</b>');
     expect(message).toContain('Kshop Settlement Failed');
     expect(message).toContain('K SHOP settlement was not deposited.');
   });
 
   it('renders the ignored template for ignore classifications (preview only)', () => {
     const message = renderEmailAutomationNotification(input, ignoredClassification);
-    expect(blocks(message)[0]).toBe('<b>🤫 Ignored</b>');
+    expect(blocks(message)[0]).toBe('<b>🤫 Email - ignored</b>');
     expect(message).toContain('Matched an ignore rule.');
+  });
+
+  it('adds a dashboard link to a durable review notification without claiming success', () => {
+    const message = renderDurableEmailAutomationNotification(input, reviewClassification, {
+      processingState: 'review',
+      reviewReason: reviewClassification.reviewReason,
+      dashboardUrl: 'https://www.casalumakpg.com/mgmt-dashboard/email-automation/12'
+    });
+    expect(blocks(message)[0]).toBe('<b>🔎 Email - review needed</b>');
+    expect(message).toContain('<a href="https://www.casalumakpg.com/mgmt-dashboard/email-automation/12">Management dashboard</a>');
+    expect(message).toContain('<b>Current state</b>\nreview');
+    expect(message).not.toContain('Financial Ledger record created');
+  });
+
+  it('puts the durable outcome state in the opening line', () => {
+    const message = renderDurableEmailAutomationNotification(input, readyExpense, {
+      actionStatus: 'succeeded',
+      externalObjectId: 'ledger-page-1',
+      externalUrl: 'https://www.notion.so/ledger-page-1'
+    });
+    expect(blocks(message)[0]).toBe('<b>✅ Expense email - recorded</b>');
+    expect(message).toContain('<a href="https://www.notion.so/ledger-page-1">Open Ledger record</a>');
+    expect(message).toContain('ledger-page-1');
   });
 
   it('selects the right template kind for each outcome', () => {
@@ -107,13 +154,13 @@ describe('notification templates', () => {
 
   it('renders the action-ready template when Ledger is disabled (simulation)', () => {
     const message = renderSimulatedEmailAutomationNotification(input, readyExpense, false);
-    expect(blocks(message)[0]).toBe('<b>✅ Action ready</b>');
+    expect(blocks(message)[0]).toBe('<b>✅ Expense email - ready</b>');
     expect(message).toContain('Ledger creation is disabled in automation settings.');
   });
 
   it('renders the expense-recorded template when Ledger is enabled (simulation)', () => {
     const message = renderSimulatedEmailAutomationNotification(input, readyExpense, true);
-    expect(blocks(message)[0]).toBe('<b>✅ Expense recorded</b>');
+    expect(blocks(message)[0]).toBe('<b>✅ Expense email - recorded</b>');
     expect(message).toContain('Ledger page was created.');
     // No real notionPageId in simulation, so the ledger page block is omitted.
     expect(message).not.toContain('notion-page');
@@ -122,18 +169,18 @@ describe('notification templates', () => {
   it('test render respects Ledger enabled setting for ready expenses', () => {
     const disabled = renderTestEmailAutomationNotification(input, readyExpense, false);
     expect(blocks(disabled)[0]).toBe('<b>🧪 TEST — dashboard preview</b>');
-    expect(blocks(disabled)[1]).toBe('<b>✅ Action ready</b>');
+    expect(blocks(disabled)[1]).toBe('<b>✅ Expense email - ready</b>');
     expect(disabled).toContain('Ledger creation is disabled');
 
     const enabled = renderTestEmailAutomationNotification(input, readyExpense, true);
-    expect(blocks(enabled)[1]).toBe('<b>✅ Expense recorded</b>');
+    expect(blocks(enabled)[1]).toBe('<b>✅ Expense email - recorded</b>');
     expect(enabled).not.toContain('Ledger creation is disabled');
   });
 
   it('simulation does not show expense-recorded for non-ledger ready classifications', () => {
     const notifyOnly: EmailClassification = { ...readyExpense, handlerKey: 'notify_only' };
     const message = renderSimulatedEmailAutomationNotification(input, notifyOnly, true);
-    expect(blocks(message)[0]).toBe('<b>✅ Action ready</b>');
+    expect(blocks(message)[0]).toBe('<b>✅ Expense email - ready</b>');
   });
 
   it('escapes HTML in review reasons and email metadata', () => {

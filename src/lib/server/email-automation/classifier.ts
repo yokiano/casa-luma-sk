@@ -1,4 +1,6 @@
 import { createHash } from 'node:crypto';
+import { extractMemo, extractTransactionReference } from '$lib/expense-scan/parsers/kbank-parser-utils';
+import { mimeReviewReason, requiresMimeReview, type MimeMetadata } from './mime-contract';
 
 export type EmailAutomationInput = {
   receivedAt: string;
@@ -9,6 +11,8 @@ export type EmailAutomationInput = {
   attachmentCount: number;
   textBody?: string;
   htmlBody?: string;
+  /** Parser completeness is transport evidence, not a classification rule. */
+  mime?: MimeMetadata;
 };
 
 export type EmailClassification = {
@@ -16,6 +20,8 @@ export type EmailClassification = {
   subtype: string;
   processingState: 'ready' | 'review' | 'ignored';
   reviewReason?: string;
+  /** K BIZ Memo/Your Note value used as the Financial Ledger description. */
+  description?: string;
   externalRef?: string;
   amountMinor?: number;
   currency?: string;
@@ -28,6 +34,8 @@ export type EmailClassification = {
 };
 
 export type EmailClassificationRuleInput = {
+  id?: number;
+  priority?: number;
   name: string;
   classification: string;
   subtype: string;
@@ -39,13 +47,42 @@ export type EmailClassificationRuleInput = {
   notifyPolicy?: string | null;
 };
 
+export type EmailClassifierDiagnostics = {
+  classifierVersion: '1';
+  selectedSource: 'database_rule' | 'built_in_fallback';
+  selectedRuleId: number | null;
+  selectedRuleName: string | null;
+  evaluatedRules: Array<{
+    id: number | null;
+    priority: number | null;
+    name: string;
+    classification: string;
+    subtype: string;
+    patterns: {
+      senderPattern: string | null;
+      subjectPattern: string | null;
+      bodyPatterns: unknown;
+    };
+    patternMatched: boolean;
+    usable: boolean;
+  }>;
+  final: {
+    classification: EmailClassification['classification'];
+    subtype: string;
+    processingState: EmailClassification['processingState'];
+    reviewReason: string | null;
+  };
+};
+
 export const normalize = (value: string) => value.replace(/\s+/g, ' ').trim();
 
 export const bodyText = (input: EmailAutomationInput) => normalize(`${input.textBody ?? ''} ${input.htmlBody ?? ''}`);
 
-export const extractReference = (text: string) => {
-  const match = text.match(/(?:reference(?:\s*(?:no\.?|number))?|transaction(?:\s*(?:id|ref(?:erence)?))?|ref(?:erence)?)\s*[:#-]?\s*([A-Z0-9-]{6,})/i);
-  return match?.[1]?.toUpperCase();
+export const extractReference = (text: string) => extractTransactionReference(text) ?? undefined;
+
+export const extractDescription = (text: string) => {
+  const value = extractMemo(text)?.trim();
+  return value ? value.slice(0, 240) : undefined;
 };
 
 export const extractAmount = (text: string) => {
@@ -55,13 +92,14 @@ export const extractAmount = (text: string) => {
   return Number.isFinite(amount) ? Math.round(amount * 100) : undefined;
 };
 
-const successfulExpense = (subtype: string, externalRef: string | undefined, amountMinor: number | undefined): EmailClassification => {
+const successfulExpense = (subtype: string, externalRef: string | undefined, amountMinor: number | undefined, description: string | undefined): EmailClassification => {
   const missing = [externalRef === undefined ? 'transaction reference' : null, amountMinor === undefined ? 'amount' : null].filter(Boolean);
   return {
     classification: 'expense',
     subtype,
     processingState: missing.length > 0 ? 'review' : 'ready',
     reviewReason: missing.length > 0 ? `A success email was matched, but its ${missing.join(' and ')} could not be extracted.` : undefined,
+    description,
     externalRef,
     amountMinor,
     currency: amountMinor === undefined ? undefined : 'THB',
@@ -150,6 +188,7 @@ export const classificationFromRule = (input: EmailAutomationInput, rule: EmailC
   const text = `${subject} ${bodyText(input)}`;
   const externalRef = extractReference(text);
   const amountMinor = extractAmount(text);
+  const description = extractDescription(text);
   const handlerKey = rule.handlerKey ?? undefined;
   const matchedRuleName = rule.name;
   const notifyPolicy = rule.notifyPolicy ?? 'review_and_success';
@@ -159,6 +198,7 @@ export const classificationFromRule = (input: EmailAutomationInput, rule: EmailC
       classification,
       subtype: rule.subtype,
       processingState: 'ignored',
+      description,
       externalRef,
       amountMinor,
       currency: amountMinor ? 'THB' : undefined,
@@ -176,6 +216,7 @@ export const classificationFromRule = (input: EmailAutomationInput, rule: EmailC
       subtype: rule.subtype,
       processingState: 'review',
       reviewReason: `Matched email classification rule: ${rule.name}.`,
+      description,
       externalRef,
       amountMinor,
       currency: amountMinor ? 'THB' : undefined,
@@ -194,6 +235,7 @@ export const classificationFromRule = (input: EmailAutomationInput, rule: EmailC
     subtype: rule.subtype,
     processingState,
     reviewReason: missing.length > 0 ? `Rule ${rule.name} matched, but its ${missing.join(' and ')} could not be extracted.` : undefined,
+    description,
     externalRef,
     amountMinor,
     currency: amountMinor === undefined ? undefined : 'THB',
@@ -222,49 +264,99 @@ const builtInClassify = (input: EmailAutomationInput): EmailClassification => {
   const text = `${subject} ${bodyText(input)}`;
   const externalRef = extractReference(text);
   const amountMinor = extractAmount(text);
+  const description = extractDescription(text);
   const isKbiz = /k\s*biz|kasikorn|kbank/i.test(`${input.from} ${text}`);
 
   if (/^status .*\(approved\)/i.test(subject)) {
-    return { classification: 'ignore', subtype: 'approved_shadow', processingState: 'ignored', externalRef, amountMinor, currency: amountMinor ? 'THB' : undefined, notify: false };
+    return { classification: 'ignore', subtype: 'approved_shadow', processingState: 'ignored', description, externalRef, amountMinor, currency: amountMinor ? 'THB' : undefined, notify: false };
   }
   if (/result of bill payment\/top-up \(success\)/i.test(subject)) {
-    return successfulExpense('bill_payment_success', externalRef, amountMinor);
+    return successfulExpense('bill_payment_success', externalRef, amountMinor, description);
   }
   if (/result of other account funds transfer \(other bank\) \(success\)/i.test(subject)) {
-    return successfulExpense('other_bank_transfer_success', externalRef, amountMinor);
+    return successfulExpense('other_bank_transfer_success', externalRef, amountMinor, description);
   }
   if (/result of promptpay funds transfer \(success\)/i.test(subject)) {
-    return successfulExpense('promptpay_transfer_success', externalRef, amountMinor);
+    return successfulExpense('promptpay_transfer_success', externalRef, amountMinor, description);
   }
   if (/could not be deposited|deposit.*failed/i.test(text) && /k\s*shop/i.test(text)) {
-    return { classification: 'review', subtype: 'kshop_settlement_failed', processingState: 'review', reviewReason: 'K SHOP settlement was not deposited.', notify: true };
+    return { classification: 'review', subtype: 'kshop_settlement_failed', processingState: 'review', reviewReason: 'K SHOP settlement was not deposited.', description, notify: true };
   }
   if (/fee.*(?:failed|unsuccessful)|(?:failed|unsuccessful).*fee/i.test(text) && /merchant/i.test(text)) {
-    return { classification: 'review', subtype: 'merchant_fee_failed', processingState: 'review', reviewReason: 'Merchant fee payment was not confirmed.', notify: true };
+    return { classification: 'review', subtype: 'merchant_fee_failed', processingState: 'review', reviewReason: 'Merchant fee payment was not confirmed.', description, notify: true };
   }
   if (/otp|login|sign.?in|email address change|terms of service/i.test(text)) {
-    return { classification: 'ignore', subtype: 'security_or_admin', processingState: 'ignored', notify: false };
+    return { classification: 'ignore', subtype: 'security_or_admin', processingState: 'ignored', description, notify: false };
   }
   if (/statement|e-document|subscription renewal/i.test(text)) {
-    return { classification: 'review', subtype: 'statement_or_attachment', processingState: 'review', reviewReason: 'This email needs a person to decide whether it is actionable.', notify: true };
+    return { classification: 'review', subtype: 'statement_or_attachment', processingState: 'review', reviewReason: 'This email needs a person to decide whether it is actionable.', description, notify: true };
   }
   return {
     classification: 'review',
     subtype: isKbiz ? 'unrecognized_kbiz' : 'unrecognized_email',
     processingState: 'review',
     reviewReason: 'No safe automatic classification matched this email.',
+    description,
     notify: true
   };
 };
 
-export const classifyEmail = (input: EmailAutomationInput, rules: EmailClassificationRuleInput[] = []): EmailClassification => {
+export const classifyEmailWithDiagnostics = (
+  input: EmailAutomationInput,
+  rules: EmailClassificationRuleInput[] = []
+): { classification: EmailClassification; diagnostics: EmailClassifierDiagnostics } => {
+  const evaluatedRules = rules.map((rule) => {
+    const patternMatched = matchesClassificationRule(input, rule);
+    const usable = patternMatched && classificationFromRule(input, rule) !== null;
+    return {
+      id: rule.id ?? null,
+      priority: rule.priority ?? null,
+      name: rule.name,
+      classification: rule.classification,
+      subtype: rule.subtype,
+      patterns: { senderPattern: rule.senderPattern ?? null, subjectPattern: rule.subjectPattern ?? null, bodyPatterns: rule.bodyPatterns ?? [] },
+      patternMatched,
+      usable
+    };
+  });
+
+  let result: EmailClassification | undefined;
+  let selectedRule: EmailClassificationRuleInput | undefined;
   for (const rule of rules) {
     if (!matchesClassificationRule(input, rule)) continue;
     const classification = classificationFromRule(input, rule);
-    if (classification) return classification;
+    if (classification) {
+      result = classification;
+      selectedRule = rule;
+      break;
+    }
   }
-  return builtInClassify(input);
+  result ??= builtInClassify(input);
+  // A partial MIME representation must never be sufficient evidence for a financial action.
+  const finalClassification = result.processingState === 'ready' && requiresMimeReview(input)
+    ? { ...result, processingState: 'review' as const, reviewReason: mimeReviewReason(input), notify: true }
+    : result;
+
+  return {
+    classification: finalClassification,
+    diagnostics: {
+      classifierVersion: '1',
+      selectedSource: selectedRule ? 'database_rule' : 'built_in_fallback',
+      selectedRuleId: selectedRule?.id ?? null,
+      selectedRuleName: selectedRule?.name ?? null,
+      evaluatedRules,
+      final: {
+        classification: finalClassification.classification,
+        subtype: finalClassification.subtype,
+        processingState: finalClassification.processingState,
+        reviewReason: finalClassification.reviewReason ?? null
+      }
+    }
+  };
 };
+
+export const classifyEmail = (input: EmailAutomationInput, rules: EmailClassificationRuleInput[] = []): EmailClassification =>
+  classifyEmailWithDiagnostics(input, rules).classification;
 
 export const shouldCreateLedgerExpense = (classification: EmailClassification) => classification.classification === 'expense'
   && classification.handlerKey === 'company_ledger_expense'

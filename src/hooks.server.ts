@@ -1,5 +1,6 @@
 import { redirect, type Handle } from '@sveltejs/kit';
 import { MANAGER_PASSWORD_BYPASS } from '$env/static/private';
+import { readConfiguredToolsSessionRole } from '$lib/server/tools-session';
 
 export const handle: Handle = async ({ event, resolve }) => {
 	// Initialize role
@@ -26,21 +27,20 @@ export const handle: Handle = async ({ event, resolve }) => {
 			return resolve(event);
 		}
 
-		let authCookie = event.cookies.get('casa_luma_tools_auth');
+		const cookieRole = readConfiguredToolsSessionRole(event.cookies.get('casa_luma_tools_auth'));
+		// The explicit development bypass is server configuration, never a client
+		// cookie value. Legacy literal role cookies intentionally fail validation.
+		const role = cookieRole ?? (isBypass ? 'manager' : undefined);
 
-		if (isBypass && !authCookie) {
-			authCookie = 'manager';
-		}
-
-		// If no cookie, redirect to login and preserve the requested tools URL.
-		if (!authCookie) {
+		// If no valid signed session, redirect to login and preserve the requested tools URL.
+		if (!role) {
 			const continueTo = `${event.url.pathname}${event.url.search}`;
 			throw redirect(303, `/tools/login?continueTo=${encodeURIComponent(continueTo)}`);
 		}
 
 		// Role-based protection
-		const isManager = authCookie === 'manager';
-		event.locals.role = authCookie;
+		const isManager = role === 'manager';
+		event.locals.role = role;
 
 		// List of routes that require manager access
 		const managerOnlyRoutes = [

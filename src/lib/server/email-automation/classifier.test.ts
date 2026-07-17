@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { classifyEmail, createEmailAutomationHash, matchesClassificationRule, shouldCreateLedgerExpense, type EmailAutomationInput, type EmailClassificationRuleInput } from './classifier';
+import { classifyEmail, classifyEmailWithDiagnostics, createEmailAutomationHash, extractDescription, extractReference, matchesClassificationRule, shouldCreateLedgerExpense, type EmailAutomationInput, type EmailClassificationRuleInput } from './classifier';
 
 const baseEmail = (overrides: Partial<EmailAutomationInput> = {}): EmailAutomationInput => ({
   receivedAt: '2026-07-11T10:00:00.000Z',
@@ -9,6 +9,7 @@ const baseEmail = (overrides: Partial<EmailAutomationInput> = {}): EmailAutomati
   messageId: '<message-1@example.test>',
   attachmentCount: 0,
   textBody: 'Reference Number: PPFS260711TEST01 Amount (THB): 123.45',
+  mime: { parserVersion: 'test', completeness: 'complete', attachmentCount: 0 },
   ...overrides
 });
 
@@ -40,6 +41,33 @@ describe('email automation classifier', () => {
       handlerKey: 'company_ledger_expense',
       matchedRuleName: 'DB PromptPay success'
     });
+  });
+
+  it('extracts bilingual K BIZ description and reference fields for Ledger mapping', () => {
+    const thai = 'หมายเลขอ้างอิง: BILS260715313032359 จำนวนเงิน (บาท): 123.45 บันทึกช่วยจำ: Makto ผู้ทำรายการ: SURISA';
+    const english = 'Reference Number: BILS260715313032359 Amount (THB): 123.45 Your Note: Makto User: SURISA';
+
+    expect(extractReference(thai)).toBe('BILS260715313032359');
+    expect(extractDescription(thai)).toBe('Makto');
+    expect(extractReference(english)).toBe('BILS260715313032359');
+    expect(extractDescription(english)).toBe('Makto');
+
+    const result = classifyEmail(baseEmail({ textBody: thai }), [dbExpenseRule({ bodyPatterns: [] })]);
+    expect(result).toMatchObject({ description: 'Makto', externalRef: 'BILS260715313032359' });
+  });
+
+  it('stores deterministic rule evaluation diagnostics alongside the selected result', () => {
+    const result = classifyEmailWithDiagnostics(baseEmail(), [
+      { ...dbExpenseRule({ id: 7, priority: 10 }), name: 'First non-match', subjectPattern: 'does not match' },
+      { ...dbExpenseRule({ id: 8, priority: 20 }), name: 'Selected rule' }
+    ]);
+
+    expect(result.classification.matchedRuleName).toBe('Selected rule');
+    expect(result.diagnostics).toMatchObject({ selectedSource: 'database_rule', selectedRuleId: 8, selectedRuleName: 'Selected rule' });
+    expect(result.diagnostics.evaluatedRules).toEqual([
+      expect.objectContaining({ id: 7, priority: 10, name: 'First non-match', patternMatched: false, usable: false }),
+      expect.objectContaining({ id: 8, priority: 20, name: 'Selected rule', patternMatched: true, usable: true })
+    ]);
   });
 
   it('requires all body patterns by default and falls back when a DB rule does not match', () => {

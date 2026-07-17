@@ -43,6 +43,20 @@
       "when": 1783866240000,
       "tag": "0005_email_classification_rules_dummy_input",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1784073600000,
+      "tag": "0006_email_automation_hardening",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1784073601000,
+      "tag": "0007_email_attention_reviews",
+      "breakpoints": true
     }
   ]
 }

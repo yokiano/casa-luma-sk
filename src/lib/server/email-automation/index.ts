@@ -1,135 +1,140 @@
-import { asc, desc, eq } from 'drizzle-orm';
+import { asc, eq } from 'drizzle-orm';
 import { db } from '$lib/server/db/client';
-import { emailClassificationRules, emailEvents } from '$lib/server/db/schema';
-import { createCompanyLedgerExpense, type CompanyLedgerExpenseType } from '$lib/server/ledger-expenses';
-import {
-  classifyEmail,
-  createEmailAutomationHash,
-  normalize,
-  shouldCreateLedgerExpense,
-  type EmailAutomationInput,
-  type EmailClassification,
-  type EmailClassificationRuleInput
-} from './classifier';
-import { sendEmailAutomationNotification } from './notifications';
+import { FINANCIAL_LEDGER_PROP_VALUES } from '$lib/notion-sdk/dbs/financial-ledger/constants';
+import { emailClassificationRules } from '$lib/server/db/schema';
+import { classifyEmailWithDiagnostics, createEmailAutomationHash, type EmailAutomationInput, type EmailClassification, type EmailClassificationRuleInput } from './classifier';
+import { validateHandler } from './handlers/registry';
+import { processOneEmailAutomationItem } from './processor';
+import { persistDurableEmailIntent } from './store';
 import { loadAutomationSettings } from './settings';
+import { applyEmailAutomationSafetyPolicy } from './ledger-safety';
+import { findExpenseScanRule } from '$lib/server/expense-scan-rules';
 
 export type { EmailAutomationInput, EmailClassification } from './classifier';
 export { renderEmailAutomationNotification } from './notifications';
 
-const MAX_SNIPPET_LENGTH = 500;
+const loadEnabledClassificationRules = async (): Promise<EmailClassificationRuleInput[]> => db.select({
+  id: emailClassificationRules.id, priority: emailClassificationRules.priority,
+  name: emailClassificationRules.name, classification: emailClassificationRules.classification, subtype: emailClassificationRules.subtype,
+  senderPattern: emailClassificationRules.senderPattern, subjectPattern: emailClassificationRules.subjectPattern,
+  bodyPatterns: emailClassificationRules.bodyPatterns, handlerKey: emailClassificationRules.handlerKey,
+  ledgerDefaults: emailClassificationRules.ledgerDefaults, notifyPolicy: emailClassificationRules.notifyPolicy
+}).from(emailClassificationRules).where(eq(emailClassificationRules.enabled, true)).orderBy(asc(emailClassificationRules.priority), asc(emailClassificationRules.id));
 
-type Classification = EmailClassification;
-
-const compactSnippet = (value?: string) => {
-  if (!value) return undefined;
-  const result = normalize(value);
-  return result ? result.slice(0, MAX_SNIPPET_LENGTH) : undefined;
-};
-
-const ledgerDefaults = (classification: Classification) => classification.ledgerDefaults && typeof classification.ledgerDefaults === 'object'
-  ? classification.ledgerDefaults as { ledgerType?: string; bankAccount?: string; paymentMethod?: string; category?: string; department?: string; supplierId?: string }
+const asLedgerDefaults = (value: unknown): Record<string, string> => value && typeof value === 'object'
+  ? Object.fromEntries(Object.entries(value).filter((entry): entry is [string, string] => typeof entry[1] === 'string'))
   : {};
 
-const createLedgerRecord = async (input: EmailAutomationInput, classification: Classification, ledgerEnabled: boolean) => {
-  if (!shouldCreateLedgerExpense(classification)) return null;
-  if (!ledgerEnabled) return null;
-  const amountMinor = classification.amountMinor;
-  if (amountMinor === undefined) return null;
-  const defaults = ledgerDefaults(classification);
-  const isPromptPay = /prompt\s*pay|promptpay/i.test(classification.subtype);
-  const ledgerType = (defaults.ledgerType ?? (isPromptPay ? 'Scan Expense' : 'Bank Transfer Expense')) as CompanyLedgerExpenseType;
-  const paymentMethod = defaults.paymentMethod ?? (isPromptPay ? 'Scan' : 'Wire Transfer');
-  return createCompanyLedgerExpense({
-    ledgerType,
-    title: input.subject,
-    amount: amountMinor / 100,
-    date: input.receivedAt,
-    transactionId: classification.externalRef,
-    bankAccount: defaults.bankAccount ?? 'KBank',
-    paymentMethod,
-    category: defaults.category,
-    department: defaults.department,
-    supplierId: defaults.supplierId,
-    notes: `Created by email automation from ${input.from}. Review and attach the invoice/receipt image.`
-  });
+/**
+ * Email Ledger defaults must follow the same recipient rules as expense OCR.
+ * A failed rule lookup becomes review instead of allowing an unclassified write.
+ */
+const applyExpenseScanDefaults = async (classification: EmailClassification): Promise<EmailClassification> => {
+  if (classification.classification !== 'expense' || classification.processingState !== 'ready') return classification;
+  if (!classification.description) {
+    return {
+      ...classification,
+      processingState: 'review',
+      reviewReason: 'No expense description/memo was extracted for Expense Scan rule matching. No external Ledger action was run.',
+      notify: true
+    };
+  }
+
+  let matchedRule;
+  try {
+    matchedRule = await findExpenseScanRule(classification.description);
+  } catch {
+    return {
+      ...classification,
+      processingState: 'review',
+      reviewReason: 'Expense-scan rules could not be loaded. No external Ledger action was run.',
+      notify: true
+    };
+  }
+  if (!matchedRule) {
+    return {
+      ...classification,
+      processingState: 'review',
+      reviewReason: 'No expense-scan rule matched the extracted description. No external Ledger action was run.',
+      notify: true
+    };
+  }
+
+  const defaults = asLedgerDefaults(classification.ledgerDefaults);
+  const mergedDefaults = {
+    ...defaults,
+    category: defaults.category || matchedRule.category || undefined,
+    department: defaults.department || matchedRule.department || undefined,
+    supplierId: defaults.supplierId || matchedRule.supplierId || undefined
+  };
+  const validCategories = FINANCIAL_LEDGER_PROP_VALUES.category as readonly string[];
+  const validDepartments = FINANCIAL_LEDGER_PROP_VALUES.department as readonly string[];
+  const invalidField = mergedDefaults.category && !validCategories.includes(mergedDefaults.category)
+    ? 'category'
+    : mergedDefaults.department && !validDepartments.includes(mergedDefaults.department)
+      ? 'department'
+      : null;
+  const missingField = !mergedDefaults.category ? 'category' : !mergedDefaults.department ? 'department' : null;
+  if (invalidField || missingField) {
+    return {
+      ...classification,
+      processingState: 'review',
+      reviewReason: invalidField
+        ? `The matched expense-scan rule contains an invalid Ledger ${invalidField}. No external Ledger action was run.`
+        : `The matched expense-scan rule has no Ledger ${missingField} value. No external Ledger action was run.`,
+      notify: true
+    };
+  }
+
+  return { ...classification, ledgerDefaults: mergedDefaults };
 };
 
-const notify = async (input: EmailAutomationInput, event: Classification, eventId: number, notionPageId?: string) =>
-  sendEmailAutomationNotification(input, event, eventId, notionPageId);
-
-const loadEnabledClassificationRules = async (): Promise<EmailClassificationRuleInput[]> => {
-  const rows = await db.select({
-    name: emailClassificationRules.name,
-    classification: emailClassificationRules.classification,
-    subtype: emailClassificationRules.subtype,
-    senderPattern: emailClassificationRules.senderPattern,
-    subjectPattern: emailClassificationRules.subjectPattern,
-    bodyPatterns: emailClassificationRules.bodyPatterns,
-    handlerKey: emailClassificationRules.handlerKey,
-    ledgerDefaults: emailClassificationRules.ledgerDefaults,
-    notifyPolicy: emailClassificationRules.notifyPolicy
-  }).from(emailClassificationRules)
-    .where(eq(emailClassificationRules.enabled, true))
-    .orderBy(asc(emailClassificationRules.priority), asc(emailClassificationRules.id));
-  return rows;
-};
-
+/**
+ * Persists the event plus all intended work before any external call. A best-effort
+ * single processor pass preserves the existing immediate UX; durable state remains
+ * authoritative when Notion or Telegram is unavailable.
+ */
 export const ingestEmailAutomationEvent = async (input: EmailAutomationInput) => {
   const settings = await loadAutomationSettings();
   const rules = settings.automationEnabled ? await loadEnabledClassificationRules() : [];
-  const classification = settings.automationEnabled
-    ? classifyEmail(input, rules)
-    : { classification: 'ignore' as const, subtype: 'automation_disabled', processingState: 'ignored' as const, reviewReason: 'Email automation is disabled in dashboard settings.', notify: false };
-  const hash = createEmailAutomationHash(input);
-  const [created] = await db.insert(emailEvents).values({
-    receivedAt: new Date(input.receivedAt), messageId: input.messageId, emailHash: hash,
-    fromAddress: input.from, toAddress: input.to, subject: input.subject,
-    attachmentCount: input.attachmentCount, classification: classification.classification,
-    subtype: classification.subtype, processingState: classification.processingState,
-    externalRef: classification.externalRef, amountMinor: classification.amountMinor,
-    currency: classification.currency, counterparty: classification.counterparty,
-    reviewReason: classification.reviewReason,
-    notificationState: classification.notify && settings.notificationsEnabled ? 'pending' : 'not_needed',
-    metadata: {
-      textSnippet: compactSnippet(input.textBody),
-      htmlSnippet: compactSnippet(input.htmlBody),
-      matchedRuleName: classification.matchedRuleName,
-      handlerKey: classification.handlerKey,
-      notifyPolicy: classification.notifyPolicy,
-      ledgerDefaults: classification.ledgerDefaults
+  let classification: EmailClassification;
+  let classifierDiagnostics: ReturnType<typeof classifyEmailWithDiagnostics>['diagnostics'];
+  if (settings.automationEnabled) {
+    const classified = classifyEmailWithDiagnostics(input, rules);
+    classification = classified.classification;
+    classifierDiagnostics = classified.diagnostics;
+  } else {
+    classification = { classification: 'ignore', subtype: 'automation_disabled', processingState: 'ignored', reviewReason: 'Email automation is disabled in dashboard settings.', notify: false };
+    classifierDiagnostics = {
+      classifierVersion: '1', selectedSource: 'built_in_fallback', selectedRuleId: null, selectedRuleName: null, evaluatedRules: [],
+      final: { classification: 'ignore', subtype: 'automation_disabled', processingState: 'ignored', reviewReason: classification.reviewReason ?? null }
+    };
+  }
+  classification = await applyExpenseScanDefaults(classification);
+  const handlerResult = validateHandler(classification);
+  // Unknown/incompatible handlers must never silently look ready.
+  if (classification.processingState === 'ready' && handlerResult.error) {
+    classification = { ...classification, processingState: 'review', reviewReason: handlerResult.error, notify: true };
+  }
+  classification = applyEmailAutomationSafetyPolicy(input, classification, settings.ledgerEnabled, settings.ledgerAllowedSenders, settings.ledgerMaxAmountThb);
+  classifierDiagnostics = {
+    ...classifierDiagnostics,
+    final: {
+      classification: classification.classification,
+      subtype: classification.subtype,
+      processingState: classification.processingState,
+      reviewReason: classification.reviewReason ?? null
     }
-  }).onConflictDoNothing({ target: emailEvents.emailHash }).returning({ id: emailEvents.id });
-
-  if (!created) {
-    const [existing] = await db.select({ id: emailEvents.id, processingState: emailEvents.processingState, notificationState: emailEvents.notificationState })
-      .from(emailEvents).where(eq(emailEvents.emailHash, hash)).orderBy(desc(emailEvents.id)).limit(1);
-    return { duplicate: true, eventId: existing?.id, processingState: existing?.processingState, notificationState: existing?.notificationState };
-  }
-
-  let notionPageId: string | undefined;
-  if (classification.processingState === 'ready') {
-    try {
-      const ledger = await createLedgerRecord(input, classification, settings.ledgerEnabled);
-      notionPageId = ledger?.id;
-      if (notionPageId) {
-        await db.update(emailEvents).set({ notionPageId, processingState: 'ledger_created' }).where(eq(emailEvents.id, created.id));
-      }
-    } catch (error) {
-      const lastError = error instanceof Error ? error.message : String(error);
-      await db.update(emailEvents).set({ processingState: 'retry_pending', lastError, attemptCount: 1 }).where(eq(emailEvents.id, created.id));
-      return { duplicate: false, eventId: created.id, classification, notificationState: 'not_sent' };
-    }
-  }
-
-  let notificationState = classification.notify && settings.notificationsEnabled ? 'pending' : 'not_needed';
-  try {
-    if (classification.notify && settings.notificationsEnabled) notificationState = await notify(input, classification, created.id, notionPageId);
-    await db.update(emailEvents).set({ notificationState, processedAt: new Date(), attemptCount: 1 }).where(eq(emailEvents.id, created.id));
-  } catch (error) {
-    const lastError = error instanceof Error ? error.message : String(error);
-    notificationState = 'retry_pending';
-    await db.update(emailEvents).set({ notificationState, lastError, attemptCount: 1 }).where(eq(emailEvents.id, created.id));
-  }
-  return { duplicate: false, eventId: created.id, classification, notificationState };
+  };
+  const persisted = await persistDurableEmailIntent({
+    input, classification, classifierDiagnostics, hash: createEmailAutomationHash(input), handler: handlerResult.handler,
+    notificationsEnabled: settings.notificationsEnabled, ledgerEnabled: settings.ledgerEnabled
+  });
+  if (persisted.duplicate) return { ...persisted, classification };
+  // Work was committed first. This pass can fail without losing recoverability.
+  await processOneEmailAutomationItem();
+  // The second bounded pass can deliver the independent outbox item after an
+  // action succeeds. Recovery never depends on these best-effort passes.
+  await processOneEmailAutomationItem();
+  return { ...persisted, classification };
 };

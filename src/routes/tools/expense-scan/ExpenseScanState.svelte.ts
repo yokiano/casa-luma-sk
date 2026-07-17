@@ -1,4 +1,5 @@
 import { scanExpenseSlipClient } from '$lib/expense-scan/ocr';
+import { findMatchingExpenseScanRule, type ExpenseScanRule } from '$lib/expense-scan/rules';
 import { submitExpenseSlip } from '$lib/expense-submit.remote';
 import { toast } from 'svelte-sonner';
 
@@ -32,13 +33,7 @@ export type ScannedSlip = {
   notionId?: string | null;
 };
 
-export type ScanRule = {
-  id: string;
-  match: string;
-  category: string;
-  department: string;
-  supplierId?: string;
-};
+export type ScanRule = ExpenseScanRule;
 
 export type SortField = 'recipient' | 'amount' | 'date' | 'ruleMatch';
 
@@ -162,27 +157,21 @@ export class ExpenseScanState {
       const parsed = await scanExpenseSlipClient(slip.imageDataUrl, slip.fileName);
       console.log(`[scanSlip] Parsed recipient: "${parsed.recipientName}"`);
 
-      // Match rules locally
-      let ruleSuggestion: Partial<ScannedSlip> | null = null;
-      if (parsed.recipientName && (this.rules?.length ?? 0) > 0) {
-        const normalizedRecipient = parsed.recipientName.toLowerCase().replace(/\s+/g, '');
-        for (const rule of this.rules || []) {
-          const matchPattern = rule.match?.toLowerCase().replace(/\s+/g, '');
-          if (matchPattern && normalizedRecipient.includes(matchPattern)) {
-            console.log(`[scanSlip] Rule matched: "${rule.match}" -> supplierId: "${rule.supplierId}"`);
-            ruleSuggestion = {
-              category: rule.category || undefined,
-              department: rule.department || undefined,
-              supplierId: rule.supplierId || '',
-              ruleApplied: true,
-              matchedRuleId: rule.id
-            };
-            break;
+      // Match rules locally using the same helper as server-side email automation.
+      const matchedRule = findMatchingExpenseScanRule(parsed.recipientName ?? undefined, this.rules);
+      const ruleSuggestion: Partial<ScannedSlip> | null = matchedRule
+        ? {
+            category: matchedRule.category || undefined,
+            department: matchedRule.department || undefined,
+            supplierId: matchedRule.supplierId || '',
+            ruleApplied: true,
+            matchedRuleId: matchedRule.id
           }
-        }
-      }
+        : null;
 
-      if (!ruleSuggestion) {
+      if (matchedRule) {
+        console.log(`[scanSlip] Rule matched: "${matchedRule.match}" -> supplierId: "${matchedRule.supplierId}"`);
+      } else {
         console.log(`[scanSlip] No rule matched for "${parsed.recipientName}"`);
       }
 

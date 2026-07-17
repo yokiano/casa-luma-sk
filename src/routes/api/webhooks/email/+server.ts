@@ -39,6 +39,20 @@ const getSnippet = (value: unknown): string | undefined => {
 		: normalized;
 };
 
+const getMime = (value: unknown) => {
+	if (!isObject(value)) return undefined;
+	const completeness = asString(value.completeness);
+	const completenessState: 'complete' | 'incomplete' | 'unsupported' = completeness === 'complete' || completeness === 'incomplete' || completeness === 'unsupported' ? completeness : 'incomplete';
+	return {
+		parserVersion: asString(value.parserVersion)?.slice(0, 80),
+		mimeType: asString(value.mimeType)?.slice(0, 120),
+		completeness: completenessState,
+		textTruncated: value.textTruncated === true,
+		decodeWarnings: Array.isArray(value.decodeWarnings) ? value.decodeWarnings.filter((warning): warning is string => typeof warning === 'string').slice(0, 5).map((warning) => warning.slice(0, 160)) : [],
+		attachmentCount: asNumber(value.attachmentCount) ?? 0
+	};
+};
+
 const getPayloadMetadata = (payload: Record<string, unknown>) => {
 	const attachmentCount = asNumber(payload.attachmentCount) ?? 0;
 
@@ -50,7 +64,8 @@ const getPayloadMetadata = (payload: Record<string, unknown>) => {
 		messageId: asString(payload.messageId),
 		attachmentCount,
 		textSnippet: getSnippet(payload.textBody),
-		htmlSnippet: getSnippet(payload.htmlBody)
+		htmlSnippet: getSnippet(payload.htmlBody),
+		mime: getMime(payload.mime)
 	};
 };
 
@@ -89,7 +104,8 @@ export const POST: RequestHandler = async ({ request }) => {
 			// Classify from the Worker preview (up to 4,000 chars); only compact
 			// snippets are retained by the email-automation service.
 			textBody: asString(payload.textBody)?.slice(0, 4000),
-			htmlBody: asString(payload.htmlBody)?.slice(0, 4000)
+			htmlBody: asString(payload.htmlBody)?.slice(0, 4000),
+			mime: metadata.mime
 		});
 	} catch (error) {
 		console.error('[email-webhook] durable email ingestion failed', error);

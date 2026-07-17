@@ -21,6 +21,9 @@ Thumbs.db
 !.env.example
 !.env.test
 
+# Local OAuth/client secrets
+.secrets/
+
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*

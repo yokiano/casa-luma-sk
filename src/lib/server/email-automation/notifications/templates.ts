@@ -1,5 +1,5 @@
 import type { EmailAutomationInput, EmailClassification } from '../classifier';
-import { detailBlock, escapeHtml, formatMoney, humanSubtype } from './helpers';
+import { detailBlock, escapeHtml, extractedDetailBlocks, humanSubtype, notionPageUrl, notificationTitle } from './helpers';
 
 /**
  * Modular Telegram notification templates for email automation.
@@ -34,11 +34,12 @@ const emailBlock = (input: EmailAutomationInput) => detailBlock(
 );
 
 export const expenseRecordedTemplate: NotificationTemplate = (_input, classification, notionPageId) => [
-  '<b>✅ Expense recorded</b>',
-  humanSubtype(classification.subtype),
-  detailBlock('Amount', formatMoney(classification.amountMinor, classification.currency)),
-  detailBlock('Reference', classification.externalRef ? `<code>${escapeHtml(classification.externalRef)}</code>` : null),
-  detailBlock('Ledger page', notionPageId ? `<code>${escapeHtml(notionPageId)}</code>` : null),
+  `<b>${notificationTitle(classification.classification, 'recorded')}</b>`,
+  ...extractedDetailBlocks(classification),
+  detailBlock('What happened', `Email classified as ${humanSubtype(classification.subtype)}`),
+  detailBlock('Action taken', 'Financial Ledger page was created.'),
+  detailBlock('Current state', 'Action succeeded.'),
+  detailBlock('Ledger page', notionPageId ? `${notionPageUrl(notionPageId) ? `<a href="${notionPageUrl(notionPageId)}">Open Ledger page</a>\n` : ''}<code>${escapeHtml(notionPageId)}</code>` : null),
   emailBlock(_input),
   detailBlock('Next step', 'Ledger page was created. Please attach the receipt or invoice if needed.')
 ];
@@ -49,29 +50,34 @@ export const actionReadyTemplate: NotificationTemplate = (input, classification)
     ? 'Ledger creation is disabled in automation settings. Review this email, then enable Ledger writes when ready.'
     : 'Review the matched automation handler before enabling side effects.';
   return [
-    '<b>✅ Action ready</b>',
-    humanSubtype(classification.subtype),
-    detailBlock('Amount', formatMoney(classification.amountMinor, classification.currency)),
-    detailBlock('Reference', classification.externalRef ? `<code>${escapeHtml(classification.externalRef)}</code>` : null),
+    `<b>${notificationTitle(classification.classification, 'ready')}</b>`,
+    ...extractedDetailBlocks(classification),
+    detailBlock('What happened', `Email classified as ${humanSubtype(classification.subtype)}`),
+    detailBlock('Action taken', 'No external action has run.'),
+    detailBlock('Current state', 'Action is ready but not queued because Ledger writes are disabled.'),
     emailBlock(input),
     detailBlock('Next step', nextStep)
   ];
 };
 
 export const reviewNeededTemplate: NotificationTemplate = (input, classification) => [
-  '<b>🔎 Review needed</b>',
-  humanSubtype(classification.subtype),
-  detailBlock('Amount', formatMoney(classification.amountMinor, classification.currency)),
-  detailBlock('Reference', classification.externalRef ? `<code>${escapeHtml(classification.externalRef)}</code>` : null),
+  `<b>${notificationTitle(classification.classification, 'review needed')}</b>`,
+  ...extractedDetailBlocks(classification),
+  detailBlock('What happened', `Email classified as ${humanSubtype(classification.subtype)}`),
+  detailBlock('Action taken', 'No external action was run.'),
+  detailBlock('Current state', 'Waiting for manager review.'),
   detailBlock('Why', classification.reviewReason ? escapeHtml(classification.reviewReason) : null),
   emailBlock(input),
   detailBlock('Next step', 'Please review this email before any automation runs.')
 ];
 
 export const ignoredTemplate: NotificationTemplate = (input, classification) => [
-  '<b>🤫 Ignored</b>',
-  humanSubtype(classification.subtype),
-  detailBlock('Why', classification.reviewReason ?? 'Matched an ignore rule. No notification or side effect is produced.'),
+  `<b>${notificationTitle(classification.classification, 'ignored')}</b>`,
+  ...extractedDetailBlocks(classification),
+  detailBlock('What happened', `Email classified as ${humanSubtype(classification.subtype)}`),
+  detailBlock('Action taken', 'No external action was run.'),
+  detailBlock('Current state', 'Ignored.'),
+  detailBlock('Why', classification.reviewReason ? escapeHtml(classification.reviewReason) : 'Matched an ignore rule. No notification or side effect is produced.'),
   emailBlock(input)
 ];
 

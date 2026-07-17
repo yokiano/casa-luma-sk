@@ -1,14 +1,10 @@
 import { getSuppliersData } from '$lib/server/suppliers';
 import { COMPANY_LEDGER_PROP_VALUES } from '$lib/notion-sdk/dbs/company-ledger/constants';
-import { ExpenseScanRulesDatabase } from '$lib/notion-sdk/dbs/expense-scan-rules/db';
-import { NOTION_API_KEY } from '$env/static/private';
+import { loadExpenseScanRules } from '$lib/server/expense-scan-rules';
 
 export const load = async () => {
   const suppliers = await getSuppliersData();
-  const rulesDb = new ExpenseScanRulesDatabase({ notionSecret: NOTION_API_KEY });
-  const rules = await rulesDb.query({
-    sorts: [{ timestamp: 'last_edited_time', direction: 'descending' }]
-  });
+  const rules = await loadExpenseScanRules();
 
   const expenseTypes = (COMPANY_LEDGER_PROP_VALUES.type as readonly string[]).filter((type) =>
     type.toLowerCase().includes('expense')
@@ -21,12 +17,6 @@ export const load = async () => {
     bankAccounts: COMPANY_LEDGER_PROP_VALUES.bankAccount as unknown as string[],
     paymentMethods: COMPANY_LEDGER_PROP_VALUES.paymentMethod as unknown as string[],
     expenseTypes,
-    rules: rules.results.map(r => ({
-      id: r.id,
-      match: r.properties["Recipient Match"]?.title?.[0]?.plain_text || '',
-      category: r.properties["Category Name"]?.rich_text?.[0]?.plain_text || '',
-      department: r.properties["Department Name"]?.rich_text?.[0]?.plain_text || '',
-      supplierId: (r.properties["Auto-Supplier"]?.relation as unknown as { id: string }[])?.[0]?.id || ''
-    })).filter(r => r.match)
+    rules
   };
 };

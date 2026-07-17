@@ -2,9 +2,14 @@ import { env } from '$env/dynamic/private';
 import { createTelegramAlertPublisher } from '$lib/server/alerts/telegram';
 import { loadAutomationSettings } from '../settings';
 import type { EmailAutomationInput, EmailClassification } from '../classifier';
-import { renderEmailAutomationNotification, renderTestEmailAutomationNotification } from './render';
+import { renderDurableEmailAutomationNotification, renderEmailAutomationNotification, renderTestEmailAutomationNotification, type DurableNotificationOutcome } from './render';
 
 export type NotificationSendResult = 'sent' | 'not_configured';
+
+export const getEmailAutomationEventUrl = (eventId: number) => {
+  const baseUrl = (env.EMAIL_AUTOMATION_PUBLIC_URL || 'https://www.casalumakpg.com').replace(/\/+$/, '');
+  return `${baseUrl}/mgmt-dashboard/email-automation/${eventId}`;
+};
 
 const publish = async (body: string) => {
   const botToken = env.TELEGRAM_BOT_TOKEN;
@@ -24,9 +29,12 @@ export const sendEmailAutomationNotification = async (
   input: EmailAutomationInput,
   classification: EmailClassification,
   _eventId: number,
-  notionPageId?: string
+  notionPageId?: string,
+  durableOutcome?: DurableNotificationOutcome
 ): Promise<NotificationSendResult> => {
-  const body = renderEmailAutomationNotification(input, classification, notionPageId);
+  const body = durableOutcome
+    ? renderDurableEmailAutomationNotification(input, classification, durableOutcome)
+    : renderEmailAutomationNotification(input, classification, notionPageId);
   return publish(body);
 };
 
