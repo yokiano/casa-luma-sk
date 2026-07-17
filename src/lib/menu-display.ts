@@ -100,15 +100,16 @@ export function preparePublicMenuSummary(menu: MenuSummary): MenuSummary {
 		menu.highlights.filter(isPublicMenuItem).map(prepareMenuItem)
 	);
 
-	const dietaryTags = Array.from(
-		new Set(grandCategories.flatMap((grand) => grand.sections.flatMap((section) => section.items.flatMap((item) => item.dietaryTags))))
-	).sort() as MenuSummary['dietaryTags'];
+	const publicItems = grandCategories.flatMap((grand) => grand.sections.flatMap((section) => section.items));
+	const tags = Array.from(new Set(publicItems.flatMap((item) => item.tags))).sort();
+	const dietaryTags = Array.from(new Set(publicItems.flatMap((item) => item.dietaryTags))).sort() as MenuSummary['dietaryTags'];
 
 	return {
 		...menu,
 		grandCategories,
 		sections: grandCategories.flatMap((grand) => grand.sections),
 		highlights,
+		tags,
 		dietaryTags
 	};
 }

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { getMenuSummary } from '$lib/menu.remote';
-	import { isPublicMenuItem, preparePublicMenuSummary } from '$lib/menu-display';
+	import { getPublicMenuSummary } from '$lib/menu.remote';
+	import { isPublicMenuItem } from '$lib/menu-display';
 	import OnlineMenuStickyNav from '$lib/components/menu/online/OnlineMenuStickyNav.svelte';
 	import OnlineMenuItem from '$lib/components/menu/online/OnlineMenuItem.svelte';
 	import type { DietaryTag, MenuItem } from '$lib/types/menu';
@@ -10,7 +10,7 @@
 
 	const accentPalette = ['#DFBC69', '#A8C3A0', '#E07A5F', '#8E8FB5', '#C7A4A1'];
 
-	let menu = $state(preparePublicMenuSummary(await getMenuSummary()));
+	let menu = $state(await getPublicMenuSummary());
 
 	let activeGrandCategory = $state('');
 	let activeCategory = $state('');

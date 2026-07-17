@@ -13,6 +13,7 @@ import {
 } from '$lib/server/notion';
 import { createCategoryOrderMapReader, createMenuPagesReader } from '$lib/server/menu-cache';
 import type { MenuGrandCategory, MenuItem, MenuSummary, StructuredMenuSection, MenuModifier } from '$lib/types/menu';
+import { preparePublicMenuSummary } from '$lib/menu-display';
 import * as v from 'valibot';
 import { getActiveModifiers } from './modifiers.remote';
 
@@ -284,12 +285,19 @@ const buildSummary = (pages: any[], categoryOrder: Map<string, number>, modifier
 const queryMenuPages = createMenuPagesReader();
 const getCategoryOrderMap = createCategoryOrderMapReader();
 
-export const getMenuSummary = query(async () => {
+const loadMenuSummary = async () => {
 	const [pages, categoryOrder] = await Promise.all([
 		queryMenuPages(),
 		getCategoryOrderMap()
 	]);
 	return buildSummary(pages, categoryOrder);
+};
+
+export const getMenuSummary = query(async () => loadMenuSummary());
+
+export const getPublicMenuSummary = query(async () => {
+	// Apply the public filter on the server so excluded internal items are not sent to customers in the hydrated payload.
+	return preparePublicMenuSummary(await loadMenuSummary());
 });
 
 export const getMenuSummaryWithModifiers = query(async () => {

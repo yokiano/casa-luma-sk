@@ -145,7 +145,7 @@ describe('preparePublicMenuSummary', () => {
 									isAvailable: true,
 									excludeFromMenu: false,
 									status: 'Active',
-									tags: [],
+									tags: ['public'],
 									order: 1
 								},
 								{
@@ -164,7 +164,7 @@ describe('preparePublicMenuSummary', () => {
 									isAvailable: true,
 									excludeFromMenu: true,
 									status: 'Active',
-									tags: [],
+									tags: ['internal'],
 									order: 2
 								}
 							]
@@ -174,7 +174,7 @@ describe('preparePublicMenuSummary', () => {
 			],
 			sections: [],
 			highlights: [],
-			tags: [],
+			tags: ['internal', 'public'],
 			dietaryTags: [],
 			allModifiers: []
 		};
@@ -182,5 +182,6 @@ describe('preparePublicMenuSummary', () => {
 		const prepared = preparePublicMenuSummary(menu);
 		expect(prepared.grandCategories[0].sections[0].items).toHaveLength(1);
 		expect(prepared.grandCategories[0].sections[0].items[0].name).toBe('Visible Pizza');
+		expect(prepared.tags).toEqual(['public']);
 	});
 });
