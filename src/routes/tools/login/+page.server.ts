@@ -1,6 +1,7 @@
 import { AUTH_PASSWORD, MANAGER_PASSWORD } from '$env/static/private';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions } from './$types';
+import { createConfiguredToolsSessionCookie, SESSION_MAX_AGE_SECONDS } from '$lib/server/tools-session';
 
 const getSafeContinueTo = (continueTo: string | null) => {
 	if (!continueTo || !continueTo.startsWith('/tools') || continueTo.startsWith('//')) {
@@ -27,12 +28,12 @@ export const actions: Actions = {
 		}
 
 		if (role) {
-			cookies.set('casa_luma_tools_auth', role, {
+			cookies.set('casa_luma_tools_auth', createConfiguredToolsSessionCookie(role as 'manager' | 'staff'), {
 				path: '/',
 				httpOnly: true,
 				sameSite: 'strict',
 				secure: true,
-				maxAge: 60 * 60 * 24 * 7 // 1 week
+				maxAge: SESSION_MAX_AGE_SECONDS
 			});
 
 			throw redirect(303, getSafeContinueTo(url.searchParams.get('continueTo')));
