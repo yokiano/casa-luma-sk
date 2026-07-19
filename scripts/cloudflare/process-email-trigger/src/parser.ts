@@ -49,8 +49,14 @@ const decodeBasicHtmlEntities = (value: string): string => value
 	.replace(/&gt;/gi, '>')
 	.replace(/&quot;/gi, '"')
 	.replace(/&#39;|&#x27;/gi, "'")
-	.replace(/&#(\d+);/g, (_match, code: string) => String.fromCodePoint(Number(code)))
-	.replace(/&#x([\da-f]+);/gi, (_match, code: string) => String.fromCodePoint(Number.parseInt(code, 16)));
+	.replace(/&#(\d+);/g, (match, code: string) => {
+		const value = Number(code);
+		return Number.isSafeInteger(value) && value >= 0 && value <= 0x10ffff ? String.fromCodePoint(value) : match;
+	})
+	.replace(/&#x([\da-f]+);/gi, (match, code: string) => {
+		const value = Number.parseInt(code, 16);
+		return Number.isSafeInteger(value) && value >= 0 && value <= 0x10ffff ? String.fromCodePoint(value) : match;
+	});
 
 const removeKnownQuoteContainers = (value: string): string => value
 	.replace(/<([a-z][\w:-]*)\b[^>]*(?:class\s*=\s*["'][^"']*\bgmail_quote\b[^"']*["']|type\s*=\s*["']cite["'])[^>]*>[\s\S]*?<\/\1>/gi, '')
@@ -211,7 +217,7 @@ export const parseInboundEmail = async (raw: RawEmail): Promise<ParsedInboundEma
 	}
 
 	const mimeType = headerValue(email.headers, 'content-type')?.split(';', 1)[0]?.toLowerCase();
-	const attachmentCount = email.attachments.length;
+	const attachmentCount = Array.isArray(email.attachments) ? email.attachments.length : 0;
 	let body = '';
 	let bodySource: BodySource | null = null;
 	const decodeWarnings: string[] = [];
