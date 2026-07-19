@@ -58,6 +58,21 @@ describe('email attention review bundle', () => {
     expect(createEmailBodyPreview({ ...input, textBody: undefined, htmlBody: '<p>HTML fallback</p>' })).toBe('<p>HTML fallback</p>');
   });
 
+  it('uses extracted body evidence while keeping review bundles bounded', () => {
+    const evidence = createReviewEvidenceSnapshot({
+      ...input,
+      extractedBody: 'latest '.repeat(300),
+      extractedBodySource: 'html-fallback',
+      extractedBodyTruncated: true,
+      bodyExtractionMetadata: { bodyCompleteness: 'incomplete', threadStrippingApplied: true, threadStrippingMarker: 'On … wrote:' }
+    }, {
+      classification: 'review', subtype: 'unrecognized_email', processingState: 'review', notify: true
+    });
+    expect(evidence.extractedBodyPreview).toHaveLength(700);
+    expect(evidence.extractedBodySource).toBe('html-fallback');
+    expect(evidence.bodyExtractionMetadata).toMatchObject({ bodyCompleteness: 'incomplete', threadStrippingApplied: true });
+  });
+
   it('bounds evidence and produces a provider-neutral deterministic export', () => {
     const bundle = renderEmailReviewBundle(review);
     expect(review.evidenceSnapshot.textPreview).toContain('untrusted content.');
