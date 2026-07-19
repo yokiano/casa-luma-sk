@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import type { EmailAutomationInput } from './classifier';
-import { createEmailBodyPreview, EMAIL_BODY_PREVIEW_MAX_CHARS, createReviewEvidenceSnapshot, renderEmailReviewBundle, sanitizeClassifierDiagnostics } from './review-bundle';
+import {
+  createEmailBodyPreview,
+  EMAIL_BODY_PREVIEW_MAX_CHARS,
+  createReviewEvidenceSnapshot,
+  readReviewTriageMetadata,
+  renderEmailClassifierRuleDraft,
+  renderEmailReviewBundle,
+  renderPendingEmailReviewBundles,
+  sanitizeClassifierDiagnostics
+} from './review-bundle';
 
 const input: EmailAutomationInput = {
   receivedAt: '2026-07-14T10:00:00.000Z',
@@ -89,5 +98,30 @@ describe('email attention review bundle', () => {
     const reordered = { ...review, evidenceSnapshot: { b: 1, a: 2 }, classifierDiagnostics: { z: true, a: false } };
     const reorderedAgain = { ...review, evidenceSnapshot: { a: 2, b: 1 }, classifierDiagnostics: { a: false, z: true } };
     expect(renderEmailReviewBundle(reordered)).toBe(renderEmailReviewBundle(reorderedAgain));
+  });
+
+  it('combines every open review into one agent-safe batch document', () => {
+    const bundle = renderPendingEmailReviewBundles([review, { ...review, id: 13, eventId: 35 }]);
+    expect(bundle).toContain('# Pending email reviews for local Pi');
+    expect(bundle).toContain('Open reviews: 2');
+    expect(bundle).toContain('Review 2 of 2');
+    expect(bundle.match(/# Email attention review bundle/g)).toHaveLength(2);
+    expect(bundle).toContain('Do not modify production settings or automatically create or enable classifier rules.');
+  });
+
+  it('reads structured triage metadata without requiring a schema migration', () => {
+    expect(readReviewTriageMetadata({ needsFullBody: true, disposition: 'dismissed_irrelevant', revision: 3 })).toEqual({
+      needsFullBody: true,
+      disposition: 'dismissed_irrelevant',
+      revision: 3
+    });
+    expect(readReviewTriageMetadata({ needsFullBody: 'yes', disposition: 'other' })).toEqual({ needsFullBody: false, disposition: null, revision: 0 });
+  });
+
+  it('creates a disabled classifier draft without copying body content', () => {
+    const draft = renderEmailClassifierRuleDraft({ id: 34, senderEmail: 'kbiz@example.test', subject: 'Needs review', subtype: 'unrecognized_email' });
+    expect(JSON.parse(draft)).toMatchObject({ draftOnly: true, enabled: false, sourceEventId: 34, handlerKey: 'none' });
+    expect(draft).not.toContain(input.textBody!);
+    expect(draft).toContain('Never auto-enable this draft.');
   });
 });

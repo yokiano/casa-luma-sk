@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { extractMemo, extractTransactionReference } from '$lib/expense-scan/parsers/kbank-parser-utils';
-import { mimeReviewReason, requiresMimeReview, type MimeMetadata } from './mime-contract';
+import { mimeReviewReason, requiresMimeReview, type BodyExtractionMetadata, type MimeMetadata } from './mime-contract';
 
 export type EmailAutomationInput = {
   receivedAt: string;
@@ -11,6 +11,11 @@ export type EmailAutomationInput = {
   attachmentCount: number;
   textBody?: string;
   htmlBody?: string;
+  /** Primary body selected by the MIME parser; legacy text/html fields remain rollout fallbacks. */
+  extractedBody?: string;
+  extractedBodySource?: 'text' | 'html' | 'html-fallback' | null;
+  extractedBodyTruncated?: boolean;
+  bodyExtractionMetadata?: BodyExtractionMetadata;
   /** Parser completeness is transport evidence, not a classification rule. */
   mime?: MimeMetadata;
 };
@@ -49,7 +54,7 @@ export type EmailClassificationRuleInput = {
 
 export type EmailClassifierDiagnostics = {
   classifierVersion: '1';
-  selectedSource: 'database_rule' | 'built_in_fallback';
+  selectedSource: 'ignored_sender_list' | 'database_rule' | 'built_in_fallback';
   selectedRuleId: number | null;
   selectedRuleName: string | null;
   evaluatedRules: Array<{
@@ -76,7 +81,18 @@ export type EmailClassifierDiagnostics = {
 
 export const normalize = (value: string) => value.replace(/\s+/g, ' ').trim();
 
-export const bodyText = (input: EmailAutomationInput) => normalize(`${input.textBody ?? ''} ${input.htmlBody ?? ''}`);
+export const extractSenderEmail = (from: string) => {
+  const angle = from.match(/<([^>]+)>/);
+  const candidate = (angle?.[1] ?? from).trim().toLowerCase();
+  return candidate.match(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i)?.[0]?.toLowerCase() ?? candidate;
+};
+
+export const matchesIgnoredSender = (input: EmailAutomationInput, ignoredSenders: string[]) => {
+  const sender = extractSenderEmail(input.from);
+  return ignoredSenders.some((entry) => extractSenderEmail(entry) === sender);
+};
+
+export const bodyText = (input: EmailAutomationInput) => normalize(input.extractedBody ?? `${input.textBody ?? ''} ${input.htmlBody ?? ''}`);
 
 export const extractReference = (text: string) => extractTransactionReference(text) ?? undefined;
 
@@ -303,9 +319,21 @@ const builtInClassify = (input: EmailAutomationInput): EmailClassification => {
 
 export const classifyEmailWithDiagnostics = (
   input: EmailAutomationInput,
-  rules: EmailClassificationRuleInput[] = []
+  rules: EmailClassificationRuleInput[] = [],
+  ignoredSenders: string[] = []
 ): { classification: EmailClassification; diagnostics: EmailClassifierDiagnostics } => {
-  const evaluatedRules = rules.map((rule) => {
+  const ignoredSenderMatched = matchesIgnoredSender(input, ignoredSenders);
+  const ignoredSenderEvaluation = ignoredSenders.length > 0 ? [{
+    id: null,
+    priority: 0,
+    name: 'Ignored sender list',
+    classification: 'ignore',
+    subtype: 'ignored_sender',
+    patterns: { senderPattern: 'configured dashboard sender list', subjectPattern: null, bodyPatterns: [] },
+    patternMatched: ignoredSenderMatched,
+    usable: ignoredSenderMatched
+  }] : [];
+  const evaluatedRules = [...ignoredSenderEvaluation, ...rules.map((rule) => {
     const patternMatched = matchesClassificationRule(input, rule);
     const usable = patternMatched && classificationFromRule(input, rule) !== null;
     return {
@@ -318,11 +346,25 @@ export const classifyEmailWithDiagnostics = (
       patternMatched,
       usable
     };
-  });
+  })];
 
   let result: EmailClassification | undefined;
   let selectedRule: EmailClassificationRuleInput | undefined;
-  for (const rule of rules) {
+  if (ignoredSenderMatched) {
+    // This settings-backed rule runs before DB rules so an operator can quiet a
+    // trusted sender without creating a broad or easily misordered DB rule.
+    result = {
+      classification: 'ignore',
+      subtype: 'ignored_sender',
+      processingState: 'ignored',
+      reviewReason: 'Sender matched the dashboard ignored-sender list.',
+      notify: false,
+      handlerKey: 'none',
+      notifyPolicy: 'never',
+      matchedRuleName: 'Ignored sender list'
+    };
+  }
+  for (const rule of ignoredSenderMatched ? [] : rules) {
     if (!matchesClassificationRule(input, rule)) continue;
     const classification = classificationFromRule(input, rule);
     if (classification) {
@@ -341,9 +383,9 @@ export const classifyEmailWithDiagnostics = (
     classification: finalClassification,
     diagnostics: {
       classifierVersion: '1',
-      selectedSource: selectedRule ? 'database_rule' : 'built_in_fallback',
+      selectedSource: ignoredSenderMatched ? 'ignored_sender_list' : selectedRule ? 'database_rule' : 'built_in_fallback',
       selectedRuleId: selectedRule?.id ?? null,
-      selectedRuleName: selectedRule?.name ?? null,
+      selectedRuleName: ignoredSenderMatched ? 'Ignored sender list' : selectedRule?.name ?? null,
       evaluatedRules,
       final: {
         classification: finalClassification.classification,
@@ -355,8 +397,8 @@ export const classifyEmailWithDiagnostics = (
   };
 };
 
-export const classifyEmail = (input: EmailAutomationInput, rules: EmailClassificationRuleInput[] = []): EmailClassification =>
-  classifyEmailWithDiagnostics(input, rules).classification;
+export const classifyEmail = (input: EmailAutomationInput, rules: EmailClassificationRuleInput[] = [], ignoredSenders: string[] = []): EmailClassification =>
+  classifyEmailWithDiagnostics(input, rules, ignoredSenders).classification;
 
 export const shouldCreateLedgerExpense = (classification: EmailClassification) => classification.classification === 'expense'
   && classification.handlerKey === 'company_ledger_expense'
@@ -364,5 +406,13 @@ export const shouldCreateLedgerExpense = (classification: EmailClassification) =
   && classification.amountMinor !== undefined;
 
 export const createEmailAutomationHash = (input: EmailAutomationInput) => createHash('sha256')
-  .update([input.messageId?.trim() || '', normalize(input.from).toLowerCase(), normalize(input.to).toLowerCase(), normalize(input.subject), normalize(input.textBody ?? input.htmlBody ?? '')].join('\n'))
+  // Message-ID is stable across parser improvements. Only legacy messages
+  // without one use extracted body text as fallback entropy.
+  .update(input.messageId?.trim()
+    ? `message-id\n${input.messageId.trim().toLowerCase()}`
+    : ['fallback', normalize(input.from).toLowerCase(), normalize(input.to).toLowerCase(), normalize(input.subject), bodyText(input)].join('\n'))
+  .digest('hex');
+
+export const createExtractedBodyHash = (input: EmailAutomationInput) => createHash('sha256')
+  .update(bodyText(input))
   .digest('hex');

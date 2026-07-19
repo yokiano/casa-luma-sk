@@ -94,6 +94,12 @@ export const emailEvents = pgTable(
     authenticityVerdict: text('authenticity_verdict').notNull().default('unverified'),
     parserVersion: text('parser_version'),
     mimeCompleteness: text('mime_completeness').notNull().default('incomplete'),
+    extractedBody: text('extracted_body'),
+    extractedBodySource: text('extracted_body_source'),
+    extractedBodyTruncated: boolean('extracted_body_truncated').notNull().default(false),
+    extractedBodyParserVersion: text('extracted_body_parser_version'),
+    extractedBodyHash: text('extracted_body_hash'),
+    bodyExtractionMetadata: jsonb('body_extraction_metadata').notNull().default({}),
     decisionSnapshot: jsonb('decision_snapshot').notNull().default({}),
     actionId: bigint('action_id', { mode: 'number' })
   },

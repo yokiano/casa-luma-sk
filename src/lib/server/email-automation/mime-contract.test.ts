@@ -13,4 +13,19 @@ describe('MIME completeness boundary', () => {
     expect(result.processingState).toBe('review');
     expect(result.reviewReason).toMatch(/evidence is missing/i);
   });
+
+  it('keeps an ambiguous latest-body extraction in review', () => {
+    const result = classifyEmail({
+      receivedAt: '2026-07-11T00:00:00Z',
+      from: 'K BIZ <KBIZ@kasikornbank.com>',
+      to: 'automations@casalumakpg.com',
+      subject: 'Result of PromptPay Funds Transfer (Success)',
+      attachmentCount: 0,
+      extractedBody: 'Reference Number: PPFS260711123 Amount (THB): 12.00\nOn Tue wrote:\nOlder amount: 999.00',
+      bodyExtractionMetadata: { bodyCompleteness: 'ambiguous' },
+      mime: { completeness: 'ambiguous', attachmentCount: 0 }
+    });
+    expect(result.processingState).toBe('review');
+    expect(result.reviewReason).toMatch(/ambiguous/i);
+  });
 });

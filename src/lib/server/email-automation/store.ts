@@ -2,8 +2,8 @@ import { randomUUID } from 'node:crypto';
 import { and, asc, eq, inArray, lte } from 'drizzle-orm';
 import { db } from '$lib/server/db/client';
 import { emailAttentionReviews, emailAutomationActions, emailAutomationAttempts, emailEvents, emailNotificationOutbox } from '$lib/server/db/schema';
-import type { EmailAutomationInput, EmailClassification, EmailClassifierDiagnostics } from './classifier';
-import { boundReviewText, createEmailBodyPreview, createHistoricalClassifierDiagnostics, createReviewEvidenceSnapshot, EMAIL_BODY_PREVIEW_MAX_CHARS, sanitizeClassifierDiagnostics } from './review-bundle';
+import { createExtractedBodyHash, type EmailAutomationInput, type EmailClassification, type EmailClassifierDiagnostics } from './classifier';
+import { boundReviewText, createEmailBodyPreview, createHistoricalClassifierDiagnostics, createReviewEvidenceSnapshot, EMAIL_BODY_PREVIEW_MAX_CHARS, EMAIL_EXTRACTED_BODY_MAX_CHARS, sanitizeBodyExtractionMetadata, sanitizeClassifierDiagnostics } from './review-bundle';
 import type { EmailAutomationHandler } from './handlers/types';
 import { nextRetryAt, canRetry } from './retry-policy';
 
@@ -61,9 +61,33 @@ const actionSnapshot = (value: unknown) => value as { input: EmailAutomationInpu
 
 export const persistDurableEmailIntent = async (intent: DurableIntent) => {
   const bodyPreview = createEmailBodyPreview(intent.input);
-  const bodySource = typeof intent.input.textBody === 'string' && intent.input.textBody.trim() ? 'text' : typeof intent.input.htmlBody === 'string' && intent.input.htmlBody.trim() ? 'html' : null;
-  const sourceBody = typeof intent.input.textBody === 'string' && intent.input.textBody.trim() ? intent.input.textBody : intent.input.htmlBody;
-  const bodyPreviewTruncated = Boolean(intent.input.mime?.textTruncated) || Boolean(sourceBody && sourceBody.trim().length > EMAIL_BODY_PREVIEW_MAX_CHARS);
+  const sourceBody = typeof intent.input.extractedBody === 'string' && intent.input.extractedBody.trim()
+    ? intent.input.extractedBody
+    : typeof intent.input.textBody === 'string' && intent.input.textBody.trim()
+      ? intent.input.textBody
+      : intent.input.htmlBody;
+  const bodySource = intent.input.extractedBodySource
+    ?? (typeof intent.input.textBody === 'string' && intent.input.textBody.trim() ? 'text' : typeof intent.input.htmlBody === 'string' && intent.input.htmlBody.trim() ? 'html' : null);
+  const fullExtractedBody = sourceBody?.trim() || null;
+  const extractedBodyTruncated = Boolean(intent.input.extractedBodyTruncated)
+    || Boolean(fullExtractedBody && fullExtractedBody.length > EMAIL_EXTRACTED_BODY_MAX_CHARS);
+  const extractedBody = fullExtractedBody?.slice(0, EMAIL_EXTRACTED_BODY_MAX_CHARS) || null;
+  const bodyPreviewTruncated = Boolean(intent.input.mime?.textTruncated)
+    || extractedBodyTruncated
+    || Boolean(fullExtractedBody && fullExtractedBody.length > EMAIL_BODY_PREVIEW_MAX_CHARS);
+  const bodyExtractionMetadata = sanitizeBodyExtractionMetadata(intent.input.bodyExtractionMetadata, {
+    parserVersion: intent.input.mime?.parserVersion,
+    bodySource,
+    bodyCompleteness: intent.input.mime?.completeness === 'ambiguous'
+      ? 'ambiguous'
+      : extractedBodyTruncated || !extractedBody
+        ? 'incomplete'
+        : intent.input.mime?.completeness === 'complete' ? 'complete' : 'incomplete',
+    extractedBodyChars: extractedBody?.length ?? 0,
+    extractedBodyTruncated,
+    attachmentCount: intent.input.attachmentCount,
+    decodeWarnings: intent.input.mime?.decodeWarnings
+  });
   return db.transaction(async (tx) => {
   const [event] = await tx.insert(emailEvents).values({
     receivedAt: new Date(intent.input.receivedAt), messageId: intent.input.messageId, emailHash: intent.hash,
@@ -75,13 +99,22 @@ export const persistDurableEmailIntent = async (intent: DurableIntent) => {
     counterparty: intent.classification.counterparty, reviewReason: intent.classification.reviewReason,
     notificationState: intent.classification.notify && intent.notificationsEnabled ? 'pending' : 'not_needed',
     parserVersion: intent.input.mime?.parserVersion, mimeCompleteness: intent.input.mime?.completeness ?? 'incomplete',
+    extractedBody,
+    extractedBodySource: bodySource,
+    extractedBodyTruncated,
+    extractedBodyParserVersion: bodyExtractionMetadata.parserVersion,
+    extractedBodyHash: extractedBody ? createExtractedBodyHash({ ...intent.input, extractedBody }) : null,
+    bodyExtractionMetadata,
     decisionSnapshot: { classifierVersion: '1', handlerKey: intent.handler?.key, handlerVersion: intent.handler?.version, matchedRuleName: intent.classification.matchedRuleName, extractedDescription: intent.classification.description, notifyPolicy: intent.classification.notifyPolicy, ledgerEnabled: intent.ledgerEnabled, classifierDiagnostics: intent.classifierDiagnostics ? sanitizeClassifierDiagnostics(intent.classifierDiagnostics) : null },
     metadata: {
+      // Keep the legacy review/export field bounded while the dedicated column
+      // retains the complete latest visible body up to the hard safety cap.
       bodyPreview,
       bodyPreviewSource: bodySource,
       bodyPreviewTruncated,
       textSnippet: intent.input.textBody?.replace(/\s+/g, ' ').slice(0, 500),
       htmlSnippet: intent.input.htmlBody?.replace(/\s+/g, ' ').slice(0, 500),
+      bodyExtractionMetadata,
       description: intent.classification.description,
       handlerKey: intent.classification.handlerKey,
       mime: intent.input.mime

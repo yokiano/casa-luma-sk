@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { env } from '$env/dynamic/private';
 import { ingestEmailAutomationEvent } from '$lib/server/email-automation';
+import { EMAIL_EXTRACTED_BODY_MAX_CHARS, sanitizeBodyExtractionMetadata } from '$lib/server/email-automation/review-bundle';
 
 const MAX_SNIPPET_LENGTH = 500;
 
@@ -13,8 +14,18 @@ const asString = (value: unknown): string | undefined => {
 	return typeof value === 'string' && value.trim().length > 0 ? value : undefined;
 };
 
+const asBoundedString = (value: unknown, maxLength: number): string | undefined => {
+	const string = asString(value);
+	return string?.slice(0, maxLength);
+};
+
 const asNumber = (value: unknown): number | undefined => {
 	return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+};
+
+const asAttachmentCount = (value: unknown) => {
+	const count = asNumber(value);
+	return count === undefined ? 0 : Math.min(Math.max(Math.floor(count), 0), 10_000);
 };
 
 const escapeHtml = (value: string): string => {
@@ -39,22 +50,41 @@ const getSnippet = (value: unknown): string | undefined => {
 		: normalized;
 };
 
+const getBodySource = (value: unknown): 'text' | 'html' | 'html-fallback' | undefined =>
+	value === 'text' || value === 'html' || value === 'html-fallback' ? value : undefined;
+
 const getMime = (value: unknown) => {
 	if (!isObject(value)) return undefined;
 	const completeness = asString(value.completeness);
-	const completenessState: 'complete' | 'incomplete' | 'unsupported' = completeness === 'complete' || completeness === 'incomplete' || completeness === 'unsupported' ? completeness : 'incomplete';
+	const completenessState: 'complete' | 'incomplete' | 'unsupported' | 'ambiguous' = completeness === 'complete' || completeness === 'unsupported' || completeness === 'ambiguous' ? completeness : 'incomplete';
 	return {
-		parserVersion: asString(value.parserVersion)?.slice(0, 80),
-		mimeType: asString(value.mimeType)?.slice(0, 120),
+		parserVersion: asBoundedString(value.parserVersion, 80),
+		mimeType: asBoundedString(value.mimeType, 120),
 		completeness: completenessState,
 		textTruncated: value.textTruncated === true,
 		decodeWarnings: Array.isArray(value.decodeWarnings) ? value.decodeWarnings.filter((warning): warning is string => typeof warning === 'string').slice(0, 5).map((warning) => warning.slice(0, 160)) : [],
-		attachmentCount: asNumber(value.attachmentCount) ?? 0
+		attachmentCount: asAttachmentCount(value.attachmentCount)
 	};
 };
 
 const getPayloadMetadata = (payload: Record<string, unknown>) => {
-	const attachmentCount = asNumber(payload.attachmentCount) ?? 0;
+	const extractedBodyRaw = asString(payload.extractedBody) ?? asString(payload.textBody) ?? asString(payload.htmlBody);
+	const extractedBody = extractedBodyRaw?.slice(0, EMAIL_EXTRACTED_BODY_MAX_CHARS);
+	const extractedBodyTruncated = payload.extractedBodyTruncated === true || Boolean(extractedBodyRaw && extractedBodyRaw.length > EMAIL_EXTRACTED_BODY_MAX_CHARS);
+	const attachmentCount = Math.max(asAttachmentCount(payload.attachmentCount), asAttachmentCount(isObject(payload.mime) ? payload.mime.attachmentCount : undefined));
+	const extractedBodySource = getBodySource(payload.extractedBodySource);
+	const bodyExtractionMetadata = sanitizeBodyExtractionMetadata(payload.bodyExtractionMetadata, {
+		parserVersion: isObject(payload.mime) ? asBoundedString(payload.mime.parserVersion, 80) : undefined,
+		bodySource: extractedBodySource,
+		bodyCompleteness: isObject(payload.mime) && payload.mime.completeness === 'ambiguous'
+			? 'ambiguous'
+			: extractedBodyTruncated || !extractedBody
+				? 'incomplete'
+				: 'complete',
+		extractedBodyChars: extractedBody?.length ?? 0,
+		extractedBodyTruncated,
+		attachmentCount
+	});
 
 	return {
 		receivedAt: asString(payload.receivedAt) ?? new Date().toISOString(),
@@ -63,6 +93,10 @@ const getPayloadMetadata = (payload: Record<string, unknown>) => {
 		subject: asString(payload.subject) ?? '(no subject)',
 		messageId: asString(payload.messageId),
 		attachmentCount,
+		extractedBody,
+		extractedBodySource,
+		extractedBodyTruncated,
+		bodyExtractionMetadata,
 		textSnippet: getSnippet(payload.textBody),
 		htmlSnippet: getSnippet(payload.htmlBody),
 		mime: getMime(payload.mime)
@@ -76,9 +110,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		return json({ error: 'Email webhook is not configured' }, { status: 503 });
 	}
 	const incomingToken = request.headers.get('x-webhook-token');
-	if (incomingToken !== secret) {
-		return json({ error: 'Unauthorized webhook request' }, { status: 401 });
-	}
+	if (incomingToken !== secret) return json({ error: 'Unauthorized webhook request' }, { status: 401 });
 
 	let payload: unknown;
 	try {
@@ -86,10 +118,7 @@ export const POST: RequestHandler = async ({ request }) => {
 	} catch {
 		return json({ error: 'Invalid JSON payload' }, { status: 400 });
 	}
-
-	if (!isObject(payload)) {
-		return json({ error: 'Expected JSON object payload' }, { status: 400 });
-	}
+	if (!isObject(payload)) return json({ error: 'Expected JSON object payload' }, { status: 400 });
 
 	const metadata = getPayloadMetadata(payload);
 	let result;
@@ -101,10 +130,14 @@ export const POST: RequestHandler = async ({ request }) => {
 			subject: metadata.subject,
 			messageId: metadata.messageId,
 			attachmentCount: metadata.attachmentCount,
-			// Classify from the Worker preview (up to 4,000 chars); only compact
-			// snippets are retained by the email-automation service.
-			textBody: asString(payload.textBody)?.slice(0, 4000),
-			htmlBody: asString(payload.htmlBody)?.slice(0, 4000),
+			// extractedBody is the latest visible body. text/html remain compatibility
+			// fallbacks for older callers and are bounded independently at the edge.
+			extractedBody: metadata.extractedBody,
+			extractedBodySource: metadata.extractedBodySource,
+			extractedBodyTruncated: metadata.extractedBodyTruncated,
+			bodyExtractionMetadata: metadata.bodyExtractionMetadata,
+			textBody: asBoundedString(payload.textBody, EMAIL_EXTRACTED_BODY_MAX_CHARS),
+			htmlBody: asBoundedString(payload.htmlBody, EMAIL_EXTRACTED_BODY_MAX_CHARS),
 			mime: metadata.mime
 		});
 	} catch (error) {

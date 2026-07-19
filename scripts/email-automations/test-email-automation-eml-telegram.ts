@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { readFile } from 'node:fs/promises';
 import { basename } from 'node:path';
-import { getBodyPreview } from '../cloudflare/process-email-trigger/src/index';
+import { parseInboundEmail } from '../cloudflare/process-email-trigger/src/parser';
 import { classifyEmail, type EmailAutomationInput } from '../../src/lib/server/email-automation/classifier';
 import { renderTestEmailAutomationNotification } from '../../src/lib/server/email-automation/notifications/render';
 import { SEED_CLASSIFICATION_RULES } from '../../src/lib/server/email-automation/seed-rules';
@@ -16,36 +16,30 @@ if (paths.length === 0) {
   process.exit(1);
 }
 
-const readHeader = (headerBlock: string, name: string): string => {
-  const unfolded = headerBlock.replace(/\r?\n[\t ]+/g, ' ');
-  return unfolded.match(new RegExp(`^${name}:\\s*(.+)$`, 'im'))?.[1]?.trim() ?? '';
-};
-
 const parseEml = async (path: string): Promise<EmailAutomationInput> => {
-  const raw = await readFile(path, 'utf8');
-  const separatorIndex = raw.search(/\r?\n\r?\n/);
-  if (separatorIndex < 0) throw new Error(`${path}: missing email header/body separator.`);
-
-  const headerBlock = raw.slice(0, separatorIndex);
-  const preview = getBodyPreview(raw);
-  const dateHeader = readHeader(headerBlock, 'Date');
-  const parsedDate = Date.parse(dateHeader);
-  const attachmentCount = (raw.match(/content-disposition:\s*attachment/gi) ?? []).length;
+  const parsed = await parseInboundEmail(await readFile(path));
+  const parsedDate = parsed.date ? Date.parse(parsed.date) : Number.NaN;
+  const attachmentCount = parsed.bodyExtractionMetadata.attachmentCount;
 
   return {
     receivedAt: Number.isNaN(parsedDate) ? new Date().toISOString() : new Date(parsedDate).toISOString(),
-    from: readHeader(headerBlock, 'From'),
-    to: readHeader(headerBlock, 'To'),
-    subject: readHeader(headerBlock, 'Subject'),
-    messageId: readHeader(headerBlock, 'Message-ID'),
+    from: parsed.from ?? 'unknown sender',
+    to: parsed.to ?? 'automations@casalumakpg.com',
+    subject: parsed.subject ?? '(no subject)',
+    messageId: parsed.messageId,
     attachmentCount,
-    textBody: preview.text,
+    extractedBody: parsed.extractedBody,
+    extractedBodySource: parsed.extractedBodySource,
+    extractedBodyTruncated: parsed.extractedBodyTruncated,
+    bodyExtractionMetadata: parsed.bodyExtractionMetadata,
+    // Keep the local runner's input shape compatible with older classifier code.
+    textBody: parsed.extractedBody,
     mime: {
-      parserVersion: 'worker-preview-v1',
-      mimeType: preview.mimeType,
-      completeness: preview.completeness,
-      textTruncated: preview.textTruncated,
-      decodeWarnings: preview.decodeWarnings,
+      parserVersion: parsed.bodyExtractionMetadata.parserVersion,
+      mimeType: parsed.mimeType,
+      completeness: parsed.bodyExtractionMetadata.bodyCompleteness,
+      textTruncated: parsed.extractedBodyTruncated,
+      decodeWarnings: parsed.bodyExtractionMetadata.decodeWarnings,
       attachmentCount
     }
   };
@@ -90,6 +84,12 @@ for (const path of paths) {
     classification: classification.classification,
     subtype: classification.subtype,
     processingState: classification.processingState,
+    bodySource: input.extractedBodySource,
+    bodyCompleteness: input.bodyExtractionMetadata?.bodyCompleteness,
+    threadStrippingApplied: input.bodyExtractionMetadata?.threadStrippingApplied,
+    threadStrippingMarker: input.bodyExtractionMetadata?.threadStrippingMarker,
+    extractedBodyChars: input.extractedBody?.length ?? 0,
+    attachmentCount: input.attachmentCount,
     templateMode: ledgerEnabled ? 'ledger-enabled simulation' : 'ledger-disabled simulation',
     sent: shouldSend
   }));

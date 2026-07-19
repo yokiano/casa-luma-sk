@@ -43,6 +43,22 @@ describe('email automation classifier', () => {
     });
   });
 
+  it('applies the dashboard ignored-sender rule before DB rules', () => {
+    const result = classifyEmail(baseEmail({
+      from: 'K BIZ <blocked@example.com>',
+      attachmentCount: 1,
+      mime: { parserVersion: 'test', completeness: 'unsupported', attachmentCount: 1 }
+    }), [dbExpenseRule()], ['blocked@example.com']);
+
+    expect(result).toMatchObject({
+      classification: 'ignore',
+      subtype: 'ignored_sender',
+      processingState: 'ignored',
+      notify: false,
+      matchedRuleName: 'Ignored sender list'
+    });
+  });
+
   it('extracts bilingual K BIZ description and reference fields for Ledger mapping', () => {
     const thai = 'หมายเลขอ้างอิง: BILS260715313032359 จำนวนเงิน (บาท): 123.45 บันทึกช่วยจำ: Makto ผู้ทำรายการ: SURISA';
     const english = 'Reference Number: BILS260715313032359 Amount (THB): 123.45 Your Note: Makto User: SURISA';
@@ -68,6 +84,15 @@ describe('email automation classifier', () => {
       expect.objectContaining({ id: 7, priority: 10, name: 'First non-match', patternMatched: false, usable: false }),
       expect.objectContaining({ id: 8, priority: 20, name: 'Selected rule', patternMatched: true, usable: true })
     ]);
+  });
+
+  it('prefers the extracted latest body over quoted legacy fields for rule matching', () => {
+    const result = classifyEmail(baseEmail({
+      extractedBody: 'Reference Number: LATEST123 Amount (THB): 45.00',
+      textBody: 'Reference Number: OLD999 Amount (THB): 999.00'
+    }), [dbExpenseRule({ bodyPatterns: ['LATEST123'] })]);
+
+    expect(result).toMatchObject({ processingState: 'ready', externalRef: 'LATEST123', amountMinor: 4500 });
   });
 
   it('requires all body patterns by default and falls back when a DB rule does not match', () => {
@@ -153,5 +178,10 @@ describe('email automation dedupe hash', () => {
   it('changes when the message id changes', () => {
     expect(createEmailAutomationHash(baseEmail({ messageId: '<message-1@example.test>' })))
       .not.toBe(createEmailAutomationHash(baseEmail({ messageId: '<message-2@example.test>' })));
+  });
+
+  it('does not change when only the parsed body improves for a Message-ID event', () => {
+    expect(createEmailAutomationHash(baseEmail({ extractedBody: 'first parsed body' })))
+      .toBe(createEmailAutomationHash(baseEmail({ extractedBody: 'improved parsed body' })));
   });
 });

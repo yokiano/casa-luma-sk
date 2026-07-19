@@ -28,13 +28,13 @@ The dashboard and Telegram messages use four labeled facts: **What happened**, *
 
 ### MIME fail-safe boundary
 
-The Worker now sends bounded parser metadata. Multipart, malformed/non-text messages, decode failures, unsupported transfer encodings, truncated previews, and messages with attachments are marked incomplete and route otherwise-ready financial emails to human review. The Worker still is not a general MIME parser: attachment bytes are neither read nor retained. A later parser replacement requires Cloudflare runtime validation and a storage/privacy decision.
+The Worker uses `postal-mime` (`worker-postal-mime-v2`) for multipart structure, transfer encodings, charsets, and encoded headers. It selects the text/plain body first, converts HTML-only messages to visible text, then conservatively strips older reply/forward history. The extracted latest body is capped at 64,000 characters and persisted in `email_events`; raw RFC822 and attachment bytes are never retained. Ambiguous stripping, truncation, malformed input, unreadable bodies, and attachment-bearing messages remain incomplete/review evidence for financial side effects. The dashboard labels the stored value as the most recent extracted body and exposes bounded parser metadata.
 
 ### Phase 1 email-attention review workflow
 
 Migration `0007_email_attention_reviews.sql` adds a dedicated one-record-per-event table for classifier review and terminal action failure. It is separate from `email_automation_actions` and `email_notification_outbox`. The migration backfills existing `review` and terminal `failed` events with bounded evidence and a historical diagnostics note. New review events are inserted in the same intake transaction, and terminal action failures or safety blocks create a record without creating a second action or Telegram queue item.
 
-The dashboard at `/mgmt-dashboard/email-automation` has a separate open review queue. Event detail pages let a manager save a summary and analysis, record manual provenance, copy or download a provider-neutral Markdown review bundle, mark the review done, and reopen a completed review. The bundle contains bounded saved sender, subject, body-preview, and MIME evidence, deterministic database-rule evaluations and final classifier output, plus explicit future-provider fields. Email content and notes are treated as untrusted text. No OpenRouter, GLM, or automatic LLM processing is used.
+The dashboard at `/mgmt-dashboard/email-automation` has a separate open review queue. Event detail pages let a manager save a summary and triage guidance, flag that a full Gmail body is needed, inspect retained body/MIME evidence and classifier diagnostics, copy or download a provider-neutral Markdown review bundle, mark the review done, dismiss it as irrelevant with audit history, and reopen a completed review. Managers can copy one bundle or all waiting/in-progress bundles for a local Pi session. A confirmed action can add the normalized visible sender to the settings-backed ignored list, with an explicit spoofing/bypass warning. The dashboard can copy a disabled classifier-rule draft but never creates or enables one. The bundle contains bounded saved sender, subject, body-preview, and MIME evidence, deterministic database-rule evaluations and final classifier output, plus explicit future-provider fields. Email content and notes are treated as untrusted text. No OpenRouter, GLM, or automatic LLM processing is used.
 
 A new review uses the existing durable Telegram outbox when the notification policy and settings allow it. The message includes a direct event dashboard link when the optional `EMAIL_AUTOMATION_PUBLIC_URL` is set, with `https://www.casalumakpg.com` as the current fallback. Saving or completing a review does not claim, retry, reconcile, cancel, or otherwise mutate external-action or Telegram work.
 
@@ -317,7 +317,7 @@ The opening line puts the meaningful state first, for example `Expense email - r
 - **Ignored:** the subtype and optional extracted facts are available in previews only. Production notification policy remains quiet.
 - **Durable outcomes:** action status controls the title and wording. A recorded title is used only for succeeded or reconciled Ledger work. Queued, retry, failed, and safety-blocked states are not described as completed. Successful Ledger outcomes include an HTTPS Notion page link when a valid page ID is available, and every durable notification includes the internal event dashboard link.
 
-The event dashboard retains a bounded readable body preview of up to 4,000 characters for new events, in addition to classification and MIME evidence. The Worker currently supplies a single text preview and does not reliably distinguish forwarded or quoted chains from the original body. A truncated or incomplete MIME preview is labeled as such; raw MIME and attachments are not retained.
+The event dashboard retains the extracted most-recent visible body up to the 64,000-character safety cap for new events, in addition to classification and MIME evidence. Review bundles and compact queue cards retain only bounded previews. The Worker records the body source, parser versions, stripping marker, completeness, truncation, attachment count, and decode warnings. Raw MIME and attachments are not retained.
 
 ### Gmail message links
 
@@ -343,7 +343,7 @@ Send the rendered message only to the dedicated test group:
 pnpm email:test-eml temp/example.eml --send
 ```
 
-The command uses the Worker body-preview parser, seed classification rules, and production notification renderer. It does not create a database event or Ledger record. Add `--ledger-enabled` only to simulate the successful Ledger notification template; this still creates no external Ledger side effect. The runner has no fallback to `EMAIL_AUTOMATION_TELEGRAM_CHAT_ID` and refuses to send when the test and production chat IDs are equal.
+The command uses the same PostalMime/latest-body parser as the Worker, seed classification rules, and production notification renderer. It reports body source, completeness, stripping, and attachment metadata. It does not create a database event or Ledger record. Add `--ledger-enabled` only to simulate the successful Ledger notification template; this still creates no external Ledger side effect. The runner has no fallback to `EMAIL_AUTOMATION_TELEGRAM_CHAT_ID` and refuses to send when the test and production chat IDs are equal.
 
 The current local fixture set covers expense, review, ignored, and no-specific-rule fallback emails. There is no seeded `income` classifier rule. K SHOP settlement-failure and merchant-fee-failure emails were not found in the mailbox search, so those remain gaps until representative messages are available.
 
@@ -353,11 +353,18 @@ The Email automation dashboard uses SvelteKit remote functions (`src/lib/email-a
 
 The dashboard lets you:
 
+- Triage waiting and in-progress attention reviews from one canonical queue, including retained preview/MIME state, deterministic classifier diagnostics, per-email guidance, and a structured full-body-needed flag.
+- Copy one review bundle or all open bundles as provider-neutral Markdown for a local Pi session; classifier source changes and tests remain a local development/deployment workflow.
+- Dismiss an irrelevant review without deleting its event or history. The review is completed with `analysis_provenance.disposition = dismissed_irrelevant`, and an append-only audit entry records the transition. This uses existing JSON provenance and requires no schema migration.
+- Copy a disabled classifier-rule draft for local editing and testing. The dashboard never creates or enables the rule.
+- Maintain an exact sender email ignore list in Automation settings. This settings-backed rule has highest priority, stores matching emails as `ignored`, and skips handlers, Ledger work, reviews, and Telegram notifications without requiring a DB ignore rule.
 - Toggle DB rules on/off (enable/disable) without touching SQL.
 - Reorder rules with up/down buttons, which swap priorities so DB rules match in the intended order.
 - See a per-rule Telegram preview rendered with the exact same code as production, using each rule's `dummy_input`. Previews are rendered with `{@html}` so the HTML formatting displays correctly.
 - Send a real demo message to the Telegram group (`EMAIL_AUTOMATION_TELEGRAM_CHAT_ID`) for any DB rule or built-in classifier, wrapped with a `🧪 TEST` banner so it is clearly not a live automation message.
 - Hide ignored email events behind a "Show ignored" toggle at the bottom of the recent events section.
+
+The triage/export area carries this explicit deferred note: **Remember to add this workflow to the future ticketing system.** No ticketing system is implemented here.
 
 Send test posts to the same chat as production. DB-rule and built-in previews run the same final MIME and Ledger canary policy as intake, so a Ledger-looking sample truthfully shows whether it is blocked or canary-eligible. No actual side effects (Ledger pages, DB events) are created by the test. If `TELEGRAM_BOT_TOKEN` or `EMAIL_AUTOMATION_TELEGRAM_CHAT_ID` are missing, the action reports `not_configured` instead of sending.
 

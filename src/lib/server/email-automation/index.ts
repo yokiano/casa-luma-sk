@@ -2,7 +2,7 @@ import { asc, eq } from 'drizzle-orm';
 import { db } from '$lib/server/db/client';
 import { FINANCIAL_LEDGER_PROP_VALUES } from '$lib/notion-sdk/dbs/financial-ledger/constants';
 import { emailClassificationRules } from '$lib/server/db/schema';
-import { classifyEmailWithDiagnostics, createEmailAutomationHash, type EmailAutomationInput, type EmailClassification, type EmailClassificationRuleInput } from './classifier';
+import { classifyEmailWithDiagnostics, createEmailAutomationHash, matchesIgnoredSender, type EmailAutomationInput, type EmailClassification, type EmailClassificationRuleInput } from './classifier';
 import { validateHandler } from './handlers/registry';
 import { processOneEmailAutomationItem } from './processor';
 import { persistDurableEmailIntent } from './store';
@@ -99,8 +99,8 @@ export const ingestEmailAutomationEvent = async (input: EmailAutomationInput) =>
   const rules = settings.automationEnabled ? await loadEnabledClassificationRules() : [];
   let classification: EmailClassification;
   let classifierDiagnostics: ReturnType<typeof classifyEmailWithDiagnostics>['diagnostics'];
-  if (settings.automationEnabled) {
-    const classified = classifyEmailWithDiagnostics(input, rules);
+  if (settings.automationEnabled || matchesIgnoredSender(input, settings.ignoredSenders)) {
+    const classified = classifyEmailWithDiagnostics(input, rules, settings.ignoredSenders);
     classification = classified.classification;
     classifierDiagnostics = classified.diagnostics;
   } else {
