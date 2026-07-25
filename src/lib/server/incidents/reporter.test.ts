@@ -24,6 +24,17 @@ describe('incident notification defaults', () => {
     ).toBe(true);
   });
 
+  it('notifies for an accepted receipt replay request', () => {
+    expect(
+      shouldNotifyByDefault('info', {
+        source: 'receipt-webhook',
+        code: 'RECEIPT_WEBHOOK_REPLAY_REQUESTED',
+        severity: 'info',
+        message: 'replay requested'
+      })
+    ).toBe(true);
+  });
+
   it('honors explicit replay notification suppression', () => {
     expect(
       shouldNotifyByDefault('critical', {

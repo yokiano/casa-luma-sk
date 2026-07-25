@@ -9,7 +9,8 @@ const INCIDENT_SUMMARY_BY_CODE: Record<string, string> = {
   RECEIPT_WEBHOOK_PROCESSING_FAILED: 'Receipt webhook processing crashed before completion.',
   RECEIPT_WEBHOOK_INVALID_JSON: 'Webhook body is not valid JSON and could not be parsed.',
   RECEIPT_WEBHOOK_INVALID_PAYLOAD_SHAPE: 'Webhook payload shape did not match expected format.',
-  RECEIPT_WEBHOOK_NO_VALID_RECEIPTS: 'Webhook batch had no valid receipts to process.'
+  RECEIPT_WEBHOOK_NO_VALID_RECEIPTS: 'Webhook batch had no valid receipts to process.',
+  RECEIPT_WEBHOOK_REPLAY_REQUESTED: 'A manager requested receipt webhook troubleshooting replay.'
 };
 
 const VALIDATION_LABEL_BY_CODE: Record<string, string> = {
@@ -114,6 +115,35 @@ const getPrimaryFindingCode = (input: ReportIncidentInput, failedChecks: string[
 const isReceiptValidationIncident = (input: ReportIncidentInput): boolean =>
   input.code === 'RECEIPT_WEBHOOK_VALIDATION_RULES_FAILED' ||
   input.code === 'RECEIPT_WEBHOOK_VALIDATION_ENGINE_ERROR';
+
+const buildReceiptReplayRequestedAlertPayload = (input: ReportIncidentInput): AlertPublishPayload => {
+  const mode = getString(input.context?.mode) ?? 'dry_run';
+  const sourceCount = isFiniteNumber(input.context?.sourceCount) ? input.context.sourceCount : null;
+  const sources = Array.isArray(input.context?.sources)
+    ? input.context.sources.filter((value): value is string => typeof value === 'string').slice(0, 10)
+    : [];
+  const targets = Array.isArray(input.context?.targets)
+    ? input.context.targets.filter((value): value is string => typeof value === 'string').slice(0, 3)
+    : [];
+  const replayNotifications = input.context?.replayNotifications === true;
+  const reportUrl = isHttpUrl(input.context?.reportUrl) ? input.context.reportUrl : null;
+  const body = [
+    '<b>Receipt webhook replay requested</b>',
+    `Mode: <code>${escapeHtml(mode)}</code>`,
+    `Sources: ${formatNumber(sourceCount ?? sources.length)}${sources.length ? ` (${escapeHtml(sources.join(', '))})` : ''}`,
+    targets.length ? `Stages: ${escapeHtml(targets.join(', '))}` : null,
+    `Replay-generated alerts: ${replayNotifications ? 'enabled' : 'disabled'}`,
+    reportUrl ? `🔎 ${formatHtmlLink('Open control incident', reportUrl)}` : null
+  ]
+    .filter((line): line is string => Boolean(line))
+    .join('\n');
+
+  return {
+    title: '🔁 Receipt replay control',
+    body,
+    parseMode: 'HTML'
+  };
+};
 
 const getPrimaryFindingDetails = (
   input: ReportIncidentInput,
@@ -621,6 +651,7 @@ const buildEmailReceivedAlertPayload = (input: ReportIncidentInput): AlertPublis
 
 export const buildIncidentAlertPayload = (input: ReportIncidentInput): AlertPublishPayload => {
   if (input.code === 'EMAIL_RECEIVED') return buildEmailReceivedAlertPayload(input);
+  if (input.code === 'RECEIPT_WEBHOOK_REPLAY_REQUESTED') return buildReceiptReplayRequestedAlertPayload(input);
   if (isReceiptValidationIncident(input)) return buildReceiptValidationAlertPayload(input);
   if (isMembershipAutomationIncident(input)) return buildMembershipAutomationAlertPayload(input);
   if (isFlexiPassAutomationIncident(input)) return buildFlexiPassAutomationAlertPayload(input);

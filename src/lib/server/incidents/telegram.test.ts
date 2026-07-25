@@ -32,8 +32,8 @@ describe('incident telegram payload formatter', () => {
             }
           ]
         },
-        receiptUrl: 'https://admin.example.com/tools/receipts/R-1',
-        reportUrl: 'https://admin.example.com/tools/incidents/17'
+        receiptUrl: 'https://admin.example.com/mgmt-dashboard/receipts/R-1',
+        reportUrl: 'https://admin.example.com/mgmt-dashboard/incidents/17'
       }
     });
 
@@ -48,8 +48,8 @@ describe('incident telegram payload formatter', () => {
     expect(payload.body).toContain('Line notes:');
     expect(payload.body).toContain('Line 0: Open Play &lt;1H&gt; / ID item-1 × 2: Call &lt;manager&gt; &amp; confirm');
     expect(payload.body).not.toContain('Open Play <1H>');
-    expect(payload.body).toContain('<a href="https://admin.example.com/tools/receipts/R-1">Open receipt</a>');
-    expect(payload.body).toContain('<a href="https://admin.example.com/tools/incidents/17">Open incident</a>');
+    expect(payload.body).toContain('<a href="https://admin.example.com/mgmt-dashboard/receipts/R-1">Open receipt</a>');
+    expect(payload.body).toContain('<a href="https://admin.example.com/mgmt-dashboard/incidents/17">Open incident</a>');
     expect(payload.body.indexOf('Receipt Violation — One Hour Not Converted')).toBeLessThan(
       payload.body.indexOf('One Hour Not Converted', 1)
     );
@@ -225,7 +225,7 @@ describe('incident telegram payload formatter', () => {
       context: {
         receiptNumber: 'R-1',
         failedChecks: ['DISCOUNT_100_PRESENT'],
-        receiptUrl: '/tools/receipts/R-1',
+        receiptUrl: '/mgmt-dashboard/receipts/R-1',
         reportUrl: 'javascript:alert(1)'
       }
     });
@@ -247,8 +247,8 @@ describe('incident telegram payload formatter', () => {
         startDate: '2026-01-12',
         endDate: '2026-01-18',
         membershipName: 'Test Family - Weekly - 3 kids',
-        receiptUrl: 'https://admin.example.com/tools/receipts/R-MEM-AUTO',
-        reportUrl: 'https://admin.example.com/tools/incidents/99'
+        receiptUrl: 'https://admin.example.com/mgmt-dashboard/receipts/R-MEM-AUTO',
+        reportUrl: 'https://admin.example.com/mgmt-dashboard/incidents/99'
       }
     });
 
@@ -259,7 +259,7 @@ describe('incident telegram payload formatter', () => {
     expect(payload.body).toContain('Type: Weekly');
     expect(payload.body).toContain('Kids: 3');
     expect(payload.body).toContain('Dates: 2026-01-12 → 2026-01-18');
-    expect(payload.body).toContain('<a href="https://admin.example.com/tools/receipts/R-MEM-AUTO">Open receipt</a>');
+    expect(payload.body).toContain('<a href="https://admin.example.com/mgmt-dashboard/receipts/R-MEM-AUTO">Open receipt</a>');
   });
 
   it('formats birthday booking incidents with dedicated layout and links', () => {
@@ -285,7 +285,7 @@ describe('incident telegram payload formatter', () => {
         activities: ['Face Painting (+3000 THB)'],
         specialNotes: 'Nut-free please',
         summaryUrl: 'https://www.casalumakpg.com/birthdays/summary?ref=BD-2605-LEO8501',
-        reportUrl: 'https://www.casalumakpg.com/tools/incidents/64'
+        reportUrl: 'https://www.casalumakpg.com/mgmt-dashboard/incidents/64'
       }
     });
 
@@ -297,7 +297,7 @@ describe('incident telegram payload formatter', () => {
     expect(payload.body).toContain('Quote: 12000 THB');
     expect(payload.body).toContain('Activities: Face Painting (+3000 THB)');
     expect(payload.body).toContain('<a href="https://www.casalumakpg.com/birthdays/summary?ref=BD-2605-LEO8501">Open booking summary</a>');
-    expect(payload.body).toContain('<a href="https://www.casalumakpg.com/tools/incidents/64">Open incident</a>');
+    expect(payload.body).toContain('<a href="https://www.casalumakpg.com/mgmt-dashboard/incidents/64">Open incident</a>');
     expect(payload.body).not.toContain('birthday-booking incident');
     expect(payload.body).not.toContain('BIRTHDAY_BOOKING_SUBMITTED');
   });
@@ -317,8 +317,8 @@ describe('incident telegram payload formatter', () => {
         validFrom: '2026-01-12',
         validUntil: '2026-03-12',
         recordName: 'Test Family - Flexi - 2 cards',
-        receiptUrl: 'https://admin.example.com/tools/receipts/R-FLEXI-AUTO',
-        reportUrl: 'https://admin.example.com/tools/incidents/100'
+        receiptUrl: 'https://admin.example.com/mgmt-dashboard/receipts/R-FLEXI-AUTO',
+        reportUrl: 'https://admin.example.com/mgmt-dashboard/incidents/100'
       }
     });
 
@@ -329,7 +329,7 @@ describe('incident telegram payload formatter', () => {
     expect(payload.body).toContain('Cards on receipt: 2');
     expect(payload.body).toContain('Entries granted: 22');
     expect(payload.body).toContain('Valid: 2026-01-12 → 2026-03-12');
-    expect(payload.body).toContain('<a href="https://admin.example.com/tools/receipts/R-FLEXI-AUTO">Open receipt</a>');
+    expect(payload.body).toContain('<a href="https://admin.example.com/mgmt-dashboard/receipts/R-FLEXI-AUTO">Open receipt</a>');
   });
 
   it('formats flexi pass usage review incidents with balance context', () => {
@@ -352,7 +352,7 @@ describe('incident telegram payload formatter', () => {
         remainingAfterCurrentReceipt: 10,
         firstPurchaseAt: '2026-03-10T10:37:30.000Z',
         lastPurchaseAt: '2026-05-10T05:28:45.000Z',
-        receiptUrl: 'https://admin.example.com/tools/receipts/1-5148'
+        receiptUrl: 'https://admin.example.com/mgmt-dashboard/receipts/1-5148'
       }
     });
 
@@ -394,6 +394,31 @@ describe('incident telegram payload formatter', () => {
     });
 
     expect(payload.body).toContain('Custom fallback summary');
+  });
+
+  it('formats receipt replay control notifications without raw payloads', () => {
+    const payload = buildIncidentAlertPayload({
+      source: 'receipt-webhook',
+      code: 'RECEIPT_WEBHOOK_REPLAY_REQUESTED',
+      severity: 'info',
+      message: 'fallback message',
+      context: {
+        mode: 'dry_run',
+        sourceCount: 2,
+        sources: ['webhook_event:12', 'processing_incident:34'],
+        targets: ['ingestion', 'validation'],
+        replayNotifications: false,
+        reportUrl: 'https://admin.example.com/mgmt-dashboard/incidents/88'
+      },
+      payload: { receipts: [{ receipt_number: 'do-not-send' }] }
+    });
+
+    expect(payload.title).toBe('🔁 Receipt replay control');
+    expect(payload.body).toContain('Receipt webhook replay requested');
+    expect(payload.body).toContain('Mode: <code>dry_run</code>');
+    expect(payload.body).toContain('webhook_event:12, processing_incident:34');
+    expect(payload.body).toContain('<a href="https://admin.example.com/mgmt-dashboard/incidents/88">Open control incident</a>');
+    expect(payload.body).not.toContain('do-not-send');
   });
 
   it('uses dedicated summary for invalid JSON incidents', () => {

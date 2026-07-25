@@ -8,6 +8,7 @@ import {
   validateReplayRunId
 } from '$lib/server/receipts/replay-receipt-webhook';
 import { getSafeErrorSummary } from '$lib/server/errors/safe-error';
+import { incidentReporter } from '$lib/server/incidents';
 import { db } from '$lib/server/db/client';
 
 const requireManager = (cookies: Parameters<RequestHandler>[0]['cookies']) => {
@@ -28,6 +29,27 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 
   const parsed = parseReceiptReplayRequest(body);
   if ('error' in parsed) return json({ error: parsed.error }, { status: 400 });
+
+  // Keep a lightweight control trail in Telegram and reported_errors whenever an
+  // authenticated manager accepts a replay request. This does not expose receipt payloads.
+  try {
+    await incidentReporter.report({
+      source: 'receipt-webhook',
+      code: 'RECEIPT_WEBHOOK_REPLAY_REQUESTED',
+      severity: 'info',
+      message: 'A manager requested a receipt webhook troubleshooting replay.',
+      notify: true,
+      context: {
+        mode: parsed.value.mode,
+        sourceCount: parsed.value.sources.length,
+        sources: parsed.value.sources.map((source) => `${source.sourceType}:${source.sourceId}`),
+        targets: parsed.value.targets,
+        replayNotifications: parsed.value.notify
+      }
+    });
+  } catch (error) {
+    console.error('[receipt-replay] failed to record control notification', getSafeErrorSummary(error));
+  }
 
   try {
     const runs = await replayReceiptWebhook(parsed.value, { database: db });

@@ -20,7 +20,11 @@ POST /api/tools/receipt-replays
 GET  /api/tools/receipt-replays?runId=<run-id>
 ```
 
+This is intentionally an API-only troubleshooting tool. There is no replay page or normal operator workflow. Manager pages show a reminder near receipt and incident data, while this document is the operating procedure for agents.
+
 The request must include the signed `casa_luma_tools_auth` manager session cookie. The route verifies the cookie again at the API boundary; a page-layout guard is not sufficient.
+
+Every authenticated request with a valid replay selection sends one lightweight Telegram control alert and stores a `RECEIPT_WEBHOOK_REPLAY_REQUESTED` info incident. The alert includes the mode, selected source IDs, stages, and whether replay-generated alerts were requested. It never includes the stored receipt payload. This confirms that a replay request was accepted, not that the replay succeeded. Unauthenticated, invalid, or payload-bearing requests do not send this control alert.
 
 ### Default dry-run
 
@@ -103,7 +107,7 @@ Every selected source gets a row in `webhook_replay_runs` with:
 - sanitized error summary when applicable
 - created, started, and completed timestamps
 
-Use the returned `runId` with the GET endpoint to inspect the result. Result responses do not include raw webhook or incident payloads.
+Use the returned `runId` with the GET endpoint to inspect the result. Result responses do not include raw webhook or incident payloads. The Telegram control alert is not a completion alert; always inspect the run rows and their stage summaries before reporting the outcome.
 
 ## Operational sequence
 

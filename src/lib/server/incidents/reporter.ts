@@ -20,7 +20,8 @@ export const shouldNotifyByDefault = (severity: IncidentSeverity, input?: Report
     (input.code === 'MEMBERSHIP_CREATED' ||
       input.code.startsWith('MEMBERSHIP_CREATION_') ||
       input.code === 'FLEXI_PASSES_CREATED' ||
-      input.code.startsWith('FLEXI_PASS_'))
+      input.code.startsWith('FLEXI_PASS_') ||
+      input.code === 'RECEIPT_WEBHOOK_REPLAY_REQUESTED')
   );
 };
 
