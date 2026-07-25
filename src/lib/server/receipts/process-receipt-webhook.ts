@@ -10,11 +10,11 @@ import {
   type ReceiptValidationSuite
 } from '$lib/receipts/validation';
 import {
-  createDefaultReceiptAutomationSuite,
   runReceiptAutomationSuite,
   type ReceiptAutomation,
   type ReceiptAutomationResult
 } from '$lib/receipts/automations';
+import { createDefaultReceiptAutomationSuite } from '$lib/server/membership-automation';
 import { buildReceiptReportUrl } from '$lib/server/incidents/urls';
 import { incidentReporter } from '$lib/server/incidents';
 import type { ReportIncidentInput } from '$lib/server/incidents/types';
