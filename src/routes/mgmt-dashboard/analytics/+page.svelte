@@ -4,6 +4,7 @@
   import AnalyticsToolbar from '$lib/components/mgmt-dashboard/analytics/AnalyticsToolbar.svelte';
   import { analyticsSections, type AnalyticsSectionId } from '$lib/components/mgmt-dashboard/analytics/AnalyticsSectionNav.svelte';
   import ReceiptsAnalytics from '$lib/components/mgmt-dashboard/analytics/ReceiptsAnalytics.svelte';
+  import RevenueTimingBreakdown from '$lib/components/mgmt-dashboard/analytics/RevenueTimingBreakdown.svelte';
   import { MgmtAnalyticsFilters, type MgmtAnalyticsPeriod } from '$lib/mgmt-dashboard/analytics-filters.svelte';
   import type { ReceiptAnalytics } from '$lib/receipts/analytics';
   import { BarChart3, TrendingUp, WalletCards } from 'lucide-svelte';
@@ -58,7 +59,7 @@
   };
 
   let data = $state<DashboardAnalytics | null>(null);
-  let legacyReceipts = $state<ReceiptAnalytics | null>(null);
+  let receiptAnalytics = $state<ReceiptAnalytics | null>(null);
   let loading = $state(true);
   let error = $state<string | null>(null);
   let requestKey = $state('');
@@ -76,7 +77,7 @@
       ]);
       if (requestKey === key) {
         data = dashboard;
-        legacyReceipts = receipts;
+        receiptAnalytics = receipts;
       }
     } catch (err) {
       if (requestKey === key) error = errorMessage(err) ?? 'Failed to load management analytics.';
@@ -97,6 +98,10 @@
   const revenueTrend = $derived(data?.revenueTrend ?? []);
   const profitabilityTrend = $derived(data?.profitabilityTrend ?? []);
   const maxChannelRevenue = $derived(Math.max(1, ...(data?.revenueChannels ?? []).map((row) => row.revenue)));
+  const channelCogsShare = (channel: { revenue: number; cogs: number }) =>
+    channel.revenue > 0 ? Math.min(100, Math.max(0, (channel.cogs / channel.revenue) * 100)) : 0;
+  const channelGrossProfitShare = (channel: { revenue: number; grossProfit: number }) =>
+    channel.revenue > 0 ? Math.min(100, Math.max(0, (channel.grossProfit / channel.revenue) * 100)) : 0;
   const showPoints = (rows: unknown[]) => rows.length <= 60;
   const commonXAxisProps = $derived({
     tickSpacing: filters.groupBy === 'day' ? 104 : 88,
@@ -267,18 +272,38 @@
         </Chart.Container>
       </article>
 
+      <RevenueTimingBreakdown analytics={receiptAnalytics} groupBy={filters.groupBy} />
+
       <aside class="space-y-4 rounded-3xl border border-[#dfd2c5] bg-white p-6 shadow-sm">
-        <p class="text-sm font-semibold text-[#7a6550]">Selected-period mix</p>
-        {#each data?.revenueChannels ?? [] as channel}
+        <div class="flex items-start justify-between gap-3">
           <div>
-            <div class="mb-1 flex items-center justify-between gap-3 text-sm">
-              <p class="font-semibold capitalize text-[#2c2925]">{channel.channel.replace('-', ' ')}</p>
-              <p class="tabular-nums text-[#7a6550]">{percent(channel.share)} · {formatMoney(channel.revenue)}</p>
-            </div>
-            <div class="h-3 overflow-hidden rounded-full bg-[#efe6dc]"><div class="h-full rounded-full bg-[#7a6550]" style="width: {(channel.revenue / maxChannelRevenue) * 100}%"></div></div>
-            <p class="mt-1 text-xs text-[#7a6550]/70">COGS {formatMoney(channel.cogs)} · gross profit {formatMoney(channel.grossProfit)}</p>
+            <p class="text-sm font-semibold text-[#7a6550]">Gross revenue composition</p>
+            <p class="mt-1 text-xs text-[#7a6550]/70">COGS + gross profit by channel</p>
           </div>
-        {/each}
+          <div class="flex shrink-0 gap-3 text-[10px] font-semibold text-[#7a6550]/70">
+            <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-[#d79a5f]"></span>COGS</span>
+            <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-[#7f9f8f]"></span>Gross profit</span>
+          </div>
+        </div>
+        {#if (data?.revenueChannels ?? []).length}
+          {#each data?.revenueChannels ?? [] as channel}
+            <div>
+              <div class="mb-1 flex items-center justify-between gap-3 text-sm">
+                <p class="font-semibold capitalize text-[#2c2925]">{channel.channel.replace('-', ' ')}</p>
+                <p class="tabular-nums text-[#7a6550]">{percent(channel.share)} · {formatMoney(channel.revenue)}</p>
+              </div>
+              <div class="h-3 overflow-hidden rounded-full bg-[#efe6dc]" style="width: {(channel.revenue / maxChannelRevenue) * 100}%" role="img" aria-label={`${channel.channel} revenue composition`}>
+                <div class="flex h-full w-full">
+                  <span class="h-full bg-[#d79a5f]" style="width: {channelCogsShare(channel)}%" title={`COGS ${formatMoney(channel.cogs)}`}></span>
+                  <span class="h-full bg-[#7f9f8f]" style="width: {channelGrossProfitShare(channel)}%" title={`Gross profit ${formatMoney(channel.grossProfit)}`}></span>
+                </div>
+              </div>
+              <p class="mt-1 text-xs text-[#7a6550]/70">COGS {formatMoney(channel.cogs)} · gross profit {formatMoney(channel.grossProfit)} · margin {percent(channel.revenue > 0 ? (channel.grossProfit / channel.revenue) * 100 : 0)}</p>
+            </div>
+          {/each}
+        {:else}
+          <p class="mt-4 rounded-2xl border border-dashed border-[#dfd2c5] p-4 text-sm text-[#7a6550]">No channel revenue found for this period.</p>
+        {/if}
       </aside>
     </section>
 
@@ -443,10 +468,10 @@
 
     <section class="space-y-4" id="receipt-patterns" use:trackSection>
       <div>
-        <p class="text-sm font-bold uppercase tracking-[0.22em] text-[#7a6550]/55">Legacy receipt analytics</p>
-        <h2 class="mt-2 text-2xl font-semibold tracking-tight text-[#2c2925]">Customer, payment, item, and timing patterns</h2>
+        <p class="text-sm font-bold uppercase tracking-[0.22em] text-[#7a6550]/55">Receipt patterns</p>
+        <h2 class="mt-2 text-2xl font-semibold tracking-tight text-[#2c2925]">Customer, payment, and item performance</h2>
       </div>
-      <ReceiptsAnalytics analytics={legacyReceipts} groupBy={filters.groupBy} />
+      <ReceiptsAnalytics analytics={receiptAnalytics} groupBy={filters.groupBy} />
     </section>
   {/if}
   </div>

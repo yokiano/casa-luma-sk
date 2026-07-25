@@ -1,10 +1,9 @@
 <script lang="ts">
   import type { LoyverseReceipt } from '$lib/receipts/types';
   import type { ReceiptAnalytics, ReceiptAnalyticsGranularity, ReceiptAnalyticsTimeSeriesPoint } from '$lib/receipts/analytics';
-  import { scaleBand } from 'd3-scale';
-  import { BarChart } from 'layerchart';
+  import { scaleBand, scalePoint } from 'd3-scale';
+  import { BarChart, LineChart } from 'layerchart';
   import * as Chart from '$lib/components/ui/chart';
-  import AnalyticsTimeSeriesCard from './AnalyticsTimeSeriesCard.svelte';
   import { formatAmount, formatDurationMinutes, formatOptional } from '$lib/components/receipts/receipt-format';
   import { getReceiptToolsMeta } from '$lib/components/receipts/receipt-tools';
 
@@ -239,8 +238,6 @@
   const avgDurationMinutes = $derived(summary.avgDurationMinutes);
   const durationReceiptsCount = $derived(summary.durationReceiptsCount);
   const longStayReceiptsCount = $derived(summary.longStayReceiptsCount);
-  const selectedTimeSeries = $derived(computedAnalytics.timeSeries?.[groupBy] ?? []);
-
   const receiptsByHour = $derived(computedAnalytics.receiptsByHour);
   type RevenueBreakdownMode = 'items' | 'categories';
   const revenueBreakdownOptions: { key: RevenueBreakdownMode; label: string }[] = [
@@ -259,7 +256,6 @@
   );
   const revenueBreakdownPaddingLeft = $derived(revenueBreakdownMode === 'categories' ? 90 : 120);
   const paymentTypeRevenue = $derived(computedAnalytics.paymentTypeRevenue);
-  const revenueByDayOfWeek = $derived(computedAnalytics.revenueByDayOfWeek);
 </script>
 
 <section class="space-y-6">
@@ -334,40 +330,37 @@
 
   <div class="space-y-6">
     <div class="rounded-3xl border border-[#dfd2c5] bg-white p-5 shadow-sm">
-      <h3 class="text-base font-semibold text-[#2c2925]">Business-critical performance</h3>
-      <p class="text-xs text-[#7a6550]/70">Revenue, order value, and customer attribution grouped by the global {groupBy} control.</p>
+      <h3 class="text-base font-semibold text-[#2c2925]">Receipt performance</h3>
+      <p class="text-xs text-[#7a6550]/70">Customer attribution follows the global {groupBy} control.</p>
     </div>
 
     <div class="grid grid-cols-1 gap-4">
-      <AnalyticsTimeSeriesCard
-        title="Revenue"
-        subtitle="Sales receipts only"
-        data={selectedTimeSeries}
-        yKey="revenue"
-        label="Revenue"
-        color="var(--color-chart-1)"
-        valueFormatter={formatAmount}
-      />
-
-      <AnalyticsTimeSeriesCard
-        title="Avg Ticket"
-        subtitle="Weighted by sales count"
-        data={selectedTimeSeries}
-        yKey="avgTicket"
-        label="Avg Ticket"
-        color="var(--color-chart-2)"
-        valueFormatter={formatAmount}
-      />
-
-      <AnalyticsTimeSeriesCard
-        title="Unassigned Customers"
-        subtitle="Receipts without a customer attached"
-        data={selectedTimeSeries}
-        yKey="unassignedCustomers"
-        label="Unassigned"
-        color="var(--color-chart-5)"
-        valueFormatter={(value) => String(Math.round(value))}
-      />
+      <div class="flex flex-col space-y-3 rounded-3xl border border-[#dfd2c5] bg-white p-6 shadow-sm">
+        <div>
+          <p class="text-xs uppercase tracking-wide text-[#7a6550]/70">Unassigned Customers</p>
+          <p class="mt-1 text-xs text-[#7a6550]/70">Receipts without a customer attached, grouped by {groupBy}</p>
+        </div>
+        <Chart.Container
+          config={{ unassignedCustomers: { label: 'Unassigned', color: 'var(--color-chart-5)' } }}
+          class="aspect-auto h-[280px] w-full"
+        >
+          <LineChart
+            data={computedAnalytics.timeSeries[groupBy] ?? []}
+            x="label"
+            y="unassignedCustomers"
+            xScale={scalePoint().padding(0.5)}
+            series={[{ key: 'unassignedCustomers', label: 'Unassigned', color: 'var(--color-chart-5)' }]}
+            points={(computedAnalytics.timeSeries[groupBy] ?? []).length <= 60}
+            padding={{ top: 20, right: 20, bottom: 28, left: 46 }}
+            axis="x"
+            props={{ xAxis: { tickSpacing: 96, format: (value: string) => value, tickLabelProps: { class: 'text-[10px] fill-[#7a6550]/60' } }, yAxis: { ticks: 4, format: (value: number) => String(Math.round(value)) } }}
+          >
+            {#snippet tooltip()}
+              <Chart.Tooltip labelKey="label" nameKey="unassignedCustomers" />
+            {/snippet}
+          </LineChart>
+        </Chart.Container>
+      </div>
 
       <div class="flex flex-col space-y-3 rounded-3xl border border-[#dfd2c5] bg-white p-6 shadow-sm">
         <div class="flex flex-wrap items-start justify-between gap-3">
@@ -492,34 +485,6 @@
         </Chart.Container>
       </div>
 
-      <div class="flex flex-col space-y-3 rounded-3xl border border-[#dfd2c5] bg-white p-6 shadow-sm">
-        <div>
-          <p class="text-xs uppercase tracking-wide text-[#7a6550]/70">Day of Week</p>
-          <p class="mt-1 text-xs text-[#7a6550]/70">Revenue by weekday</p>
-        </div>
-        <Chart.Container
-          config={{
-            revenue: { label: 'Revenue', color: 'var(--color-chart-1)' }
-          }}
-          class="aspect-auto h-[240px] w-full"
-        >
-          <BarChart
-            data={revenueByDayOfWeek}
-            x="label"
-            y="revenue"
-            xScale={scaleBand().padding(0.35)}
-            series={[{ key: 'revenue', label: 'Revenue', color: 'var(--color-chart-1)' }]}
-            labels={{ class: 'text-[9px] fill-[#7a6550]/60', format: (v: number) => (v > 0 ? formatAmount(v) : '') }}
-            padding={{ top: 20, right: 10, bottom: 20, left: 40 }}
-            axis="x"
-            props={{ yAxis: { ticks: 4, format: (v: number) => formatAmount(v) } }}
-          >
-            {#snippet tooltip()}
-              <Chart.Tooltip labelKey="label" nameKey="revenue" />
-            {/snippet}
-          </BarChart>
-        </Chart.Container>
-      </div>
     </div>
   </div>
 </section>
