@@ -240,7 +240,8 @@ Receipt validation triage now lives under the management dashboard:
 
 - `/mgmt-dashboard/violations` aggregates incidents by the underlying validation code from `reported_errors.context` / `reported_errors.payload`, including `context.failedChecks`, `context.primaryFindingCode`, `context.validationFindingsSummary`, and `payload.validationFindings`. It supports 7-day, 30-day, 90-day, 12-month, and all-time filters plus daily/weekly/monthly trend buckets.
 - `/mgmt-dashboard/violations/[id]` reuses the incident detail data and adds validation-code metadata so staff can inspect individual incidents from the dashboard.
-- The old `/tools/incidents` list remains available as a legacy/debug view, but it is deprecated for receipt validation triage because it groups around top-level incident codes such as `RECEIPT_WEBHOOK_VALIDATION_RULES_FAILED`.
+- `/mgmt-dashboard/incidents` is the manager-only generic incident list and `/mgmt-dashboard/incidents/[id]` is the generic incident detail page.
+- The legacy `/tools/incidents` URL redirects to `/mgmt-dashboard/incidents` for existing bookmarks.
 
 Dashboard labels and descriptions come from shared receipt validation metadata in `src/lib/receipts/validation/metadata.ts`, backed by the default suite rule descriptions where possible.
 
@@ -280,8 +281,8 @@ The Telegram formatter escapes all human-sourced text as HTML and avoids dumping
 If `INCIDENT_REPORT_BASE_URL` is configured, Telegram messages can include:
 
 ```text
-<INCIDENT_REPORT_BASE_URL>/tools/receipts/<receiptNumber>
-<INCIDENT_REPORT_BASE_URL>/tools/incidents/<incidentId>
+<INCIDENT_REPORT_BASE_URL>/mgmt-dashboard/receipts/<receiptNumber>
+<INCIDENT_REPORT_BASE_URL>/mgmt-dashboard/incidents/<incidentId>
 ```
 
-The app route for receipt details is `/tools/receipts/<receiptNumber>`. The incident route is `/tools/incidents/<incidentId>`.
+The app routes for receipt details and generic incident details are `/mgmt-dashboard/receipts/<receiptNumber>` and `/mgmt-dashboard/incidents/<incidentId>`. Legacy `/tools/receipts/<receiptNumber>` and `/tools/incidents/<incidentId>` URLs redirect to the management dashboard.

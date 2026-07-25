@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from '$app/state';
   import type { Snippet } from 'svelte';
-  import { Activity, AlertTriangle, BarChart3, HeartPulse, Mail, Scale, TrendingUp } from 'lucide-svelte';
+  import { Activity, AlertTriangle, BarChart3, HeartPulse, Mail, ReceiptText, Scale, TrendingUp } from 'lucide-svelte';
   import { Toaster } from '$lib/components/ui/sonner';
 
   let { children }: { children?: Snippet } = $props();
@@ -10,6 +10,8 @@
     { href: '/mgmt-dashboard', label: 'Daily meeting', icon: BarChart3 },
     { href: '/mgmt-dashboard/reconciliation', label: 'Reconciliation', icon: Scale },
     { href: '/mgmt-dashboard/analytics', label: 'Analytics', icon: TrendingUp },
+    { href: '/mgmt-dashboard/receipts', label: 'Receipts', icon: ReceiptText },
+    { href: '/mgmt-dashboard/incidents', label: 'Incidents', icon: AlertTriangle },
     { href: '/mgmt-dashboard/email-automation', label: 'Email automation', icon: Mail },
     { href: '/mgmt-dashboard/violations', label: 'Violations', icon: AlertTriangle },
     { href: '/mgmt-dashboard/health', label: 'Health checks', icon: HeartPulse }
@@ -67,7 +69,7 @@
       </nav>
 
       <p class="mt-8 hidden rounded-3xl border border-[#dfd2c5] bg-[#fbf8f4] p-4 text-xs leading-5 text-[#7a6550] lg:block">
-        Daily meeting agenda with Notion-led expenses, bank/safe reconciliation, HR reminders, task links, and dedicated analytics.
+        Manager-only operations for receipts, incidents, validation, email automation, reconciliation, and daily meeting review.
       </p>
     </aside>
 

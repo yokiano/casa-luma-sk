@@ -22,7 +22,7 @@
     </div>
     <div class="flex gap-3 text-sm">
       <a class="font-semibold text-[#7a6550] underline" href="/mgmt-dashboard/violations">Back to violations</a>
-      <a class="font-semibold text-[#7a6550] underline" href={`/tools/incidents/${data.incident.id}`}>Old tools view</a>
+      <a class="font-semibold text-[#7a6550] underline" href={`/mgmt-dashboard/incidents/${data.incident.id}`}>Open incident record</a>
     </div>
   </div>
 

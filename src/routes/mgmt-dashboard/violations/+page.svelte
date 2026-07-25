@@ -141,12 +141,17 @@
       </p>
     </div>
     <a
-      href="/tools/incidents"
+      href="/mgmt-dashboard/incidents"
       class="inline-flex items-center gap-2 rounded-2xl border border-[#dfd2c5] bg-white px-4 py-3 text-sm font-semibold text-[#7a6550] shadow-sm hover:border-[#b99f86]"
     >
-      Old incidents list <ArrowUpRight size={16} />
+      All incident records <ArrowUpRight size={16} />
     </a>
   </div>
+
+  <aside class="rounded-3xl border border-sky-200 bg-sky-50 p-4 text-sm leading-6 text-sky-950 shadow-sm">
+    <p class="font-semibold">Troubleshooting note</p>
+    <p class="mt-1">Receipt webhook replay is a manager-only recovery tool for stored events. It is not part of normal validation triage, defaults to a dry-run, and requires explicit confirmation plus deployment enablement for live use. Agents: read <code>docs/receipts/replay.md</code> before using it. For raw incident records, use <a class="font-semibold underline" href="/mgmt-dashboard/incidents">Incidents</a>.</p>
+  </aside>
 
   {#if data.dbError}
     <div class="rounded-3xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">

@@ -23,7 +23,7 @@
   });
 
   const toolsMeta = $derived.by(() => getReceiptToolsMeta(receipt));
-  const receiptHref = $derived(`/tools/receipts/${encodeURIComponent(receipt.receipt_number)}`);
+  const receiptHref = $derived(`/mgmt-dashboard/receipts/${encodeURIComponent(receipt.receipt_number)}`);
   const showNotConvertedFlag = $derived.by(
     () => toolsMeta.hasOneHour && toolsMeta.isNotConverted && Boolean(toolsMeta.orderStartTime)
   );

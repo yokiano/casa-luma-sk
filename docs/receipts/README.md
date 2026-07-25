@@ -4,7 +4,7 @@ The receipts system has three layers:
 
 1. Loyverse webhook ingestion into Neon/Postgres.
 2. Receipt validation and incident/Telegram alerting.
-3. Receipt query and analytics APIs for the receipts tool.
+3. Receipt query and analytics APIs for the manager dashboard.
 
 ## Main source files
 
@@ -32,7 +32,7 @@ Loyverse webhook
   -> upsert receipts + child tables in Neon
   -> run receipt validation suite for processed receipts
   -> report incidents and send Telegram for critical incidents
-  -> receipts tool calls getReceipts/getReceiptAnalytics remote functions
+  -> manager dashboard calls getReceipts/getReceiptAnalytics remote functions
   -> receipt queries/analytics read from Neon
 ```
 
@@ -86,6 +86,7 @@ The route returns `processed_batch` when multiple receipts were accepted in one 
 
 - `docs/receipts/ingestion.md`
 - `docs/receipts/validation-and-alerts.md`
+- `docs/receipts/replay.md`
 - `docs/receipts/query-and-analytics.md`
 - `docs/neon/README.md`
 - `docs/neon/schema.md`

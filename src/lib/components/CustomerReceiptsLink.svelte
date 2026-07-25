@@ -16,14 +16,14 @@
 	}: Props = $props();
 
 	const href = $derived.by(() => {
-		if (!customerId) return '/tools/receipts';
+		if (!customerId) return '/mgmt-dashboard/receipts';
 		const params = new URLSearchParams({
 			customerId,
 			tab: 'receipts',
 			view: 'compact',
 			sortOrder: 'desc'
 		});
-		return `/tools/receipts?${params.toString()}`;
+		return `/mgmt-dashboard/receipts?${params.toString()}`;
 	});
 
 	const baseClass = 'inline-flex items-center justify-center gap-2 rounded-full text-sm font-semibold transition';

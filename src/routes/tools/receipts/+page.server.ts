@@ -2,5 +2,6 @@ import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = ({ url }) => {
-  redirect(307, `/mgmt-dashboard/incidents${url.search}`);
+  const query = url.search ? url.search : '';
+  redirect(307, `/mgmt-dashboard/receipts${query}`);
 };

@@ -10,12 +10,17 @@
 
 <section class="space-y-6">
   <header class="space-y-2">
-    <h2 class="text-2xl font-semibold text-[#2c2925]">Incidents (Reported Errors)</h2>
+    <p class="text-sm font-bold uppercase tracking-[0.22em] text-[#7a6550]/55">Operations</p>
+    <h1 class="text-3xl font-semibold tracking-tight text-[#2c2925]">Incidents</h1>
     <p class="text-sm text-[#7a6550]/80">
-      Recent incidents persisted by the server error pipeline. This legacy tools list is deprecated for receipt
-      validation triage; use <a class="font-semibold underline" href="/mgmt-dashboard/violations">Mgmt Dashboard → Violations</a> instead.
+      Recent incidents persisted by the server error pipeline. Use <a class="font-semibold underline" href="/mgmt-dashboard/violations">Violations</a> for receipt validation trends and focused triage.
     </p>
   </header>
+
+  <aside class="rounded-3xl border border-sky-200 bg-sky-50 p-4 text-sm leading-6 text-sky-950 shadow-sm">
+    <p class="font-semibold">Receipt replay troubleshooting</p>
+    <p class="mt-1">Replay is a manager-only troubleshooting tool for stored receipt events, not a normal workflow. It defaults to dry-run and has no replay dashboard. Agents: read <code>docs/receipts/replay.md</code> before using the API.</p>
+  </aside>
 
   {#if data.dbError}
     <div class="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
