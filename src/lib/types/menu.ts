@@ -1,3 +1,5 @@
+export type MenuMetaFilter = 'popular' | 'recommended';
+
 export type DietaryTag =
 	| 'Vegetarian'
 	| 'Vegan'

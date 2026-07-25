@@ -3,10 +3,9 @@
 	import { isPublicMenuItem } from '$lib/menu-display';
 	import OnlineMenuStickyNav from '$lib/components/menu/online/OnlineMenuStickyNav.svelte';
 	import OnlineMenuItem from '$lib/components/menu/online/OnlineMenuItem.svelte';
-	import type { DietaryTag, MenuItem } from '$lib/types/menu';
-
-	const SCROLL_OFFSET = 168;
-	const ACTIVE_OFFSET = 200;
+	import MenuItemModal from '$lib/components/menu/online/MenuItemModal.svelte';
+	import MenuShareModal from '$lib/components/menu/online/MenuShareModal.svelte';
+	import type { DietaryTag, MenuItem, MenuMetaFilter } from '$lib/types/menu';
 
 	const accentPalette = ['#DFBC69', '#A8C3A0', '#E07A5F', '#8E8FB5', '#C7A4A1'];
 
@@ -17,6 +16,10 @@
 	let searchQuery = $state('');
 	let searchOpen = $state(false);
 	let activeDietaryFilters = $state<Set<DietaryTag>>(new Set());
+	let activeMetaFilter = $state<MenuMetaFilter | null>(null);
+	let shareOpen = $state(false);
+	let selectedItem = $state<MenuItem | null>(null);
+	let menuScrollOffset = $state(184);
 	let scrollSpyEnabled = $state(true);
 
 	const itemMatchesFilters = (item: MenuItem) => {
@@ -24,11 +27,28 @@
 
 		const query = searchQuery.trim().toLowerCase();
 		if (query) {
-			const haystack = [item.name, item.description, item.category, item.grandCategory, ...item.tags]
+			const modifierSearchValues =
+				item.modifiers?.flatMap((modifier) => [modifier.name, ...modifier.options.map((option) => option.name)]) ?? [];
+			const haystack = [
+				item.name,
+				item.description,
+				item.thaiName ?? '',
+				item.thaiDescription ?? '',
+				item.category,
+				item.grandCategory,
+				item.availabilityWindow ?? '',
+				...item.tags,
+				...item.dietaryTags,
+				...item.allergens,
+				...modifierSearchValues
+			]
 				.join(' ')
 				.toLowerCase();
 			if (!haystack.includes(query)) return false;
 		}
+
+		if (activeMetaFilter === 'popular' && !item.highlight) return false;
+		if (activeMetaFilter === 'recommended' && !item.recommended) return false;
 
 		if (activeDietaryFilters.size > 0) {
 			for (const tag of activeDietaryFilters) {
@@ -55,6 +75,16 @@
 
 	const grandCategoryNames = $derived(filteredGrandCategories.map((grand) => grand.name));
 
+	const metaFilters = $derived.by(() => {
+		const publicItems = menu.grandCategories.flatMap((grand) =>
+			grand.sections.flatMap((section) => section.items.filter(isPublicMenuItem))
+		);
+		const filters: MenuMetaFilter[] = [];
+		if (publicItems.some((item) => item.highlight)) filters.push('popular');
+		if (publicItems.some((item) => item.recommended)) filters.push('recommended');
+		return filters;
+	});
+
 	const categoriesForActiveGrand = $derived.by(() => {
 		const grand =
 			filteredGrandCategories.find((g) => g.name === activeGrandCategory) ??
@@ -78,7 +108,12 @@
 	);
 
 	$effect(() => {
-		if (!activeGrandCategory && grandCategoryNames.length > 0) {
+		if (grandCategoryNames.length === 0) {
+			activeGrandCategory = '';
+			activeCategory = '';
+			return;
+		}
+		if (!grandCategoryNames.includes(activeGrandCategory)) {
 			activeGrandCategory = grandCategoryNames[0];
 		}
 	});
@@ -95,19 +130,36 @@
 		return `${grandName}::${sectionName}`;
 	}
 
+	function sectionId(grandName: string, sectionName: string) {
+		const slug = (value: string) => value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-');
+		return `menu-section-${slug(grandName)}-${slug(sectionName)}`;
+	}
+
+	// Keep section headings below both the global header and the sticky menu toolbar.
+	function getMenuScrollOffset() {
+		if (typeof window === 'undefined') return menuScrollOffset;
+		const stickyNav = document.querySelector<HTMLElement>('[data-menu-sticky-nav]');
+		return stickyNav ? Math.ceil(stickyNav.getBoundingClientRect().bottom + 16) : menuScrollOffset;
+	}
+
 	function scrollToSection(grandName: string, sectionName: string) {
 		if (typeof window === 'undefined') return;
 		scrollSpyEnabled = false;
-		const target = document.querySelector<HTMLElement>(
-			`[data-menu-section="${sectionKey(grandName, sectionName)}"]`
-		);
+		const target = document.getElementById(sectionId(grandName, sectionName));
 		if (target) {
-			const top = target.getBoundingClientRect().top + window.scrollY - SCROLL_OFFSET;
+			const offset = getMenuScrollOffset();
+			menuScrollOffset = offset;
+			const top = target.getBoundingClientRect().top + window.scrollY - offset;
 			window.scrollTo({ top, behavior: 'smooth' });
 		}
 		window.setTimeout(() => {
 			scrollSpyEnabled = true;
 		}, 600);
+	}
+
+	function scrollToTop() {
+		if (typeof window === 'undefined') return;
+		window.scrollTo({ top: 0, behavior: 'smooth' });
 	}
 
 	function handleGrandCategoryChange(name: string) {
@@ -126,17 +178,27 @@
 	}
 
 	function toggleDietaryFilter(tag: DietaryTag) {
-		const next = new Set(activeDietaryFilters);
-		if (next.has(tag)) next.delete(tag);
-		else next.add(tag);
-		activeDietaryFilters = next;
+		// Dietary filters behave like a radio group so Vegan and Vegan Option do not intersect to zero results.
+		activeDietaryFilters = activeDietaryFilters.has(tag)
+			? new Set<DietaryTag>()
+			: new Set<DietaryTag>([tag]);
+		scrollToTop();
+	}
+
+	function toggleMetaFilter(filter: MenuMetaFilter) {
+		activeMetaFilter = activeMetaFilter === filter ? null : filter;
+		scrollToTop();
+	}
+
+	function openItem(item: MenuItem) {
+		selectedItem = item;
 	}
 
 	function updateActiveOnScroll() {
 		if (typeof window === 'undefined' || !scrollSpyEnabled) return;
 
 		const sections = document.querySelectorAll<HTMLElement>('[data-menu-section]');
-		const scrollPosition = window.scrollY + ACTIVE_OFFSET;
+		const scrollPosition = window.scrollY + getMenuScrollOffset() + 16;
 		let currentSection = '';
 		let currentGrand = '';
 
@@ -153,10 +215,21 @@
 
 	$effect(() => {
 		if (typeof window === 'undefined') return;
+		const stickyNav = document.querySelector<HTMLElement>('[data-menu-sticky-nav]');
+		const updateOffset = () => {
+			if (stickyNav) menuScrollOffset = Math.ceil(stickyNav.getBoundingClientRect().bottom + 16);
+		};
+		updateOffset();
+		const observer = stickyNav && typeof ResizeObserver !== 'undefined' ? new ResizeObserver(updateOffset) : null;
+		if (stickyNav && observer) observer.observe(stickyNav);
+
 		const onScroll = () => updateActiveOnScroll();
 		window.addEventListener('scroll', onScroll, { passive: true });
 		updateActiveOnScroll();
-		return () => window.removeEventListener('scroll', onScroll);
+		return () => {
+			window.removeEventListener('scroll', onScroll);
+			observer?.disconnect();
+		};
 	});
 </script>
 
@@ -173,9 +246,11 @@
 		grandCategories={grandCategoryNames}
 		categories={categoriesForActiveGrand}
 		dietaryTags={menu.dietaryTags}
+		{metaFilters}
 		{activeGrandCategory}
 		{activeCategory}
 		{activeDietaryFilters}
+		{activeMetaFilter}
 		{searchQuery}
 		{searchOpen}
 		filteredCount={filteredItemCount}
@@ -183,9 +258,16 @@
 		onGrandCategoryChange={handleGrandCategoryChange}
 		onCategoryChange={handleCategoryChange}
 		onDietaryToggle={toggleDietaryFilter}
+		onMetaToggle={toggleMetaFilter}
+		onShareOpen={() => (shareOpen = true)}
 		onSearchChange={(value) => (searchQuery = value)}
 		onSearchOpenChange={(open) => (searchOpen = open)}
 	/>
+
+	<MenuShareModal open={shareOpen} onClose={() => (shareOpen = false)} />
+	{#if selectedItem}
+		<MenuItemModal item={selectedItem} open={true} onClose={() => (selectedItem = null)} />
+	{/if}
 
 	<div class="mx-auto max-w-3xl px-4 pb-16 sm:px-6">
 		{#if filteredGrandCategories.length === 0}
@@ -209,7 +291,9 @@
 						{@const accent =
 							section.accentColor || accentPalette[(grandIndex + sectionIndex) % accentPalette.length]}
 						<section
-							class="scroll-mt-44 {sectionIndex > 0 ? 'mt-10' : ''}"
+							class="menu-section {sectionIndex > 0 ? 'mt-10' : ''}"
+							style={`scroll-margin-top: ${menuScrollOffset}px;`}
+							id={sectionId(grand.name, section.name)}
 							data-menu-section={sectionKey(grand.name, section.name)}
 							data-menu-grand={grand.name}
 							data-menu-category={section.name}
@@ -227,7 +311,7 @@
 
 							<div class="divide-y divide-[#2D3A3A]/6">
 								{#each section.items as item}
-									<OnlineMenuItem {item} accentColor={accent} />
+									<OnlineMenuItem {item} accentColor={accent} onSelect={openItem} />
 								{/each}
 							</div>
 						</section>

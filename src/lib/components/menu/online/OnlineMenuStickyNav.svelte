@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Icon from '@iconify/svelte';
-	import { Search, X } from 'lucide-svelte';
-	import type { DietaryTag } from '$lib/types/menu';
+	import { Search, Share2, X } from 'lucide-svelte';
+	import type { DietaryTag, MenuMetaFilter } from '$lib/types/menu';
 
 	interface Props {
 		grandCategories: string[];
@@ -10,6 +10,8 @@
 		activeGrandCategory: string;
 		activeCategory: string;
 		activeDietaryFilters: Set<DietaryTag>;
+		metaFilters: MenuMetaFilter[];
+		activeMetaFilter: MenuMetaFilter | null;
 		searchQuery: string;
 		searchOpen: boolean;
 		filteredCount: number;
@@ -17,6 +19,8 @@
 		onGrandCategoryChange: (name: string) => void;
 		onCategoryChange: (name: string) => void;
 		onDietaryToggle: (tag: DietaryTag) => void;
+		onMetaToggle: (filter: MenuMetaFilter) => void;
+		onShareOpen: () => void;
 		onSearchChange: (value: string) => void;
 		onSearchOpenChange: (open: boolean) => void;
 	}
@@ -28,6 +32,8 @@
 		activeGrandCategory,
 		activeCategory,
 		activeDietaryFilters,
+		metaFilters,
+		activeMetaFilter,
 		searchQuery,
 		searchOpen,
 		filteredCount,
@@ -35,6 +41,8 @@
 		onGrandCategoryChange,
 		onCategoryChange,
 		onDietaryToggle,
+		onMetaToggle,
+		onShareOpen,
 		onSearchChange,
 		onSearchOpenChange
 	}: Props = $props();
@@ -56,7 +64,7 @@
 	let grandNav = $state<HTMLDivElement | null>(null);
 	let categoryNav = $state<HTMLDivElement | null>(null);
 	const hasActiveFilters = $derived(
-		searchQuery.trim().length > 0 || activeDietaryFilters.size > 0
+		searchQuery.trim().length > 0 || activeDietaryFilters.size > 0 || activeMetaFilter !== null
 	);
 
 	$effect(() => {
@@ -96,12 +104,13 @@
 		for (const tag of activeDietaryFilters) {
 			onDietaryToggle(tag);
 		}
+		if (activeMetaFilter) onMetaToggle(activeMetaFilter);
 	}
 </script>
 
-<div class="sticky top-20 z-40 border-b border-[#2D3A3A]/8 bg-[#F9F7F2]/95 backdrop-blur-md">
+<div data-menu-sticky-nav class="sticky top-20 z-40 border-b border-[#2D3A3A]/8 bg-[#F9F7F2]/95 backdrop-blur-md">
 	<div class="mx-auto max-w-3xl px-4 sm:px-6">
-		<!-- Search + dietary filters row -->
+		<!-- Search + menu filters row -->
 		<div class="flex items-center gap-2 py-2.5">
 			{#if searchOpen}
 				<div class="flex min-w-0 flex-1 items-center gap-2 rounded-full border border-[#2D3A3A]/12 bg-white px-3 py-1.5 shadow-sm">
@@ -133,24 +142,64 @@
 					<Search size={17} />
 				</button>
 
-				<div class="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto scrollbar-none">
-					{#each dietaryTags as tag}
-						{@const active = activeDietaryFilters.has(tag)}
+				<div class="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto scrollbar-none" aria-label="Menu filters">
+					{#each metaFilters as filter}
+						{@const active = activeMetaFilter === filter}
 						<button
 							type="button"
 							class="inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-all {active
 								? 'border-[#2D3A3A] bg-[#2D3A3A] text-white'
 								: 'border-[#2D3A3A]/10 bg-white text-[#2D3A3A]/70 hover:border-[#2D3A3A]/20'}"
-							onclick={() => onDietaryToggle(tag)}
+							aria-pressed={active}
+							onclick={() => onMetaToggle(filter)}
 						>
-							{#if dietaryIconMap[tag]}
-								<Icon icon={dietaryIconMap[tag]} class="h-3 w-3" />
+							{#if active}
+								<X size={14} />
+							{:else}
+								<Icon icon={filter === 'popular' ? 'mdi:star-four-points-outline' : 'mdi:sparkles'} class="h-4 w-4" />
 							{/if}
-							{tag}
+							{filter === 'popular' ? 'Popular' : 'Recommended'}
 						</button>
 					{/each}
+
+					{#if metaFilters.length > 0 && dietaryTags.length > 0}
+						<div class="h-5 w-px shrink-0 bg-[#2D3A3A]/10" aria-hidden="true"></div>
+					{/if}
+
+					<div class="flex shrink-0 items-center gap-1.5" role="radiogroup" aria-label="Dietary filters">
+						{#each dietaryTags as tag}
+							{@const active = activeDietaryFilters.has(tag)}
+							<button
+								type="button"
+								class="inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-all {active
+									? 'border-[#2D3A3A] bg-[#2D3A3A] text-white'
+									: 'border-[#2D3A3A]/10 bg-white text-[#2D3A3A]/70 hover:border-[#2D3A3A]/20'}"
+								role="radio"
+								aria-checked={active}
+								onclick={() => onDietaryToggle(tag)}
+							>
+								{#if active}
+									<X size={14} />
+								{:else}
+									{#if dietaryIconMap[tag]}
+										<Icon icon={dietaryIconMap[tag]} class="h-4 w-4" />
+									{/if}
+								{/if}
+								{tag}
+							</button>
+						{/each}
+					</div>
 				</div>
 			{/if}
+
+			<button
+				type="button"
+				class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#2D3A3A]/10 bg-white text-[#2D3A3A]/70 shadow-sm transition-colors hover:border-[#E07A5F]/30 hover:text-[#E07A5F]"
+				aria-label="Share menu"
+				onclick={onShareOpen}
+			>
+				<Share2 size={17} />
+			</button>
 		</div>
 
 		{#if hasActiveFilters}

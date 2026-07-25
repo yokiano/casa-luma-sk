@@ -3,7 +3,11 @@
 	import menuPlaceholder from '$lib/assets/menu/restaurant_menu_placeholder.png';
 	import type { MenuItem } from '$lib/types/menu';
 
-	let { item, accentColor = '#DFBC69' }: { item: MenuItem; accentColor?: string } = $props();
+	let {
+		item,
+		accentColor = '#DFBC69',
+		onSelect = () => {}
+	}: { item: MenuItem; accentColor?: string; onSelect?: (item: MenuItem) => void } = $props();
 
 	const dietaryIconMap: Record<string, string> = {
 		Vegan: 'mdi:leaf',
@@ -28,11 +32,25 @@
 	const formatPrice = (value: number) => priceFormatter.format(value);
 	const imageSrc = $derived(item.image || menuPlaceholder);
 	const isPlaceholder = $derived(!item.image);
+
+	function handleKeydown(event: KeyboardEvent) {
+		if (event.key !== 'Enter' && event.key !== ' ') return;
+		event.preventDefault();
+		onSelect(item);
+	}
 </script>
 
-<article class="group flex gap-3.5 py-4 sm:gap-4 sm:py-5">
+<article
+	class="group flex cursor-pointer gap-3.5 py-4 outline-none transition-colors hover:bg-white/45 focus-visible:rounded-2xl focus-visible:bg-white/60 focus-visible:ring-2 focus-visible:ring-[#E07A5F]/50 sm:gap-4 sm:py-5"
+	role="button"
+	tabindex="0"
+	aria-haspopup="dialog"
+	aria-label={`View details for ${item.name}`}
+	onclick={() => onSelect(item)}
+	onkeydown={handleKeydown}
+>
 	<div
-		class="h-[4.5rem] w-[4.5rem] shrink-0 overflow-hidden rounded-2xl bg-[#E8E4DE] sm:h-24 sm:w-24"
+		class="h-[5.4rem] w-[5.4rem] shrink-0 overflow-hidden rounded-2xl bg-[#E8E4DE] sm:h-[7.2rem] sm:w-[7.2rem]"
 		style={isPlaceholder ? undefined : `box-shadow: inset 0 0 0 1px color-mix(in srgb, ${accentColor} 25%, transparent);`}
 	>
 		<img
@@ -52,7 +70,12 @@
 							class="mr-1.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#2D3A3A]"
 							style={`background: color-mix(in srgb, ${accentColor} 35%, white);`}
 						>
-							Pick
+							Popular
+						</span>
+					{/if}
+					{#if item.recommended}
+						<span class="mr-1.5 inline-block rounded-full bg-[#A8C3A0]/45 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#2D3A3A]">
+							Recommended
 						</span>
 					{/if}
 					{item.name}
