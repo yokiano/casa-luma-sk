@@ -45,7 +45,7 @@
   {#if reviews.length === 0}
     <p class="px-5 py-8 text-sm text-[#7a6550]">No open email reviews. Historical review records are retained as done when completed.</p>
   {:else}
-    <div class="divide-y divide-[#eee5dc]">
+    <div class="space-y-2 bg-[#fbf8f4] p-2">
       {#each reviews as review (review.id)}
         <PendingReviewCard {review} {operations} {onRefresh} {loadDetail} {onQuickReview} />
       {/each}

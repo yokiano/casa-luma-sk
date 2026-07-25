@@ -149,76 +149,83 @@
   };
 </script>
 
-<section class="mx-auto max-w-4xl space-y-5">
+<section class="mx-auto max-w-5xl space-y-3">
   {#if variant === 'route'}
-    <a class="text-sm font-medium text-[#7a6550] hover:underline" href="/mgmt-dashboard/email-automation">← Email automation</a>
+    <a class="text-xs font-medium text-[#7a6550] hover:underline" href="/mgmt-dashboard/email-automation">← Email automation</a>
   {/if}
 
-  <header>
-    <p class="text-sm font-bold uppercase tracking-[0.22em] text-[#7a6550]/55">Operational event</p>
-    <h1 class="mt-2 text-3xl font-semibold text-[#2c2925]">{detail.event.subject}</h1>
-    <p class="mt-2 break-words text-sm text-[#5c4a3d]">{detail.event.fromAddress} <span class="text-[#7a6550]">to</span> {detail.event.toAddress}</p>
-    <p class="mt-1 text-sm text-[#7a6550]">Received {formatDateTime(detail.event.receivedAt)} · event #{detail.event.id}</p>
-    {#if detail.event.ledgerUrl}<a class="mt-2 inline-block text-sm font-semibold text-[#7a6550] hover:underline" href={detail.event.ledgerUrl} target="_blank" rel="noreferrer">Open Ledger record</a>{/if}
+  <header class="rounded-2xl border border-[#e7e2dc] bg-white p-4 shadow-[0_1px_2px_rgba(44,41,37,0.04)]">
+    <div class="flex flex-wrap items-start justify-between gap-3">
+      <div class="min-w-0">
+        <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#8a7a69]">Operational event</p>
+        <h1 class="mt-1.5 break-words text-2xl font-semibold tracking-[-0.02em] text-[#1f1f1f]">{detail.event.subject}</h1>
+        <p class="mt-1.5 break-words text-xs leading-5 text-[#6f6255]">{detail.event.fromAddress} <span class="text-[#9a8d80]">to</span> {detail.event.toAddress}</p>
+      </div>
+      <div class="shrink-0 text-right text-xs leading-5 text-[#7a6550]">
+        <p>{formatDateTime(detail.event.receivedAt)}</p>
+        <p>event #{detail.event.id}</p>
+        {#if detail.event.ledgerUrl}<a class="font-medium text-[#5c4a3d] hover:underline" href={detail.event.ledgerUrl} target="_blank" rel="noreferrer">Open Ledger</a>{/if}
+      </div>
+    </div>
   </header>
 
-  <DashboardSection title="Most recent extracted body" description={`This ${detail.event.bodyPreviewSource ?? 'text'} body contains only the latest visible message selected by the MIME parser, capped at 64,000 characters. It is untrusted email evidence; raw MIME and attachments are not retained.`}>
-    {#if warning}
-      <p class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm leading-5 text-amber-950">{warning}</p>
-    {/if}
-    {#if review?.triage.needsFullBody}
-      <p class="mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-900">Manager flag: the full Gmail body is needed. Retrieval is deferred and has not run.</p>
-    {/if}
-    {#if detail.event.bodyPreview}
-      <pre class="mt-3 max-h-[32rem] overflow-auto whitespace-pre-wrap rounded-xl bg-[#1f1b17] p-4 text-xs leading-5 text-[#f8f3ed]">{detail.event.bodyPreview}</pre>
-    {:else}
-      <p class="mt-3 text-sm text-[#7a6550]">No readable body preview was available. Check MIME completeness and attachments below.</p>
-    {/if}
-  </DashboardSection>
-
-  <div class="grid gap-3 md:grid-cols-2">
+  <div class="grid gap-2 md:grid-cols-4">
     <MetricCard label="What happened" value={detail.outcome.whatHappened} tone={detail.event.processingState === 'review' ? 'warning' : 'neutral'} />
     <MetricCard label="Action taken" value={detail.outcome.actionTaken} tone={detail.outcome.isActionRequired ? 'warning' : 'positive'} />
     <MetricCard label="Current state" value={detail.outcome.currentState} />
     <MetricCard label="Next step" value={detail.outcome.nextStep} tone={detail.outcome.isActionRequired ? 'warning' : 'neutral'} />
   </div>
 
+  <DashboardSection title="Most recent extracted body" description={`Latest visible ${detail.event.bodyPreviewSource ?? 'text'} body selected by the MIME parser. It is untrusted email evidence. Raw MIME and attachments are not retained.`}>
+    {#if warning}
+      <p class="rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs leading-5 text-amber-950">{warning}</p>
+    {/if}
+    {#if review?.triage.needsFullBody}
+      <p class="mt-2 rounded-lg border border-red-200 bg-red-50 p-2.5 text-xs font-medium text-red-900">Manager flag: the full Gmail body is needed. Retrieval is deferred and has not run.</p>
+    {/if}
+    {#if detail.event.bodyPreview}
+      <pre class="mt-2 max-h-[28rem] overflow-auto whitespace-pre-wrap rounded-xl bg-[#161412] p-3 text-xs leading-5 text-[#f8f3ed]">{detail.event.bodyPreview}</pre>
+    {:else}
+      <p class="mt-2 text-sm text-[#7a6550]">No readable body preview was available. Check MIME completeness and attachments below.</p>
+    {/if}
+  </DashboardSection>
+
   {#if review}
-    <DashboardSection title={`Attention review #${review.id}`} description="This is a human-notes record only. Review saves run in the current request and do not start background action or Telegram work. Saving, completing, or dismissing it does not approve, retry, reconcile, cancel, or otherwise mutate those queues. Automatic background retry scheduling is not configured." class="border-amber-200 bg-amber-50">
-      <div class="flex flex-wrap items-start justify-between gap-3">
-        <p class="max-w-2xl text-sm text-amber-950">{review.reason}</p>
-        <div class="flex flex-wrap gap-2">
-          <span class="rounded-full border px-3 py-1 text-xs font-bold {reviewStateClasses(review.status)}">{humanize(review.status)}</span>
-          {#if review.triage.disposition}<span class="rounded-full border border-slate-300 bg-slate-100 px-3 py-1 text-xs font-bold text-slate-800">dismissed irrelevant</span>{/if}
-          {#if review.triage.needsFullBody}<span class="rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-bold text-red-800">full Gmail body needed</span>{/if}
+    <DashboardSection title={`Attention review #${review.id}`} description="Human notes only. These actions do not approve, retry, reconcile, or mutate external-action or Telegram queues." class="border-amber-200">
+      <div class="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-amber-100 bg-amber-50/70 p-3">
+        <p class="max-w-2xl text-xs leading-5 text-amber-950">{review.reason}</p>
+        <div class="flex flex-wrap gap-1.5">
+          <span class="rounded-full border px-2 py-0.5 text-[11px] font-medium {reviewStateClasses(review.status)}">{humanize(review.status)}</span>
+          {#if review.triage.disposition}<span class="rounded-full border border-slate-300 bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-800">dismissed</span>{/if}
+          {#if review.triage.needsFullBody}<span class="rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-800">full body needed</span>{/if}
         </div>
       </div>
 
-      <div class="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
+      <div class="mt-3 grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard label="MIME" value={humanize(detail.event.mimeCompleteness)} tone={detail.event.mimeCompleteness === 'complete' ? 'positive' : 'warning'} />
         <MetricCard label="Parser" value={detail.event.parserVersion ?? 'not recorded'} />
         <MetricCard label="Body" value={detail.event.bodyPreviewTruncated ? 'truncated at safety cap' : 'complete'} tone={detail.event.bodyPreviewTruncated ? 'warning' : 'positive'} />
         <MetricCard label="Attachments" value={String(detail.event.attachmentCount)} tone={detail.event.attachmentCount > 0 ? 'warning' : 'neutral'} />
       </div>
 
-      <div class="mt-4 grid gap-3 md:grid-cols-[1fr_2fr]">
-        <label class="block text-sm font-medium text-amber-950">Summary<textarea class="mt-1 min-h-24 w-full rounded-xl border border-amber-300 bg-white px-3 py-2" maxlength="1000" bind:value={summary} oninput={() => reviewDraftDirty = true} placeholder="Short conclusion for the next reviewer"></textarea></label>
-        <label class="block text-sm font-medium text-amber-950">Analysis / triage guidance<textarea class="mt-1 min-h-24 w-full rounded-xl border border-amber-300 bg-white px-3 py-2" maxlength="12000" bind:value={analysis} oninput={() => reviewDraftDirty = true} placeholder="What needs attention? What should happen with this email or future emails like it? Do not paste secrets."></textarea></label>
+      <div class="mt-3 grid gap-2 md:grid-cols-[0.9fr_1.6fr]">
+        <label class="block text-xs font-medium text-[#5f5145]">Summary<textarea class="mt-1 min-h-20 w-full rounded-lg border border-[#ded6ce] bg-white px-2.5 py-2 text-sm" maxlength="1000" bind:value={summary} oninput={() => reviewDraftDirty = true} placeholder="Short conclusion"></textarea></label>
+        <label class="block text-xs font-medium text-[#5f5145]">Analysis / triage guidance<textarea class="mt-1 min-h-20 w-full rounded-lg border border-[#ded6ce] bg-white px-2.5 py-2 text-sm" maxlength="12000" bind:value={analysis} oninput={() => reviewDraftDirty = true} placeholder="What needs attention? Do not paste secrets."></textarea></label>
       </div>
-      <label class="mt-3 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-950"><input class="mt-1" type="checkbox" bind:checked={needsFullBody} onchange={() => reviewDraftDirty = true} /><span><b class="block">Flag that the full Gmail body is needed</b><span class="text-xs leading-5">This records guidance only. It does not retrieve Gmail data, raw MIME, or attachments.</span></span></label>
+      <label class="mt-2 flex items-start gap-2 rounded-lg border border-red-100 bg-red-50 p-2 text-xs text-red-900"><input class="mt-0.5" type="checkbox" bind:checked={needsFullBody} onchange={() => reviewDraftDirty = true} /><span><b class="block font-medium">Full Gmail body needed</b><span class="leading-5">Records guidance only. It does not retrieve Gmail data, raw MIME, or attachments.</span></span></label>
 
       <ActionToolbar busy={reviewWorking} status={reviewStatus}>
         {#if review.status !== 'done'}
-          <button type="button" class="rounded-full bg-[#2c2925] px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50" disabled={reviewWorking} onclick={() => reviewNotes('saveNotes')}>Save notes</button>
-          <button type="button" class="rounded-full border border-[#2c2925] bg-white px-3 py-1.5 text-xs font-semibold disabled:opacity-50" disabled={reviewWorking} onclick={() => reviewNotes('markDone')}>Mark done</button>
-          <button type="button" class="rounded-full border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-800 disabled:opacity-50" disabled={reviewWorking} onclick={dismissReview}>Dismiss as irrelevant</button>
+          <button type="button" class="rounded-full bg-[#1f1f1f] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50" disabled={reviewWorking} onclick={() => reviewNotes('saveNotes')}>Save notes</button>
+          <button type="button" class="rounded-full border border-[#2c2925] bg-white px-3 py-1.5 text-xs font-medium disabled:opacity-50" disabled={reviewWorking} onclick={() => reviewNotes('markDone')}>Mark done</button>
+          <button type="button" class="rounded-full border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-700 disabled:opacity-50" disabled={reviewWorking} onclick={dismissReview}>Dismiss</button>
         {:else}
           <button type="button" class="rounded-full border border-[#2c2925] bg-white px-3 py-1.5 text-xs font-semibold disabled:opacity-50" disabled={reviewWorking} onclick={() => runReview('Reopen review', () => operations.reopen({ reviewId: review.id }))}>Reopen for re-review</button>
         {/if}
-        <button type="button" class="rounded-full border border-[#d9d0c7] bg-white px-3 py-1.5 text-xs font-semibold text-[#5c4a3d] disabled:opacity-50" disabled={!review.bundle} onclick={copyReviewBundle}>Copy review bundle</button>
-        <button type="button" class="rounded-full border border-[#d9d0c7] bg-white px-3 py-1.5 text-xs font-semibold text-[#5c4a3d] disabled:opacity-50" disabled={!review.bundle} onclick={downloadReviewBundle}>Download Markdown</button>
-        <button type="button" class="rounded-full border border-[#d9d0c7] bg-white px-3 py-1.5 text-xs font-semibold text-[#5c4a3d] disabled:opacity-50" onclick={() => copyText(detail.event.senderEmail, 'Sender copied', 'Copied the normalized visible sender address.')}>Copy sender address</button>
-        <button type="button" class="rounded-full border border-[#d9d0c7] bg-white px-3 py-1.5 text-xs font-semibold text-[#5c4a3d] disabled:opacity-50" onclick={() => copyText(detail.event.classifierRuleDraft, 'Classifier rule draft copied', 'This disabled draft must be reviewed and tested locally. The dashboard did not create or enable a rule.')}>Copy disabled classifier rule draft</button>
+        <button type="button" class="rounded-full border border-[#d9d0c7] bg-white px-3 py-1.5 text-xs font-medium text-[#5c4a3d] disabled:opacity-50" disabled={!review.bundle} onclick={copyReviewBundle}>Copy bundle</button>
+        <button type="button" class="rounded-full border border-[#d9d0c7] bg-white px-3 py-1.5 text-xs font-medium text-[#5c4a3d] disabled:opacity-50" disabled={!review.bundle} onclick={downloadReviewBundle}>Download</button>
+        <button type="button" class="rounded-full border border-[#d9d0c7] bg-white px-3 py-1.5 text-xs font-medium text-[#5c4a3d] disabled:opacity-50" onclick={() => copyText(detail.event.senderEmail, 'Sender copied', 'Copied the normalized visible sender address.')}>Copy sender</button>
+        <button type="button" class="rounded-full border border-[#d9d0c7] bg-white px-3 py-1.5 text-xs font-medium text-[#5c4a3d] disabled:opacity-50" onclick={() => copyText(detail.event.classifierRuleDraft, 'Classifier rule draft copied', 'This disabled draft must be reviewed and tested locally. The dashboard did not create or enable a rule.')}>Copy rule draft</button>
       </ActionToolbar>
 
       <div class="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-950">
