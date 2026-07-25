@@ -217,6 +217,27 @@ const formatOneHourDetails = (details: Record<string, unknown>): string[] => {
     );
   }
 
+  const lineNotes = Array.isArray(details.lineNotes) ? details.lineNotes : [];
+  const noteLines = lineNotes
+    .filter(isRecord)
+    .slice(0, 5)
+    .map((lineNote) => {
+      const lineIndex = isFiniteNumber(lineNote.lineIndex) ? formatNumber(lineNote.lineIndex) : '?';
+      const itemName = getString(lineNote.itemName);
+      const itemId = getString(lineNote.itemId);
+      const quantity = isFiniteNumber(lineNote.quantity) ? formatNumber(lineNote.quantity) : 'unknown';
+      const note = getString(lineNote.note);
+      if (!note) return null;
+      const item = [itemName, itemId ? `ID ${itemId}` : null].filter(Boolean).join(' / ') || 'unknown item';
+      return `Line ${lineIndex}: ${item} × ${quantity}: ${note}`;
+    })
+    .filter((line): line is string => Boolean(line));
+
+  if (noteLines.length) {
+    lines.push('Line notes:');
+    lines.push(...noteLines);
+  }
+
   return lines;
 };
 

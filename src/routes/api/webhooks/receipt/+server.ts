@@ -1,382 +1,141 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { env } from '$env/dynamic/private';
-import { ingestReceiptWebhook } from '$lib/server/db/ingest-receipt-webhook';
 import {
-    createAlwaysFailValidationRule,
-    createDefaultReceiptValidationSuite,
-    runReceiptValidationSuite
-} from '$lib/receipts/validation';
-import { incidentReporter, type IncidentSeverity } from '$lib/server/incidents';
-import { buildReceiptReportUrl } from '$lib/server/incidents/urls';
-import { createDefaultReceiptAutomationSuite } from '$lib/server/membership-automation';
-import { runReceiptAutomationSuite, type ReceiptAutomationResult } from '$lib/receipts/automations';
+  getReceiptWebhookPayloads,
+  processReceiptWebhook,
+  type ReceiptWebhookItemPayload
+} from '$lib/server/receipts/process-receipt-webhook';
+import { incidentReporter } from '$lib/server/incidents';
+import { getWebhookHttpStatus, getSafeErrorSummary } from '$lib/server/errors/safe-error';
+import type { ReportIncidentInput } from '$lib/server/incidents/types';
 
-const getReceiptValidationSuite = () => {
-    const forceFail = env.RECEIPT_VALIDATION_FORCE_FAIL === '1';
+const isObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
 
-    return createDefaultReceiptValidationSuite({
-        extraRules: forceFail
-            ? [
-                  createAlwaysFailValidationRule({
-                      message: 'Forced test failure is enabled (RECEIPT_VALIDATION_FORCE_FAIL=1).'
-                  })
-              ]
-            : []
-    });
+const getWebhookEventId = (error: unknown): number | undefined => {
+  if (!isObject(error) || typeof error.webhookEventId !== 'number' || error.webhookEventId <= 0) return undefined;
+  return error.webhookEventId;
 };
 
-const isObject = (value: unknown): value is Record<string, unknown> => {
-    return typeof value === 'object' && value !== null;
+const reportIncidentSafely = async (input: ReportIncidentInput) => {
+  try {
+    await incidentReporter.report(input);
+  } catch (reportError) {
+    // A reporter outage must not turn the original webhook error into a 200 or
+    // replace its retryable classification.
+    console.error('[receipt-webhook] incident reporter failed', getSafeErrorSummary(reportError));
+  }
 };
 
-const isReceiptLike = (value: unknown): value is { receipt_number: string } & Record<string, unknown> => {
-    return isObject(value) && typeof value.receipt_number === 'string';
-};
-
-type ReceiptWebhookItemPayload = {
-    merchant_id: string;
-    type: string;
-    created_at: string;
-    items: { receipt_number: string } & Record<string, unknown>;
-};
-
-const getReceiptWebhookPayloads = (payload: unknown): ReceiptWebhookItemPayload[] | null => {
-    if (!isObject(payload)) return null;
-    const { merchant_id, type, created_at } = payload;
-    if (typeof merchant_id !== 'string' || typeof type !== 'string' || typeof created_at !== 'string') {
-        return null;
-    }
-
-    if (isReceiptLike(payload.items)) {
-        return [
-            {
-                merchant_id,
-                type,
-                created_at,
-                items: payload.items
-            }
-        ];
-    }
-
-    if (!Array.isArray(payload.receipts)) return null;
-
-    const receipts = payload.receipts.filter(isReceiptLike);
-    if (!receipts.length) return [];
-
-    return receipts.map((receipt) => ({
-        merchant_id,
-        type,
-        created_at,
-        items: receipt
-    }));
-};
-
-const hasErrorCode = (error: unknown, code: string): boolean => {
-    if (!isObject(error)) return false;
-    if (error.code === code) return true;
-    return hasErrorCode(error.cause, code);
-};
-
-import { buildReceiptReportUrl, getSiteBaseUrl } from '$lib/server/incidents/urls';
-
-const getPrimaryFinding = (findings: { code: string; severity: string; message: string; details?: Record<string, unknown> }[]) => {
-    return findings.find((finding) => finding.severity === 'critical') ?? findings[0] ?? null;
-};
-
-const getAutomationIncidentSeverity = (result: ReceiptAutomationResult): IncidentSeverity | null => {
-    if (result.status === 'completed' && typeof result.details?.incidentCode === 'string') return 'warning';
-    if (
-        result.status === 'completed' &&
-        (result.code === 'MEMBERSHIP_CREATED' || result.code === 'FLEXI_PASSES_CREATED')
-    ) return 'info';
-    if (result.status === 'failed') return 'critical';
-    if (result.status === 'skipped' && typeof result.details?.incidentCode === 'string') return 'warning';
-    return null;
-};
-
-const getAutomationIncidentCode = (result: ReceiptAutomationResult) => {
-    if (result.code === 'MEMBERSHIP_CREATED' || result.code === 'FLEXI_PASSES_CREATED') return result.code;
-    return typeof result.details?.incidentCode === 'string'
-        ? result.details.incidentCode
-        : 'RECEIPT_WEBHOOK_AUTOMATION_FAILED';
-};
-
-const pickKeys = (value: unknown, keys: string[]): Record<string, unknown> | undefined => {
-    if (!isObject(value)) return undefined;
-
-    const picked = Object.fromEntries(
-        keys.filter((key) => value[key] !== undefined).map((key) => [key, value[key]])
-    );
-
-    return Object.keys(picked).length ? picked : undefined;
-};
-
-const getCompactFindingDetails = (finding: { code: string; details?: Record<string, unknown> }) => {
-    switch (finding.code) {
-        case 'DISCOUNT_100_PRESENT':
-            return pickKeys(finding.details, [
-                'thresholdPercentage',
-                'receiptLevelDiscounts',
-                'lineLevelDiscounts'
-            ]);
-        case 'DISCOUNT_TOTAL_OVER_THRESHOLD':
-            return pickKeys(finding.details, [
-                'thresholdAmount',
-                'discountTotal',
-                'comparableDiscountTotal',
-                'currency',
-                'discountNames'
-            ]);
-        case 'ONE_HOUR_NOT_CONVERTED':
-            return pickKeys(finding.details, [
-                'orderStartTime',
-                'checkoutAt',
-                'durationMinutes',
-                'baseDurationMinutes',
-                'gracePeriodMinutes',
-                'thresholdMinutes',
-                'timeZone',
-                'exceedsUnconvertedThreshold'
-            ]);
-        case 'MEMBERSHIP_ENTRY_WITHOUT_VALID_MEMBERSHIP':
-            return pickKeys(finding.details, [
-                'reason',
-                'checkedDate',
-                'customerId',
-                'memberEntryQuantity',
-                'matchedFamily',
-                'activeMembershipCount'
-            ]);
-        case 'FLEXI_ENTRY_WITHOUT_AVAILABLE_PASS':
-            return pickKeys(finding.details, [
-                'reason',
-                'checkedDate',
-                'customerId',
-                'currentReceiptEntries',
-                'cardsPurchased',
-                'entriesPurchased',
-                'entriesUsedIncludingCurrent',
-                'remainingBeforeCurrentReceipt',
-                'remainingAfterCurrentReceipt'
-            ]);
-        case 'RECEIPT_CLOSED_WITHOUT_CUSTOMER':
-            return pickKeys(finding.details, [
-                'receiptType',
-                'totalMoney',
-                'itemCount',
-                'items'
-            ]);
-        default:
-            return undefined;
-    }
-};
+const countBy = (values: string[]) =>
+  values.reduce<Record<string, number>>((counts, value) => {
+    counts[value] = (counts[value] ?? 0) + 1;
+    return counts;
+  }, {});
 
 export const POST: RequestHandler = async ({ request }) => {
-    let rawPayload: unknown;
+  let rawPayload: unknown;
+
+  try {
+    const secret = env.LOYVERSE_WEBHOOK_SECRET;
+    if (secret) {
+      const incomingToken = request.headers.get('x-webhook-token');
+      if (incomingToken !== secret) return json({ error: 'Unauthorized webhook request' }, { status: 401 });
+    }
 
     try {
-        const secret = env.LOYVERSE_WEBHOOK_SECRET;
-        if (secret) {
-            const incomingToken = request.headers.get('x-webhook-token');
-            if (incomingToken !== secret) {
-                return json({ error: 'Unauthorized webhook request' }, { status: 401 });
-            }
-        }
-
-        const payload = await request.json();
-        rawPayload = payload;
-        const receiptPayloads = getReceiptWebhookPayloads(payload);
-        if (receiptPayloads === null) {
-            await incidentReporter.report({
-                source: 'receipt-webhook',
-                code: 'RECEIPT_WEBHOOK_INVALID_PAYLOAD_SHAPE',
-                severity: 'warning',
-                message: 'Receipt webhook payload did not match expected schema.',
-                context: {
-                    topLevelKeys: isObject(payload) ? Object.keys(payload) : [],
-                    receiptsCount:
-                        isObject(payload) && Array.isArray(payload.receipts) ? payload.receipts.length : undefined
-                },
-                payload
-            });
-
-            console.warn('[receipt-webhook] ignored invalid payload shape', {
-                topLevelKeys: isObject(payload) ? Object.keys(payload) : [],
-                receiptsCount: isObject(payload) && Array.isArray(payload.receipts) ? payload.receipts.length : undefined
-            });
-            return json({ received: true, status: 'ignored_invalid_payload' });
-        }
-        if (!receiptPayloads.length) {
-            await incidentReporter.report({
-                source: 'receipt-webhook',
-                code: 'RECEIPT_WEBHOOK_NO_VALID_RECEIPTS',
-                severity: 'warning',
-                message: 'Receipt webhook payload included no valid receipts to process.',
-                context: {
-                    topLevelKeys: isObject(payload) ? Object.keys(payload) : []
-                },
-                payload
-            });
-
-            console.warn('[receipt-webhook] ignored payload with no valid receipts', {
-                topLevelKeys: isObject(payload) ? Object.keys(payload) : []
-            });
-            return json({ received: true, status: 'ignored_no_valid_receipts' });
-        }
-
-        const results = [];
-        const automationResults: ReceiptAutomationResult[] = [];
-        for (const receiptPayload of receiptPayloads) {
-            const result = await ingestReceiptWebhook(receiptPayload);
-            results.push(result);
-
-            if (result.status === 'processed') {
-                const automationSuite = createDefaultReceiptAutomationSuite();
-                const receiptUrl = buildReceiptReportUrl(receiptPayload.items.receipt_number) ?? undefined;
-                const automationReport = await runReceiptAutomationSuite(automationSuite, receiptPayload.items, {
-                    merchantId: receiptPayload.merchant_id,
-                    receiptKey: result.receiptKey,
-                    eventType: receiptPayload.type,
-                    eventCreatedAt: receiptPayload.created_at,
-                    receiptUrl
-                });
-                automationResults.push(...automationReport.results);
-
-                for (const automationResult of automationReport.results) {
-                    const severity = getAutomationIncidentSeverity(automationResult);
-                    if (!severity) continue;
-
-                    console.warn('[receipt-webhook] automation issue', {
-                        receiptKey: result.receiptKey,
-                        automationCode: automationResult.code,
-                        status: automationResult.status,
-                        details: automationResult.details
-                    });
-
-                    await incidentReporter.report({
-                        source: 'receipt-webhook',
-                        code: getAutomationIncidentCode(automationResult),
-                        severity,
-                        message: automationResult.message,
-                        merchantId: receiptPayload.merchant_id,
-                        receiptKey: result.receiptKey,
-                        context: {
-                            automationCode: automationResult.code,
-                            receiptNumber: receiptPayload.items.receipt_number,
-                            receiptUrl,
-                            customerId: typeof receiptPayload.items.customer_id === 'string' ? receiptPayload.items.customer_id : undefined,
-                            ...automationResult.details
-                        },
-                        payload: {
-                            receipt: receiptPayload.items,
-                            automationResult
-                        }
-                    });
-                }
-
-                const validationSuite = getReceiptValidationSuite();
-                const validationReport = await runReceiptValidationSuite(validationSuite, receiptPayload.items, {
-                    merchantId: receiptPayload.merchant_id,
-                    receiptKey: result.receiptKey,
-                    eventType: receiptPayload.type,
-                    eventCreatedAt: receiptPayload.created_at
-                });
-
-                if (validationReport.hasFailures) {
-                    const failedChecks = [...new Set(validationReport.findings.map((finding) => finding.code))];
-                    const hasEngineFailure = failedChecks.some((code) =>
-                        code.startsWith('RULE_EXECUTION_ERROR:')
-                    );
-                    console.warn('[receipt-webhook] validation failures', {
-                        receiptKey: result.receiptKey,
-                        failedRules: validationReport.failedRules,
-                        failedChecks
-                    });
-
-                    const primaryFinding = getPrimaryFinding(validationReport.findings);
-                    const receiptNumber = receiptPayload.items.receipt_number;
-
-                    await incidentReporter.report({
-                        source: 'receipt-webhook',
-                        code: hasEngineFailure
-                            ? 'RECEIPT_WEBHOOK_VALIDATION_ENGINE_ERROR'
-                            : 'RECEIPT_WEBHOOK_VALIDATION_RULES_FAILED',
-                        severity: 'critical',
-                        message: hasEngineFailure
-                            ? 'Validation rule execution failed while evaluating receipt.'
-                            : 'Receipt validation checks failed for this webhook event.',
-                        merchantId: receiptPayload.merchant_id,
-                        receiptKey: result.receiptKey,
-                        context: {
-                            receiptNumber,
-                            receiptUrl: buildReceiptReportUrl(receiptNumber) ?? undefined,
-                            customerId: typeof receiptPayload.items.customer_id === 'string' ? receiptPayload.items.customer_id : undefined,
-                            failedChecks,
-                            primaryFindingCode: primaryFinding?.code,
-                            primaryFindingMessage: primaryFinding?.message,
-                            primaryFindingDetails: primaryFinding ? getCompactFindingDetails(primaryFinding) : undefined,
-                            validationFindingsSummary: validationReport.findings.slice(0, 5).map((finding) => ({
-                                code: finding.code,
-                                severity: finding.severity,
-                                message: finding.message,
-                                details: getCompactFindingDetails(finding)
-                            }))
-                        },
-                        payload: {
-                            receipt: receiptPayload.items,
-                            validationFindings: validationReport.findings
-                        }
-                    });
-                }
-            }
-        }
-
-        const statusCounts = results.reduce<Record<string, number>>((acc, result) => {
-            acc[result.status] = (acc[result.status] ?? 0) + 1;
-            return acc;
-        }, {});
-        const automationStatusCounts = automationResults.reduce<Record<string, number>>((acc, result) => {
-            acc[result.status] = (acc[result.status] ?? 0) + 1;
-            return acc;
-        }, {});
-
-        console.log('[receipt-webhook] processed', {
-            receiptCount: results.length,
-            statusCounts,
-            automationStatusCounts,
-            receiptKeys: results.map((result) => result.receiptKey)
-        });
-
-        // Loyverse expects a 2xx response to confirm receipt
-        return json({
-            received: true,
-            status: results.length === 1 ? results[0].status : 'processed_batch',
-            statusCounts,
-            automationStatusCounts
-        });
-    } catch (err) {
-        const isInvalidJson = err instanceof SyntaxError && rawPayload === undefined;
-        console.error('Error processing webhook:', err);
-        await incidentReporter.report({
-            source: 'receipt-webhook',
-            code: isInvalidJson ? 'RECEIPT_WEBHOOK_INVALID_JSON' : 'RECEIPT_WEBHOOK_PROCESSING_FAILED',
-            severity: isInvalidJson ? 'warning' : 'critical',
-            message: isInvalidJson
-                ? 'Webhook request body is not valid JSON.'
-                : 'Unhandled error while processing receipt webhook request.',
-            context: {
-                hasPayload: rawPayload !== undefined
-            },
-            payload: rawPayload,
-            error: err
-        });
-
-        if (hasErrorCode(err, 'ECONNREFUSED')) {
-            return json({ error: 'Database unavailable' }, { status: 503 });
-        }
-        // Even if processing fails, we might want to return 200 to stop retries if the payload is bad,
-        // but for now let's return 400 for bad JSON.
-        return json({ error: 'Invalid request body' }, { status: 400 });
+      rawPayload = await request.json();
+    } catch (error) {
+      await reportIncidentSafely({
+        source: 'receipt-webhook',
+        code: 'RECEIPT_WEBHOOK_INVALID_JSON',
+        severity: 'warning',
+        message: 'Webhook request body is not valid JSON.',
+        error,
+        notify: false
+      });
+      return json({ error: 'Invalid JSON request body' }, { status: 400 });
     }
+
+    const receiptPayloads = getReceiptWebhookPayloads(rawPayload);
+    if (receiptPayloads === null) {
+      await reportIncidentSafely({
+        source: 'receipt-webhook',
+        code: 'RECEIPT_WEBHOOK_INVALID_PAYLOAD_SHAPE',
+        severity: 'warning',
+        message: 'Receipt webhook payload did not match expected schema.',
+        context: {
+          topLevelKeys: isObject(rawPayload) ? Object.keys(rawPayload) : [],
+          receiptsCount: isObject(rawPayload) && Array.isArray(rawPayload.receipts) ? rawPayload.receipts.length : undefined
+        },
+        payload: rawPayload,
+        notify: false
+      });
+      return json({ error: 'Invalid receipt webhook payload' }, { status: 400 });
+    }
+
+    if (!receiptPayloads.length) {
+      await reportIncidentSafely({
+        source: 'receipt-webhook',
+        code: 'RECEIPT_WEBHOOK_NO_VALID_RECEIPTS',
+        severity: 'warning',
+        message: 'Receipt webhook payload included no valid receipts to process.',
+        context: { topLevelKeys: isObject(rawPayload) ? Object.keys(rawPayload) : [] },
+        payload: rawPayload,
+        notify: false
+      });
+      return json({ error: 'Receipt webhook contained no valid receipts' }, { status: 400 });
+    }
+
+    const results = [];
+    const automationStatuses: string[] = [];
+    const ingestionStatuses: string[] = [];
+
+    for (const receiptPayload of receiptPayloads as ReceiptWebhookItemPayload[]) {
+      const result = await processReceiptWebhook(receiptPayload);
+      results.push(result);
+      const ingestionStatus = typeof result.stages.ingestion?.status === 'string'
+        ? result.stages.ingestion.status
+        : 'unknown';
+      ingestionStatuses.push(ingestionStatus);
+      automationStatuses.push(...result.automationResults.map((automation) => automation.status));
+    }
+
+    const statusCounts = countBy(ingestionStatuses);
+    const automationStatusCounts = countBy(automationStatuses);
+
+    console.log('[receipt-webhook] processed', {
+      receiptCount: results.length,
+      statusCounts,
+      automationStatusCounts,
+      receiptKeys: results.map((result) => result.receiptKey)
+    });
+
+    return json({
+      received: true,
+      status: results.length === 1 ? ingestionStatuses[0] : 'processed_batch',
+      statusCounts,
+      automationStatusCounts
+    });
+  } catch (error) {
+    console.error('[receipt-webhook] processing failed', getSafeErrorSummary(error));
+    await reportIncidentSafely({
+      source: 'receipt-webhook',
+      code: 'RECEIPT_WEBHOOK_PROCESSING_FAILED',
+      severity: 'critical',
+      message: 'Unhandled error while processing receipt webhook request.',
+      webhookEventId: getWebhookEventId(error),
+      context: {
+        hasPayload: rawPayload !== undefined
+      },
+      payload: rawPayload,
+      error
+    });
+
+    return json(
+      { error: getWebhookHttpStatus(error) === 503 ? 'Receipt webhook temporarily unavailable' : 'Receipt webhook processing failed' },
+      { status: getWebhookHttpStatus(error) }
+    );
+  }
 };

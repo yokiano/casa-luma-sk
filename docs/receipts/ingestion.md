@@ -5,6 +5,8 @@ Source files:
 - `src/routes/api/webhooks/receipt/+server.ts`
 - `src/lib/server/db/ingest-receipt-webhook.ts`
 - `src/lib/server/db/ingest-receipt-core.ts`
+- `src/lib/server/receipts/process-receipt-webhook.ts`
+- `src/lib/server/receipts/replay-receipt-webhook.ts`
 - `src/lib/server/db/schema.ts`
 
 ## Webhook route responsibilities
@@ -15,13 +17,14 @@ Source files:
 2. Parses JSON.
 3. Normalizes one `items` receipt or a `receipts` batch into per-receipt payloads.
 4. Reports warning incidents for invalid shapes or empty batches.
-5. Calls `ingestReceiptWebhook` once per receipt.
-6. Runs validation for receipts whose ingest status is `processed`.
-7. Logs summary counts and returns a 2xx response to Loyverse for handled payloads.
+5. Calls the shared `processReceiptWebhook` pipeline once per receipt.
+6. Runs automations and validation only for receipts whose ingest status is `processed`.
+7. Returns HTTP 400 for malformed JSON or clearly invalid client payloads, HTTP 503 for retryable database/network failures, and HTTP 500 for unexpected non-retryable failures.
+8. Logs summary counts and returns a 2xx response to Loyverse for handled payloads.
 
-Invalid JSON goes through the catch path and returns HTTP 400 with `Invalid request body`.
+Invalid JSON returns HTTP 400. Database/network failures return HTTP 503 when their code, SQLSTATE, retryability flag, cause chain, or message identifies a retryable condition. Other unexpected processing failures return HTTP 500. Responses remain compact and never include raw payloads or error details.
 
-Database connection refusal (`ECONNREFUSED`) returns HTTP 503.
+The shared pipeline is also used by the manager-protected replay endpoint. See [`docs/receipts/replay.md`](./replay.md).
 
 ## Ingestion entrypoint
 
@@ -56,7 +59,7 @@ merchant_id | type | created_at | receipt_number | items.updated_at | items.tota
 
 Implementation: `createDedupeKey` in `src/lib/server/db/ingest-receipt-core.ts`.
 
-The key is inserted into `webhook_events.dedupe_key`, which has a unique index. If insertion conflicts, ingestion returns `duplicate` and does not update receipt tables.
+The key is inserted into `webhook_events.dedupe_key`, which has a unique index. If insertion conflicts, an already processed event returns `duplicate` and does not update receipt tables. An unprocessed event is claimed and retried. A short-lived `processing_started_at` claim prevents concurrent duplicate processing; an abandoned claim becomes retryable after the claim timeout.
 
 ## Receipt key
 
@@ -86,7 +89,9 @@ For accepted events, ingestion opens a transaction and:
    - `receipt_line_taxes`
    - `receipt_payments`
 3. Reinserts current child arrays from the Loyverse payload.
-4. Marks the webhook event as processed.
+4. Marks the webhook event as processed and clears the processing claim/error.
+
+If the receipt transaction fails after the event row is inserted, `webhook_events.error_message` receives a bounded sanitized summary containing useful error name/code/SQLSTATE/retryability/cause information. The original error remains the request failure so incident-reporting errors cannot mask it.
 
 This replace-children strategy means child rows represent the latest accepted webhook state, while `webhook_events.payload` keeps the raw event history.
 

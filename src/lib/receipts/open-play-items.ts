@@ -1,3 +1,5 @@
+import { MEMBERSHIP_PURCHASE_ITEMS } from './automations/membership-items';
+
 // Open Play Loyverse item IDs used by receipt validation.
 // Source of truth: Notion "Open Play POS Items" database. The relevant pages currently expose
 // these UUIDs via the Notion item ID/userDefined ID field, while the LoyverseID field is blank.
@@ -7,4 +9,16 @@ export const FLEXIBLE_RESIDENT_ITEM_ID = '483c66bc-ee06-411c-95b6-f39a7491d09a';
 export const FLEXIBLE_REGULAR_ITEM_ID = '360020d1-3ecd-43c2-97c8-c6ff4da754d4';
 
 export const FLEXI_CARD_ITEM_IDS = [FLEXIBLE_RESIDENT_ITEM_ID, FLEXIBLE_REGULAR_ITEM_ID] as const;
+
+/**
+ * Only these configured Open Play POS items make a missing customer actionable.
+ * Restaurant, store, and unknown-item receipts are intentionally outside this set.
+ */
+export const OPEN_PLAY_CUSTOMER_REQUIRED_ITEM_IDS = [
+  MEMBER_VALID_VISIT_ITEM_ID,
+  FLEXI_SINGLE_ENTRANCE_ITEM_ID,
+  ...FLEXI_CARD_ITEM_IDS,
+  ...MEMBERSHIP_PURCHASE_ITEMS.map((item) => item.itemId)
+] as const;
+
 export const FLEXI_PASS_ENTRIES_PER_CARD = 11;

@@ -23,11 +23,35 @@ export const webhookEvents = pgTable(
     payload: jsonb('payload').notNull(),
     processed: boolean('processed').notNull().default(false),
     processedAt: timestamp('processed_at', { withTimezone: true }),
+    processingStartedAt: timestamp('processing_started_at', { withTimezone: true }),
     errorMessage: text('error_message')
   },
   (table) => [
     uniqueIndex('webhook_events_dedupe_key_uidx').on(table.dedupeKey),
     index('webhook_events_merchant_event_created_idx').on(table.merchantId, table.eventCreatedAt)
+  ]
+);
+
+export const webhookReplayRuns = pgTable(
+  'webhook_replay_runs',
+  {
+    id: bigint('id', { mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    startedAt: timestamp('started_at', { withTimezone: true }),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+    sourceType: text('source_type').notNull(),
+    sourceId: bigint('source_id', { mode: 'number' }).notNull(),
+    mode: text('mode').notNull(),
+    status: text('status').notNull().default('pending'),
+    selectedStages: jsonb('selected_stages').notNull().default([]),
+    notify: boolean('notify').notNull().default(false),
+    resultSummary: jsonb('result_summary').notNull().default({}),
+    errorSummary: text('error_summary')
+  },
+  (table) => [
+    index('webhook_replay_runs_source_idx').on(table.sourceType, table.sourceId),
+    index('webhook_replay_runs_created_idx').on(table.createdAt),
+    index('webhook_replay_runs_status_idx').on(table.status)
   ]
 );
 

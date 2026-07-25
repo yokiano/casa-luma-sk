@@ -1,9 +1,11 @@
 import type { LoyverseReceiptLineItem } from '$lib/receipts/types';
+import { OPEN_PLAY_CUSTOMER_REQUIRED_ITEM_IDS } from '$lib/receipts/open-play-items';
 import type { ReceiptValidationRule } from '../types';
 
 export interface MissingCustomerRuleOptions {
   skipRefunds?: boolean;
   skipCancelled?: boolean;
+  requiredItemIds?: readonly string[];
 }
 
 const hasCustomer = (customerId?: string | null): boolean =>
@@ -22,6 +24,7 @@ export const createMissingCustomerRule = (
 ): ReceiptValidationRule => {
   const skipRefunds = options.skipRefunds ?? true;
   const skipCancelled = options.skipCancelled ?? true;
+  const requiredItemIds = new Set(options.requiredItemIds ?? OPEN_PLAY_CUSTOMER_REQUIRED_ITEM_IDS);
 
   return {
     code: 'RECEIPT_CLOSED_WITHOUT_CUSTOMER',
@@ -31,6 +34,11 @@ export const createMissingCustomerRule = (
       if (skipCancelled && receipt.cancelled_at) return null;
       if (hasCustomer(receipt.customer_id)) return null;
 
+      const matchingItems = (receipt.line_items ?? []).filter(
+        (lineItem) => typeof lineItem.item_id === 'string' && requiredItemIds.has(lineItem.item_id)
+      );
+      if (!matchingItems.length) return null;
+
       return {
         code: 'RECEIPT_CLOSED_WITHOUT_CUSTOMER',
         severity: 'warning',
@@ -39,8 +47,8 @@ export const createMissingCustomerRule = (
           receiptNumber: receipt.receipt_number,
           receiptType: receipt.receipt_type ?? null,
           totalMoney: receipt.total_money ?? null,
-          itemCount: receipt.line_items?.length ?? 0,
-          items: summarizeItems(receipt.line_items)
+          itemCount: matchingItems.length,
+          items: summarizeItems(matchingItems)
         }
       };
     }

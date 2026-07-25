@@ -4,6 +4,7 @@ import { db } from '$lib/server/db/client';
 import { reportedErrors } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
 import { buildIncidentAlertPayload } from './telegram';
+import { formatSafeErrorSummary, getSafeErrorSummary, sanitizeErrorText } from '$lib/server/errors/safe-error';
 import type {
   IncidentReporterOptions,
   IncidentSeverity,
@@ -11,7 +12,8 @@ import type {
   ReportIncidentResult
 } from './types';
 
-const shouldNotifyByDefault = (severity: IncidentSeverity, input?: ReportIncidentInput) => {
+export const shouldNotifyByDefault = (severity: IncidentSeverity, input?: ReportIncidentInput) => {
+  if (input?.notify === false) return false;
   if (severity === 'critical') return true;
   return (
     typeof input?.code === 'string' &&
@@ -22,27 +24,18 @@ const shouldNotifyByDefault = (severity: IncidentSeverity, input?: ReportInciden
   );
 };
 
-const getErrorDetails = (error: unknown): {
+export const getErrorDetails = (error: unknown): {
   errorName: string | null;
   errorMessage: string | null;
   errorStack: string | null;
 } => {
-  if (!error) {
-    return { errorName: null, errorMessage: null, errorStack: null };
-  }
+  if (!error) return { errorName: null, errorMessage: null, errorStack: null };
 
-  if (error instanceof Error) {
-    return {
-      errorName: error.name,
-      errorMessage: error.message,
-      errorStack: error.stack ?? null
-    };
-  }
-
+  const summary = formatSafeErrorSummary(error);
   return {
-    errorName: 'NonErrorThrowable',
-    errorMessage: String(error),
-    errorStack: null
+    errorName: error instanceof Error ? sanitizeErrorText(error.name, 120) : 'NonErrorThrowable',
+    errorMessage: summary,
+    errorStack: error instanceof Error ? sanitizeErrorText(error.stack, 4_000) : null
   };
 };
 
@@ -57,7 +50,7 @@ const logIncident = (input: ReportIncidentInput) => {
   };
 
   if (input.severity === 'critical') {
-    console.error(label, input.message, metadata, input.error);
+    console.error(label, input.message, metadata, input.error ? getSafeErrorSummary(input.error) : undefined);
     return;
   }
 
@@ -100,12 +93,14 @@ export const createIncidentReporter = (options: IncidentReporterOptions = {}) =>
 
         incidentId = inserted[0]?.id ?? null;
       } catch (persistError) {
-        console.error('[incident] failed to persist incident', persistError);
+        console.error('[incident] failed to persist incident', getSafeErrorSummary(persistError));
       }
 
-      const shouldSendNotification = shouldNotify
-        ? shouldNotify(input.severity)
-        : shouldNotifyByDefault(input.severity, input);
+      const shouldSendNotification = input.notify === false
+        ? false
+        : shouldNotify
+          ? shouldNotify(input.severity)
+          : shouldNotifyByDefault(input.severity, input);
 
       if (!publisher || !shouldSendNotification) {
         return {
@@ -132,7 +127,7 @@ export const createIncidentReporter = (options: IncidentReporterOptions = {}) =>
               .set({ notified: true, notifiedAt: new Date(), notifyError: null })
               .where(eq(reportedErrors.id, incidentId));
           } catch (updateError) {
-            console.error('[incident] failed to mark incident as notified', updateError);
+            console.error('[incident] failed to mark incident as notified', getSafeErrorSummary(updateError));
           }
         }
 
@@ -142,7 +137,7 @@ export const createIncidentReporter = (options: IncidentReporterOptions = {}) =>
           notified: true
         };
       } catch (notifyError) {
-        console.error('[incident] failed to send Telegram alert', notifyError);
+        console.error('[incident] failed to send Telegram alert', getSafeErrorSummary(notifyError));
 
         if (incidentId !== null) {
           try {
@@ -151,11 +146,13 @@ export const createIncidentReporter = (options: IncidentReporterOptions = {}) =>
               .set({
                 notified: false,
                 notifiedAt: null,
-                notifyError: notifyError instanceof Error ? notifyError.message : String(notifyError)
+                notifyError: sanitizeErrorText(
+                  notifyError instanceof Error ? notifyError.message : String(notifyError)
+                )
               })
               .where(eq(reportedErrors.id, incidentId));
           } catch (updateError) {
-            console.error('[incident] failed to persist notification failure', updateError);
+            console.error('[incident] failed to persist notification failure', getSafeErrorSummary(updateError));
           }
         }
 

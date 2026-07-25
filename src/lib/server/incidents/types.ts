@@ -17,6 +17,8 @@ export interface ReportIncidentInput {
   context?: IncidentContext;
   payload?: unknown;
   error?: unknown;
+  /** Explicitly suppress or enable notification for controlled replay paths. */
+  notify?: boolean;
 }
 
 export interface ReportIncidentResult {

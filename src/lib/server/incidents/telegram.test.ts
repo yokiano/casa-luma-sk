@@ -21,7 +21,16 @@ describe('incident telegram payload formatter', () => {
           gracePeriodMinutes: 15,
           orderStartTime: '2026-01-12T10:00:00+07:00',
           checkoutAt: '2026-01-12T11:45:00+07:00',
-          timeZone: 'Asia/Bangkok'
+          timeZone: 'Asia/Bangkok',
+          lineNotes: [
+            {
+              lineIndex: 0,
+              itemName: 'Open Play <1H>',
+              itemId: 'item-1',
+              quantity: 2,
+              note: 'Call <manager> & confirm'
+            }
+          ]
         },
         receiptUrl: 'https://admin.example.com/tools/receipts/R-1',
         reportUrl: 'https://admin.example.com/tools/incidents/17'
@@ -36,6 +45,9 @@ describe('incident telegram payload formatter', () => {
     expect(payload.body).toContain('Duration: 105 min (1h 45m) — calculation looks plausible');
     expect(payload.body).toContain('Rule: threshold 75 min (60 min + 15 min grace)');
     expect(payload.body).toContain('Times: start 2026-01-12T10:00:00+07:00; checkout 2026-01-12T11:45:00+07:00 (Asia/Bangkok)');
+    expect(payload.body).toContain('Line notes:');
+    expect(payload.body).toContain('Line 0: Open Play &lt;1H&gt; / ID item-1 × 2: Call &lt;manager&gt; &amp; confirm');
+    expect(payload.body).not.toContain('Open Play <1H>');
     expect(payload.body).toContain('<a href="https://admin.example.com/tools/receipts/R-1">Open receipt</a>');
     expect(payload.body).toContain('<a href="https://admin.example.com/tools/incidents/17">Open incident</a>');
     expect(payload.body.indexOf('Receipt Violation — One Hour Not Converted')).toBeLessThan(
@@ -43,6 +55,23 @@ describe('incident telegram payload formatter', () => {
     );
     expect(payload.body).not.toContain('Merchant:');
     expect(payload.body).not.toContain('Receipt key:');
+  });
+
+  it('does not add a line-notes section when no notes are present', () => {
+    const payload = buildIncidentAlertPayload({
+      source: 'receipt-webhook',
+      code: 'RECEIPT_WEBHOOK_VALIDATION_RULES_FAILED',
+      severity: 'critical',
+      message: 'fallback message',
+      context: {
+        receiptNumber: 'R-NOTES-EMPTY',
+        failedChecks: ['ONE_HOUR_NOT_CONVERTED'],
+        primaryFindingCode: 'ONE_HOUR_NOT_CONVERTED',
+        primaryFindingDetails: { durationMinutes: 90, thresholdMinutes: 75 }
+      }
+    });
+
+    expect(payload.body).not.toContain('Line notes:');
   });
 
   it('formats 100 percent discount validation incidents with a friendly label', () => {

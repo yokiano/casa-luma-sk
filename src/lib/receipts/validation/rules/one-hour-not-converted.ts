@@ -12,6 +12,26 @@ export interface OneHourNotConvertedRuleOptions {
   thresholdMinutes?: number;
 }
 
+const MAX_LINE_NOTES = 5;
+const MAX_LINE_NOTE_LENGTH = 200;
+
+const getLineNotes = (receipt: Parameters<ReceiptValidationRule['validate']>[0]['receipt']) =>
+  (receipt.line_items ?? [])
+    .map((lineItem, lineIndex) => {
+      const note = typeof lineItem.line_note === 'string' ? lineItem.line_note.replace(/\s+/g, ' ').trim() : '';
+      if (!note) return null;
+
+      return {
+        lineIndex,
+        itemName: lineItem.item_name ?? null,
+        itemId: lineItem.item_id ?? null,
+        quantity: lineItem.quantity ?? null,
+        note: note.slice(0, MAX_LINE_NOTE_LENGTH)
+      };
+    })
+    .filter((lineNote): lineNote is NonNullable<typeof lineNote> => lineNote !== null)
+    .slice(0, MAX_LINE_NOTES);
+
 export const createOneHourNotConvertedRule = (
   options: OneHourNotConvertedRuleOptions = {}
 ): ReceiptValidationRule => {
@@ -46,7 +66,8 @@ export const createOneHourNotConvertedRule = (
           gracePeriodMinutes: ONE_HOUR_GRACE_PERIOD_MINUTES,
           thresholdMinutes,
           timeZone: RECEIPT_TOOLS_TIME_ZONE,
-          exceedsUnconvertedThreshold: exceedsThreshold
+          exceedsUnconvertedThreshold: exceedsThreshold,
+          lineNotes: getLineNotes(receipt)
         }
       };
     }

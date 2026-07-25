@@ -2,6 +2,7 @@ export * from './types';
 export * from './engine';
 export * from './default-suite';
 export * from './metadata';
+export * from './incident-severity';
 export * from './rules/always-fail';
 export * from './rules/discount-hundred-percent';
 export * from './rules/discount-total-over-threshold';

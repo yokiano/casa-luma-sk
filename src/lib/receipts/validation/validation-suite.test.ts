@@ -197,6 +197,35 @@ describe('receipt validation suite', () => {
     expect(result.findings[0].details?.timeZone).toBe('Asia/Bangkok');
   });
 
+  it('includes bounded line notes in one-hour findings', async () => {
+    const suite = createReceiptValidationSuite([createOneHourNotConvertedRule()]);
+    const receipt = createReceipt({
+      order: '#779 09:30',
+      created_at: '2026-01-12T04:15:00.000Z',
+      line_items: [
+        {
+          item_id: ONE_HOUR_ITEM_ID,
+          item_name: 'Open Play <1H>',
+          quantity: 2,
+          line_note: '  Staff <check>\nplease call  '
+        },
+        { item_id: 'other', line_note: '   ' }
+      ]
+    });
+
+    const result = await runReceiptValidationSuite(suite, receipt);
+
+    expect(result.findings[0].details?.lineNotes).toEqual([
+      {
+        lineIndex: 0,
+        itemName: 'Open Play <1H>',
+        itemId: ONE_HOUR_ITEM_ID,
+        quantity: 2,
+        note: 'Staff <check> please call'
+      }
+    ]);
+  });
+
   it('skips one-hour validation for refunds by default', async () => {
     const suite = createReceiptValidationSuite([createOneHourNotConvertedRule()]);
     const receipt = createReceipt({
@@ -239,13 +268,46 @@ describe('receipt validation suite', () => {
     ]);
   });
 
-  it('finds missing customers on non-refund closed receipts', async () => {
+  it('does not flag restaurant-only receipts without customers', async () => {
     const suite = createReceiptValidationSuite([createMissingCustomerRule()]);
-    const receipt = createReceipt({ customer_id: undefined });
+    const receipt = createReceipt({
+      customer_id: undefined,
+      line_items: [{ item_id: 'restaurant-item', item_name: 'Coffee', quantity: 1 }]
+    });
+
+    const result = await runReceiptValidationSuite(suite, receipt);
+
+    expect(result.hasFailures).toBe(false);
+  });
+
+  it('finds missing customers on Open Play receipts', async () => {
+    const suite = createReceiptValidationSuite([createMissingCustomerRule()]);
+    const receipt = createReceipt({
+      customer_id: undefined,
+      line_items: [{ item_id: MEMBER_VALID_VISIT_ITEM_ID, item_name: 'Member Valid Visit', quantity: 1 }]
+    });
 
     const result = await runReceiptValidationSuite(suite, receipt);
 
     expect(result.findings[0].code).toBe('RECEIPT_CLOSED_WITHOUT_CUSTOMER');
+  });
+
+  it('flags mixed receipts when an Open Play line is present', async () => {
+    const suite = createReceiptValidationSuite([createMissingCustomerRule()]);
+    const receipt = createReceipt({
+      customer_id: undefined,
+      line_items: [
+        { item_id: 'restaurant-item', item_name: 'Coffee', quantity: 1 },
+        { item_id: FLEXI_SINGLE_ENTRANCE_ITEM_ID, item_name: 'Flexi Entry', quantity: 1 }
+      ]
+    });
+
+    const result = await runReceiptValidationSuite(suite, receipt);
+
+    expect(result.findings[0].code).toBe('RECEIPT_CLOSED_WITHOUT_CUSTOMER');
+    expect(result.findings[0].details?.items).toEqual([
+      expect.objectContaining({ itemId: FLEXI_SINGLE_ENTRANCE_ITEM_ID })
+    ]);
   });
 
   it('skips missing customer validation for refunds', async () => {
