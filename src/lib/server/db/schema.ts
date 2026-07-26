@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm';
 import {
   bigint,
   boolean,
@@ -264,6 +265,42 @@ export const emailNotificationOutbox = pgTable(
   (table) => [
     uniqueIndex('email_notification_outbox_idempotency_uidx').on(table.idempotencyKey),
     index('email_notification_outbox_due_idx').on(table.status, table.nextAttemptAt)
+  ]
+);
+
+export const emailReceiptUploadSessions = pgTable(
+  'email_receipt_upload_sessions',
+  {
+    id: bigint('id', { mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+    eventId: bigint('event_id', { mode: 'number' }).notNull(),
+    actionId: bigint('action_id', { mode: 'number' }).notNull(),
+    notionPageId: text('notion_page_id').notNull(),
+    callbackQueryId: text('callback_query_id').notNull(),
+    telegramUserId: bigint('telegram_user_id', { mode: 'number' }).notNull(),
+    telegramChatId: bigint('telegram_chat_id', { mode: 'number' }).notNull(),
+    telegramThreadId: bigint('telegram_thread_id', { mode: 'number' }),
+    sourceMessageId: bigint('source_message_id', { mode: 'number' }).notNull(),
+    promptMessageId: bigint('prompt_message_id', { mode: 'number' }),
+    status: text('status').notNull().default('awaiting_prompt'),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    fileName: text('file_name'),
+    mimeType: text('mime_type'),
+    sizeBytes: bigint('size_bytes', { mode: 'number' }),
+    notionFileUploadId: text('notion_file_upload_id'),
+    telegramFileUniqueId: text('telegram_file_unique_id'),
+    lastError: text('last_error'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+    consumedAt: timestamp('consumed_at', { withTimezone: true })
+  },
+  (table) => [
+    uniqueIndex('email_receipt_upload_sessions_callback_uidx').on(table.callbackQueryId),
+    uniqueIndex('email_receipt_upload_sessions_prompt_uidx').on(table.telegramChatId, table.promptMessageId),
+    uniqueIndex('email_receipt_upload_sessions_active_uidx')
+      .on(table.eventId, table.telegramUserId, table.telegramChatId)
+      .where(sql`${table.status} in ('awaiting_prompt', 'awaiting_photo', 'processing')`),
+    index('email_receipt_upload_sessions_event_idx').on(table.eventId, table.createdAt),
+    index('email_receipt_upload_sessions_expiry_idx').on(table.status, table.expiresAt)
   ]
 );
 

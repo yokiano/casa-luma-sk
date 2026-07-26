@@ -71,6 +71,13 @@
       "when": 1784073603000,
       "tag": "0009_webhook_replay_and_claim",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1785061100084,
+      "tag": "0010_email_receipt_upload_sessions",
+      "breakpoints": true
     }
   ]
 }

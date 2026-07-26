@@ -5,6 +5,7 @@ import { parseInboundEmail } from '../cloudflare/process-email-trigger/src/parse
 import { classifyEmail, type EmailAutomationInput } from '../../src/lib/server/email-automation/classifier';
 import { renderTestEmailAutomationNotification } from '../../src/lib/server/email-automation/notifications/render';
 import { SEED_CLASSIFICATION_RULES } from '../../src/lib/server/email-automation/seed-rules';
+import { buildEmailAutomationTestKeyboard } from '../../src/lib/server/email-automation/notifications/telegram-buttons';
 
 const args = process.argv.slice(2);
 const shouldSend = args.includes('--send');
@@ -62,7 +63,10 @@ const publishToTestGroup = async (body: string): Promise<void> => {
       chat_id: testChatId,
       text: body,
       parse_mode: 'HTML',
-      disable_web_page_preview: true
+      disable_web_page_preview: true,
+      reply_markup: buildEmailAutomationTestKeyboard(
+        `${(process.env.EMAIL_AUTOMATION_PUBLIC_URL || 'https://www.casalumakpg.com').replace(/\/+$/, '')}/mgmt-dashboard/email-automation`
+      )
     })
   });
 

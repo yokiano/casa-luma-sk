@@ -39,7 +39,8 @@ export const createTelegramAlertPublisher = (
         text: `${payload.title}\n\n${payload.body}`,
         parse_mode: payload.parseMode,
         disable_web_page_preview: true,
-        message_thread_id: options.messageThreadId ? Number(options.messageThreadId) : undefined
+        message_thread_id: options.messageThreadId ? Number(options.messageThreadId) : undefined,
+        reply_markup: payload.replyMarkup
       };
 
       const response = await withTimeout(

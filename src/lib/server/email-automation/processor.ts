@@ -46,7 +46,7 @@ const executeNotification = async (notification: typeof emailNotificationOutbox.
   const snapshot = asSnapshot(notification.payloadSnapshot);
   try {
     const [event] = await db.select({ actionId: emailEvents.actionId, processingState: emailEvents.processingState, reviewReason: emailEvents.reviewReason }).from(emailEvents).where(eq(emailEvents.id, notification.eventId)).limit(1);
-    const [review] = await db.select({ id: emailAttentionReviews.id }).from(emailAttentionReviews).where(eq(emailAttentionReviews.eventId, notification.eventId)).limit(1);
+    const [review] = await db.select({ id: emailAttentionReviews.id, status: emailAttentionReviews.status }).from(emailAttentionReviews).where(eq(emailAttentionReviews.eventId, notification.eventId)).limit(1);
     const [action] = event?.actionId ? await db.select({ status: emailAutomationActions.status, externalObjectId: emailAutomationActions.externalObjectId, outcome: emailAutomationActions.outcome }).from(emailAutomationActions).where(eq(emailAutomationActions.id, event.actionId)).limit(1) : [];
     if (action && ['pending', 'claimed', 'retry_scheduled'].includes(action.status)) {
       // A concurrent processor may claim the notification while the external action is still running.
@@ -57,7 +57,7 @@ const executeNotification = async (notification: typeof emailNotificationOutbox.
     const actionOutcome = action?.outcome && typeof action.outcome === 'object' ? action.outcome as { message?: unknown; externalUrl?: unknown } : undefined;
     const actionMessage = actionOutcome && 'message' in actionOutcome ? String(actionOutcome.message ?? '') : undefined;
     const externalUrl = actionOutcome && typeof actionOutcome.externalUrl === 'string' ? actionOutcome.externalUrl : undefined;
-    const sent = await sendEmailAutomationNotification(snapshot.input, snapshot.classification, notification.eventId, action?.externalObjectId ?? undefined, { actionStatus: action?.status, externalObjectId: action?.externalObjectId, externalUrl, actionMessage, processingState: event?.processingState, reviewReason: event?.reviewReason, dashboardUrl: getEmailAutomationEventUrl(notification.eventId) });
+    const sent = await sendEmailAutomationNotification(snapshot.input, snapshot.classification, notification.eventId, action?.externalObjectId ?? undefined, { actionStatus: action?.status, externalObjectId: action?.externalObjectId, externalUrl, actionMessage, processingState: event?.processingState, reviewReason: event?.reviewReason, dashboardUrl: getEmailAutomationEventUrl(notification.eventId), hasOpenReview: Boolean(review && review.status !== 'done') });
     if (sent === 'not_configured') throw new Error('Telegram is not configured.');
     await markNotificationResult(notification.id, leaseToken, true, notification.attemptCount + 1);
     return { kind: 'notification' as const, status: 'sent' as const, id: notification.id };

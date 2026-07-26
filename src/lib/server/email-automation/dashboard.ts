@@ -682,11 +682,15 @@ const normalizeReviewNotes = (values: Pick<ReviewNotesUpdate, 'analysis' | 'summ
   summary: values.summary.trim().slice(0, 1_000)
 });
 
-const reviewProvenance = (now: Date, triage: { needsFullBody: boolean; disposition?: 'dismissed_irrelevant' | null; revision: number }) => ({
+const reviewProvenance = (
+  now: Date,
+  triage: { needsFullBody: boolean; disposition?: 'dismissed_irrelevant' | null; revision: number },
+  actor = 'manager'
+) => ({
   bundleVersion: '1',
   provider: null,
-  source: 'manual',
-  actor: 'manager',
+  source: actor.startsWith('telegram:') ? 'telegram' : 'manual',
+  actor,
   savedAt: now.toISOString(),
   needsFullBody: triage.needsFullBody,
   disposition: triage.disposition ?? null,
@@ -717,7 +721,7 @@ export const saveEmailAutomationReviewNotes = async ({ reviewId, analysis, summa
   });
 };
 
-export const markEmailAutomationReviewDone = async ({ reviewId, analysis, summary, needsFullBody, expectedRevision }: ReviewNotesUpdate) => {
+export const markEmailAutomationReviewDone = async ({ reviewId, analysis, summary, needsFullBody, expectedRevision }: ReviewNotesUpdate, actor = 'manager') => {
   const notes = normalizeReviewNotes({ analysis, summary });
   return db.transaction(async (tx) => {
     const [review] = await tx.select().from(emailAttentionReviews).where(eq(emailAttentionReviews.id, reviewId)).limit(1);
@@ -729,8 +733,8 @@ export const markEmailAutomationReviewDone = async ({ reviewId, analysis, summar
       status: 'done',
       analysis: notes.analysis || null,
       summary: notes.summary || null,
-      analysisProvenance: reviewProvenance(now, { needsFullBody, revision: expectedRevision + 1 }),
-      lastActor: 'manager',
+      analysisProvenance: reviewProvenance(now, { needsFullBody, revision: expectedRevision + 1 }, actor),
+      lastActor: actor,
       startedAt: review.startedAt ?? now,
       completedAt: now,
       updatedAt: now
@@ -739,12 +743,12 @@ export const markEmailAutomationReviewDone = async ({ reviewId, analysis, summar
       if (review.status === 'done') return { status: 'done', nextStep: 'This review was already marked done. No action or Telegram queue was changed.' };
       throw new Error('Review state changed. Refresh before marking it done.');
     }
-    await tx.insert(emailAutomationAuditLog).values({ eventId: review.eventId, action: 'review_done', reason: 'Manager marked the attention review done.', before: { status: review.status, revision: expectedRevision }, after: { status: 'done', reviewId, needsFullBody, revision: expectedRevision + 1 } });
+    await tx.insert(emailAutomationAuditLog).values({ eventId: review.eventId, actor, action: 'review_done', reason: actor === 'manager' ? 'Manager marked the attention review done.' : 'Authorized Telegram manager marked the attention review done.', before: { status: review.status, revision: expectedRevision }, after: { status: 'done', reviewId, needsFullBody, revision: expectedRevision + 1 } });
     return { status: 'done', nextStep: 'Review marked done. No external action, retry, Ledger, or Telegram queue was changed.' };
   });
 };
 
-export const dismissEmailAutomationReviewAsIrrelevant = async ({ reviewId, analysis, summary, needsFullBody, expectedRevision }: ReviewNotesUpdate) => {
+export const dismissEmailAutomationReviewAsIrrelevant = async ({ reviewId, analysis, summary, needsFullBody, expectedRevision }: ReviewNotesUpdate, actor = 'manager') => {
   const notes = normalizeReviewNotes({ analysis, summary });
   return db.transaction(async (tx) => {
     const [review] = await tx.select().from(emailAttentionReviews).where(eq(emailAttentionReviews.id, reviewId)).limit(1);
@@ -756,8 +760,8 @@ export const dismissEmailAutomationReviewAsIrrelevant = async ({ reviewId, analy
       status: 'done',
       analysis: notes.analysis || null,
       summary: notes.summary || 'Dismissed as irrelevant.',
-      analysisProvenance: reviewProvenance(now, { needsFullBody, disposition: 'dismissed_irrelevant', revision: expectedRevision + 1 }),
-      lastActor: 'manager',
+      analysisProvenance: reviewProvenance(now, { needsFullBody, disposition: 'dismissed_irrelevant', revision: expectedRevision + 1 }, actor),
+      lastActor: actor,
       startedAt: review.startedAt ?? now,
       completedAt: now,
       updatedAt: now
@@ -765,12 +769,12 @@ export const dismissEmailAutomationReviewAsIrrelevant = async ({ reviewId, analy
     if (!updated) throw new Error('Only an open review can be dismissed. Refresh the dashboard.');
     // Dismissal closes only the human review record. The append-only audit entry
     // preserves the explicit irrelevant disposition without deleting the event.
-    await tx.insert(emailAutomationAuditLog).values({ eventId: review.eventId, action: 'review_dismissed_irrelevant', reason: 'Manager dismissed the attention review as irrelevant.', before: { status: review.status, revision: expectedRevision }, after: { status: 'done', reviewId, disposition: 'dismissed_irrelevant', needsFullBody, revision: expectedRevision + 1 } });
+    await tx.insert(emailAutomationAuditLog).values({ eventId: review.eventId, actor, action: 'review_dismissed_irrelevant', reason: actor === 'manager' ? 'Manager dismissed the attention review as irrelevant.' : 'Authorized Telegram manager dismissed the attention review as irrelevant.', before: { status: review.status, revision: expectedRevision }, after: { status: 'done', reviewId, disposition: 'dismissed_irrelevant', needsFullBody, revision: expectedRevision + 1 } });
     return { status: 'done', nextStep: 'Dismissed as irrelevant with audit history. The email event and all durable history remain stored.' };
   });
 };
 
-export const addEmailAutomationReviewSenderToIgnoredList = async (reviewId: number, confirmIgnoredSenderBypassRisk: boolean) => db.transaction(async (tx) => {
+export const addEmailAutomationReviewSenderToIgnoredList = async (reviewId: number, confirmIgnoredSenderBypassRisk: boolean, actor = 'manager') => db.transaction(async (tx) => {
   if (!confirmIgnoredSenderBypassRisk) throw new Error('Confirm the visible-sender spoofing and review-bypass warning before adding an ignored sender.');
   const [source] = await tx.select({ eventId: emailAttentionReviews.eventId, fromAddress: emailEvents.fromAddress })
     .from(emailAttentionReviews)
@@ -817,8 +821,9 @@ export const addEmailAutomationReviewSenderToIgnoredList = async (reviewId: numb
   });
   await tx.insert(emailAutomationAuditLog).values({
     eventId: source.eventId,
+    actor,
     action: 'review_sender_added_to_ignored_list',
-    reason: 'Manager confirmed the visible sender should bypass future review and notifications.',
+    reason: actor === 'manager' ? 'Manager confirmed the visible sender should bypass future review and notifications.' : 'Authorized Telegram manager confirmed the visible sender should bypass future review and notifications.',
     before: { ignoredSenderCount: current.ignoredSenders.length },
     after: { ignoredSenderCount: next.ignoredSenders.length, senderEmail }
   });

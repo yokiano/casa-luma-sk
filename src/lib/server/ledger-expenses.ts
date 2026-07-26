@@ -3,6 +3,7 @@ import { NOTION_API_KEY } from '$env/static/private';
 import { FinancialLedgerDatabase } from '$lib/notion-sdk/dbs/financial-ledger/db';
 import { FinancialLedgerPatchDTO } from '$lib/notion-sdk/dbs/financial-ledger/patch.dto';
 import type { FinancialLedgerResponse } from '$lib/notion-sdk/dbs/financial-ledger/types';
+import type { NotionFileUpload } from '$lib/server/notion/upload';
 
 export const COMPANY_LEDGER_EXPENSE_TYPES = {
   register: 'Register Expense',
@@ -59,6 +60,38 @@ export async function findCompanyLedgerExpenseByReference(transactionId: string,
   if (matches.length === 1) return { state: 'verified' as const, id: matches[0].id, externalUrl: notionPageUrl(matches[0].id, matches[0].url) };
   if (response.results.length === 1) return { state: 'amount_mismatch' as const };
   return { state: 'missing' as const };
+}
+
+/** Appends a Telegram-uploaded receipt without removing existing Ledger files. */
+export async function appendCompanyLedgerReceipt(pageId: string, upload: NotionFileUpload) {
+  const ledger = new FinancialLedgerDatabase({ notionSecret: NOTION_API_KEY });
+  const page = await ledger.getPage(pageId);
+  const existingFiles = page.properties['Invoice / Receipt']?.files ?? [];
+  if (existingFiles.length >= 100) {
+    throw new Error('The Ledger receipt field already contains the maximum number of files.');
+  }
+  if (existingFiles.some((file) => file.name === upload.name)) {
+    return { alreadyAttached: true as const };
+  }
+
+  try {
+    await ledger.updatePage(pageId, new FinancialLedgerPatchDTO({
+      properties: {
+        // The generated SDK predates Notion's file_upload request variant, but
+        // the current API accepts it alongside the existing file objects.
+        invoiceReceipt: [...existingFiles, upload] as unknown as FinancialLedgerResponse['properties']['Invoice / Receipt']['files']
+      }
+    }));
+  } catch (error) {
+    // A timeout can happen after Notion accepted the PATCH. Re-read before
+    // declaring failure so retrying the same Telegram file stays idempotent.
+    const reconciled = await ledger.getPage(pageId).catch(() => null);
+    if (reconciled?.properties['Invoice / Receipt']?.files.some((file) => file.name === upload.name)) {
+      return { alreadyAttached: true as const };
+    }
+    throw error;
+  }
+  return { alreadyAttached: false as const };
 }
 
 export async function createCompanyLedgerExpense(data: CompanyLedgerExpenseInput) {

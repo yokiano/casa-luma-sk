@@ -5,8 +5,12 @@ type TelegramChat = {
   type?: string;
 };
 
+type TelegramUser = {
+  id?: number;
+};
+
 type TelegramUpdate = {
-  message?: { chat?: TelegramChat };
+  message?: { chat?: TelegramChat; from?: TelegramUser };
   edited_message?: { chat?: TelegramChat };
   channel_post?: { chat?: TelegramChat };
   edited_channel_post?: { chat?: TelegramChat };
@@ -28,6 +32,7 @@ if (!botToken) {
 }
 
 const endpoint = `https://api.telegram.org/bot${botToken}/getUpdates`;
+const listUsers = process.argv.includes('--users');
 
 try {
   const response = await fetch(endpoint, {
@@ -42,7 +47,9 @@ try {
   }
 
   const ids = new Set<number>();
+  const userIds = new Set<number>();
   for (const update of payload.result ?? []) {
+    if (typeof update.message?.from?.id === 'number') userIds.add(update.message.from.id);
     const chats = [
       update.message?.chat,
       update.edited_message?.chat,
@@ -60,12 +67,19 @@ try {
     }
   }
 
-  if (ids.size === 0) {
-    console.error('No group IDs found. Send a message mentioning the bot in the test group, then run this script again.');
-    process.exit(2);
+  if (listUsers) {
+    if (userIds.size === 0) {
+      console.error('No user IDs found. Send a message that mentions the bot, then run this command before configuring the webhook.');
+      process.exit(2);
+    }
+    for (const id of userIds) console.log(id);
+  } else {
+    if (ids.size === 0) {
+      console.error('No group IDs found. Send a message mentioning the bot in the test group, then run this script again.');
+      process.exit(2);
+    }
+    for (const id of ids) console.log(id);
   }
-
-  for (const id of ids) console.log(id);
 } catch (error) {
   const message = error instanceof Error ? error.message : 'Unknown Telegram API error.';
   console.error(`Unable to read Telegram updates: ${message}`);

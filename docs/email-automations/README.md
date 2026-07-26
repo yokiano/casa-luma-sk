@@ -40,7 +40,9 @@ A new review uses the existing durable Telegram outbox when the notification pol
 
 ### Manager command authorization
 
-Every email-automation remote command performs a server-side manager-role check at the command boundary, including reads, test sends, settings, rule mutations, retry, and reconciliation. Login now issues a server-signed, seven-day role session derived from existing server-only login password material. Literal legacy cookies such as `manager` are rejected and require a new login. This proves the server issued the role, but it does not identify an individual person; do not treat the audit actor as personal attribution.
+Every email-automation dashboard remote command performs a server-side manager-role check at the command boundary, including reads, test sends, settings, rule mutations, retry, and reconciliation. Login now issues a server-signed, seven-day role session derived from existing server-only login password material. Literal legacy cookies such as `manager` are rejected and require a new login. This proves the server issued the role, but it does not identify an individual person; do not treat the audit actor as personal attribution.
+
+Telegram review commands use a separate server-side command boundary because callback updates do not carry the browser manager session. The callback route requires Telegram's configured webhook secret, the exact production chat and optional topic, and an explicit allowlist of Telegram user IDs. Group membership alone never grants command access. Every successful mutation records `telegram:<userId>` in review provenance and the audit log.
 
 ### Operations health
 
@@ -101,7 +103,10 @@ Set this wherever the SvelteKit app runs:
   - `EMAIL_AUTOMATION_TELEGRAM_CHAT_ID`
   - optional `EMAIL_AUTOMATION_TELEGRAM_MESSAGE_THREAD_ID`
   - local testing only: `EMAIL_AUTOMATION_TELEGRAM_TEST_CHAT_ID` for a dedicated test group; the EML test runner refuses to use the production chat ID
-  - optional `EMAIL_AUTOMATION_PUBLIC_URL` for absolute links in review Telegram messages
+  - optional `EMAIL_AUTOMATION_PUBLIC_URL` for absolute links in review Telegram messages and the Telegram callback webhook
+  - `EMAIL_AUTOMATION_TELEGRAM_WEBHOOK_SECRET`: high-entropy random 32-256 character webhook secret using only letters, numbers, `_`, and `-`
+  - `EMAIL_AUTOMATION_TELEGRAM_ALLOWED_USER_IDS`: comma-separated Telegram user IDs authorized to run review commands and attach Ledger receipts; chat membership is not sufficient
+  - optional `EMAIL_AUTOMATION_TELEGRAM_UPLOAD_TIMEOUT_MS`: Telegram receipt download timeout in milliseconds (defaults to 15000, bounded to 1-120 seconds)
   - `EMAIL_AUTOMATION_LEDGER_ENABLED` is legacy only and is not sufficient for this hardening slice.
   - `EMAIL_AUTOMATION_LEDGER_CANARY_ENABLED=true`: the only deployment-level opt-in for the guarded Company Ledger canary.
   - Normal runtime control lives in Neon `email_automation_settings` and is editable from the dashboard, including the Company Ledger switch, exact visible-sender allowlist, and canary amount ceiling.
@@ -307,6 +312,15 @@ Telegram messages are rendered by modular, code-backed templates in `src/lib/ser
 
 `render.ts` selects the template from the classification outcome. `send.ts` publishes to Telegram using the same publisher as production, and `sendEmailAutomationTestNotification` wraps the body with a visible `🧪 TEST` banner for dashboard Send-test buttons. `builtin-dummies.ts` holds the sample inputs used for built-in classifier previews and tests.
 
+Production review notifications include inline controls:
+
+- **Mark handled** completes only the human attention review.
+- **Dismiss** completes the review with the audited `dismissed_irrelevant` disposition.
+- **Ignore this sender** adds the one unambiguous normalized visible sender email to the settings-backed ignore list. It requires a short-lived, one-time confirmation bound to the Telegram manager who requested it because visible sender addresses can be spoofed and matching future mail bypasses handlers, review, and Telegram. It does not close the current review.
+- **Open dashboard** opens the event detail. Non-review outcomes receive only this safe link.
+
+Callback actions never retry, claim, reconcile, or mutate Ledger actions or Telegram outbox work. Completed reviews are idempotent, and successful commands remove stale mutation controls from the message.
+
 ### Notification information and ordering
 
 The opening line puts the meaningful state first, for example `Expense email - recorded`, `Expense email - ready`, or `Email - review needed`. Monetary facts follow immediately so Telegram preview truncation still exposes the amount and available extracted details.
@@ -346,6 +360,30 @@ pnpm email:test-eml temp/example.eml --send
 The command uses the same PostalMime/latest-body parser as the Worker, seed classification rules, and production notification renderer. It reports body source, completeness, stripping, and attachment metadata. It does not create a database event or Ledger record. Add `--ledger-enabled` only to simulate the successful Ledger notification template; this still creates no external Ledger side effect. The runner has no fallback to `EMAIL_AUTOMATION_TELEGRAM_CHAT_ID` and refuses to send when the test and production chat IDs are equal.
 
 The current local fixture set covers expense, review, ignored, and no-specific-rule fallback emails. There is no seeded `income` classifier rule. K SHOP settlement-failure and merchant-fee-failure emails were not found in the mailbox search, so those remain gaps until representative messages are available.
+
+### Configure Telegram buttons and receipt replies
+
+Do this only after the Telegram webhook route, receipt-upload migration, and all three Telegram command env vars are deployed. Before a webhook is configured, send the bot a message and discover the manager's numeric user ID:
+
+```bash
+pnpm telegram:chat-ids -- --users
+```
+
+Then inspect the planned webhook without changing Telegram:
+
+```bash
+pnpm telegram:email-webhook
+```
+
+After confirming the target URL, register it:
+
+```bash
+pnpm telegram:email-webhook -- --apply
+```
+
+Telegram allows one webhook per bot. The apply command replaces that bot's current webhook and limits delivered update types to `callback_query` and `message`. Once a webhook is active, `getUpdates` based discovery commands no longer work, so collect every required manager user ID first. Test messages include no-op review controls and never create an upload session.
+
+Successful Company Ledger notifications include an **Attach receipt** button. An allowlisted manager can tap it and reply to the bot's force-reply prompt with a Telegram photo or a JPG, PNG, or WebP document up to 10 MB. The one-time request is bound to the exact event, Notion page, Telegram user, chat, topic, and prompt message; it expires after 30 days. The server downloads and validates image bytes without exposing the bot-token file URL, uploads the image to Notion, and appends it to the existing **Invoice / Receipt** files. Upload-session state and bounded audit metadata are stored in Neon; image bytes are not.
 
 ## Dashboard rule management
 

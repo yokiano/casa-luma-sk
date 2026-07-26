@@ -10,7 +10,8 @@ export const handle: Handle = async ({ event, resolve }) => {
 	if (
 		event.url.pathname.startsWith('/api/customer') ||
 		event.url.pathname.startsWith('/api/webhooks/receipt') ||
-		event.url.pathname.startsWith('/api/webhooks/email')
+		event.url.pathname.startsWith('/api/webhooks/email') ||
+		event.url.pathname.startsWith('/api/webhooks/telegram')
 	) {
 		// SvelteKit's CSRF protection expects the Origin header to match the request URL.
 		// Webhooks from external services (like Loyverse) often don't include an Origin header

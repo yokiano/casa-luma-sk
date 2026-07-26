@@ -80,6 +80,7 @@ export type DurableNotificationOutcome = {
   processingState?: string | null;
   reviewReason?: string | null;
   dashboardUrl?: string;
+  hasOpenReview?: boolean;
 };
 
 /** Renders persisted action truth. It never infers success from classification. */
@@ -106,7 +107,9 @@ export const renderDurableEmailAutomationNotification = (
           : status === 'failed'
             ? 'The external action failed permanently; no further automatic retry will run.'
             : 'No external action was run.';
-  const nextStep = succeeded ? 'No action is needed.'
+  const nextStep = succeeded && classification.handlerKey === 'company_ledger_expense'
+    ? 'Attach a receipt from the button below if one is available.'
+    : succeeded ? 'No action is needed.'
     : status === 'retry_scheduled' ? 'A manager should open the event and wait for or trigger the safe retry.'
     : safetyBlocked ? 'A manager should inspect the original email. Ledger automation runs only inside the explicit canary gates until sender-authenticity enforcement is implemented.'
     : status === 'failed' ? 'A manager should open the event, inspect the attempt, then retry or reconcile.'
