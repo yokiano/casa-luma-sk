@@ -1,82 +1,58 @@
 # Membership and Flexi Receipt Validation
 
-The receipt validation suite is async-capable, so rules can await Notion and Neon lookups while existing synchronous rules continue to work.
+The receipt validation suite is async-capable and uses Neon receipt history as the balance source of truth.
 
-## Rules
+## Membership
 
-### `MEMBERSHIP_ENTRY_WITHOUT_VALID_MEMBERSHIP`
+`MEMBERSHIP_ENTRY_WITHOUT_VALID_MEMBERSHIP` runs for `Member Valid Visit`, requires a customer, matches the customer to a Family, and requires a membership covering the receipt date.
 
-Triggers only when the receipt contains `Member Valid Visit`.
+## Flexi check-in
 
-Validation steps:
+`FLEXI_CHECKIN_WITHOUT_AVAILABLE_PASS` runs for `Flexi Entrance` and requires:
 
-1. Skip refunds.
-2. Require `receipt.customer_id`.
-3. Query Notion Families where `Loyverse Customer ID` contains the customer ID, then confirm an exact normalized match.
-4. Query Notion Memberships related to the Family.
-5. Require at least one membership whose `Start Date` is on/before the receipt date and whose `End Date` is on/after the receipt date.
+- an approved `1 kid` through `5 kids` variant
+- quantity `1`
+- an attached Loyverse customer
+- at least one usable Flexi hour remaining, regardless of child count
 
-Finding reasons:
+Entrance records check-in only. It never reduces balance. `FLEXI_CHECKIN_INVALID_VARIANT` is emitted for missing or malformed child-count data.
 
-- `missing_customer`
-- `family_not_found`
-- `no_active_membership`
+## Flexi checkout
 
-### `FLEXI_ENTRY_WITHOUT_AVAILABLE_PASS`
+`FLEXI_CHECKOUT_WITHOUT_AVAILABLE_PASS` runs for `Flexi Checkout` and requires:
 
-Triggers only when the receipt contains `Flexi Single Entrance`.
+- one approved `1 hour` through `8 hours` variant
+- quantity exactly `1`
+- an attached Loyverse customer
+- enough balance for the selected value
 
-Validation steps:
+The selected value is the total holes punched for this visit only. It is not elapsed time and not the cumulative holes already on the physical card. `FLEXI_CHECKOUT_INVALID_VARIANT` is emitted for unknown/missing variants, quantity other than `1`, multiple Checkout lines, malformed history, or any case where the application cannot safely determine visit punches. It never guesses.
 
-1. Skip refunds.
-2. Require `receipt.customer_id`.
-3. Query Neon receipt history for that customer and merchant up to the current receipt time.
-4. Count flexi card purchases (`Flexible Resident`, `flexible Regular`) as `11` passes each.
-5. Count flexi single entrance line quantities as used passes.
-6. Because webhook validation runs after ingestion, compute balance before the current receipt by adding the current receipt's flexi quantity back to the aggregate after-current balance.
-7. Alert when the balance before the current receipt is lower than the current receipt's flexi entry quantity.
+Refunds and cancelled receipts are skipped. Historical usage on retained variant `1ac06b7d-7b94-4f7b-98d3-be0b93a5f930` remains one punch per quantity.
 
-Note: flexi card purchase automation writes structured rows to the dedicated `🎟️ Flexi Passes` database, and flexi usage automation synchronizes each active pass row's `Entries Used` / `Entries Left` counters after usage receipts are ingested. This validation rule still uses Neon receipt-history balance as the source of truth so alerts remain idempotent and independent from Notion counter drift. A future validation pass may use `Flexi Passes` as primary and receipt history as fallback/reconciliation.
+Flexi card purchases (`Flexible Resident` and `flexible Regular`) grant `11` entries each. Usage automation updates `Entries Used` and `Entries Left` in Notion only for valid Checkout receipts. Entrance receipts are ignored by usage automation.
 
-Finding reasons:
+## Incident details and Telegram
 
-- `missing_customer`
-- `no_flexi_purchase`
-- `insufficient_remaining_entries`
+New codes:
 
-### `RECEIPT_CLOSED_WITHOUT_CUSTOMER`
+- `FLEXI_CHECKIN_WITHOUT_AVAILABLE_PASS`
+- `FLEXI_CHECKIN_INVALID_VARIANT`
+- `FLEXI_CHECKOUT_WITHOUT_AVAILABLE_PASS`
+- `FLEXI_CHECKOUT_INVALID_VARIANT`
 
-Triggers when a non-refund, non-cancelled receipt has no `customer_id`.
-
-This rule is intentionally global at first: it is not limited to Open Play item IDs. If Telegram noise is too high, add an `openPlayOnly` option later and scope it to membership/flexi/open-play items.
-
-## Dashboard triage
-
-Membership and flexi validation findings appear in `/mgmt-dashboard/violations`, grouped by their underlying validation codes (`MEMBERSHIP_ENTRY_WITHOUT_VALID_MEMBERSHIP` and `FLEXI_ENTRY_WITHOUT_AVAILABLE_PASS`). Use the linked incident detail pages there for day-to-day triage; `/tools/incidents` is now a legacy/debug incident list.
-
-## Telegram alerts
-
-Telegram messages start with human labels:
-
-- `Receipt Violation — Membership Entry Without Valid Membership`
-- `Receipt Violation — Flexi Entry Without Available Pass`
-- `Receipt Alert — Closed Without Customer`
-
-The webhook stores full details in the incident payload, but passes compact context fields for Telegram: reason, customer ID, Family, checked date, entry quantities, and flexi balance counts.
+Stored `FLEXI_ENTRY_WITHOUT_AVAILABLE_PASS` incidents remain renderable for historical compatibility. Incident context includes item/variant identifiers, selected visit punches, reason, and balance before/after the receipt. Generic missing-customer validation excludes Flexi lines so staff do not receive duplicate findings.
 
 ## Efficiency
 
-Notion and Neon helpers are only called after the relevant receipt line appears:
+No Neon lookup occurs when the relevant Flexi line is absent. Malformed or ambiguous Checkout data stops before balance or Notion mutation. The separate paid one-hour Open Play item remains governed by its own 60/75-minute rule.
 
-- no `Member Valid Visit` -> no Notion lookup
-- no `Flexi Single Entrance` -> no flexi history query
-- missing customer for those items -> immediate finding, no external lookup
+## Cashier workflow
 
-## Operational SOP (Check-In Workflow)
+1. Attach the correct customer.
+2. Add `Flexi Entrance`, choose the number of kids, and keep the 0-baht ticket open.
+3. At departure, punch only the holes earned by this visit.
+4. Count those new holes and add `Flexi Checkout` to the same ticket.
+5. Choose the matching hours variant, leave quantity at `1`, and close the ticket.
 
-Because receipt validations are post-facto (running after a ticket or receipt is closed on Loyverse), they cannot block register transactions before payment. To prevent validation alerts from arriving too late (e.g., after the customer has stayed, eaten, and left), the venue enforces the following standard operating procedure (SOP):
-
-1. **Immediate 0-Baht Receipts:** When a customer checks in under a weekly/monthly membership or a flexi pass, the staff must immediately add the check-in item (`Member Valid Visit` or `Flexi Single Entrance`) on the Loyverse POS.
-2. **Immediate Ticket Closure:** Staff must **immediately close and pay** this check-in ticket (generating a 0-Baht receipt) right as the family walks in, *before* letting them enter and *before* opening any ongoing open tab for food, drinks, or other retail items.
-3. **Prompt Alerting:** This triggers the webhook and runs validations instantly on arrival. If the customer has an expired membership or insufficient flexi pass balance, staff will receive a Telegram alert within seconds, allowing them to handle the overspent pass with the parent immediately while they are still at the front desk or taking off their shoes.
-
+Examples: `1 kid` plus one new hole means `1 hour`; `3 kids` plus two new holes means `2 hours`; four new holes means `4 hours`, even if the card has older holes. Do not create pairing violations or infer sessions from timestamps.

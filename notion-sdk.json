@@ -999,9 +999,9 @@
           "readOnly": false
         },
         "xUkM": {
-          "_name": "Access",
+          "_name": "Description",
           "_type": "rich_text",
-          "varName": "access",
+          "varName": "description",
           "readOnly": false
         },
         "%7B%5BoE": {
@@ -1026,6 +1026,42 @@
           "_name": "LoyverseID",
           "_type": "rich_text",
           "varName": "loyverseId",
+          "readOnly": false
+        },
+        "DRoF": {
+          "_name": "Variant option 2 name",
+          "_type": "rich_text",
+          "varName": "variantOption_2Name",
+          "readOnly": false
+        },
+        "MkKz": {
+          "_name": "Thai Description",
+          "_type": "rich_text",
+          "varName": "thaiDescription",
+          "readOnly": false
+        },
+        "X%40%5CJ": {
+          "_name": "Has variants",
+          "_type": "checkbox",
+          "varName": "hasVariants",
+          "readOnly": false
+        },
+        "Y%3B%5Dj": {
+          "_name": "Variant option 1 name",
+          "_type": "rich_text",
+          "varName": "variantOption_1Name",
+          "readOnly": false
+        },
+        "%5D_WB": {
+          "_name": "Variants JSON",
+          "_type": "rich_text",
+          "varName": "variantsJson",
+          "readOnly": false
+        },
+        "dD_L": {
+          "_name": "Variant option 3 name",
+          "_type": "rich_text",
+          "varName": "variantOption_3Name",
           "readOnly": false
         }
       }

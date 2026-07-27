@@ -20,6 +20,10 @@ Use this when a fresh Pi session needs to add or change Casa Luma menu records i
 - If the task touches Notion database schema, run `pnpm notion:generate` afterward. Ordinary row creates do not require regeneration.
 - Never run `pnpm check`, `svelte check`, or `pnpm build` in this project.
 
+## Open Play variant items
+
+Open Play POS Items use `Description`, `Thai Description`, `Has variants`, `Variants JSON`, and three variant option-name properties. The Open Play sync reads all pages with pagination, validates JSON before any category/item mutation, matches Loyverse items ID-first, preserves variant IDs, writes new IDs back to Notion, and never deletes orphan candidates. For Flexi Entrance/Checkout semantics and the safe post-sync ID capture, see `docs/loyverse/flexi-checkin-checkout.md`.
+
 ## Typical flow for menu item creates
 
 1. Parse the user request and source files or images.

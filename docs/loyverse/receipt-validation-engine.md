@@ -10,7 +10,8 @@ This module provides composable receipt validation rules that can be executed by
 - Rules:
   - `RECEIPT_CLOSED_WITHOUT_CUSTOMER`
   - `MEMBERSHIP_ENTRY_WITHOUT_VALID_MEMBERSHIP`
-  - `FLEXI_ENTRY_WITHOUT_AVAILABLE_PASS`
+  - `FLEXI_CHECKIN_WITHOUT_AVAILABLE_PASS`
+  - `FLEXI_CHECKOUT_WITHOUT_AVAILABLE_PASS`
   - `DISCOUNT_100_PRESENT`
   - `DISCOUNT_TOTAL_OVER_THRESHOLD`
   - `ONE_HOUR_NOT_CONVERTED`
@@ -40,12 +41,13 @@ The rule contract is async-capable. Existing synchronous rules return findings d
 - Uses `Families.Loyverse Customer ID` in Notion to find the Family.
 - Requires a Membership related to that Family whose date range covers the receipt date.
 
-### `FLEXI_ENTRY_WITHOUT_AVAILABLE_PASS`
+### Flexi check-in and checkout rules
 
-- Triggers only for `Flexi Single Entrance` (`a94027fa-dd55-43d2-a031-b358877f4752`).
-- Requires a Loyverse customer on the receipt.
-- Queries Neon receipt history for flexi card purchases and flexi entries for that customer.
-- Counts `Flexible Resident` and `flexible Regular` cards as 11 entrances each.
+- `Flexi Entrance` accepts `1 kid` through `5 kids`, quantity `1`, requires a customer, and does not consume balance.
+- `Flexi Checkout` retains item ID `a94027fa-dd55-43d2-a031-b358877f4752` and accepts `1 hour` through `8 hours`, quantity `1`.
+- Checkout hours mean the total holes punched for this visit only, never elapsed time or cumulative holes from earlier visits.
+- Neon balance queries classify `variant_id`/SKU, count card purchases as 11 entries each, exclude refunds/cancellations, and reject unknown or multiple Checkout lines.
+- `FLEXI_ENTRY_WITHOUT_AVAILABLE_PASS` remains a historical incident-rendering alias. New findings use `FLEXI_CHECKIN_*` and `FLEXI_CHECKOUT_*` codes.
 
 ### `DISCOUNT_100_PRESENT`
 
@@ -125,7 +127,7 @@ Tests are in `src/lib/receipts/validation/validation-suite.test.ts` and cover:
 - async rule support and async execution errors
 - missing customer receipt alerts
 - membership entry checks with mocked Notion lookup
-- flexi entry balance checks with mocked Neon lookup
+- Flexi check-in and Checkout balance/variant checks with mocked Neon lookup
 - one-hour not converted -> detected
 - refund skip behavior for one-hour rule
 

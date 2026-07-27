@@ -150,17 +150,31 @@ export const getCompactFindingDetails = (finding: { code: string; details?: Reco
         'matchedFamily',
         'activeMembershipCount'
       ]);
+    case 'FLEXI_CHECKIN_WITHOUT_AVAILABLE_PASS':
+    case 'FLEXI_CHECKOUT_WITHOUT_AVAILABLE_PASS':
     case 'FLEXI_ENTRY_WITHOUT_AVAILABLE_PASS':
+    case 'FLEXI_CHECKIN_INVALID_VARIANT':
+    case 'FLEXI_CHECKOUT_INVALID_VARIANT':
       return pickKeys(finding.details, [
         'reason',
         'checkedDate',
         'customerId',
+        'usageItemId',
+        'checkoutItemId',
+        'variantId',
+        'sku',
+        'selectedVisitPunches',
+        'currentVisitPunches',
         'currentReceiptEntries',
+        'childCount',
         'cardsPurchased',
         'entriesPurchased',
         'entriesUsedIncludingCurrent',
         'remainingBeforeCurrentReceipt',
-        'remainingAfterCurrentReceipt'
+        'remainingAfterCurrentReceipt',
+        'unknownVariantDiagnostics',
+        'validationErrors',
+        'lines'
       ]);
     case 'RECEIPT_CLOSED_WITHOUT_CUSTOMER':
       return pickKeys(finding.details, ['receiptType', 'totalMoney', 'itemCount', 'items']);

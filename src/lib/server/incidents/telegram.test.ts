@@ -174,8 +174,8 @@ describe('incident telegram payload formatter', () => {
       message: 'fallback message',
       context: {
         receiptNumber: 'R-FLX',
-        failedChecks: ['FLEXI_ENTRY_WITHOUT_AVAILABLE_PASS'],
-        primaryFindingCode: 'FLEXI_ENTRY_WITHOUT_AVAILABLE_PASS',
+        failedChecks: ['FLEXI_CHECKOUT_WITHOUT_AVAILABLE_PASS'],
+        primaryFindingCode: 'FLEXI_CHECKOUT_WITHOUT_AVAILABLE_PASS',
         primaryFindingDetails: {
           reason: 'insufficient_remaining_entries',
           customerId: 'cust-1',
@@ -183,14 +183,17 @@ describe('incident telegram payload formatter', () => {
           entriesPurchased: 11,
           entriesUsedIncludingCurrent: 12,
           remainingBeforeCurrentReceipt: 0,
-          remainingAfterCurrentReceipt: -1
+          remainingAfterCurrentReceipt: -1,
+          lines: [{ itemId: 'checkout-item', variantId: 'bad-variant', sku: 'BAD', quantity: 2 }]
         }
       }
     });
 
-    expect(payload.body.startsWith('<b>Receipt Violation — Flexi Entry Without Available Pass</b>')).toBe(true);
+    expect(payload.body.startsWith('<b>Receipt Violation — Flexi Checkout Without Available Pass</b>')).toBe(true);
+    expect(payload.body).toContain('Holes punched this visit: 1');
     expect(payload.body).toContain('Remaining: before 0; after -1');
     expect(payload.body).toContain('Flexi history: purchased 11; used 12');
+    expect(payload.body).toContain('Flexi lines: checkout-item / bad-variant / BAD × 2');
   });
 
   it('formats missing customer validation incidents with item details', () => {

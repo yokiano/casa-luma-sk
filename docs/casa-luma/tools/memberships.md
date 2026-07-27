@@ -42,7 +42,7 @@ Flexi pass records are shown alongside memberships as read-only list items:
 
 Flexi pass list data comes from `FlexiPassesDatabase` through `getMembershipsData()` and is merged with membership records by creation time.
 
-Flexi pass records are read-only in this tool because their lifecycle is driven by receipt automation and the dedicated Notion `🎟️ Flexi Passes` database.
+Flexi pass records are read-only in this tool because their lifecycle is driven by receipt automation and the dedicated Notion `🎟️ Flexi Passes` database. Cashier item workflow and POS variant sync are documented in `docs/loyverse/flexi-checkin-checkout.md`.
 
 ## Initial load and pagination
 

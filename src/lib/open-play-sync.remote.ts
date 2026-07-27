@@ -1,324 +1,409 @@
-import { query, command } from '$app/server';
+import { command, query } from '$app/server';
 import { NOTION_API_KEY } from '$env/static/private';
 import { OpenPlayPosItemsDatabase } from '$lib/notion-sdk/dbs/open-play-pos-items/db';
 import { OpenPlayPosItemsPatchDTO } from '$lib/notion-sdk/dbs/open-play-pos-items/patch.dto';
 import { OpenPlayPosItemsResponseDTO } from '$lib/notion-sdk/dbs/open-play-pos-items/response.dto';
-import { loyverse } from '$lib/server/loyverse';
+import { loyverse, type CreateLoyverseItemPayload, type LoyverseItem } from '$lib/server/loyverse';
+import {
+  buildOpenPlayDescription,
+  compareOpenPlayVariants,
+  parseOpenPlayVariants,
+  reconcileOpenPlayVariants,
+  writeBackVariantIds,
+  type OpenPlayVariantDefinition
+} from '$lib/open-play-sync.logic';
+import type { ItemSyncResult, MenuItemSyncState, SyncReport, SyncStatus } from './menu-sync.remote';
 import * as v from 'valibot';
-import type { MenuItemSyncState, SyncReport, ItemSyncResult, SyncStatus } from './menu-sync.remote';
 
-// Helper to normalize strings for comparison
-const normalize = (str?: string | null) => str?.trim() || '';
+const normalize = (value?: string | null) => value?.normalize('NFC').trim() ?? '';
+const normalizedName = (value?: string | null) => normalize(value).toLocaleLowerCase();
 
-// Helper to build description from Notion properties
-function buildDescription(item: OpenPlayPosItemsResponseDTO): string {
-  const parts = [];
-  if (item.properties.duration.text) parts.push(`Duration: ${item.properties.duration.text}`);
-  if (item.properties.access.text) parts.push(`Access: ${item.properties.access.text}`);
-  if (item.properties.workshopsIncluded.text) parts.push(`Workshops: ${item.properties.workshopsIncluded.text}`);
-  if (item.properties.perks.values.length > 0) parts.push(`Perks: ${item.properties.perks.values.join(', ')}`);
-  if (item.properties.foodDiscount.text) parts.push(`Food Discount: ${item.properties.foodDiscount.text}`);
-  return parts.join('\n');
+async function fetchAllPages(db: OpenPlayPosItemsDatabase) {
+  const results: unknown[] = [];
+  let startCursor: string | undefined;
+  do {
+    const response = await db.query({ page_size: 100, start_cursor: startCursor } as never);
+    results.push(...response.results);
+    startCursor = response.has_more && response.next_cursor ? response.next_cursor : undefined;
+  } while (startCursor);
+  return results;
 }
 
-// Helper to compare Notion and Loyverse items
+function resolveNotionLoyverseId(item: OpenPlayPosItemsResponseDTO): string | undefined {
+  const canonical = normalize(item.properties.loyverseId.text);
+  const legacy = normalize(item.properties.id.text);
+  if (canonical && legacy && canonical !== legacy) {
+    throw new Error(`Conflicting Notion ID (${legacy}) and LoyverseID (${canonical}) values.`);
+  }
+  return canonical || legacy || undefined;
+}
+
+function getOptionNames(item: OpenPlayPosItemsResponseDTO): [string | undefined, string | undefined, string | undefined] {
+  return [
+    item.properties.variantOption_1Name.text,
+    item.properties.variantOption_2Name.text,
+    item.properties.variantOption_3Name.text
+  ];
+}
+
+function getConfiguredVariants(item: OpenPlayPosItemsResponseDTO): OpenPlayVariantDefinition[] {
+  if (!item.properties.hasVariants) return [];
+  return parseOpenPlayVariants(item.properties.variantsJson.text, getOptionNames(item));
+}
+
+function buildDescription(item: OpenPlayPosItemsResponseDTO): string {
+  return buildOpenPlayDescription({
+    description: item.properties.description.text,
+    thaiDescription: item.properties.thaiDescription.text,
+    duration: item.properties.duration.text,
+    workshopsIncluded: item.properties.workshopsIncluded.text,
+    perks: item.properties.perks.values,
+    foodDiscount: item.properties.foodDiscount.text
+  });
+}
+
 function compareOpenPlayItems(
-  notionItem: OpenPlayPosItemsResponseDTO, 
-  loyverseItem: any, 
-  loyverseCategories: Map<string, any>
+  notionItem: OpenPlayPosItemsResponseDTO,
+  loyverseItem: LoyverseItem,
+  loyverseCategories: Map<string, { name: string }>
 ): string[] {
   const diffs: string[] = [];
-  
-  if (normalize(notionItem.properties.name.text) !== normalize(loyverseItem.item_name)) {
-    diffs.push(`Name mismatch: "${notionItem.properties.name.text}" vs "${loyverseItem.item_name}"`);
-  }
-  
-  // Compare Price
-  const notionPrice = notionItem.properties.priceBaht ?? 0;
-  const loyversePrice = loyverseItem.variants[0]?.default_price ?? 0;
-  
-  if (notionPrice !== loyversePrice) {
-    diffs.push(`Price mismatch: ${notionPrice} vs ${loyversePrice}`);
+  const notionName = normalize(notionItem.properties.name.text);
+  if (notionName !== normalize(loyverseItem.item_name)) {
+    diffs.push(`Name mismatch: "${notionName}" vs "${normalize(loyverseItem.item_name)}"`);
   }
 
-  // Compare Description
-  const notionDesc = normalize(buildDescription(notionItem));
-  const loyverseDesc = normalize(loyverseItem.description);
-  
-  // Loyverse description might have different line endings or whitespace
-  if (notionDesc !== loyverseDesc) {
+  if (normalize(buildDescription(notionItem)) !== normalize(loyverseItem.description)) {
     diffs.push('Description mismatch');
   }
 
-  // Compare Category
   const notionCategory = notionItem.properties.category?.name || 'Uncategorized';
-  const loyverseCategory = loyverseItem.category_id ? loyverseCategories.get(loyverseItem.category_id)?.name : undefined;
+  const loyverseCategory = loyverseItem.category_id
+    ? loyverseCategories.get(loyverseItem.category_id)?.name || 'Uncategorized'
+    : 'Uncategorized';
+  if (notionCategory !== loyverseCategory) {
+    diffs.push(`Category mismatch: "${notionCategory}" vs "${loyverseCategory}"`);
+  }
 
-  if (notionCategory !== (loyverseCategory || 'Uncategorized')) {
-    diffs.push(`Category mismatch: "${notionCategory}" vs "${loyverseCategory || 'Uncategorized'}"`);
+  if (notionItem.properties.hasVariants) {
+    diffs.push(...compareOpenPlayVariants(getConfiguredVariants(notionItem), loyverseItem, getOptionNames(notionItem)));
+  } else {
+    const notionPrice = notionItem.properties.priceBaht ?? 0;
+    if (loyverseItem.variants.length !== 1) {
+      diffs.push(`Variant count mismatch for simple item: 1 vs ${loyverseItem.variants.length}`);
+    }
+    const loyversePrice = loyverseItem.variants[0]?.default_price ?? 0;
+    if (notionPrice !== loyversePrice) diffs.push(`Price mismatch: ${notionPrice} vs ${loyversePrice}`);
+    if (normalize(loyverseItem.option1_name) || normalize(loyverseItem.option2_name) || normalize(loyverseItem.option3_name)) {
+      diffs.push('Simple item still has Loyverse option names');
+    }
   }
 
   return diffs;
 }
 
+function buildNameMap(items: LoyverseItem[]) {
+  const map = new Map<string, LoyverseItem[]>();
+  for (const item of items) {
+    const key = normalizedName(item.item_name);
+    map.set(key, [...(map.get(key) ?? []), item]);
+  }
+  return map;
+}
+
+function findUnambiguousNameMatch(name: string, byName: Map<string, LoyverseItem[]>): LoyverseItem | undefined {
+  const matches = byName.get(normalizedName(name)) ?? [];
+  if (matches.length > 1) throw new Error(`Multiple Loyverse items match the name "${name}".`);
+  return matches[0];
+}
+
+function createPayload(
+  notionItem: OpenPlayPosItemsResponseDTO,
+  categoryId: string | undefined,
+  existing?: LoyverseItem
+): { payload: CreateLoyverseItemPayload; configuredVariants: OpenPlayVariantDefinition[] } {
+  const configuredVariants = getConfiguredVariants(notionItem);
+  const payload: CreateLoyverseItemPayload = {
+    item_name: notionItem.properties.name.text || 'Untitled',
+    description: buildDescription(notionItem),
+    category_id: categoryId,
+    variants: []
+  };
+
+  if (notionItem.properties.hasVariants) {
+    const [option1, option2, option3] = getOptionNames(notionItem);
+    payload.option1_name = normalize(option1) || null;
+    payload.option2_name = normalize(option2) || null;
+    payload.option3_name = normalize(option3) || null;
+    payload.variants = reconcileOpenPlayVariants(configuredVariants, existing?.variants ?? []);
+  } else {
+    payload.option1_name = null;
+    payload.option2_name = null;
+    payload.option3_name = null;
+    payload.variants = [{
+      ...(existing?.variants[0] ? { variant_id: existing.variants[0].variant_id } : {}),
+      default_price: notionItem.properties.priceBaht ?? 0,
+      default_pricing_type: 'FIXED'
+    }];
+  }
+
+  return { payload, configuredVariants };
+}
+
+async function ensureFullLoyverseItem(synced: LoyverseItem, itemId: string): Promise<LoyverseItem> {
+  if (synced.id && Array.isArray(synced.variants) && synced.variants.length > 0) return synced;
+  const refreshed = (await loyverse.getAllItems()).find((item) => item.id === itemId);
+  if (!refreshed) throw new Error(`Loyverse did not return the synchronized item ${itemId}.`);
+  return refreshed;
+}
+
+async function writeBackLoyverseIdentity(
+  notionDb: OpenPlayPosItemsDatabase,
+  notionItem: OpenPlayPosItemsResponseDTO,
+  synced: LoyverseItem,
+  configuredVariants: OpenPlayVariantDefinition[]
+) {
+  const properties: ConstructorParameters<typeof OpenPlayPosItemsPatchDTO>[0]['properties'] = {
+    loyverseId: synced.id
+  };
+  // Keep the legacy ID field untouched when it already carries the item ID. For
+  // a newly-created row, populate both fields so older readers remain linked.
+  if (!normalize(notionItem.properties.id.text) && !normalize(notionItem.properties.loyverseId.text)) {
+    properties.id = synced.id;
+  }
+  if (notionItem.properties.hasVariants) {
+    properties.variantsJson = JSON.stringify(writeBackVariantIds(configuredVariants, synced.variants));
+  }
+  await notionDb.updatePage(notionItem.id, new OpenPlayPosItemsPatchDTO({ properties }));
+}
+
 export const getOpenPlaySyncStatus = query(async () => {
   const notionDb = new OpenPlayPosItemsDatabase({ notionSecret: NOTION_API_KEY });
-  
-  // Parallel fetch
-  const [notionResult, loyverseItems, loyverseCategoriesList] = await Promise.all([
-    notionDb.query({}),
+  const [notionRaw, loyverseItems, categoryList] = await Promise.all([
+    fetchAllPages(notionDb),
     loyverse.getAllItems(),
     loyverse.getAllCategories()
   ]);
+  const notionItems = notionRaw.map((item) => new OpenPlayPosItemsResponseDTO(item as never));
+  const loyverseById = new Map(loyverseItems.map((item) => [item.id, item]));
+  const loyverseByName = buildNameMap(loyverseItems);
+  const categories = new Map(categoryList.map((category) => [category.id, category]));
+  const matchedLoyverseIds = new Set<string>();
+  const states: MenuItemSyncState[] = [];
 
-  const notionItems = notionResult.results.map(r => new OpenPlayPosItemsResponseDTO(r));
-  
-  const syncStates: MenuItemSyncState[] = [];
-  
-  const loyverseById = new Map(loyverseItems.map(i => [i.id, i]));
-  const loyverseByName = new Map(loyverseItems.map(i => [normalize(i.item_name).toLowerCase(), i]));
-  const loyverseCategories = new Map(loyverseCategoriesList.map(c => [c.id, c]));
+  for (const notionItem of notionItems) {
+    const name = notionItem.properties.name.text || 'Untitled';
+    const category = notionItem.properties.category?.name || 'Uncategorized';
+    try {
+      const configuredId = resolveNotionLoyverseId(notionItem);
+      let target: LoyverseItem | undefined;
+      let linkedByName = false;
+      if (configuredId) {
+        target = loyverseById.get(configuredId);
+        if (!target) {
+          states.push({
+            notionId: notionItem.id,
+            name,
+            category,
+            imageUrl: notionItem.cover.url,
+            notionLoyverseIdProp: configuredId,
+            status: 'NOT_IN_LOYVERSE',
+            diffs: [`Configured Loyverse item ${configuredId} was not found. Automatic name relinking is blocked.`],
+            hasVariants: notionItem.properties.hasVariants
+          });
+          continue;
+        }
+      } else {
+        target = findUnambiguousNameMatch(name, loyverseByName);
+        linkedByName = Boolean(target);
+      }
 
-  // Collect all unique categories used by Open Play Items in Notion (normalized for comparison)
-  const notionOpenPlayCategories = new Set<string>();
-  for (const nItem of notionItems) {
-    const cat = nItem.properties.category?.name;
-    if (cat) notionOpenPlayCategories.add(normalize(cat).toLowerCase());
+      if (!target) {
+        // Parsing here makes invalid variant JSON visible before the user presses Sync.
+        getConfiguredVariants(notionItem);
+        states.push({
+          notionId: notionItem.id,
+          name,
+          category,
+          imageUrl: notionItem.cover.url,
+          status: 'NOT_IN_LOYVERSE',
+          hasVariants: notionItem.properties.hasVariants
+        });
+        continue;
+      }
+
+      matchedLoyverseIds.add(target.id);
+      const diffs = compareOpenPlayItems(notionItem, target, categories);
+      const status: SyncStatus = linkedByName ? 'LINKED_ONLY' : diffs.length ? 'MODIFIED' : 'SYNCED';
+      states.push({
+        notionId: notionItem.id,
+        loyverseId: target.id,
+        name,
+        category,
+        imageUrl: notionItem.cover.url,
+        notionLoyverseIdProp: configuredId,
+        status,
+        diffs,
+        hasVariants: notionItem.properties.hasVariants
+      });
+    } catch (error) {
+      states.push({
+        notionId: notionItem.id,
+        name,
+        category,
+        imageUrl: notionItem.cover.url,
+        status: 'MODIFIED',
+        diffs: [error instanceof Error ? error.message : String(error)],
+        hasVariants: notionItem.properties.hasVariants
+      });
+    }
   }
 
-  const matchedLoyverseIds = new Set<string>();
-
-  for (const nItem of notionItems) {
-    const notionLoyverseId = nItem.properties.id.text;
-    const name = nItem.properties.name.text || 'Untitled';
-    const category = nItem.properties.category?.name || 'Uncategorized';
-    const imageUrl = nItem.cover.url;
-    
-    let status: SyncStatus = 'NOT_IN_LOYVERSE';
-    let loyverseId: string | undefined = undefined;
-    let diffs: string[] = [];
-
-    if (notionLoyverseId && loyverseById.has(notionLoyverseId)) {
-      const lItem = loyverseById.get(notionLoyverseId)!;
-      loyverseId = lItem.id;
-      matchedLoyverseIds.add(lItem.id);
-      
-      diffs = compareOpenPlayItems(nItem, lItem, loyverseCategories);
-      
-      status = diffs.length > 0 ? 'MODIFIED' : 'SYNCED';
-    } else if (loyverseByName.has(normalize(name).toLowerCase())) {
-      const lItem = loyverseByName.get(normalize(name).toLowerCase())!;
-      loyverseId = lItem.id;
-      matchedLoyverseIds.add(lItem.id);
-
-      status = 'LINKED_ONLY';
-      diffs = compareOpenPlayItems(nItem, lItem, loyverseCategories);
-    }
-
-    syncStates.push({
-      notionId: nItem.id,
-      loyverseId,
-      name,
-      category,
-      imageUrl,
-      notionLoyverseIdProp: notionLoyverseId,
-      status,
-      diffs
+  const managedCategories = new Set(
+    notionItems.map((item) => normalizedName(item.properties.category?.name)).filter(Boolean)
+  );
+  for (const item of loyverseItems) {
+    if (matchedLoyverseIds.has(item.id)) continue;
+    const category = item.category_id ? categories.get(item.category_id)?.name || '' : '';
+    if (!managedCategories.has(normalizedName(category))) continue;
+    states.push({
+      loyverseId: item.id,
+      name: item.item_name,
+      category: category || 'Uncategorized',
+      status: 'NOT_IN_NOTION',
+      warnings: ['Read-only orphan candidate. Open Play sync never deletes unmatched Loyverse items.']
     });
   }
 
-  // Find orphaned Loyverse items - only consider items whose category is used by Open Play Items
-  for (const lItem of loyverseItems) {
-    if (!matchedLoyverseIds.has(lItem.id)) {
-      const catName = lItem.category_id ? (loyverseCategories.get(lItem.category_id)?.name || '') : '';
-      const normalizedCat = normalize(catName).toLowerCase();
-
-      // Only show as orphan if category is one used by Open Play Items in Notion
-      if (notionOpenPlayCategories.has(normalizedCat)) {
-        syncStates.push({
-          notionId: undefined,
-          loyverseId: lItem.id,
-          name: lItem.item_name,
-          category: catName || 'Uncategorized',
-          status: 'NOT_IN_NOTION'
-        });
-      }
-    }
-  }
-
-  return syncStates;
+  return states;
 });
 
 export const syncOpenPlayItems = command(
-  v.object({
-    itemIds: v.optional(v.array(v.string())),
-    deleteOrphans: v.optional(v.boolean())
-  }),
-  async ({ itemIds, deleteOrphans }) => {
+  v.object({ itemIds: v.optional(v.array(v.string())) }),
+  async ({ itemIds }) => {
     const notionDb = new OpenPlayPosItemsDatabase({ notionSecret: NOTION_API_KEY });
     const report: SyncReport = { created: 0, updated: 0, linked: 0, deleted: 0, errors: [], itemResults: [] };
 
     try {
-      const [notionResult, loyverseItems, loyverseCategoriesList] = await Promise.all([
-        notionDb.query({}),
+      const [notionRaw, loyverseItems, categoryList] = await Promise.all([
+        fetchAllPages(notionDb),
         loyverse.getAllItems(),
         loyverse.getAllCategories()
       ]);
+      const allNotionItems = notionRaw.map((item) => new OpenPlayPosItemsResponseDTO(item as never));
+      const notionItems = allNotionItems.filter((item) => !itemIds || itemIds.includes(item.id));
+      const loyverseById = new Map(loyverseItems.map((item) => [item.id, item]));
+      const loyverseByName = buildNameMap(loyverseItems);
+      const categories = new Map(categoryList.map((category) => [category.id, category]));
+      // Validate every selected row before any category, Loyverse, or Notion write.
+      // This prevents a later malformed Flexi row from leaving an earlier row half-synced.
+      for (const notionItem of notionItems) {
+        resolveNotionLoyverseId(notionItem);
+        getConfiguredVariants(notionItem);
+      }
+      const categoryCache = new Map(categoryList.map((category) => [normalizedName(category.name), category.id]));
 
-      const allNotionItems = notionResult.results.map(r => new OpenPlayPosItemsResponseDTO(r));
-      const notionItemsToSync = allNotionItems.filter(i => !itemIds || itemIds.includes(i.id));
-
-      const loyverseById = new Map(loyverseItems.map(i => [i.id, i]));
-      const loyverseByName = new Map(loyverseItems.map(i => [normalize(i.item_name).toLowerCase(), i]));
-      const loyverseCategories = new Map(loyverseCategoriesList.map(c => [c.id, c]));
-      const categoryCache = new Map(loyverseCategoriesList.map(c => [normalize(c.name).toLowerCase(), c.id]));
-
-      const resolveCategoryId = async (categoryName: string) => {
-        const normalizedName = normalize(categoryName).toLowerCase();
-        if (categoryCache.has(normalizedName)) return categoryCache.get(normalizedName)!;
-        const newCat = await loyverse.createCategory(categoryName);
-        categoryCache.set(normalizedName, newCat.id);
-        return newCat.id;
+      const resolveCategoryId = async (name: string) => {
+        const key = normalizedName(name);
+        const existing = categoryCache.get(key);
+        if (existing) return existing;
+        const created = await loyverse.createCategory(name);
+        categoryCache.set(key, created.id);
+        return created.id;
       };
 
-      // Collect all unique categories used by Open Play Items in Notion (normalized for comparison)
-      const notionOpenPlayCategories = new Set<string>();
-      for (const nItem of allNotionItems) {
-        const cat = nItem.properties.category?.name;
-        if (cat) notionOpenPlayCategories.add(normalize(cat).toLowerCase());
-      }
-
-      const matchedLoyverseIds = new Set<string>();
-      for (const nItem of allNotionItems) {
-         const notionLoyverseId = nItem.properties.id.text;
-         const name = nItem.properties.name.text || 'Untitled';
-         if (notionLoyverseId && loyverseById.has(notionLoyverseId)) {
-            matchedLoyverseIds.add(notionLoyverseId);
-         } else if (loyverseByName.has(normalize(name).toLowerCase())) {
-            matchedLoyverseIds.add(loyverseByName.get(normalize(name).toLowerCase())!.id);
-         }
-      }
-
-      for (const nItem of notionItemsToSync) {
-        let currentAction: 'CREATE' | 'UPDATE' | 'LINK' | 'DELETE' | 'SKIP' = 'UPDATE';
+      for (const notionItem of notionItems) {
+        let action: ItemSyncResult['action'] = 'UPDATE';
+        const name = notionItem.properties.name.text || 'Untitled';
         try {
-          const notionLoyverseId = nItem.properties.id.text;
-          const name = nItem.properties.name.text || 'Untitled';
-          const description = buildDescription(nItem);
-          const categoryName = nItem.properties.category?.name || 'Uncategorized';
-          const categoryId = await resolveCategoryId(categoryName);
-          const price = nItem.properties.priceBaht ?? 0;
-          let targetLoyverseItem: any;
-          let isNew = false;
-
-          if (notionLoyverseId && loyverseById.has(notionLoyverseId)) {
-            targetLoyverseItem = loyverseById.get(notionLoyverseId);
-            currentAction = 'UPDATE';
-          } else if (loyverseByName.has(normalize(name).toLowerCase())) {
-            targetLoyverseItem = loyverseByName.get(normalize(name).toLowerCase());
-            await notionDb.updatePage(nItem.id, new OpenPlayPosItemsPatchDTO({
-              properties: { id: targetLoyverseItem.id }
-            }));
-            report.linked++;
-            currentAction = 'LINK';
+          const configuredId = resolveNotionLoyverseId(notionItem);
+          let target: LoyverseItem | undefined;
+          let linkedByName = false;
+          if (configuredId) {
+            target = loyverseById.get(configuredId);
+            if (!target) throw new Error(`Configured Loyverse item ${configuredId} was not found. Refusing to recreate it by name.`);
           } else {
-            isNew = true;
-            currentAction = 'CREATE';
+            target = findUnambiguousNameMatch(name, loyverseByName);
+            linkedByName = Boolean(target);
           }
 
-          if (!isNew && targetLoyverseItem) {
-            const diffs = compareOpenPlayItems(nItem, targetLoyverseItem, loyverseCategories);
-            if (diffs.length === 0) {
+          // Validate variant JSON and build the complete payload before creating a
+          // missing category. Malformed input must not cause any external mutation.
+          const { payload, configuredVariants } = createPayload(notionItem, undefined, target);
+          const categoryName = notionItem.properties.category?.name || 'Uncategorized';
+          const categoryId = await resolveCategoryId(categoryName);
+          payload.category_id = categoryId;
+
+          if (target) {
+            const diffs = compareOpenPlayItems(notionItem, target, categories);
+            if (linkedByName) action = 'LINK';
+            const needsCanonicalLink = !normalize(notionItem.properties.loyverseId.text);
+            if (!diffs.length && !needsCanonicalLink) {
               report.itemResults.push({
-                notionId: nItem.id,
-                loyverseId: targetLoyverseItem.id,
+                notionId: notionItem.id,
+                loyverseId: target.id,
                 name,
-                action: 'SKIP',
+                action: linkedByName ? 'LINK' : 'SKIP',
                 status: 'SUCCESS',
-                message: 'Already in sync'
+                message: linkedByName ? 'Linked existing Loyverse item by unique name.' : 'Already in sync'
+              });
+              continue;
+            }
+            if (!diffs.length && needsCanonicalLink) {
+              await writeBackLoyverseIdentity(notionDb, notionItem, target, configuredVariants);
+              report.linked += 1;
+              report.itemResults.push({
+                notionId: notionItem.id,
+                loyverseId: target.id,
+                name,
+                action: 'LINK',
+                status: 'SUCCESS',
+                message: 'Added canonical LoyverseID while preserving the legacy ID field.'
               });
               continue;
             }
           }
 
-          const payload: any = {
-             item_name: name,
-             description,
-             category_id: categoryId,
-             variants: [{
-                default_price: price,
-                default_pricing_type: 'FIXED'
-             }]
-          };
-
-          if (!isNew && targetLoyverseItem && targetLoyverseItem.variants?.[0]) {
-             payload.variants[0].variant_id = targetLoyverseItem.variants[0].variant_id;
-          }
-
-          let finalLid: string;
-          if (isNew) {
-            const newItem = await loyverse.createItem(payload);
-            finalLid = newItem.id;
-            await notionDb.updatePage(nItem.id, new OpenPlayPosItemsPatchDTO({
-              properties: { id: finalLid }
-            }));
-            report.created++;
+          let synced: LoyverseItem;
+          if (target) {
+            action = linkedByName ? 'LINK' : 'UPDATE';
+            if (linkedByName) report.linked += 1;
+            synced = await loyverse.updateItem(target.id, payload);
+            report.updated += 1;
           } else {
-            finalLid = targetLoyverseItem.id;
-            await loyverse.updateItem(finalLid, payload);
-            if (notionLoyverseId !== finalLid) {
-               await notionDb.updatePage(nItem.id, new OpenPlayPosItemsPatchDTO({
-                properties: { id: finalLid }
-              }));
-              report.linked++;
-            }
-            report.updated++;
+            action = 'CREATE';
+            synced = await loyverse.createItem(payload);
+            report.created += 1;
           }
 
-          report.itemResults.push({ 
-            notionId: nItem.id, 
-            loyverseId: finalLid, 
-            name, 
-            action: isNew ? 'CREATE' : (currentAction === 'LINK' ? 'LINK' : 'UPDATE'), 
-            status: 'SUCCESS' 
-          });
-        } catch (err: any) {
-          console.error(`Error syncing open play item ${nItem.properties.name.text}:`, err);
-          report.errors.push(`Failed to sync "${nItem.properties.name.text}": ${err.message}`);
+          synced = await ensureFullLoyverseItem(synced, target?.id ?? synced.id);
+          await writeBackLoyverseIdentity(notionDb, notionItem, synced, configuredVariants);
           report.itemResults.push({
-            notionId: nItem.id,
-            name: nItem.properties.name.text || 'Untitled',
-            action: currentAction,
-            status: 'ERROR',
-            message: err.message
+            notionId: notionItem.id,
+            loyverseId: synced.id,
+            name,
+            action,
+            status: 'SUCCESS',
+            message: notionItem.properties.hasVariants
+              ? `Synchronized ${synced.variants.length} variants and wrote their IDs back to Notion.`
+              : undefined,
+            variantIds: notionItem.properties.hasVariants
+              ? synced.variants.map((variant) => ({
+                  option1Value: variant.option1_value,
+                  option2Value: variant.option2_value,
+                  option3Value: variant.option3_value,
+                  variantId: variant.variant_id
+                }))
+              : undefined
           });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          report.errors.push(`Failed to sync "${name}": ${message}`);
+          report.itemResults.push({ notionId: notionItem.id, name, action, status: 'ERROR', message });
         }
       }
-
-      // Handle Orphans (Delete) - only delete items whose category is used by Open Play Items
-      if (deleteOrphans) {
-        for (const lItem of loyverseItems) {
-          if (!matchedLoyverseIds.has(lItem.id)) {
-             const catName = lItem.category_id ? (loyverseCategories.get(lItem.category_id)?.name || '') : '';
-             const normalizedCat = normalize(catName).toLowerCase();
-
-             // Only delete if category is one used by Open Play Items in Notion
-             if (notionOpenPlayCategories.has(normalizedCat)) {
-               try {
-                 await loyverse.deleteItem(lItem.id);
-                 report.deleted++;
-                 report.itemResults.push({ loyverseId: lItem.id, name: lItem.item_name, action: 'DELETE', status: 'SUCCESS' });
-               } catch (err: any) {
-                 report.errors.push(`Failed to delete "${lItem.item_name}": ${err.message}`);
-                 report.itemResults.push({ loyverseId: lItem.id, name: lItem.item_name, action: 'DELETE', status: 'ERROR', message: err.message });
-               }
-             }
-          }
-        }
-      }
-    } catch (err: any) {
-      console.error('Fatal open play sync error:', err);
-      report.errors.push(`Fatal error: ${err.message}`);
+    } catch (error) {
+      report.errors.push(`Fatal error: ${error instanceof Error ? error.message : String(error)}`);
     }
 
     return report;

@@ -27,9 +27,9 @@ It does not run for:
 
 Because receipt validations are post-facto (running after a ticket or receipt is closed on Loyverse), they cannot block register transactions before payment. To prevent validation alerts from arriving too late (e.g., after the customer has stayed, eaten, and left), the venue enforces the following standard operating procedure (SOP):
 
-1. **Immediate 0-Baht Receipts:** When a customer checks in under a weekly/monthly membership or a flexi pass, the staff must immediately add the check-in item (`Member Valid Visit` or `Flexi Single Entrance`) on the Loyverse POS.
-2. **Immediate Ticket Closure:** Staff must **immediately close and pay** this check-in ticket (generating a 0-Baht receipt) right as the family walks in, *before* letting them enter and *before* opening any ongoing open tab for food, drinks, or other retail items.
-3. **Prompt Alerting:** This triggers the webhook and runs validations instantly on arrival. If the customer has an expired membership or insufficient flexi pass balance, staff will receive a Telegram alert within seconds, allowing them to handle the overspent pass with the parent immediately while they are still at the front desk or taking off their shoes.
+1. **Open the customer ticket:** Attach the customer and add the relevant 0-baht check-in marker. For Flexi, add `Flexi Entrance` and choose the number of kids.
+2. **Keep the same ticket open:** At departure, punch only the holes earned during this visit, add `Flexi Checkout`, choose that visit's total hours, keep quantity at `1`, and close the same ticket.
+3. **Prompt alerting:** Webhook validation checks customer, variant, and balance data. It does not infer pairing from timestamps and it never treats elapsed time or cumulative card holes as Checkout usage.
 
 
 ## Runtime context passed to rules
@@ -74,11 +74,12 @@ The returned report includes:
 
 1. `RECEIPT_CLOSED_WITHOUT_CUSTOMER`
 2. `MEMBERSHIP_ENTRY_WITHOUT_VALID_MEMBERSHIP`
-3. `FLEXI_ENTRY_WITHOUT_AVAILABLE_PASS`
-4. `DISCOUNT_100_PRESENT`
-5. `DISCOUNT_TOTAL_OVER_THRESHOLD`
-6. `ONE_HOUR_NOT_CONVERTED`
-7. any `extraRules`
+3. `FLEXI_CHECKIN_WITHOUT_AVAILABLE_PASS`
+4. `FLEXI_CHECKOUT_WITHOUT_AVAILABLE_PASS`
+5. `DISCOUNT_100_PRESENT`
+6. `DISCOUNT_TOTAL_OVER_THRESHOLD`
+7. `ONE_HOUR_NOT_CONVERTED`
+8. any `extraRules`
 
 The webhook can inject an always-fail rule when:
 
@@ -114,15 +115,13 @@ The rule is efficient: it calls Notion only when the receipt contains the hardco
 
 Finding reasons include `missing_customer`, `family_not_found`, and `no_active_membership`.
 
-### `FLEXI_ENTRY_WITHOUT_AVAILABLE_PASS`
+### Flexi check-in and checkout
 
-Source: `src/lib/receipts/validation/rules/flexi-pass-entry.ts`
+Sources: `src/lib/receipts/validation/rules/flexi-checkin.ts` and `flexi-checkout.ts`.
 
-Purpose: warn when `Flexi Single Entrance` appears but the customer has no available flexi pass balance in Neon receipt history.
+`Flexi Entrance` validates the child-count variant, quantity `1`, customer, and at least one usable hour. It does not reduce balance. `Flexi Checkout` validates one variant from `1` to `8` hours, quantity `1`, customer, and enough balance. The selected hours are holes punched for this visit only. Unknown, malformed, multiple, or incorrectly-quantified Checkout lines produce review findings and do not mutate Notion usage.
 
-The rule is efficient: it calls the Neon flexi balance helper only when the receipt contains the hardcoded `Flexi Single Entrance` item ID and has a customer attached.
-
-Flexi cards currently grant `11` entrances each. Finding reasons include `missing_customer`, `no_flexi_purchase`, and `insufficient_remaining_entries`.
+New codes are `FLEXI_CHECKIN_WITHOUT_AVAILABLE_PASS`, `FLEXI_CHECKIN_INVALID_VARIANT`, `FLEXI_CHECKOUT_WITHOUT_AVAILABLE_PASS`, and `FLEXI_CHECKOUT_INVALID_VARIANT`. Historical `FLEXI_ENTRY_WITHOUT_AVAILABLE_PASS` incidents remain supported.
 
 See also:
 
@@ -273,7 +272,7 @@ Known detail formatters include:
 - `DISCOUNT_TOTAL_OVER_THRESHOLD`: total discount amount, threshold amount, currency, and up to three discount names.
 - `ONE_HOUR_NOT_CONVERTED`: calculated duration in minutes/hours, threshold plus grace period, start/checkout times, timezone, and a plausibility hint for the duration calculation.
 - `MEMBERSHIP_ENTRY_WITHOUT_VALID_MEMBERSHIP`: reason, customer ID, Family, checked date, and member-entry quantity.
-- `FLEXI_ENTRY_WITHOUT_AVAILABLE_PASS`: reason, customer ID, current entry quantity, purchased/used counts, and remaining balance before/after the receipt.
+- `FLEXI_CHECKIN_*` and `FLEXI_CHECKOUT_*`: reason, item/variant identifiers, selected holes punched for this visit, purchased/used counts, and remaining balance before/after the receipt. Historical `FLEXI_ENTRY_WITHOUT_AVAILABLE_PASS` details remain supported.
 - `RECEIPT_CLOSED_WITHOUT_CUSTOMER`: total, item count, and compact item names.
 
 The Telegram formatter escapes all human-sourced text as HTML and avoids dumping raw finding JSON. Unknown validation codes keep the generic friendly check-list formatting.

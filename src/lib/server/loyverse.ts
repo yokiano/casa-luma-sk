@@ -87,6 +87,9 @@ export interface CreateLoyverseItemPayload {
   is_composite?: boolean;
   image_url?: string;
   modifier_ids?: string[];
+  option1_name?: string | null;
+  option2_name?: string | null;
+  option3_name?: string | null;
   variants: Array<{
     variant_id?: string;
     sku?: string;

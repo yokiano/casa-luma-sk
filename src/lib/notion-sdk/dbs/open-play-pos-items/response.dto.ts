@@ -67,11 +67,17 @@ export class OpenPlayPosItemsPropertiesResponseDTO {
       workshopsIncluded: this.__props['Workshops Included'],
       duration: this.__props['Duration'],
       perks: this.__props['Perks'],
-      access: this.__props['Access'],
+      description: this.__props['Description'],
       priceBaht: this.__props['Price (Baht)'],
       name: this.__props['Name'],
       category: this.__props['Category'],
       loyverseId: this.__props['LoyverseID'],
+      variantOption_2Name: this.__props['Variant option 2 name'],
+      thaiDescription: this.__props['Thai Description'],
+      hasVariants: this.__props['Has variants'],
+      variantOption_1Name: this.__props['Variant option 1 name'],
+      variantsJson: this.__props['Variants JSON'],
+      variantOption_3Name: this.__props['Variant option 3 name'],
     }
   }
 
@@ -118,11 +124,11 @@ export class OpenPlayPosItemsPropertiesResponseDTO {
     }
   }
 
-  get access() {
+  get description() {
     return {
-      text: this.__props['Access']?.rich_text ? this.__props['Access'].rich_text.reduce((acc, item) => acc + item.plain_text, '') : undefined,
-      links: this.__props['Access']?.rich_text ? this.__props['Access'].rich_text.filter((item) => item.href?.length).map((item) => item.href) : [],
-      rich_text: this.__props['Access']?.rich_text,
+      text: this.__props['Description']?.rich_text ? this.__props['Description'].rich_text.reduce((acc, item) => acc + item.plain_text, '') : undefined,
+      links: this.__props['Description']?.rich_text ? this.__props['Description'].rich_text.filter((item) => item.href?.length).map((item) => item.href) : [],
+      rich_text: this.__props['Description']?.rich_text,
     }
   }
 
@@ -147,6 +153,50 @@ export class OpenPlayPosItemsPropertiesResponseDTO {
       text: this.__props['LoyverseID']?.rich_text ? this.__props['LoyverseID'].rich_text.reduce((acc, item) => acc + item.plain_text, '') : undefined,
       links: this.__props['LoyverseID']?.rich_text ? this.__props['LoyverseID'].rich_text.filter((item) => item.href?.length).map((item) => item.href) : [],
       rich_text: this.__props['LoyverseID']?.rich_text,
+    }
+  }
+
+  get variantOption_2Name() {
+    return {
+      text: this.__props['Variant option 2 name']?.rich_text ? this.__props['Variant option 2 name'].rich_text.reduce((acc, item) => acc + item.plain_text, '') : undefined,
+      links: this.__props['Variant option 2 name']?.rich_text ? this.__props['Variant option 2 name'].rich_text.filter((item) => item.href?.length).map((item) => item.href) : [],
+      rich_text: this.__props['Variant option 2 name']?.rich_text,
+    }
+  }
+
+  get thaiDescription() {
+    return {
+      text: this.__props['Thai Description']?.rich_text ? this.__props['Thai Description'].rich_text.reduce((acc, item) => acc + item.plain_text, '') : undefined,
+      links: this.__props['Thai Description']?.rich_text ? this.__props['Thai Description'].rich_text.filter((item) => item.href?.length).map((item) => item.href) : [],
+      rich_text: this.__props['Thai Description']?.rich_text,
+    }
+  }
+
+  get hasVariants() {
+    return this.__props['Has variants']?.checkbox
+  }
+
+  get variantOption_1Name() {
+    return {
+      text: this.__props['Variant option 1 name']?.rich_text ? this.__props['Variant option 1 name'].rich_text.reduce((acc, item) => acc + item.plain_text, '') : undefined,
+      links: this.__props['Variant option 1 name']?.rich_text ? this.__props['Variant option 1 name'].rich_text.filter((item) => item.href?.length).map((item) => item.href) : [],
+      rich_text: this.__props['Variant option 1 name']?.rich_text,
+    }
+  }
+
+  get variantsJson() {
+    return {
+      text: this.__props['Variants JSON']?.rich_text ? this.__props['Variants JSON'].rich_text.reduce((acc, item) => acc + item.plain_text, '') : undefined,
+      links: this.__props['Variants JSON']?.rich_text ? this.__props['Variants JSON'].rich_text.filter((item) => item.href?.length).map((item) => item.href) : [],
+      rich_text: this.__props['Variants JSON']?.rich_text,
+    }
+  }
+
+  get variantOption_3Name() {
+    return {
+      text: this.__props['Variant option 3 name']?.rich_text ? this.__props['Variant option 3 name'].rich_text.reduce((acc, item) => acc + item.plain_text, '') : undefined,
+      links: this.__props['Variant option 3 name']?.rich_text ? this.__props['Variant option 3 name'].rich_text.filter((item) => item.href?.length).map((item) => item.href) : [],
+      rich_text: this.__props['Variant option 3 name']?.rich_text,
     }
   }
 }

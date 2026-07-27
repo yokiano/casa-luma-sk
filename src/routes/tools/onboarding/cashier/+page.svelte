@@ -148,11 +148,23 @@
 						</li>
 						<li class="flex items-start gap-2">
 							<span class="text-indigo-700 font-bold select-none">•</span>
-							<span><strong>Check-in Item:</strong> Select customer, add one <strong>`Flexi Single Entrance`</strong> for each hour of play used, and close at 0-baht.</span>
+							<span><strong>Check-in:</strong> Attach the customer, add <strong>`Flexi Entrance`</strong>, choose 1–5 kids, and keep this 0-baht ticket open.</span>
 						</li>
 						<li class="flex items-start gap-2">
 							<span class="text-indigo-700 font-bold select-none">•</span>
-							<span><strong>Auto Validity:</strong> Sells on Loyverse are automated with a 60-day expiration window. Always link the customer account.</span>
+							<span><strong>Checkout:</strong> Punch the card for this visit, count only the new holes, add <strong>`Flexi Checkout`</strong>, choose 1–8 hours, keep quantity at 1, then close the same ticket.</span>
+						</li>
+						<li class="flex items-start gap-2">
+							<span class="text-indigo-700 font-bold select-none">•</span>
+							<span><strong>Examples:</strong> 1 child and 1 hole means `1 kid` then `1 hour`; 3 children and 2 holes means `3 kids` then `2 hours`. A 4-hour visit means `4 hours`, even if the physical card already has older holes.</span>
+						</li>
+						<li class="flex items-start gap-2">
+							<span class="text-indigo-700 font-bold select-none">•</span>
+							<span><strong>Never:</strong> Do not use elapsed time, cumulative card holes, child count as punches, or separate tickets for the Entrance and Checkout markers.</span>
+						</li>
+						<li class="flex items-start gap-2">
+							<span class="text-indigo-700 font-bold select-none">•</span>
+							<span><strong>Auto Validity:</strong> Flexi card sales are automated with a 60-day expiration window. Always link the customer account.</span>
 						</li>
 						<li class="flex items-start gap-2">
 							<span class="text-indigo-700 font-bold select-none">•</span>
@@ -273,7 +285,7 @@
 							</div>
 							<div class="rounded-2xl bg-white/70 border border-amber-100 p-4">
 								<h4 class="font-semibold text-[#2c2925]">Membership / Flexi</h4>
-								<p class="mt-1 text-xs leading-relaxed">Check in immediately with the correct 0-baht item before play. If expired/missing/no punches, call manager or sell paid entry/new card.</p>
+								<p class="mt-1 text-xs leading-relaxed">Use Flexi Entrance at arrival and Flexi Checkout when the card is punched. If expired, missing, or short on balance, call a manager or sell paid entry/new card.</p>
 							</div>
 							<div class="rounded-2xl bg-white/70 border border-amber-100 p-4">
 								<h4 class="font-semibold text-[#2c2925]">Cafe / Food Only</h4>

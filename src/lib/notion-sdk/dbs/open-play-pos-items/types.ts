@@ -26,11 +26,17 @@ export interface OpenPlayPosItemsResponse extends WithOptional<Omit<DatabaseObje
     "Workshops Included": RichTextPropertyItemObjectResponse,
     "Duration": RichTextPropertyItemObjectResponse,
     "Perks": Omit<MultiSelectPropertyItemObjectResponse, 'multi_select'> & { multi_select: [{ id: StringRequest, name: '10 separate full days of play', color: 'green' } | { id: StringRequest, name: 'Come & go on same day', color: 'blue' } | { id: StringRequest, name: '2 included kids workshops', color: 'pink' } | { id: StringRequest, name: '10% off food & drinks', color: 'red' } | { id: StringRequest, name: 'Free adult/nanny entry', color: 'purple' } | { id: StringRequest, name: 'Unlimited play for one child', color: 'yellow' } | { id: StringRequest, name: 'Up to 8 included workshops/month', color: 'gray' } | { id: StringRequest, name: '15% off food & drinks', color: 'orange' } | { id: StringRequest, name: '50% off one birthday party/year', color: 'default' } | { id: StringRequest, name: '1 free guest pass/month', color: 'brown' } | { id: StringRequest, name: 'Unlimited play for 12 months', color: 'red' } | { id: StringRequest, name: 'All included kids workshops', color: 'default' } | { id: StringRequest, name: '2 free guest passes/month', color: 'purple' } | { id: StringRequest, name: 'Priority event RSVP', color: 'red' }]},
-    "Access": RichTextPropertyItemObjectResponse,
+    "Description": RichTextPropertyItemObjectResponse,
     "Price (Baht)": NumberPropertyItemObjectResponse,
     "Name": TitlePropertyItemObjectResponse,
-    "Category": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'Membership', color: 'orange' } | { id: StringRequest, name: 'Entry', color: 'purple' }},
-    "LoyverseID": RichTextPropertyItemObjectResponse
+    "Category": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'Other', color: 'yellow' } | { id: StringRequest, name: 'Membership', color: 'orange' } | { id: StringRequest, name: 'Entry', color: 'purple' }},
+    "LoyverseID": RichTextPropertyItemObjectResponse,
+    "Variant option 2 name": RichTextPropertyItemObjectResponse,
+    "Thai Description": RichTextPropertyItemObjectResponse,
+    "Has variants": CheckboxPropertyItemObjectResponse,
+    "Variant option 1 name": RichTextPropertyItemObjectResponse,
+    "Variants JSON": RichTextPropertyItemObjectResponse,
+    "Variant option 3 name": RichTextPropertyItemObjectResponse
   }
 }
 
@@ -54,7 +60,7 @@ type OpenPlayPosItemsPerksPropertyFilter =
     }          
   | ExistencePropertyFilter
 
-type OpenPlayPosItemsAccessPropertyFilter = TextPropertyFilter
+type OpenPlayPosItemsDescriptionPropertyFilter = TextPropertyFilter
 type OpenPlayPosItemsPriceBahtPropertyFilter = NumberPropertyFilter
 type OpenPlayPosItemsNamePropertyFilter = TextPropertyFilter
 
@@ -70,8 +76,14 @@ type OpenPlayPosItemsCategoryPropertyFilter =
   | ExistencePropertyFilter      
 
 type OpenPlayPosItemsLoyverseIdPropertyFilter = TextPropertyFilter
+type OpenPlayPosItemsVariantOption_2NamePropertyFilter = TextPropertyFilter
+type OpenPlayPosItemsThaiDescriptionPropertyFilter = TextPropertyFilter
+type OpenPlayPosItemsHasVariantsPropertyFilter = CheckboxPropertyFilter
+type OpenPlayPosItemsVariantOption_1NamePropertyFilter = TextPropertyFilter
+type OpenPlayPosItemsVariantsJsonPropertyFilter = TextPropertyFilter
+type OpenPlayPosItemsVariantOption_3NamePropertyFilter = TextPropertyFilter
 
-export type OpenPlayPosItemsPropertyFilter = { highlight: OpenPlayPosItemsHighlightPropertyFilter } | { foodDiscount: OpenPlayPosItemsFoodDiscountPropertyFilter } | { id: OpenPlayPosItemsIdPropertyFilter } | { workshopsIncluded: OpenPlayPosItemsWorkshopsIncludedPropertyFilter } | { duration: OpenPlayPosItemsDurationPropertyFilter } | { perks: OpenPlayPosItemsPerksPropertyFilter } | { access: OpenPlayPosItemsAccessPropertyFilter } | { priceBaht: OpenPlayPosItemsPriceBahtPropertyFilter } | { name: OpenPlayPosItemsNamePropertyFilter } | { category: OpenPlayPosItemsCategoryPropertyFilter } | { loyverseId: OpenPlayPosItemsLoyverseIdPropertyFilter }
+export type OpenPlayPosItemsPropertyFilter = { highlight: OpenPlayPosItemsHighlightPropertyFilter } | { foodDiscount: OpenPlayPosItemsFoodDiscountPropertyFilter } | { id: OpenPlayPosItemsIdPropertyFilter } | { workshopsIncluded: OpenPlayPosItemsWorkshopsIncludedPropertyFilter } | { duration: OpenPlayPosItemsDurationPropertyFilter } | { perks: OpenPlayPosItemsPerksPropertyFilter } | { description: OpenPlayPosItemsDescriptionPropertyFilter } | { priceBaht: OpenPlayPosItemsPriceBahtPropertyFilter } | { name: OpenPlayPosItemsNamePropertyFilter } | { category: OpenPlayPosItemsCategoryPropertyFilter } | { loyverseId: OpenPlayPosItemsLoyverseIdPropertyFilter } | { variantOption_2Name: OpenPlayPosItemsVariantOption_2NamePropertyFilter } | { thaiDescription: OpenPlayPosItemsThaiDescriptionPropertyFilter } | { hasVariants: OpenPlayPosItemsHasVariantsPropertyFilter } | { variantOption_1Name: OpenPlayPosItemsVariantOption_1NamePropertyFilter } | { variantsJson: OpenPlayPosItemsVariantsJsonPropertyFilter } | { variantOption_3Name: OpenPlayPosItemsVariantOption_3NamePropertyFilter }
 
 export type OpenPlayPosItemsQuery = Omit<QueryDatabaseBodyParameters, 'filter' | 'sorts'> & {
   sorts?: Array<

@@ -22,17 +22,6 @@
 
       <div class="h-6 w-px bg-gray-300"></div>
 
-      <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none">
-        <input 
-          type="checkbox" 
-          bind:checked={state.deleteOrphans} 
-          class="rounded border-gray-300 text-black focus:ring-black"
-        />
-        Delete items not in Notion
-      </label>
-      
-      <div class="h-6 w-px bg-gray-300"></div>
-
       <button 
         class="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded text-sm font-medium transition-colors"
         onclick={() => state.fetchStatus()}
@@ -140,6 +129,13 @@
                       {#if item.syncResult.message}
                         <p class="text-[10px] italic opacity-80">{item.syncResult.message}</p>
                       {/if}
+                      {#if item.syncResult.variantIds && item.syncResult.variantIds.length > 0}
+                        <ul class="mt-1 text-[10px] font-normal opacity-80">
+                          {#each item.syncResult.variantIds as variant}
+                            <li>{[variant.option1Value, variant.option2Value, variant.option3Value].filter(Boolean).join(' / ')}: {variant.variantId}</li>
+                          {/each}
+                        </ul>
+                      {/if}
                     </div>
                   {/if}
 
@@ -152,11 +148,15 @@
                   {:else if item.status === 'NOT_IN_LOYVERSE'}
                     <span class="text-xs">Will be created in Loyverse</span>
                   {:else if item.status === 'NOT_IN_NOTION'}
-                    {#if state.deleteOrphans}
-                      <span class="text-xs text-red-600 font-medium">Will be deleted</span>
-                    {:else}
-                      <span class="text-xs">Enable delete option to remove</span>
-                    {/if}
+                    <span class="text-xs">Read-only orphan candidate; it will not be deleted</span>
+                  {/if}
+
+                  {#if item.warnings && item.warnings.length > 0}
+                    <ul class="list-disc list-inside text-xs text-amber-600">
+                      {#each item.warnings as warning}
+                        <li>{warning}</li>
+                      {/each}
+                    </ul>
                   {/if}
                 </div>
               </td>

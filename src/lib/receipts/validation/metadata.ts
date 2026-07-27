@@ -20,9 +20,26 @@ const metadataByCode: Record<string, Omit<ReceiptValidationCodeMetadata, 'code' 
     label: 'Membership entry without valid membership',
     protectsFrom: 'Member Valid Visit usage by customers with no active membership for the receipt date.'
   },
+  FLEXI_CHECKIN_WITHOUT_AVAILABLE_PASS: {
+    label: 'Flexi check-in without available pass',
+    protectsFrom: 'Flexi Entrance check-in when the attached customer has no usable Flexi balance.'
+  },
+  FLEXI_CHECKIN_INVALID_VARIANT: {
+    label: 'Invalid Flexi check-in variant',
+    protectsFrom: 'Child-count variants that cannot be safely interpreted.'
+  },
+  FLEXI_CHECKOUT_WITHOUT_AVAILABLE_PASS: {
+    label: 'Flexi checkout without available pass',
+    protectsFrom: 'Flexi Checkout visit punches when the attached customer has no remaining balance.'
+  },
+  FLEXI_CHECKOUT_INVALID_VARIANT: {
+    label: 'Invalid Flexi checkout variant',
+    protectsFrom: 'Unknown, malformed, duplicated, or incorrectly-quantified visit punch selections.'
+  },
+  /** Historical code retained so existing incidents render correctly. */
   FLEXI_ENTRY_WITHOUT_AVAILABLE_PASS: {
-    label: 'Flexi entry without available pass',
-    protectsFrom: 'Flexi Single Entrance usage when the attached customer has no remaining flexi balance.'
+    label: 'Historical Flexi usage without available pass',
+    protectsFrom: 'Historical Flexi usage when the attached customer had no remaining balance.'
   },
   DISCOUNT_100_PRESENT: {
     label: '100% discount used',

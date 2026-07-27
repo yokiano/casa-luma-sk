@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { LoyverseReceipt } from '$lib/receipts/types';
-import { FLEXI_SINGLE_ENTRANCE_ITEM_ID } from '$lib/receipts/open-play-items';
+import { FLEXI_CHECKOUT_ITEM_ID, LEGACY_FLEXI_SINGLE_HOUR_VARIANT_ID } from '$lib/receipts/open-play-items';
 import {
   allocateFlexiUsage,
   createFlexiPassUsageAutomation,
@@ -25,7 +25,7 @@ const createReceipt = (overrides: Partial<LoyverseReceipt> = {}): LoyverseReceip
   receipt_type: 'SALE',
   customer_id: ' cust-1 ',
   receipt_date: '2026-01-12T10:30:00.000Z',
-  line_items: [{ item_id: FLEXI_SINGLE_ENTRANCE_ITEM_ID, item_name: 'Flexi Single Entrance', quantity: 1 }],
+  line_items: [{ item_id: FLEXI_CHECKOUT_ITEM_ID, item_name: 'Flexi Checkout', variant_id: LEGACY_FLEXI_SINGLE_HOUR_VARIANT_ID, sku: '10143', quantity: 1 }],
   ...overrides
 });
 
@@ -157,12 +157,43 @@ describe('flexi pass usage automation', () => {
     expect(deps.updateFlexiPassUsage).not.toHaveBeenCalled();
   });
 
-  it('skips non-usage receipts', async () => {
+  it('skips non-usage receipts and Entrance-only tickets', async () => {
     const deps = createDeps();
 
     const results = await runAutomation(createReceipt({ line_items: [{ item_id: 'other-item', quantity: 1 }] }), deps);
-
     expect(results[0]).toMatchObject({ status: 'skipped', details: { reason: 'no_matching_item' } });
+
+    const entranceResults = await runAutomation(createReceipt({
+      line_items: [{ item_id: 'entrance-item', sku: 'FLEXI-ENTRANCE-KIDS-03', quantity: 1 }]
+    }), deps);
+    expect(entranceResults[0]).toMatchObject({ status: 'skipped', details: { reason: 'no_matching_item' } });
     expect(deps.lookupFlexiBalance).not.toHaveBeenCalled();
+  });
+
+  it('uses the Checkout variant value directly for a multi-hour visit', async () => {
+    const deps = createDeps();
+    const results = await runAutomation(createReceipt({
+      line_items: [{ item_id: FLEXI_CHECKOUT_ITEM_ID, sku: 'FLEXI-CHECKOUT-HOURS-03', quantity: 1 }]
+    }), deps);
+
+    expect(results[0]).toMatchObject({ status: 'completed', details: { selectedVisitPunches: 3 } });
+    expect(deps.lookupFlexiBalance).toHaveBeenCalledWith(expect.objectContaining({
+      currentVisitPunches: 3,
+      currentReceiptEntries: 3
+    }));
+  });
+
+  it('does not update Notion for malformed Checkout shape', async () => {
+    const deps = createDeps();
+    const results = await runAutomation(createReceipt({
+      line_items: [{ item_id: FLEXI_CHECKOUT_ITEM_ID, sku: 'FLEXI-CHECKOUT-HOURS-03', quantity: 2 }]
+    }), deps);
+
+    expect(results[0]).toMatchObject({
+      status: 'skipped',
+      details: { reason: 'invalid_checkout_variant', incidentCode: 'FLEXI_PASS_USAGE_INVALID_CHECKOUT' }
+    });
+    expect(deps.lookupFlexiBalance).not.toHaveBeenCalled();
+    expect(deps.updateFlexiPassUsage).not.toHaveBeenCalled();
   });
 });

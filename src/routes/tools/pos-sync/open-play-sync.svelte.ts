@@ -9,8 +9,7 @@ export class OpenPlaySyncState {
   lastReport = $state<SyncReport | null>(null);
   error = $state<string | null>(null);
   
-  // Options
-  deleteOrphans = $state(false);
+  // Open Play orphan candidates are intentionally read-only to protect linked POS identities.
   hideSynced = $state(false);
   // Computed: Filtered items
   filteredItems = $derived(this.items.filter(i => {
@@ -21,9 +20,8 @@ export class OpenPlaySyncState {
   // Computed: Items that need attention
   itemsToSync = $derived(this.items.filter(i => 
     i.status === 'NOT_IN_LOYVERSE' || 
-    i.status === 'MODIFIED' || 
-    i.status === 'LINKED_ONLY' ||
-    (this.deleteOrphans && i.status === 'NOT_IN_NOTION')
+    i.status === 'MODIFIED' ||
+    i.status === 'LINKED_ONLY'
   ));
 
   constructor() {
@@ -59,18 +57,16 @@ export class OpenPlaySyncState {
     this.error = null;
     
     // Mark items as syncing
-    const idsToSync = this.itemsToSync.map(i => i.notionId || i.loyverseId).filter(Boolean) as string[];
+    const notionIdsToSync = this.itemsToSync.map((item) => item.notionId).filter(Boolean) as string[];
     this.items.forEach(i => {
-      if ((i.notionId && idsToSync.includes(i.notionId)) || (i.loyverseId && idsToSync.includes(i.loyverseId))) {
+      if (i.notionId && notionIdsToSync.includes(i.notionId)) {
         i.isSyncing = true;
         i.syncResult = undefined;
       }
     });
 
     try {
-      const report = await syncOpenPlayItems({ 
-        deleteOrphans: this.deleteOrphans
-      });
+      const report = await syncOpenPlayItems({ itemIds: notionIdsToSync });
       this.applyReport(report);
       await this.fetchStatus();
     } catch (e: any) {

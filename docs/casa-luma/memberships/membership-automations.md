@@ -6,7 +6,7 @@ Current automations:
 
 - Create Notion `🎫 Memberships` rows from eligible weekly/monthly membership purchase receipts.
 - Create structured Notion `🎟️ Flexi Passes` rows from eligible `Flexible Resident` / `flexible Regular` flexi purchase receipts.
-- Synchronize Notion `🎟️ Flexi Passes` `Entries Used` / `Entries Left` counters from `Flexi Single Entrance` usage receipts.
+- Synchronize Notion `🎟️ Flexi Passes` `Entries Used` / `Entries Left` counters from valid `Flexi Checkout` visit-punch receipts.
 
 ## Current webhook context
 
@@ -57,13 +57,15 @@ Flexi pass purchase automation writes to the dedicated `🎟️ Flexi Passes` da
 - Cancelled receipts are skipped and alerted for review.
 - Refund receipts mark matching flexi pass rows as `Refunded`, set `Entries Left = 0`, and store refund receipt metadata.
 
-Flexi pass usage automation runs on `Flexi Single Entrance` receipts:
+Flexi pass usage automation runs only when a receipt contains one valid `Flexi Checkout` line:
 
+- Maps the selected variant directly to holes punched for this visit.
+- Requires quantity `1`; rejects unknown, malformed, or multiple Checkout lines without changing Notion.
+- Ignores `Flexi Entrance`, which is a check-in marker and never consumes entries.
 - Uses Neon receipt history as the idempotent source of truth for cumulative entries used by the Loyverse customer.
 - Finds non-refunded Flexi Passes records for that Loyverse customer whose `Valid From` is on/before the receipt date.
-- Allocates cumulative used entries oldest pass first.
-- Updates each affected Notion row's `Entries Used` and `Entries Left` only when the stored counters differ.
-- Skips missing-customer/no-pass cases without writing; receipt validation still raises the operational warning.
+- Allocates cumulative used entries oldest pass first and updates only changed Notion counters.
+- Skips missing-customer/no-pass/cancelled/refund cases without writing; receipt validation reports actionable findings where appropriate.
 
 Validation replacement and backfill/import are later milestones.
 

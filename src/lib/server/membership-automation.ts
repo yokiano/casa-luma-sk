@@ -97,6 +97,21 @@ const toExistingMembership = (dto: MembershipsResponseDTO) => ({
   notes: dto.properties.notes?.text ?? null
 });
 
+const queryAllFlexiPassPages = async (flexiDb: FlexiPassesDatabase, query: Record<string, unknown>) => {
+  const results: unknown[] = [];
+  let startCursor: string | undefined;
+  do {
+    const response = await flexiDb.query({
+      ...query,
+      page_size: 100,
+      ...(startCursor ? { start_cursor: startCursor } : {})
+    } as any);
+    results.push(...response.results);
+    startCursor = response.has_more && response.next_cursor ? response.next_cursor : undefined;
+  } while (startCursor);
+  return results;
+};
+
 const appendRefundNote = (notes: string | null | undefined, input: {
   originalReceiptNumber: string;
   refundReceiptNumber: string;
@@ -246,14 +261,13 @@ export const createNotionFlexiPassAutomationDeps = (
 
   async findExistingFlexiPassRecord(query) {
     const flexiDb = new FlexiPassesDatabase({ notionSecret: getNotionSecret() });
-    const response = await flexiDb.query({
-      page_size: 100,
+    const results = await queryAllFlexiPassPages(flexiDb, {
       filter: query.sourceReceiptKey
         ? { sourceReceiptKey: { equals: query.sourceReceiptKey } }
         : { sourceReceiptNumber: { equals: query.sourceReceiptNumber } }
-    } as any);
+    });
 
-    const existing = response.results
+    const existing = results
       .map((result) => new FlexiPassesResponseDTO(result as any))
       .find((dto) => flexiRecordMatchesReceipt(dto, query));
 
@@ -262,13 +276,12 @@ export const createNotionFlexiPassAutomationDeps = (
 
   async findFlexiPassRecordsByReceiptNumber({ receiptNumber, itemIds }) {
     const flexiDb = new FlexiPassesDatabase({ notionSecret: getNotionSecret() });
-    const response = await flexiDb.query({
-      page_size: 100,
+    const results = await queryAllFlexiPassPages(flexiDb, {
       filter: { sourceReceiptNumber: { equals: receiptNumber } }
-    } as any);
+    });
 
     const itemIdSet = new Set(itemIds ?? []);
-    return response.results
+    return results
       .map((result) => new FlexiPassesResponseDTO(result as any))
       .filter((dto) => {
         if (!itemIdSet.size) return true;
@@ -341,15 +354,14 @@ export const createNotionFlexiPassUsageAutomationDeps = (
 
   async findFlexiPassRecordsForUsage({ loyverseCustomerId, at }) {
     const flexiDb = new FlexiPassesDatabase({ notionSecret: getNotionSecret() });
-    const response = await flexiDb.query({
-      page_size: 100,
+    const results = await queryAllFlexiPassPages(flexiDb, {
       filter: { loyverseCustomerId: { contains: normalizeId(loyverseCustomerId) } },
       sorts: [{ property: 'validFrom', direction: 'ascending' }]
-    } as any);
+    });
     const atDate = at.slice(0, 10);
     const normalizedCustomerId = normalizeId(loyverseCustomerId);
 
-    return response.results
+    return results
       .map((result) => new FlexiPassesResponseDTO(result as any))
       .filter((dto) => {
         const status = dto.properties.automationStatus?.name ?? '';

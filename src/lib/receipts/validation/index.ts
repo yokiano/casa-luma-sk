@@ -6,6 +6,8 @@ export * from './incident-severity';
 export * from './rules/always-fail';
 export * from './rules/discount-hundred-percent';
 export * from './rules/discount-total-over-threshold';
+export * from './rules/flexi-checkin';
+export * from './rules/flexi-checkout';
 export * from './rules/flexi-pass-entry';
 export * from './rules/member-valid-visit';
 export * from './rules/missing-customer';

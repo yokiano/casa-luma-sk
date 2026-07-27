@@ -14,7 +14,8 @@ import {
 } from '$lib/receipts/validation';
 import { ONE_HOUR_ITEM_ID, ONE_HOUR_TO_DAY_ITEM_ID } from '$lib/receipts/receipt-tools';
 import {
-  FLEXI_SINGLE_ENTRANCE_ITEM_ID,
+  FLEXI_CHECKOUT_ITEM_ID,
+  LEGACY_FLEXI_SINGLE_HOUR_VARIANT_ID,
   MEMBER_VALID_VISIT_ITEM_ID
 } from '$lib/receipts/open-play-items';
 
@@ -125,10 +126,12 @@ describe('receipt validation suite', () => {
     expect(result.hasFailures).toBe(false);
   });
 
-  it('includes total discount validation in the default suite', () => {
+  it('includes total discount and both Flexi rules in the default suite', () => {
     const suite = createDefaultReceiptValidationSuite();
 
     expect(suite.rules.some((rule) => rule.code === 'DISCOUNT_TOTAL_OVER_THRESHOLD')).toBe(true);
+    expect(suite.rules.some((rule) => rule.code === 'FLEXI_CHECKIN_WITHOUT_AVAILABLE_PASS')).toBe(true);
+    expect(suite.rules.some((rule) => rule.code === 'FLEXI_CHECKOUT_WITHOUT_AVAILABLE_PASS')).toBe(true);
   });
 
   it('allows the 15-minute grace period before flagging one-hour tickets', async () => {
@@ -292,22 +295,19 @@ describe('receipt validation suite', () => {
     expect(result.findings[0].code).toBe('RECEIPT_CLOSED_WITHOUT_CUSTOMER');
   });
 
-  it('flags mixed receipts when an Open Play line is present', async () => {
+  it('does not duplicate Flexi missing-customer findings in the generic rule', async () => {
     const suite = createReceiptValidationSuite([createMissingCustomerRule()]);
     const receipt = createReceipt({
       customer_id: undefined,
       line_items: [
         { item_id: 'restaurant-item', item_name: 'Coffee', quantity: 1 },
-        { item_id: FLEXI_SINGLE_ENTRANCE_ITEM_ID, item_name: 'Flexi Entry', quantity: 1 }
+        { item_id: FLEXI_CHECKOUT_ITEM_ID, item_name: 'Flexi Checkout', variant_id: LEGACY_FLEXI_SINGLE_HOUR_VARIANT_ID, sku: '10143', quantity: 1 }
       ]
     });
 
     const result = await runReceiptValidationSuite(suite, receipt);
 
-    expect(result.findings[0].code).toBe('RECEIPT_CLOSED_WITHOUT_CUSTOMER');
-    expect(result.findings[0].details?.items).toEqual([
-      expect.objectContaining({ itemId: FLEXI_SINGLE_ENTRANCE_ITEM_ID })
-    ]);
+    expect(result.hasFailures).toBe(false);
   });
 
   it('skips missing customer validation for refunds', async () => {
@@ -373,7 +373,7 @@ describe('receipt validation suite', () => {
     const suite = createReceiptValidationSuite([createFlexiPassEntryRule({ lookupFlexiBalance })]);
     const receipt = createReceipt({
       customer_id: undefined,
-      line_items: [{ item_id: FLEXI_SINGLE_ENTRANCE_ITEM_ID, item_name: 'Flexi Single Entrance', quantity: 1 }]
+      line_items: [{ item_id: FLEXI_CHECKOUT_ITEM_ID, item_name: 'Flexi Checkout', variant_id: LEGACY_FLEXI_SINGLE_HOUR_VARIANT_ID, sku: '10143', quantity: 1 }]
     });
 
     const result = await runReceiptValidationSuite(suite, receipt);
@@ -398,7 +398,7 @@ describe('receipt validation suite', () => {
     });
     const suite = createReceiptValidationSuite([createFlexiPassEntryRule({ lookupFlexiBalance })]);
     const receipt = createReceipt({
-      line_items: [{ item_id: FLEXI_SINGLE_ENTRANCE_ITEM_ID, item_name: 'Flexi Single Entrance', quantity: 1 }]
+      line_items: [{ item_id: FLEXI_CHECKOUT_ITEM_ID, item_name: 'Flexi Checkout', variant_id: LEGACY_FLEXI_SINGLE_HOUR_VARIANT_ID, sku: '10143', quantity: 1 }]
     });
 
     const result = await runReceiptValidationSuite(suite, receipt, { receiptKey: 'rk-1' });
@@ -422,7 +422,7 @@ describe('receipt validation suite', () => {
     });
     const suite = createReceiptValidationSuite([createFlexiPassEntryRule({ lookupFlexiBalance })]);
     const receipt = createReceipt({
-      line_items: [{ item_id: FLEXI_SINGLE_ENTRANCE_ITEM_ID, item_name: 'Flexi Single Entrance', quantity: 1 }]
+      line_items: [{ item_id: FLEXI_CHECKOUT_ITEM_ID, item_name: 'Flexi Checkout', variant_id: LEGACY_FLEXI_SINGLE_HOUR_VARIANT_ID, sku: '10143', quantity: 1 }]
     });
 
     const result = await runReceiptValidationSuite(suite, receipt);

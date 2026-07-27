@@ -40,6 +40,12 @@ export interface ItemSyncResult {
   action: 'CREATE' | 'UPDATE' | 'LINK' | 'DELETE' | 'SKIP';
   status: 'SUCCESS' | 'ERROR';
   message?: string;
+  variantIds?: Array<{
+    option1Value?: string;
+    option2Value?: string;
+    option3Value?: string;
+    variantId: string;
+  }>;
 }
 
 export interface SyncReport {

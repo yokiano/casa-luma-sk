@@ -1,5 +1,6 @@
 import { createReceiptValidationSuite } from './engine';
-import { createFlexiPassEntryRule, type FlexiPassEntryRuleOptions } from './rules/flexi-pass-entry';
+import { createFlexiCheckinRule, type FlexiCheckinRuleOptions } from './rules/flexi-checkin';
+import { createFlexiCheckoutRule, type FlexiCheckoutRuleOptions } from './rules/flexi-checkout';
 import { createHundredPercentDiscountRule, type HundredPercentDiscountRuleOptions } from './rules/discount-hundred-percent';
 import {
   createDiscountTotalOverThresholdRule,
@@ -13,7 +14,10 @@ import type { ReceiptValidationRule, ReceiptValidationSuite } from './types';
 export interface DefaultReceiptValidationSuiteOptions {
   missingCustomerRule?: MissingCustomerRuleOptions;
   memberValidVisitRule?: MemberValidVisitRuleOptions;
-  flexiPassEntryRule?: FlexiPassEntryRuleOptions;
+  flexiCheckinRule?: FlexiCheckinRuleOptions;
+  flexiCheckoutRule?: FlexiCheckoutRuleOptions;
+  /** Deprecated alias for flexiCheckoutRule. */
+  flexiPassEntryRule?: FlexiCheckoutRuleOptions;
   discountRule?: HundredPercentDiscountRuleOptions;
   discountTotalRule?: DiscountTotalOverThresholdRuleOptions;
   oneHourNotConvertedRule?: OneHourNotConvertedRuleOptions;
@@ -23,10 +27,13 @@ export interface DefaultReceiptValidationSuiteOptions {
 export const createDefaultReceiptValidationSuite = (
   options: DefaultReceiptValidationSuiteOptions = {}
 ): ReceiptValidationSuite => {
+  const checkoutOptions = options.flexiCheckoutRule ?? options.flexiPassEntryRule;
+
   return createReceiptValidationSuite([
     createMissingCustomerRule(options.missingCustomerRule),
     createMemberValidVisitRule(options.memberValidVisitRule),
-    createFlexiPassEntryRule(options.flexiPassEntryRule),
+    createFlexiCheckinRule(options.flexiCheckinRule),
+    createFlexiCheckoutRule(checkoutOptions),
     createHundredPercentDiscountRule(options.discountRule),
     createDiscountTotalOverThresholdRule(options.discountTotalRule),
     createOneHourNotConvertedRule(options.oneHourNotConvertedRule),

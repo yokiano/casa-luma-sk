@@ -19,7 +19,11 @@ const VALIDATION_LABEL_BY_CODE: Record<string, string> = {
   DISCOUNT_TOTAL_OVER_THRESHOLD: 'Receipt Alert — Discount Total Over ฿400',
   MEMBERSHIP_ENTRY_WITHOUT_VALID_MEMBERSHIP:
     'Receipt Violation — Membership Entry Without Valid Membership',
-  FLEXI_ENTRY_WITHOUT_AVAILABLE_PASS: 'Receipt Violation — Flexi Entry Without Available Pass',
+  FLEXI_CHECKIN_WITHOUT_AVAILABLE_PASS: 'Receipt Violation — Flexi Check-in Without Available Pass',
+  FLEXI_CHECKIN_INVALID_VARIANT: 'Receipt Violation — Invalid Flexi Check-in Variant',
+  FLEXI_CHECKOUT_WITHOUT_AVAILABLE_PASS: 'Receipt Violation — Flexi Checkout Without Available Pass',
+  FLEXI_CHECKOUT_INVALID_VARIANT: 'Receipt Violation — Invalid Flexi Checkout Variant',
+  FLEXI_ENTRY_WITHOUT_AVAILABLE_PASS: 'Receipt Violation — Historical Flexi Usage Without Available Pass',
   RECEIPT_CLOSED_WITHOUT_CUSTOMER: 'Receipt Alert — Closed Without Customer',
   FORCED_TEST_FAILURE: 'Receipt Alert — Forced Test Failure'
 };
@@ -296,8 +300,35 @@ const formatFlexiDetails = (details: Record<string, unknown>): string[] => {
 
   if (reason) lines.push(`Reason: ${reason.replaceAll('_', ' ')}`);
   if (customerId) lines.push(`Customer: ${customerId}`);
-  if (isFiniteNumber(details.currentReceiptEntries)) {
-    lines.push(`Current entries: ${formatNumber(details.currentReceiptEntries)}`);
+  const selectedVisitPunches = isFiniteNumber(details.selectedVisitPunches)
+    ? details.selectedVisitPunches
+    : isFiniteNumber(details.currentVisitPunches)
+      ? details.currentVisitPunches
+      : isFiniteNumber(details.currentReceiptEntries)
+        ? details.currentReceiptEntries
+        : null;
+  if (selectedVisitPunches !== null) {
+    lines.push(`Holes punched this visit: ${formatNumber(selectedVisitPunches)}`);
+  }
+  if (getString(details.usageItemId)) lines.push(`Item ID: ${getString(details.usageItemId)}`);
+  if (getString(details.variantId)) lines.push(`Variant ID: ${getString(details.variantId)}`);
+  if (Array.isArray(details.validationErrors)) {
+    const errors = details.validationErrors.filter((value): value is string => typeof value === 'string');
+    if (errors.length) lines.push(`Validation: ${formatList(errors)}`);
+  }
+  if (Array.isArray(details.unknownVariantDiagnostics)) {
+    const diagnostics = details.unknownVariantDiagnostics.filter((value): value is string => typeof value === 'string');
+    if (diagnostics.length) lines.push(`History review: ${formatList(diagnostics)}`);
+  }
+  if (Array.isArray(details.lines)) {
+    const lineLabels = details.lines.filter(isRecord).map((line) => {
+      const itemId = getString(line.itemId);
+      const variantId = getString(line.variantId);
+      const sku = getString(line.sku);
+      const quantity = isFiniteNumber(line.quantity) ? ` × ${formatNumber(line.quantity)}` : '';
+      return `${itemId ?? 'unknown item'} / ${variantId ?? 'unknown variant'}${sku ? ` / ${sku}` : ''}${quantity}`;
+    });
+    if (lineLabels.length) lines.push(`Flexi lines: ${formatList(lineLabels)}`);
   }
   if (isFiniteNumber(details.remainingBeforeCurrentReceipt) || isFiniteNumber(details.remainingAfterCurrentReceipt)) {
     lines.push(
@@ -339,6 +370,10 @@ const formatValidationDetails = (code: string | null, details: Record<string, un
       return formatOneHourDetails(details);
     case 'MEMBERSHIP_ENTRY_WITHOUT_VALID_MEMBERSHIP':
       return formatMembershipDetails(details);
+    case 'FLEXI_CHECKIN_WITHOUT_AVAILABLE_PASS':
+    case 'FLEXI_CHECKIN_INVALID_VARIANT':
+    case 'FLEXI_CHECKOUT_WITHOUT_AVAILABLE_PASS':
+    case 'FLEXI_CHECKOUT_INVALID_VARIANT':
     case 'FLEXI_ENTRY_WITHOUT_AVAILABLE_PASS':
       return formatFlexiDetails(details);
     case 'RECEIPT_CLOSED_WITHOUT_CUSTOMER':
@@ -545,9 +580,13 @@ const buildFlexiPassAutomationAlertPayload = (input: ReportIncidentInput): Alert
   const cardsPurchased = isFiniteNumber(input.context?.cardsPurchased) ? input.context.cardsPurchased : null;
   const entriesGranted = isFiniteNumber(input.context?.entriesGranted) ? input.context.entriesGranted : null;
   const entriesLeft = isFiniteNumber(input.context?.entriesLeft) ? input.context.entriesLeft : null;
-  const currentReceiptEntries = isFiniteNumber(input.context?.currentReceiptEntries)
-    ? input.context.currentReceiptEntries
-    : null;
+  const selectedVisitPunches = isFiniteNumber(input.context?.selectedVisitPunches)
+    ? input.context.selectedVisitPunches
+    : isFiniteNumber(input.context?.currentVisitPunches)
+      ? input.context.currentVisitPunches
+      : isFiniteNumber(input.context?.currentReceiptEntries)
+        ? input.context.currentReceiptEntries
+        : null;
   const entriesPurchased = isFiniteNumber(input.context?.entriesPurchased) ? input.context.entriesPurchased : null;
   const entriesUsedIncludingCurrent = isFiniteNumber(input.context?.entriesUsedIncludingCurrent)
     ? input.context.entriesUsedIncludingCurrent
@@ -571,7 +610,7 @@ const buildFlexiPassAutomationAlertPayload = (input: ReportIncidentInput): Alert
     cardsPurchased !== null ? `Cards purchased (history): ${formatNumber(cardsPurchased)}` : null,
     entriesGranted !== null ? `Entries granted: ${formatNumber(entriesGranted)}` : null,
     entriesPurchased !== null ? `Entries purchased (history): ${formatNumber(entriesPurchased)}` : null,
-    currentReceiptEntries !== null ? `Entries on this receipt: ${formatNumber(currentReceiptEntries)}` : null,
+    selectedVisitPunches !== null ? `Holes punched this visit: ${formatNumber(selectedVisitPunches)}` : null,
     entriesUsedIncludingCurrent !== null
       ? `Entries used incl. this receipt: ${formatNumber(entriesUsedIncludingCurrent)}`
       : null,

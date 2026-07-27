@@ -1,4 +1,5 @@
 import type { LoyverseReceiptLineItem } from '$lib/receipts/types';
+import { isFlexiOperationalLineItem } from '$lib/receipts/flexi-line-items';
 import { OPEN_PLAY_CUSTOMER_REQUIRED_ITEM_IDS } from '$lib/receipts/open-play-items';
 import type { ReceiptValidationRule } from '../types';
 
@@ -37,7 +38,10 @@ export const createMissingCustomerRule = (
       const matchingItems = (receipt.line_items ?? []).filter(
         (lineItem) => typeof lineItem.item_id === 'string' && requiredItemIds.has(lineItem.item_id)
       );
-      if (!matchingItems.length) return null;
+      // Flexi has dedicated check-in/check-out validation. Excluding those lines
+      // here prevents duplicate generic missing-customer incidents.
+      const nonFlexiMatchingItems = matchingItems.filter((lineItem) => !isFlexiOperationalLineItem(lineItem));
+      if (!nonFlexiMatchingItems.length) return null;
 
       return {
         code: 'RECEIPT_CLOSED_WITHOUT_CUSTOMER',
@@ -47,8 +51,8 @@ export const createMissingCustomerRule = (
           receiptNumber: receipt.receipt_number,
           receiptType: receipt.receipt_type ?? null,
           totalMoney: receipt.total_money ?? null,
-          itemCount: matchingItems.length,
-          items: summarizeItems(matchingItems)
+          itemCount: nonFlexiMatchingItems.length,
+          items: summarizeItems(nonFlexiMatchingItems)
         }
       };
     }

@@ -1,4 +1,8 @@
 Items
+
+## Local Open Play variant synchronization
+
+Open Play item sync sends option names and complete variant payloads from Notion `Variants JSON`. It compares variants by explicit `variant_id`, stable SKU, then normalized option tuple, preserves existing variant IDs, and never deletes/recreates an item when Loyverse rejects an option-structure change. It fetches all Notion pages before status/orphan classification, validates variant JSON before external mutation, writes returned IDs back to Notion, and keeps orphan handling read-only. Flexi procedures are in `docs/loyverse/flexi-checkin-checkout.md`.
 Get a single item
 path Parameters
 item_id
