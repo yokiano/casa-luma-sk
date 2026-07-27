@@ -24,6 +24,17 @@ describe('incident notification defaults', () => {
     ).toBe(true);
   });
 
+  it('does not notify successful Flexi Pass creation', () => {
+    expect(
+      shouldNotifyByDefault('info', {
+        source: 'receipt-webhook',
+        code: 'FLEXI_PASSES_CREATED',
+        severity: 'info',
+        message: 'Flexi Pass created'
+      })
+    ).toBe(false);
+  });
+
   it('notifies for an accepted receipt replay request', () => {
     expect(
       shouldNotifyByDefault('info', {

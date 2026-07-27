@@ -19,7 +19,7 @@ export const shouldNotifyByDefault = (severity: IncidentSeverity, input?: Report
     typeof input?.code === 'string' &&
     (input.code === 'MEMBERSHIP_CREATED' ||
       input.code.startsWith('MEMBERSHIP_CREATION_') ||
-      input.code === 'FLEXI_PASSES_CREATED' ||
+      // Successful Flexi Pass creation is persisted, but is intentionally not a user-facing alert.
       input.code.startsWith('FLEXI_PASS_') ||
       input.code === 'RECEIPT_WEBHOOK_REPLAY_REQUESTED')
   );
