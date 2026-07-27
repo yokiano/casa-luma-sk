@@ -31,18 +31,21 @@ const asLedgerDefaults = (value: unknown): Record<string, string> => value && ty
  */
 const applyExpenseScanDefaults = async (classification: EmailClassification): Promise<EmailClassification> => {
   if (classification.classification !== 'expense' || classification.processingState !== 'ready') return classification;
-  if (!classification.description) {
+  const expenseRuleRecipient = classification.counterparty ?? classification.description;
+  if (!expenseRuleRecipient) {
     return {
       ...classification,
       processingState: 'review',
-      reviewReason: 'No expense description/memo was extracted for Expense Scan rule matching. No external Ledger action was run.',
+      reviewReason: 'No expense recipient or description was extracted for Expense Scan rule matching. No external Ledger action was run.',
       notify: true
     };
   }
 
   let matchedRule;
   try {
-    matchedRule = await findExpenseScanRule(classification.description);
+    // K BIZ descriptions come from Your Note, while Expense Scan routing is
+    // recipient-based. Prefer the extracted payee and retain the note as the Ledger title.
+    matchedRule = await findExpenseScanRule(expenseRuleRecipient);
   } catch {
     return {
       ...classification,
@@ -55,7 +58,7 @@ const applyExpenseScanDefaults = async (classification: EmailClassification): Pr
     return {
       ...classification,
       processingState: 'review',
-      reviewReason: 'No expense-scan rule matched the extracted description. No external Ledger action was run.',
+      reviewReason: 'No expense-scan rule matched the extracted recipient or description. No external Ledger action was run.',
       notify: true
     };
   }

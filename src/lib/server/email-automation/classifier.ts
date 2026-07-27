@@ -101,6 +101,27 @@ export const extractDescription = (text: string) => {
   return value ? value.slice(0, 240) : undefined;
 };
 
+/** Extracts the payee/recipient used by the shared Expense Scan routing rules. */
+export const extractCounterparty = (text: string) => {
+  const normalizedText = normalize(text);
+  const valueBoundary = String.raw`(?=\s+(?:Amount(?:\s*\([^)]*\))?|Fee(?:\s*\([^)]*\))?|Your\s+(?:Note|Memo)|Memo|Creator|Authorizer|จำนวนเงิน(?:\s*\([^)]*\))?|ค่าธรรมเนียม|บันทึก(?:ของท่าน|ช่วยจำ)?|ผู้ทำรายการ|ผู้อนุมัติรายการ)\s*[:：-]|$)`;
+  const labels = [
+    String.raw`Account\s+Name\s+from\s+System`,
+    String.raw`Payee\s+Name`,
+    String.raw`Recipient\s+Name`,
+    String.raw`To\s+Account`,
+    String.raw`ชื่อบัญชีผู้รับ`,
+    String.raw`ชื่อผู้รับเงิน`,
+    String.raw`เพื่อเข้าบัญชีบริษัท`
+  ];
+  for (const label of labels) {
+    const match = normalizedText.match(new RegExp(`${label}\\s*[:：-]\\s*(.+?)${valueBoundary}`, 'iu'));
+    const value = match?.[1]?.trim();
+    if (value) return value.slice(0, 240);
+  }
+  return undefined;
+};
+
 export const extractAmount = (text: string) => {
   const match = text.match(/(?:amount|total)(?:\s*\([^)]*\))?\s*[:=]?\s*(?:THB|฿)?\s*([\d,]+(?:\.\d{1,2})?)/i) ?? text.match(/(?:THB|฿)\s*[:=]?\s*([\d,]+(?:\.\d{1,2})?)/i);
   if (!match) return undefined;
@@ -108,7 +129,7 @@ export const extractAmount = (text: string) => {
   return Number.isFinite(amount) ? Math.round(amount * 100) : undefined;
 };
 
-const successfulExpense = (subtype: string, externalRef: string | undefined, amountMinor: number | undefined, description: string | undefined): EmailClassification => {
+const successfulExpense = (subtype: string, externalRef: string | undefined, amountMinor: number | undefined, description: string | undefined, counterparty: string | undefined): EmailClassification => {
   const missing = [externalRef === undefined ? 'transaction reference' : null, amountMinor === undefined ? 'amount' : null].filter(Boolean);
   return {
     classification: 'expense',
@@ -116,6 +137,7 @@ const successfulExpense = (subtype: string, externalRef: string | undefined, amo
     processingState: missing.length > 0 ? 'review' : 'ready',
     reviewReason: missing.length > 0 ? `A success email was matched, but its ${missing.join(' and ')} could not be extracted.` : undefined,
     description,
+    counterparty,
     externalRef,
     amountMinor,
     currency: amountMinor === undefined ? undefined : 'THB',
@@ -205,6 +227,7 @@ export const classificationFromRule = (input: EmailAutomationInput, rule: EmailC
   const externalRef = extractReference(text);
   const amountMinor = extractAmount(text);
   const description = extractDescription(text);
+  const counterparty = extractCounterparty(text);
   const handlerKey = rule.handlerKey ?? undefined;
   const matchedRuleName = rule.name;
   const notifyPolicy = rule.notifyPolicy ?? 'review_and_success';
@@ -215,6 +238,7 @@ export const classificationFromRule = (input: EmailAutomationInput, rule: EmailC
       subtype: rule.subtype,
       processingState: 'ignored',
       description,
+      counterparty,
       externalRef,
       amountMinor,
       currency: amountMinor ? 'THB' : undefined,
@@ -233,6 +257,7 @@ export const classificationFromRule = (input: EmailAutomationInput, rule: EmailC
       processingState: 'review',
       reviewReason: `Matched email classification rule: ${rule.name}.`,
       description,
+      counterparty,
       externalRef,
       amountMinor,
       currency: amountMinor ? 'THB' : undefined,
@@ -252,6 +277,7 @@ export const classificationFromRule = (input: EmailAutomationInput, rule: EmailC
     processingState,
     reviewReason: missing.length > 0 ? `Rule ${rule.name} matched, but its ${missing.join(' and ')} could not be extracted.` : undefined,
     description,
+    counterparty,
     externalRef,
     amountMinor,
     currency: amountMinor === undefined ? undefined : 'THB',
@@ -281,19 +307,20 @@ const builtInClassify = (input: EmailAutomationInput): EmailClassification => {
   const externalRef = extractReference(text);
   const amountMinor = extractAmount(text);
   const description = extractDescription(text);
+  const counterparty = extractCounterparty(text);
   const isKbiz = /k\s*biz|kasikorn|kbank/i.test(`${input.from} ${text}`);
 
   if (/^status .*\(approved\)/i.test(subject)) {
     return { classification: 'ignore', subtype: 'approved_shadow', processingState: 'ignored', description, externalRef, amountMinor, currency: amountMinor ? 'THB' : undefined, notify: false };
   }
   if (/result of bill payment\/top-up \(success\)/i.test(subject)) {
-    return successfulExpense('bill_payment_success', externalRef, amountMinor, description);
+    return successfulExpense('bill_payment_success', externalRef, amountMinor, description, counterparty);
   }
   if (/result of other account funds transfer \(other bank\) \(success\)/i.test(subject)) {
-    return successfulExpense('other_bank_transfer_success', externalRef, amountMinor, description);
+    return successfulExpense('other_bank_transfer_success', externalRef, amountMinor, description, counterparty);
   }
   if (/result of promptpay funds transfer \(success\)/i.test(subject)) {
-    return successfulExpense('promptpay_transfer_success', externalRef, amountMinor, description);
+    return successfulExpense('promptpay_transfer_success', externalRef, amountMinor, description, counterparty);
   }
   if (/could not be deposited|deposit.*failed/i.test(text) && /k\s*shop/i.test(text)) {
     return { classification: 'review', subtype: 'kshop_settlement_failed', processingState: 'review', reviewReason: 'K SHOP settlement was not deposited.', description, notify: true };

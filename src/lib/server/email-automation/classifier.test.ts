@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { classifyEmail, classifyEmailWithDiagnostics, createEmailAutomationHash, extractDescription, extractReference, matchesClassificationRule, shouldCreateLedgerExpense, type EmailAutomationInput, type EmailClassificationRuleInput } from './classifier';
+import { classifyEmail, classifyEmailWithDiagnostics, createEmailAutomationHash, extractCounterparty, extractDescription, extractReference, matchesClassificationRule, shouldCreateLedgerExpense, type EmailAutomationInput, type EmailClassificationRuleInput } from './classifier';
 
 const baseEmail = (overrides: Partial<EmailAutomationInput> = {}): EmailAutomationInput => ({
   receivedAt: '2026-07-11T10:00:00.000Z',
@@ -70,6 +70,24 @@ describe('email automation classifier', () => {
 
     const result = classifyEmail(baseEmail({ textBody: thai }), [dbExpenseRule({ bodyPatterns: [] })]);
     expect(result).toMatchObject({ description: 'Makto', externalRef: 'BILS260715313032359' });
+  });
+
+  it('extracts the K BIZ payee separately from the memo used as the Ledger title', () => {
+    const billPayment = 'To Account: พะงันค้าเหล็ก Amount (THB): 136.00 Your Note: MG for fix the door Creator: SURISA';
+    const otherBank = 'To Account: xxx-x-x4232-xxx Account Name from System: Buppha Chabunrueang Amount (THB): 500.00 Your Note: groceries Creator: SURISA';
+    const promptPay = 'To PromptPay ID: xxx-xxx-1484 Payee Name : MISS BORWONLA Amount (THB): 1,000.00 Your Note: Pearl advance Creator: SURISA';
+
+    expect(extractCounterparty(billPayment)).toBe('พะงันค้าเหล็ก');
+    expect(extractCounterparty(otherBank)).toBe('Buppha Chabunrueang');
+    expect(extractCounterparty(promptPay)).toBe('MISS BORWONLA');
+
+    const result = classifyEmail(baseEmail({ textBody: `Reference Number: BILS260727399185227 ${billPayment}` }), [dbExpenseRule({ bodyPatterns: [] })]);
+    expect(result).toMatchObject({
+      description: 'MG for fix the door',
+      counterparty: 'พะงันค้าเหล็ก',
+      externalRef: 'BILS260727399185227',
+      amountMinor: 13600
+    });
   });
 
   it('stores deterministic rule evaluation diagnostics alongside the selected result', () => {
