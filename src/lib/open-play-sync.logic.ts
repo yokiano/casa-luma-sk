@@ -31,6 +31,15 @@ export const variantOptionKey = (variant: {
   .map((value) => normalize(value).toLocaleLowerCase())
   .join('\u0000');
 
+export function changesOpenPlayOptionStructure(
+  item: Pick<LoyverseItem, 'option1_name' | 'option2_name' | 'option3_name'>,
+  desiredOptionNames: readonly (string | undefined)[]
+): boolean {
+  const existingPresence = [item.option1_name, item.option2_name, item.option3_name].map((name) => Boolean(normalize(name)));
+  const desiredPresence = [0, 1, 2].map((index) => Boolean(normalize(desiredOptionNames[index])));
+  return existingPresence.some((present, index) => present !== desiredPresence[index]);
+}
+
 export function parseOpenPlayVariants(
   jsonString: string | undefined,
   optionNames: readonly (string | undefined)[]

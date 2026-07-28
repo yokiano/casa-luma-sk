@@ -1,6 +1,7 @@
 import type { LoyverseReceiptLineItem } from '$lib/receipts/types';
 import {
   FLEXI_CHECKOUT_ITEM_ID,
+  FLEXI_CHECKOUT_ITEM_IDS,
   FLEXI_CHECKOUT_MAX_HOURS,
   FLEXI_CHECKOUT_SKU_PREFIX,
   FLEXI_CHECKOUT_VARIANT_HOURS_BY_ID,
@@ -41,7 +42,7 @@ const isConfiguredEntranceLine = (lineItem: LoyverseReceiptLineItem) =>
   (!FLEXI_ENTRANCE_ITEM_ID && parseConfiguredValue(lineItem.sku, FLEXI_ENTRANCE_SKU_PREFIX) !== null);
 
 const isConfiguredCheckoutLine = (lineItem: LoyverseReceiptLineItem) =>
-  lineItem.item_id === FLEXI_CHECKOUT_ITEM_ID ||
+  FLEXI_CHECKOUT_ITEM_IDS.includes(normalize(lineItem.item_id)) ||
   parseConfiguredValue(lineItem.sku, FLEXI_CHECKOUT_SKU_PREFIX) !== null;
 
 const invalidQuantity = (quantity: number | undefined, label: string) =>

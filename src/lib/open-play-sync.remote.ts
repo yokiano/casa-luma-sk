@@ -6,6 +6,7 @@ import { OpenPlayPosItemsResponseDTO } from '$lib/notion-sdk/dbs/open-play-pos-i
 import { loyverse, type CreateLoyverseItemPayload, type LoyverseItem } from '$lib/server/loyverse';
 import {
   buildOpenPlayDescription,
+  changesOpenPlayOptionStructure,
   compareOpenPlayVariants,
   parseOpenPlayVariants,
   reconcileOpenPlayVariants,
@@ -115,6 +116,29 @@ function findUnambiguousNameMatch(name: string, byName: Map<string, LoyverseItem
   const matches = byName.get(normalizedName(name)) ?? [];
   if (matches.length > 1) throw new Error(`Multiple Loyverse items match the name "${name}".`);
   return matches[0];
+}
+
+const CREATE_RECONCILIATION_DELAYS_MS = [0, 300, 1_000, 2_000] as const;
+const wait = (milliseconds: number) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+
+async function reconcileFailedCreate(name: string): Promise<LoyverseItem[]> {
+  let lastReadError: unknown;
+  for (const delay of CREATE_RECONCILIATION_DELAYS_MS) {
+    if (delay) await wait(delay);
+    try {
+      const refreshedItems = await loyverse.getAllItems();
+      lastReadError = undefined;
+      const matches = refreshedItems.filter((item) => normalizedName(item.item_name) === normalizedName(name));
+      if (matches.length) return matches;
+    } catch (error) {
+      lastReadError = error;
+    }
+  }
+  if (lastReadError) {
+    const message = lastReadError instanceof Error ? lastReadError.message : String(lastReadError);
+    throw new Error(`Loyverse create reconciliation could not read items: ${message}`);
+  }
+  return [];
 }
 
 function createPayload(
@@ -296,10 +320,20 @@ export const syncOpenPlayItems = command(
       const loyverseByName = buildNameMap(loyverseItems);
       const categories = new Map(categoryList.map((category) => [category.id, category]));
       // Validate every selected row before any category, Loyverse, or Notion write.
-      // This prevents a later malformed Flexi row from leaving an earlier row half-synced.
+      // This prevents a later malformed or structurally blocked Flexi row from
+      // leaving an earlier row half-synced.
       for (const notionItem of notionItems) {
-        resolveNotionLoyverseId(notionItem);
+        const configuredId = resolveNotionLoyverseId(notionItem);
         getConfiguredVariants(notionItem);
+        const name = notionItem.properties.name.text || 'Untitled';
+        const target = configuredId
+          ? loyverseById.get(configuredId)
+          : findUnambiguousNameMatch(name, loyverseByName);
+        if (target && changesOpenPlayOptionStructure(target, getOptionNames(notionItem))) {
+          throw new Error(
+            `Cannot sync "${name}": Loyverse API cannot add or delete variant options on an existing item. Create a new Loyverse item or configure its option structure in Back Office, then relink this Notion row. No external writes were attempted.`
+          );
+        }
       }
       const categoryCache = new Map(categoryList.map((category) => [normalizedName(category.name), category.id]));
 
@@ -309,6 +343,7 @@ export const syncOpenPlayItems = command(
         if (existing) return existing;
         const created = await loyverse.createCategory(name);
         categoryCache.set(key, created.id);
+        categories.set(created.id, created);
         return created.id;
       };
 
@@ -325,6 +360,14 @@ export const syncOpenPlayItems = command(
           } else {
             target = findUnambiguousNameMatch(name, loyverseByName);
             linkedByName = Boolean(target);
+          }
+
+          // Loyverse rejects API updates that add or remove an item's option slots.
+          // Block before any write so migrations must use Back Office or a new item.
+          if (target && changesOpenPlayOptionStructure(target, getOptionNames(notionItem))) {
+            throw new Error(
+              'Loyverse API cannot add or delete variant options on an existing item. Create a new Loyverse item or configure its option structure in Back Office, then relink this Notion row. No API update was attempted.'
+            );
           }
 
           // Validate variant JSON and build the complete payload before creating a
@@ -365,6 +408,7 @@ export const syncOpenPlayItems = command(
           }
 
           let synced: LoyverseItem;
+          let recoveredCreateError: string | undefined;
           if (target) {
             action = linkedByName ? 'LINK' : 'UPDATE';
             if (linkedByName) report.linked += 1;
@@ -372,8 +416,36 @@ export const syncOpenPlayItems = command(
             report.updated += 1;
           } else {
             action = 'CREATE';
-            synced = await loyverse.createItem(payload);
-            report.created += 1;
+            try {
+              synced = await loyverse.createItem(payload);
+            } catch (error) {
+              // A create can commit even when Loyverse returns 500. Re-read before
+              // allowing another attempt, preventing duplicate items after retries.
+              const originalMessage = error instanceof Error ? error.message : String(error);
+              let matches: LoyverseItem[];
+              try {
+                matches = await reconcileFailedCreate(name);
+              } catch (reconciliationError) {
+                const reconciliationMessage = reconciliationError instanceof Error ? reconciliationError.message : String(reconciliationError);
+                throw new Error(`Create failed (${originalMessage}). ${reconciliationMessage}. Verify Loyverse manually before retrying; the create result is ambiguous.`);
+              }
+              if (matches.length > 1) {
+                throw new Error(`Create failed (${originalMessage}) and multiple Loyverse items now match "${name}". Resolve duplicates manually before syncing again.`);
+              }
+              const recovered = matches[0];
+              if (!recovered) {
+                throw new Error(`Create failed (${originalMessage}) and no matching item appeared during reconciliation. Verify Loyverse manually before retrying; the create result is ambiguous.`);
+              }
+              const recoveryDiffs = compareOpenPlayItems(notionItem, recovered, categories);
+              if (recoveryDiffs.length) {
+                throw new Error(`Create failed (${originalMessage}) and a same-name Loyverse item appeared with differences: ${recoveryDiffs.join('; ')}. Inspect it before syncing again.`);
+              }
+              synced = recovered;
+              recoveredCreateError = originalMessage;
+              action = 'LINK';
+            }
+            if (recoveredCreateError) report.linked += 1;
+            else report.created += 1;
           }
 
           synced = await ensureFullLoyverseItem(synced, target?.id ?? synced.id);
@@ -384,9 +456,11 @@ export const syncOpenPlayItems = command(
             name,
             action,
             status: 'SUCCESS',
-            message: notionItem.properties.hasVariants
-              ? `Synchronized ${synced.variants.length} variants and wrote their IDs back to Notion.`
-              : undefined,
+            message: recoveredCreateError
+              ? `Recovered the created Loyverse item after its API response failed, then wrote its IDs back to Notion. Original error: ${recoveredCreateError}`
+              : notionItem.properties.hasVariants
+                ? `Synchronized ${synced.variants.length} variants and wrote their IDs back to Notion.`
+                : undefined,
             variantIds: notionItem.properties.hasVariants
               ? synced.variants.map((variant) => ({
                   option1Value: variant.option1_value,

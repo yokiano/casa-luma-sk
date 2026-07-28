@@ -2,7 +2,7 @@ import { and, eq, inArray, isNull, lte, ne, or } from 'drizzle-orm';
 import type { LoyverseReceiptLineItem } from '$lib/receipts/types';
 import {
   FLEXI_CARD_ITEM_IDS,
-  FLEXI_CHECKOUT_ITEM_ID,
+  FLEXI_CHECKOUT_ITEM_IDS,
   FLEXI_PASS_ENTRIES_PER_CARD
 } from '$lib/receipts/open-play-items';
 import { classifyFlexiLineItem } from '$lib/receipts/flexi-line-items';
@@ -87,7 +87,7 @@ export const calculateFlexiPassBalance = ({
       continue;
     }
 
-    if (row.itemId !== FLEXI_CHECKOUT_ITEM_ID) continue;
+    if (!FLEXI_CHECKOUT_ITEM_IDS.includes(row.itemId ?? '')) continue;
     if (excludeCurrentReceiptUsage && currentReceiptKey === row.receiptKey) continue;
     const receiptRows = checkoutRowsByReceipt.get(row.receiptKey) ?? [];
     receiptRows.push(row);
@@ -120,7 +120,7 @@ export const calculateFlexiPassBalance = ({
   // A just-ingested receipt can briefly lack receipt_date. Apply its selected
   // Checkout punches once only when no matching stored Checkout line exists.
   const currentStoredCheckout = currentReceiptKey
-    ? rows.some((row) => row.receiptKey === currentReceiptKey && row.itemId === FLEXI_CHECKOUT_ITEM_ID)
+    ? rows.some((row) => row.receiptKey === currentReceiptKey && FLEXI_CHECKOUT_ITEM_IDS.includes(row.itemId ?? ''))
     : false;
   if (currentReceiptKey && selectedVisitPunches > 0 && !currentStoredCheckout) {
     entriesUsedIncludingCurrent += selectedVisitPunches;
@@ -178,7 +178,7 @@ export const queryFlexiPassBalanceForCustomer = async ({
     or(isNull(receipts.receiptType), ne(receipts.receiptType, 'REFUND'))!,
     isNull(receipts.cancelledAt),
     or(lte(receipts.receiptDate, atDate), lte(receipts.createdAt, atDate))!,
-    inArray(receiptLineItems.itemId, [...FLEXI_CARD_ITEM_IDS, FLEXI_CHECKOUT_ITEM_ID]),
+    inArray(receiptLineItems.itemId, [...FLEXI_CARD_ITEM_IDS, ...FLEXI_CHECKOUT_ITEM_IDS]),
     eq(receipts.merchantId, normalizedMerchantId)
   ];
 

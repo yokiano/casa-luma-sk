@@ -23,7 +23,7 @@ These constants live in `src/lib/receipts/open-play-items.ts` and are used by re
 | Membership entry usage | `Member Valid Visit` | `dd4303a3-0bfb-49ed-95bc-fd65b853d22b` |
 | Flexi check-in marker | `Flexi Entrance` | Loyverse ID captured after first sync |
 | Flexi card purchase | `Flexible Resident` | `483c66bc-ee06-411c-95b6-f39a7491d09a` |
-| Flexi checkout usage | `Flexi Checkout` | `a94027fa-dd55-43d2-a031-b358877f4752` |
+| Flexi checkout usage | `Flexi Checkout` | New active Loyverse ID captured at cutover; historical ID `a94027fa-dd55-43d2-a031-b358877f4752` remains supported |
 | Flexi card purchase | `flexible Regular` | `360020d1-3ecd-43c2-97c8-c6ff4da754d4` |
 
 Each flexi card purchase grants `11` entries (`FLEXI_PASS_ENTRIES_PER_CARD`). `Flexi Entrance` variants `1 kid` through `5 kids` record check-in only and never consume balance. `Flexi Checkout` variants `1 hour` through `8 hours` record the total holes punched for this visit, with quantity exactly `1`, and consume that selected number directly. SKUs are stable pre-sync contracts: `FLEXI-ENTRANCE-KIDS-01` through `05` and `FLEXI-CHECKOUT-HOURS-01` through `08`; final Loyverse item/variant IDs are recorded after sync.

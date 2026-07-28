@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { LoyverseItem, LoyverseVariant } from '$lib/server/loyverse';
 import {
   buildOpenPlayDescription,
+  changesOpenPlayOptionStructure,
   compareOpenPlayVariants,
   parseOpenPlayVariants,
   reconcileOpenPlayVariants,
@@ -48,6 +49,12 @@ describe('Open Play variant sync logic', () => {
     ['invalid SKU type', JSON.stringify([{ option1_value: '1 hour', price: 0, sku: 42 }])]
   ])('rejects %s before an external write', (_label, json) => {
     expect(() => parseOpenPlayVariants(json, ['Hours'])).toThrow();
+  });
+
+  it('detects option-slot additions and removals before a Loyverse update', () => {
+    expect(changesOpenPlayOptionStructure(item({ option1_name: undefined }), ['Hours'])).toBe(true);
+    expect(changesOpenPlayOptionStructure(item({ option1_name: 'Old label' }), ['New label'])).toBe(false);
+    expect(changesOpenPlayOptionStructure(item({ option1_name: 'Hours', option2_name: 'Type' }), ['Hours'])).toBe(true);
   });
 
   it('preserves the old optionless variant as the first configured variant', () => {
