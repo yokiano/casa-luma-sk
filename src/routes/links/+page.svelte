@@ -54,7 +54,9 @@
 			rel="noopener noreferrer"
 			class="group mx-auto mb-5 flex w-fit items-center gap-2.5 rounded-full border border-[#2D3A3A]/10 bg-white/80 px-5 py-2.5 text-sm font-medium shadow-[0_12px_30px_rgba(45,58,58,0.08)] backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#E07A5F]/35 hover:bg-white hover:shadow-[0_16px_36px_rgba(45,58,58,0.12)]"
 		>
-			<GoogleMapsIcon icon="logos:google-maps" width="21" height="21" />
+			<span class="maps-icon-grow flex h-[21px] w-[21px] shrink-0 items-center justify-center">
+				<GoogleMapsIcon icon="logos:google-maps" width="21" height="21" />
+			</span>
 			<span>Directions</span>
 			<ArrowUpRight
 				size={15}
@@ -64,7 +66,7 @@
 		</a>
 
 		<nav aria-label="Casa Luma quick links" class="space-y-3">
-			{#each links as link}
+			{#each links as link, index}
 				{@const Icon = link.icon}
 				<a
 					href={link.href}
@@ -72,8 +74,10 @@
 					class="group flex items-center gap-4 rounded-[1.65rem] border border-[#2D3A3A]/10 bg-white/72 p-3.5 text-left shadow-[0_18px_45px_rgba(45,58,58,0.08)] backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#E07A5F]/35 hover:bg-white hover:shadow-[0_22px_55px_rgba(45,58,58,0.12)] sm:p-4"
 					onclick={(event) => link.comingSoon && event.preventDefault()}
 				>
-					<span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#F9EDE8] text-[#E07A5F] transition-colors group-hover:bg-[#E07A5F] group-hover:text-white">
-						<Icon size={21} strokeWidth={1.8} />
+					<span class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#F9EDE8] text-[#E07A5F] transition-colors group-hover:bg-[#E07A5F] group-hover:text-white">
+						<span class="rolling-icon flex" style={`animation-delay: ${index * 200}ms`}>
+							<Icon size={21} strokeWidth={1.8} />
+						</span>
 					</span>
 					<span class="min-w-0 flex-1">
 						<span class="block font-heading text-lg font-medium tracking-tight text-[#2D3A3A] sm:text-xl">
@@ -97,3 +101,48 @@
 		</nav>
 	</main>
 </div>
+
+<style>
+	.maps-icon-grow {
+		animation: maps-icon-grow 700ms ease-out both;
+	}
+
+	.rolling-icon {
+		animation: icon-roll-in 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+		will-change: transform;
+	}
+
+	@keyframes maps-icon-grow {
+		0% {
+			transform: scale(0);
+		}
+		55% {
+			transform: scale(1.25);
+		}
+		75% {
+			transform: scale(0.9);
+		}
+		90% {
+			transform: scale(1.08);
+		}
+		100% {
+			transform: scale(1);
+		}
+	}
+
+	@keyframes icon-roll-in {
+		from {
+			transform: translateX(-180%) rotate(-360deg);
+		}
+		to {
+			transform: translateX(0) rotate(0);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.maps-icon-grow,
+		.rolling-icon {
+			animation: none;
+		}
+	}
+</style>
