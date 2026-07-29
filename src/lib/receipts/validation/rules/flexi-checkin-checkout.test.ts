@@ -4,7 +4,7 @@ import type { FlexiPassBalance } from '$lib/server/db/flexi-pass-queries';
 import { createFlexiCheckinRule } from './flexi-checkin';
 import { createFlexiCheckoutRule } from './flexi-checkout';
 import { runReceiptValidationSuite, createReceiptValidationSuite } from '../engine';
-import { FLEXI_CHECKOUT_ITEM_ID } from '$lib/receipts/open-play-items';
+import { FLEXI_CHECKOUT_ITEM_ID, FLEXI_ENTRANCE_ITEM_ID } from '$lib/receipts/open-play-items';
 
 const balance = (overrides: Partial<FlexiPassBalance> = {}): FlexiPassBalance => ({
   customerId: 'cust-1',
@@ -36,7 +36,7 @@ describe('Flexi check-in and checkout validation', () => {
     const lookup = vi.fn();
     const result = await runReceiptValidationSuite(
       createReceiptValidationSuite([createFlexiCheckinRule({ lookupFlexiBalance: lookup })]),
-      receipt([{ item_id: 'new-entrance-item', sku: 'FLEXI-ENTRANCE-KIDS-02', quantity: 1 }], { customer_id: undefined })
+      receipt([{ item_id: FLEXI_ENTRANCE_ITEM_ID, sku: 'FLEXI-ENTRANCE-KIDS-02', quantity: 1 }], { customer_id: undefined })
     );
 
     expect(result.findings[0]).toMatchObject({
@@ -50,7 +50,7 @@ describe('Flexi check-in and checkout validation', () => {
     const lookup = vi.fn().mockResolvedValue(balance({ currentVisitPunches: 0, currentReceiptEntries: 0 }));
     const result = await runReceiptValidationSuite(
       createReceiptValidationSuite([createFlexiCheckinRule({ lookupFlexiBalance: lookup })]),
-      receipt([{ item_id: 'new-entrance-item', sku: 'FLEXI-ENTRANCE-KIDS-05', quantity: 1 }])
+      receipt([{ item_id: FLEXI_ENTRANCE_ITEM_ID, sku: 'FLEXI-ENTRANCE-KIDS-05', quantity: 1 }])
     );
 
     expect(result.hasFailures).toBe(false);

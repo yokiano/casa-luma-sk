@@ -44,7 +44,7 @@ The rule contract is async-capable. Existing synchronous rules return findings d
 ### Flexi check-in and checkout rules
 
 - `Flexi Entrance` accepts `1 kid` through `5 kids`, quantity `1`, requires a customer, and does not consume balance.
-- Active `Flexi Checkout` accepts `1 hour` through `8 hours`, quantity `1`. Historical item ID `a94027fa-dd55-43d2-a031-b358877f4752` remains supported for receipt replay and balance history.
+- Active `Flexi Checkout` item `cf3ea669-d995-4d46-8d31-d2d6e3f91410` accepts `1 hour` through `8 hours`, quantity `1`. Historical item ID `a94027fa-dd55-43d2-a031-b358877f4752` remains supported for receipt replay and balance history.
 - Checkout hours mean the total holes punched for this visit only, never elapsed time or cumulative holes from earlier visits.
 - Neon balance queries classify `variant_id`/SKU, count card purchases as 11 entries each, exclude refunds/cancellations, and reject unknown or multiple Checkout lines.
 - `FLEXI_ENTRY_WITHOUT_AVAILABLE_PASS` remains a historical incident-rendering alias. New findings use `FLEXI_CHECKIN_*` and `FLEXI_CHECKOUT_*` codes.

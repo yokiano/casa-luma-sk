@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   FLEXI_CARD_ITEM_IDS,
   FLEXI_CHECKOUT_ITEM_ID,
+  LEGACY_FLEXI_CHECKOUT_ITEM_ID,
   LEGACY_FLEXI_SINGLE_HOUR_VARIANT_ID
 } from '$lib/receipts/open-play-items';
 import { calculateFlexiPassBalance, type FlexiBalanceRow } from './flexi-pass-queries';
@@ -69,17 +70,18 @@ describe('Flexi balance calculation', () => {
     expect(result.remainingAfterCurrentReceipt).toBe(8);
   });
 
-  it('keeps Entrance out of usage and preserves historical quantity semantics', () => {
+  it('aggregates active Checkout variants with historical quantity receipts while excluding Entrance', () => {
     const result = calculateFlexiPassBalance({
       customerId: 'cust-1',
       rows: [
         row({ itemId: FLEXI_CARD_ITEM_IDS[0], quantity: 1 }),
         row({ itemId: 'entrance-item', sku: 'FLEXI-ENTRANCE-KIDS-05', quantity: 1 }),
-        row({ variantId: LEGACY_FLEXI_SINGLE_HOUR_VARIANT_ID, sku: '10143', quantity: 3 })
+        row({ receiptKey: 'm1:R-NEW', sku: 'FLEXI-CHECKOUT-HOURS-02', quantity: 1 }),
+        row({ receiptKey: 'm1:R-OLD', itemId: LEGACY_FLEXI_CHECKOUT_ITEM_ID, variantId: LEGACY_FLEXI_SINGLE_HOUR_VARIANT_ID, sku: '10143', quantity: 3 })
       ]
     });
 
-    expect(result.entriesUsedIncludingCurrent).toBe(3);
+    expect(result.entriesUsedIncludingCurrent).toBe(5);
     expect(result.unknownVariantDiagnostics).toEqual([]);
   });
 
