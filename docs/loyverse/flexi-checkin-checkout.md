@@ -37,8 +37,8 @@ Each Flexi card purchase grants 11 entries. Entrance never consumes entries. Val
 Loyverse API cannot add or delete option slots on an existing item. Do not try to convert the historical optionless item through `/tools/pos-sync`.
 
 1. Keep the historical item and variant. Never delete or recreate either identity.
-2. Create a new `Flexi Checkout` item in `Entry`, with option `Hours punched this visit`, values `1 hour` through `8 hours`, fixed price `0`, and the stable Checkout SKUs. A new item may be created through Open Play sync; only in-place option-slot changes are blocked.
-3. Create `Flexi Entrance` in `Entry`, with option `Number of kids entering`, values `1 kid` through `5 kids`, fixed price `0`, and the stable Entrance SKUs.
+2. Create a new `Flexi Checkout` item in `Entry`, with option `Hours punched`, values `1 hour` through `8 hours`, fixed price `0`, and the stable Checkout SKUs. A new item may be created through Open Play sync; only in-place option-slot changes are blocked.
+3. Create `Flexi Entrance` in `Entry`, with option `Kids entering`, values `1 kid` through `5 kids`, fixed price `0`, and the stable Entrance SKUs.
 4. Read both new items from Loyverse and record their item IDs and every variant ID. Confirm names, descriptions, category, option names, prices, and SKUs.
 5. Set both `ID` and `LoyverseID` on the two Notion rows to the new item IDs. Write the returned variant IDs into `Variants JSON`. The Checkout row must no longer point to the historical item.
 6. Add the new item and variant IDs to `src/lib/receipts/open-play-items.ts`. Keep the historical Checkout item and variant constants permanently for receipt replay and balance history.
