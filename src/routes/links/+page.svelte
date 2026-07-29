@@ -1,11 +1,26 @@
 <script lang="ts">
-	import { ArrowUpRight, CalendarDays, PartyPopper, UtensilsCrossed } from 'lucide-svelte';
+	import GoogleMapsIcon from '@iconify/svelte';
+	import {
+		ArrowUpRight,
+		CalendarDays,
+		MessageCircle,
+		PartyPopper,
+		UtensilsCrossed
+	} from 'lucide-svelte';
 	import logoSymbol from '$lib/assets/logo/logo-black-on-transparent-only-symbol.png';
+	import { SOCIAL_LINKS } from '$lib/constants';
 
 	const links = [
 		{ title: 'Our Menu', href: '/menu', status: 'Open', icon: UtensilsCrossed, comingSoon: false },
 		{ title: 'Birthday', href: '/birthdays', status: 'Open', icon: PartyPopper, comingSoon: false },
-		{ title: 'Workshops', href: '#', status: 'Coming soon', icon: CalendarDays, comingSoon: true }
+		{ title: 'Workshops', href: '#', status: 'Coming soon', icon: CalendarDays, comingSoon: true },
+		{
+			title: 'Contact',
+			href: '/contact',
+			status: 'Get in touch',
+			icon: MessageCircle,
+			comingSoon: false
+		}
 	];
 </script>
 
@@ -31,6 +46,21 @@
 		<a href="/" class="mx-auto mb-8 block w-fit text-center" aria-label="Casa Luma home">
 			<img src={logoSymbol} alt="" class="mx-auto h-20 w-20 object-contain sm:h-24 sm:w-24" aria-hidden="true" />
 			<span class="mt-3 block text-lg uppercase tracking-[0.34em] text-[#2D3A3A] sm:text-xl">Casa Luma</span>
+		</a>
+
+		<a
+			href={SOCIAL_LINKS.googleMaps}
+			target="_blank"
+			rel="noopener noreferrer"
+			class="group mx-auto mb-5 flex w-fit items-center gap-2.5 rounded-full border border-[#2D3A3A]/10 bg-white/80 px-5 py-2.5 text-sm font-medium shadow-[0_12px_30px_rgba(45,58,58,0.08)] backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#E07A5F]/35 hover:bg-white hover:shadow-[0_16px_36px_rgba(45,58,58,0.12)]"
+		>
+			<GoogleMapsIcon icon="logos:google-maps" width="21" height="21" />
+			<span>Directions</span>
+			<ArrowUpRight
+				size={15}
+				strokeWidth={1.8}
+				class="text-[#2D3A3A]/45 transition-colors group-hover:text-[#E07A5F]"
+			/>
 		</a>
 
 		<nav aria-label="Casa Luma quick links" class="space-y-3">

@@ -1,5 +1,12 @@
 <script lang="ts">
-	import { ArrowUpRight, Facebook, Instagram, Mail, MapPinned } from 'lucide-svelte';
+	import {
+		ArrowUpRight,
+		Facebook,
+		Instagram,
+		Mail,
+		MapPinned,
+		MessageCircle
+	} from 'lucide-svelte';
 	import { BUSINESS_INFO, SOCIAL_LINKS } from '$lib/constants';
 
 	const mapEmbedUrl =
@@ -11,6 +18,12 @@
 			value: BUSINESS_INFO.email,
 			href: `mailto:${BUSINESS_INFO.email}`,
 			icon: Mail
+		},
+		{
+			label: 'WhatsApp us',
+			value: BUSINESS_INFO.phone,
+			href: SOCIAL_LINKS.whatsapp,
+			icon: MessageCircle
 		},
 		{
 			label: 'Find us',

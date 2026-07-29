@@ -7,7 +7,7 @@ export const BUSINESS_INFO = {
 	description:
 		'A safe, natural, and engaging environment where children can play, learn, and explore while parents relax and enjoy quality refreshments.',
 	email: 'info@casalumakpg.com',
-	// phone: '+66 XX XXX XXXX'
+	phone: '+66 65 601 9909'
 } as const;
 
 export interface ServiceCategory {
@@ -111,7 +111,8 @@ export const SOCIAL_LINKS = {
 	facebook: 'https://www.facebook.com/profile.php?id=61581858085482',
 	instagram: 'https://www.instagram.com/casaluma.kpg/',
 	email: 'mailto:hello@casaluma.com',
-	googleMaps: 'https://maps.app.goo.gl/iXyfd47yVxyPKk3o8'
+	googleMaps: 'https://maps.app.goo.gl/iXyfd47yVxyPKk3o8',
+	whatsapp: 'https://wa.me/66656019909'
 } as const;
 
 export interface GoogleReviewHighlight {
