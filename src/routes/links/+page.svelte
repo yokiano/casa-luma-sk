@@ -11,13 +11,13 @@
 	import { SOCIAL_LINKS } from '$lib/constants';
 
 	const links = [
-		{ title: 'Our Menu', href: '/menu', status: 'Open', icon: UtensilsCrossed, comingSoon: false },
-		{ title: 'Birthday', href: '/birthdays', status: 'Open', icon: PartyPopper, comingSoon: false },
+		{ title: 'Our Menu', href: '/menu', status: undefined, icon: UtensilsCrossed, comingSoon: false },
+		{ title: 'Birthday', href: '/birthdays', status: undefined, icon: PartyPopper, comingSoon: false },
 		{ title: 'Workshops', href: '#', status: 'Coming soon', icon: CalendarDays, comingSoon: true },
 		{
 			title: 'Contact',
 			href: '/contact',
-			status: 'Get in touch',
+			status: undefined,
 			icon: MessageCircle,
 			comingSoon: false
 		}
@@ -79,9 +79,11 @@
 						<span class="block font-heading text-lg font-medium tracking-tight text-[#2D3A3A] sm:text-xl">
 							{link.title}
 						</span>
-						<span class="mt-0.5 block text-[10px] font-semibold uppercase tracking-[0.2em] text-[#2D3A3A]/45">
-							{link.status}
-						</span>
+						{#if link.status}
+							<span class="mt-0.5 block text-[10px] font-semibold uppercase tracking-[0.2em] text-[#2D3A3A]/45">
+								{link.status}
+							</span>
+						{/if}
 					</span>
 					<ArrowUpRight
 						size={18}
