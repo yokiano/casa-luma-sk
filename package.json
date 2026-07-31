@@ -22,6 +22,7 @@
 		"db:studio": "NODE_OPTIONS='--no-network-family-autoselection --dns-result-order=ipv4first' drizzle-kit studio",
 		"receipts:backfill": "NODE_OPTIONS='--no-network-family-autoselection --dns-result-order=ipv4first' tsx scripts/backfill-loyverse-receipts.ts",
 		"receipts:reconcile": "NODE_OPTIONS='--no-network-family-autoselection --dns-result-order=ipv4first' tsx scripts/reconcile-loyverse-receipts.ts",
+		"2nd-loyverse:backfill": "NODE_OPTIONS='--no-network-family-autoselection --dns-result-order=ipv4first' node ./node_modules/tsx/dist/cli.mjs scripts/2nd-loyverse/backfill.ts",
 		"close-shift:live-test": "tsx scripts/live-test-close-shift-submit.ts",
 		"telegram:chat-ids": "tsx scripts/email-automations/telegram-list-chat-ids.ts",
 		"telegram:email-webhook": "tsx scripts/email-automations/telegram-configure-email-automation-webhook.ts",

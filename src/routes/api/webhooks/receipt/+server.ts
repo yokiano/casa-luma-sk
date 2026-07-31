@@ -100,6 +100,33 @@ export const POST: RequestHandler = async ({ request }) => {
         : 'unknown';
       ingestionStatuses.push(ingestionStatus);
       automationStatuses.push(...result.automationResults.map((automation) => automation.status));
+
+      // Best-effort second-account mirror after primary processing. Failures must never
+      // change the production webhook HTTP response.
+      try {
+        const { considerAndMirrorReceipt } = await import('$lib/server/2nd-loyverse');
+        const { env: privateEnv } = await import('$env/dynamic/private');
+        const { db } = await import('$lib/server/db/client');
+        await considerAndMirrorReceipt(
+          {
+            merchantId: receiptPayload.merchant_id,
+            receipt: receiptPayload.items,
+            eventType: receiptPayload.type
+          },
+          {
+            db: db as any,
+            env: {
+              LOYVERSE_2_ACCESS_TOKEN: privateEnv.LOYVERSE_2_ACCESS_TOKEN,
+              LOYVERSE_2_STORE_ID: privateEnv.LOYVERSE_2_STORE_ID,
+              LOYVERSE_2_MIRROR_ENABLED: privateEnv.LOYVERSE_2_MIRROR_ENABLED,
+              LOYVERSE_ACCESS_TOKEN: privateEnv.LOYVERSE_ACCESS_TOKEN
+            }
+          },
+          { trigger: 'webhook' }
+        );
+      } catch (mirrorError) {
+        console.error('[receipt-webhook] 2nd-loyverse mirror failed', getSafeErrorSummary(mirrorError));
+      }
     }
 
     const statusCounts = countBy(ingestionStatuses);

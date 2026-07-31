@@ -1,4 +1,4 @@
-import type { CreateLoyverseItemPayload } from '$lib/server/loyverse';
+import type { CreateLoyverseItemPayload } from '$lib/server/loyverse-client';
 
 type LoyverseOptionFields = Pick<CreateLoyverseItemPayload, 'option1_name' | 'option2_name' | 'option3_name'>;
 

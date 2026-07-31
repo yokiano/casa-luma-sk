@@ -501,3 +501,8 @@ export const receiptPayments = pgTable(
     index('receipt_payments_type_idx').on(table.type)
   ]
 );
+
+export {
+  secondLoyverseReceiptAttempts,
+  secondLoyverseReceiptTransfers
+} from '$lib/server/2nd-loyverse/db/schema';

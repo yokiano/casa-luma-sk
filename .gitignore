@@ -43,3 +43,5 @@ project.inlang/cache/
 /et -e
 
 .pi/
+.pnpm-store/
+temp/
