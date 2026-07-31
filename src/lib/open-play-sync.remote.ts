@@ -4,6 +4,7 @@ import { OpenPlayPosItemsDatabase } from '$lib/notion-sdk/dbs/open-play-pos-item
 import { OpenPlayPosItemsPatchDTO } from '$lib/notion-sdk/dbs/open-play-pos-items/patch.dto';
 import { OpenPlayPosItemsResponseDTO } from '$lib/notion-sdk/dbs/open-play-pos-items/response.dto';
 import { loyverse, type CreateLoyverseItemPayload, type LoyverseItem } from '$lib/server/loyverse';
+import { buildLoyverseItemOptionFields } from '$lib/loyverse-item-sync.logic';
 import {
   buildOpenPlayDescription,
   changesOpenPlayOptionStructure,
@@ -121,24 +122,52 @@ function findUnambiguousNameMatch(name: string, byName: Map<string, LoyverseItem
 const CREATE_RECONCILIATION_DELAYS_MS = [0, 300, 1_000, 2_000] as const;
 const wait = (milliseconds: number) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
-async function reconcileFailedCreate(name: string): Promise<LoyverseItem[]> {
+async function reconcileCreatedItem(name: string, itemId?: string): Promise<LoyverseItem> {
   let lastReadError: unknown;
   for (const delay of CREATE_RECONCILIATION_DELAYS_MS) {
     if (delay) await wait(delay);
+    let refreshedItems: LoyverseItem[];
     try {
-      const refreshedItems = await loyverse.getAllItems();
+      refreshedItems = await loyverse.getAllItems();
       lastReadError = undefined;
-      const matches = refreshedItems.filter((item) => normalizedName(item.item_name) === normalizedName(name));
-      if (matches.length) return matches;
     } catch (error) {
       lastReadError = error;
+      continue;
     }
+
+    if (itemId) {
+      const byId = refreshedItems.find((item) => item.id === itemId);
+      if (byId) return byId;
+      continue;
+    }
+
+    const matches = refreshedItems.filter((item) => normalizedName(item.item_name) === normalizedName(name));
+    if (matches.length > 1) {
+      throw new Error(`Multiple Loyverse items now match "${name}".`);
+    }
+    if (matches[0]) return matches[0];
   }
   if (lastReadError) {
     const message = lastReadError instanceof Error ? lastReadError.message : String(lastReadError);
     throw new Error(`Loyverse create reconciliation could not read items: ${message}`);
   }
-  return [];
+  throw new Error(
+    itemId
+      ? `Loyverse item ${itemId} was not readable after synchronization.`
+      : `No unique Loyverse item named "${name}" appeared after synchronization.`
+  );
+}
+
+async function ensureFullLoyverseItem(
+  synced: LoyverseItem,
+  name: string,
+  itemId?: string
+): Promise<LoyverseItem> {
+  if (synced.id && Array.isArray(synced.variants) && synced.variants.length > 0) return synced;
+  // Loyverse may acknowledge a write without returning the full item. Read it
+  // back before writing identities to Notion so an acknowledged create cannot
+  // leave the row permanently unlinked.
+  return reconcileCreatedItem(name, itemId ?? synced.id);
 }
 
 function createPayload(
@@ -151,19 +180,16 @@ function createPayload(
     item_name: notionItem.properties.name.text || 'Untitled',
     description: buildDescription(notionItem),
     category_id: categoryId,
+    // Keep the Open Play create shape aligned with Menu Sync. Loyverse can
+    // return INTERNAL_ERROR when unused option slots are serialized as null.
+    modifier_ids: [],
+    ...buildLoyverseItemOptionFields(getOptionNames(notionItem)),
     variants: []
   };
 
   if (notionItem.properties.hasVariants) {
-    const [option1, option2, option3] = getOptionNames(notionItem);
-    payload.option1_name = normalize(option1) || null;
-    payload.option2_name = normalize(option2) || null;
-    payload.option3_name = normalize(option3) || null;
     payload.variants = reconcileOpenPlayVariants(configuredVariants, existing?.variants ?? []);
   } else {
-    payload.option1_name = null;
-    payload.option2_name = null;
-    payload.option3_name = null;
     payload.variants = [{
       ...(existing?.variants[0] ? { variant_id: existing.variants[0].variant_id } : {}),
       default_price: notionItem.properties.priceBaht ?? 0,
@@ -172,13 +198,6 @@ function createPayload(
   }
 
   return { payload, configuredVariants };
-}
-
-async function ensureFullLoyverseItem(synced: LoyverseItem, itemId: string): Promise<LoyverseItem> {
-  if (synced.id && Array.isArray(synced.variants) && synced.variants.length > 0) return synced;
-  const refreshed = (await loyverse.getAllItems()).find((item) => item.id === itemId);
-  if (!refreshed) throw new Error(`Loyverse did not return the synchronized item ${itemId}.`);
-  return refreshed;
 }
 
 async function writeBackLoyverseIdentity(
@@ -190,9 +209,9 @@ async function writeBackLoyverseIdentity(
   const properties: ConstructorParameters<typeof OpenPlayPosItemsPatchDTO>[0]['properties'] = {
     loyverseId: synced.id
   };
-  // Keep the legacy ID field untouched when it already carries the item ID. For
-  // a newly-created row, populate both fields so older readers remain linked.
-  if (!normalize(notionItem.properties.id.text) && !normalize(notionItem.properties.loyverseId.text)) {
+  // Keep a non-empty legacy ID untouched, but backfill it whenever blank so
+  // older readers remain linked even when LoyverseID was populated first.
+  if (!normalize(notionItem.properties.id.text)) {
     properties.id = synced.id;
   }
   if (notionItem.properties.hasVariants) {
@@ -419,22 +438,15 @@ export const syncOpenPlayItems = command(
             try {
               synced = await loyverse.createItem(payload);
             } catch (error) {
-              // A create can commit even when Loyverse returns 500. Re-read before
-              // allowing another attempt, preventing duplicate items after retries.
+              // A create can commit even when Loyverse returns 500. Re-read the
+              // exact name before allowing another attempt, preventing duplicates.
               const originalMessage = error instanceof Error ? error.message : String(error);
-              let matches: LoyverseItem[];
+              let recovered: LoyverseItem;
               try {
-                matches = await reconcileFailedCreate(name);
+                recovered = await reconcileCreatedItem(name);
               } catch (reconciliationError) {
                 const reconciliationMessage = reconciliationError instanceof Error ? reconciliationError.message : String(reconciliationError);
                 throw new Error(`Create failed (${originalMessage}). ${reconciliationMessage}. Verify Loyverse manually before retrying; the create result is ambiguous.`);
-              }
-              if (matches.length > 1) {
-                throw new Error(`Create failed (${originalMessage}) and multiple Loyverse items now match "${name}". Resolve duplicates manually before syncing again.`);
-              }
-              const recovered = matches[0];
-              if (!recovered) {
-                throw new Error(`Create failed (${originalMessage}) and no matching item appeared during reconciliation. Verify Loyverse manually before retrying; the create result is ambiguous.`);
               }
               const recoveryDiffs = compareOpenPlayItems(notionItem, recovered, categories);
               if (recoveryDiffs.length) {
@@ -448,7 +460,7 @@ export const syncOpenPlayItems = command(
             else report.created += 1;
           }
 
-          synced = await ensureFullLoyverseItem(synced, target?.id ?? synced.id);
+          synced = await ensureFullLoyverseItem(synced, name, target?.id);
           await writeBackLoyverseIdentity(notionDb, notionItem, synced, configuredVariants);
           report.itemResults.push({
             notionId: notionItem.id,

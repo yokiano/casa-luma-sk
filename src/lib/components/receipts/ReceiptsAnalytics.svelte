@@ -197,7 +197,7 @@
         .sort((a, b) => b.revenue - a.revenue)
         .slice(0, 20),
       topCategoriesByRevenue: Array.from(categoryRevenue.entries())
-        .map(([label, revenue]) => ({ label, revenue }))
+        .map(([label, revenue]) => ({ label, revenue, department: 'Others' as const }))
         .sort((a, b) => b.revenue - a.revenue)
         .slice(0, 20),
       paymentTypeRevenue: Array.from(paymentRevenue.entries())

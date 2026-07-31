@@ -20,6 +20,13 @@ import { MembershipsResponseDTO } from '$lib/notion-sdk/dbs/memberships/response
 import { bangkokDate, bangkokDateRangeUtc, compactDateLabel } from '$lib/mgmt-dashboard-dates';
 import { getBalanceReconciliationSummary } from '$lib/server/balance-reconciliation';
 import { ONE_HOUR_ITEM_ID, ONE_HOUR_TO_DAY_ITEM_ID } from '$lib/receipts/receipt-tools';
+import {
+  DEPARTMENTS,
+  UNKNOWN_DEPARTMENT,
+  getDepartmentMapping,
+  normalizeCategory,
+  type DashboardDepartment
+} from '$lib/server/analytics/department-mapping';
 
 type Row = Record<string, unknown>;
 
@@ -30,9 +37,6 @@ const SALARY_ADJUSTMENTS_DATABASE_ID = 'eb751fe68e764a618c4398560a0ae114';
 const EMPLOYEES_DATABASE_ID = 'cf220f8b4efc4caeb7e46723c4f5e3e9';
 const TASKS_DATABASE_ID = '0df7129c34034bf0937088586b557c2a';
 const TASKS_VIEW_URL = 'https://efficacious-drizzle-ad4.notion.site/ebd//0df7129c34034bf0937088586b557c2a?v=36bfc77db4f38069bac4000c8a72a853';
-const DEPARTMENT_MAPPING_DATABASE_ID = '9a4c14fedf4b44dda928b1a06ee759b6';
-const DEPARTMENTS = ['playground', 'cafe', 'store', 'workshops'] as const;
-const UNKNOWN_DEPARTMENT = 'unknown';
 const TEST_ALERT_TYPES = [
   'generic',
   'one_hour_not_converted',
@@ -45,8 +49,6 @@ const DASHBOARD_PERIODS = ['today', '7d', '30d', '90d', '12m'] as const;
 const DASHBOARD_GROUP_BY = ['day', 'week', 'month'] as const;
 const DASHBOARD_APPROVER = 'Yarden' as const; // TODO(auth): use the logged-in user's Approved By select value once auth is implemented.
 
-type Department = (typeof DEPARTMENTS)[number];
-type DashboardDepartment = Department | typeof UNKNOWN_DEPARTMENT;
 type DashboardPeriod = (typeof DASHBOARD_PERIODS)[number];
 type DashboardGroupBy = (typeof DASHBOARD_GROUP_BY)[number];
 type RevenueChannel = 'restaurant' | 'open-play' | 'store' | 'others';
@@ -71,41 +73,7 @@ type LoyverseCategoryMaps = {
   categoryByVariantId: Map<string, string>;
 };
 
-type DepartmentMapping = {
-  loadedAt: number;
-  categoryToDepartment: Map<string, Department>;
-  source: 'notion' | 'fallback';
-};
-
 let loyverseCategoryCache: LoyverseCategoryMaps | null = null;
-let departmentMappingCache: DepartmentMapping | null = null;
-
-const fallbackDepartmentCategories: Record<Department, string[]> = {
-  playground: ['Entry', 'Membership', '(p4p) Art Equipment', '(p4p) Lego Figurine'],
-  cafe: [
-    'Breakfast Sets',
-    'Coffee & Friends',
-    'Comfort Food',
-    'Crafted Croissants',
-    'Cute Sandwich',
-    'Desserts',
-    'Healthy Treats',
-    'House Smoothies',
-    'Kid Sized Drinks',
-    'Kids Favorites',
-    'Kitchen Extras',
-    'Light & Fresh',
-    'More Vegan',
-    'Pastries',
-    'Personal Pizzas',
-    'Premium Tea',
-    'Proper Sandwiches',
-    'Salads',
-    'Soft Drinks'
-  ],
-  store: ['(store) All'],
-  workshops: []
-};
 
 const rowsOf = async <T extends Row>(statement: ReturnType<typeof sql>): Promise<T[]> => {
   const result = await db.execute(statement);
@@ -132,7 +100,6 @@ const toIsoOrNull = (value: unknown) => {
 
 const parseNumber = (value: unknown) => Number(value ?? 0);
 const parseNullableNumber = (value: unknown) => (value === null || value === undefined ? null : Number(value));
-const normalizeCategory = (value: string) => value.trim().toLowerCase();
 
 const dashboardPeriodLabel = (period: DashboardPeriod) =>
   period === 'today'
@@ -194,18 +161,6 @@ const buildExpenseMissingFields = (expense: CompanyLedgerResponseDTO) => {
   return missing;
 };
 
-const buildFallbackDepartmentMapping = (): DepartmentMapping => {
-  const categoryToDepartment = new Map<string, Department>();
-
-  for (const department of DEPARTMENTS) {
-    for (const category of fallbackDepartmentCategories[department]) {
-      categoryToDepartment.set(normalizeCategory(category), department);
-    }
-  }
-
-  return { loadedAt: Date.now(), categoryToDepartment, source: 'fallback' };
-};
-
 const getAllLoyverse = async <T>(endpoint: string, key: string, token: string): Promise<T[]> => {
   const all: T[] = [];
   let cursor: string | undefined;
@@ -260,61 +215,6 @@ const getLoyverseCategoryMaps = async (): Promise<LoyverseCategoryMaps> => {
       categoryByItemId: new Map<string, string>(),
       categoryByVariantId: new Map<string, string>()
     };
-  }
-};
-
-const getDepartmentMapping = async (): Promise<DepartmentMapping> => {
-  const ttlMs = 5 * 60 * 1000;
-  if (departmentMappingCache && Date.now() - departmentMappingCache.loadedAt < ttlMs) return departmentMappingCache;
-
-  const notionSecret = env.NOTION_API_KEY?.trim();
-  if (!notionSecret) {
-    departmentMappingCache = buildFallbackDepartmentMapping();
-    return departmentMappingCache;
-  }
-
-  try {
-    const databaseId = env.NOTION_DEPARTMENT_MAPPING_DB_ID?.trim() || DEPARTMENT_MAPPING_DATABASE_ID;
-    const response = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${notionSecret}`,
-        'Notion-Version': '2022-06-28',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        filter: { property: 'Active', checkbox: { equals: true } },
-        page_size: 100
-      })
-    });
-
-    if (!response.ok) throw new Error(`${response.status} ${response.statusText}: ${await response.text()}`);
-
-    const data = (await response.json()) as {
-      results?: Array<{
-        properties?: {
-          Department?: { title?: Array<{ plain_text?: string }> };
-          'Loyverse Categories'?: { multi_select?: Array<{ name?: string }> };
-        };
-      }>;
-    };
-
-    const categoryToDepartment = new Map<string, Department>();
-    for (const page of data.results ?? []) {
-      const departmentName = page.properties?.Department?.title?.map((part) => part.plain_text ?? '').join('').trim();
-      if (!DEPARTMENTS.includes(departmentName as Department)) continue;
-
-      for (const category of page.properties?.['Loyverse Categories']?.multi_select ?? []) {
-        if (category.name?.trim()) categoryToDepartment.set(normalizeCategory(category.name), departmentName as Department);
-      }
-    }
-
-    departmentMappingCache = { loadedAt: Date.now(), categoryToDepartment, source: 'notion' };
-    return departmentMappingCache;
-  } catch (error) {
-    console.error('[mgmt-dashboard] failed to load department mapping from Notion:', error);
-    departmentMappingCache = buildFallbackDepartmentMapping();
-    return departmentMappingCache;
   }
 };
 

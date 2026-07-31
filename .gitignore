@@ -35,4 +35,11 @@ vite.config.ts.timestamp-*
 src/lib/paraglide
 project.inlang/cache/
 
+# Agent transcripts and disposable task artifacts
+.pi-subagents/
+/temp/*
+!/temp/2nd-loyverse/
+!/temp/2nd-loyverse/**
+/et -e
+
 .pi/

@@ -3,6 +3,12 @@ import { db } from './client';
 import type { ReceiptAnalytics, ReceiptAnalyticsGranularity, ReceiptAnalyticsTimeSeriesPoint } from '$lib/receipts/analytics';
 import { NOT_CONVERTED_DURATION_THRESHOLD_MINUTES } from '$lib/receipts/receipt-tools';
 import { loyverse, type LoyverseItem } from '$lib/server/loyverse';
+import {
+  UNKNOWN_DEPARTMENT,
+  departmentToReceiptGroup,
+  getDepartmentMapping,
+  normalizeCategory
+} from '$lib/server/analytics/department-mapping';
 
 interface ReceiptAnalyticsQueryInput {
   dateFrom?: string;
@@ -173,7 +179,8 @@ export const queryReceiptAnalyticsFromDb = async ({
     allItemRevenueRows,
     paymentRevenueRows,
     dowRows,
-    categoryMaps
+    categoryMaps,
+    departmentMapping
   ] = await Promise.all([
       rowsOf<{
         receipt_count: number;
@@ -323,7 +330,8 @@ export const queryReceiptAnalyticsFromDb = async ({
         ) daily
         group by daily.dow
       `),
-      getLoyverseCategoryMaps()
+      getLoyverseCategoryMaps(),
+      getDepartmentMapping()
     ]);
 
   const summary = summaryRows[0];
@@ -349,9 +357,11 @@ export const queryReceiptAnalyticsFromDb = async ({
     categoryRevenue.set(category, (categoryRevenue.get(category) ?? 0) + num(row.revenue));
   }
   const topCategoriesByRevenue = Array.from(categoryRevenue.entries())
-    .map(([label, revenue]) => ({ label, revenue }))
-    .sort((a, b) => b.revenue - a.revenue)
-    .slice(0, 20);
+    .map(([label, revenue]) => {
+      const department = departmentMapping.categoryToDepartment.get(normalizeCategory(label)) ?? UNKNOWN_DEPARTMENT;
+      return { label, revenue, department: departmentToReceiptGroup(department) };
+    })
+    .sort((a, b) => b.revenue - a.revenue);
 
   return {
     summary: {

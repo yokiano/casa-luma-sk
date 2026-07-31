@@ -1,6 +1,11 @@
 <script lang="ts">
   import type { LoyverseReceipt } from '$lib/receipts/types';
-  import type { ReceiptAnalytics, ReceiptAnalyticsGranularity, ReceiptAnalyticsTimeSeriesPoint } from '$lib/receipts/analytics';
+  import type {
+    ReceiptAnalytics,
+    ReceiptAnalyticsGranularity,
+    ReceiptAnalyticsTimeSeriesPoint,
+    ReceiptDepartmentGroup
+  } from '$lib/receipts/analytics';
   import { scaleBand, scalePoint } from 'd3-scale';
   import { BarChart, LineChart } from 'layerchart';
   import * as Chart from '$lib/components/ui/chart';
@@ -197,7 +202,7 @@
         .sort((a, b) => b.revenue - a.revenue)
         .slice(0, 20),
       topCategoriesByRevenue: Array.from(categoryRevenue.entries())
-        .map(([label, revenue]) => ({ label, revenue }))
+        .map(([label, revenue]) => ({ label, revenue, department: 'Others' as const }))
         .sort((a, b) => b.revenue - a.revenue)
         .slice(0, 20),
       paymentTypeRevenue: Array.from(paymentRevenue.entries())
@@ -245,14 +250,19 @@
     { key: 'categories', label: 'Categories' }
   ];
   let revenueBreakdownMode = $state<RevenueBreakdownMode>('items');
+  const categoryDepartmentOptions: ReceiptDepartmentGroup[] = ['Open Play', 'Cafe', 'Store', 'Others'];
+  let categoryDepartment = $state<ReceiptDepartmentGroup>('Open Play');
   const topItemsByRevenue = $derived(computedAnalytics.topItemsByRevenue);
   const topCategoriesByRevenue = $derived(computedAnalytics.topCategoriesByRevenue ?? []);
+  const selectedCategoryRevenue = $derived(
+    topCategoriesByRevenue.filter((category) => category.department === categoryDepartment).slice(0, 20)
+  );
   const selectedRevenueBreakdown = $derived(
-    revenueBreakdownMode === 'categories' ? topCategoriesByRevenue : topItemsByRevenue
+    revenueBreakdownMode === 'categories' ? selectedCategoryRevenue : topItemsByRevenue
   );
   const revenueBreakdownTitle = $derived(revenueBreakdownMode === 'categories' ? 'Top Categories by Revenue' : 'Top 20 Items by Revenue');
   const revenueBreakdownSubtitle = $derived(
-    revenueBreakdownMode === 'categories' ? 'Highest grossing menu categories' : 'Highest grossing items'
+    revenueBreakdownMode === 'categories' ? `Highest grossing ${categoryDepartment} categories` : 'Highest grossing items'
   );
   const revenueBreakdownPaddingLeft = $derived(revenueBreakdownMode === 'categories' ? 90 : 120);
   const paymentTypeRevenue = $derived(computedAnalytics.paymentTypeRevenue);
@@ -384,6 +394,23 @@
             {/each}
           </div>
         </div>
+        {#if revenueBreakdownMode === 'categories'}
+          <div class="flex flex-wrap gap-2" aria-label="Category department">
+            {#each categoryDepartmentOptions as department}
+              <button
+                type="button"
+                class={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                  categoryDepartment === department
+                    ? 'border-[#d79a5f] bg-[#fff4e8] text-[#7a6550]'
+                    : 'border-[#dfd2c5] text-[#7a6550]/80 hover:border-[#d79a5f]'
+                }`}
+                onclick={() => (categoryDepartment = department)}
+              >
+                {department}
+              </button>
+            {/each}
+          </div>
+        {/if}
         <Chart.Container
           config={{
             revenue: { label: 'Revenue', color: 'var(--color-chart-2)' }

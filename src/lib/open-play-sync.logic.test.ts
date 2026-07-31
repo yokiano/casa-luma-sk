@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { LoyverseItem, LoyverseVariant } from '$lib/server/loyverse';
+import { buildLoyverseItemOptionFields } from '$lib/loyverse-item-sync.logic';
 import {
   buildOpenPlayDescription,
   changesOpenPlayOptionStructure,
@@ -27,6 +28,18 @@ const item = (overrides: Partial<LoyverseItem> = {}): LoyverseItem => ({
 });
 
 describe('Open Play variant sync logic', () => {
+  it('omits unused Loyverse option slots from one-option payloads', () => {
+    const payload = {
+      modifier_ids: [],
+      ...buildLoyverseItemOptionFields(['Number of kids entering'])
+    };
+
+    expect(JSON.parse(JSON.stringify(payload))).toEqual({
+      modifier_ids: [],
+      option1_name: 'Number of kids entering'
+    });
+  });
+
   it('strictly parses configured variants and preserves explicit IDs', () => {
     const result = parseOpenPlayVariants(JSON.stringify([
       { variant_id: 'old-id', option1_value: '1 hour', price: 0, sku: 'FLEXI-01' },

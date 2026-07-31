@@ -11,7 +11,7 @@
     type ReceiptWithTools
   } from '$lib/components/receipts';
 
-  type ReceiptTab = 'receipts' | 'analytics' | 'tools';
+  type ReceiptTab = 'receipts' | 'tools';
   type ReceiptViewMode = 'compact' | 'expanded';
   type ReceiptSortOrder = 'desc' | 'asc';
 
@@ -19,8 +19,7 @@
   const defaultDateFrom = () => toInputDate(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000));
   const defaultDateTo = () => toInputDate(new Date());
 
-  const validTab = (value: string | null): ReceiptTab =>
-    value === 'analytics' || value === 'tools' ? value : 'receipts';
+  const validTab = (value: string | null): ReceiptTab => (value === 'tools' ? value : 'receipts');
   const validViewMode = (value: string | null): ReceiptViewMode => (value === 'expanded' ? 'expanded' : 'compact');
   const validSortOrder = (value: string | null): ReceiptSortOrder => (value === 'asc' ? 'asc' : 'desc');
   const isValidInputDate = (value: string | null) => {
@@ -225,18 +224,7 @@
 
   <div class="space-y-3">
     <ReceiptsTabs activeTab={activeTab} onChange={changeTab} />
-    {#if activeTab === 'analytics'}
-      <div class="rounded-3xl border border-[#d8c9bb] bg-white/85 p-6 shadow-sm">
-        <p class="text-xs font-bold uppercase tracking-[0.18em] text-[#7a6550]/60">Analytics moved</p>
-        <h3 class="mt-2 text-xl font-semibold text-[#2c2925]">Receipt analytics now live in the management dashboard.</h3>
-        <p class="mt-2 max-w-2xl text-sm text-[#7a6550]">
-          Use the dedicated analytics section for revenue split, open-play mix, profitability, and legacy receipt trends.
-        </p>
-        <a class="mt-4 inline-flex items-center rounded-full border border-[#7a6550] bg-[#7a6550] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#2c2925]" href="/mgmt-dashboard/analytics">
-          Open management analytics
-        </a>
-      </div>
-    {:else if activeTab === 'tools'}
+    {#if activeTab === 'tools'}
       {#if analyticsError}
         <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {analyticsError}

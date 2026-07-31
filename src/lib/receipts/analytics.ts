@@ -1,4 +1,5 @@
 export type ReceiptAnalyticsGranularity = 'day' | 'week' | 'month';
+export type ReceiptDepartmentGroup = 'Open Play' | 'Cafe' | 'Store' | 'Others';
 
 export interface ReceiptAnalyticsPoint {
   label: string;
@@ -44,7 +45,7 @@ export interface ReceiptAnalytics {
   revenueByDay: { label: string; revenue: number }[];
   receiptsByHour: { label: string; count: number }[];
   topItemsByRevenue: { label: string; revenue: number; itemId?: string | null }[];
-  topCategoriesByRevenue: { label: string; revenue: number }[];
+  topCategoriesByRevenue: { label: string; revenue: number; department: ReceiptDepartmentGroup }[];
   paymentTypeRevenue: { label: string; revenue: number }[];
   avgTicketByDay: { label: string; avg: number }[];
   revenueByDayOfWeek: { label: string; revenue: number }[];

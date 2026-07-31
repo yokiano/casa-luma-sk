@@ -10,6 +10,7 @@ import { RecipeLinesDatabase } from '$lib/notion-sdk/dbs/recipe-lines/db';
 import { loyverse } from '$lib/server/loyverse';
 import { buildRecipeCostVariantFields } from '$lib/menu-sync.costs';
 import { buildMenuItemRecipeCogsMap, notionIdKey, roundMoney, type RecipeCogsInfo } from '$lib/tools/recipes/recipe-cogs.server';
+import { buildLoyverseItemOptionFields } from '$lib/loyverse-item-sync.logic';
 import * as v from 'valibot';
 
 // Types for the UI
@@ -526,18 +527,17 @@ export const syncMenuItems = command(
              item_name: name,
              description,
              category_id: categoryId,
-             modifier_ids: modifiersIds, 
-             option1_name: undefined,
-             option2_name: undefined,
-             option3_name: undefined,
+             modifier_ids: modifiersIds,
+             ...buildLoyverseItemOptionFields(hasVariants ? [
+               nItem.properties.variantOption_1Name.text,
+               nItem.properties.variantOption_2Name.text,
+               nItem.properties.variantOption_3Name.text
+             ] : []),
              variants: []
           };
 
           if (hasVariants) {
              const notionVariants = parseVariants(nItem.properties.variantsJson.text);
-             payload.option1_name = nItem.properties.variantOption_1Name.text || null;
-             payload.option2_name = nItem.properties.variantOption_2Name.text || null;
-             payload.option3_name = nItem.properties.variantOption_3Name.text || null;
              
              if (notionVariants.length > 0) {
                  // Map Notion variants to Loyverse structure
