@@ -85,6 +85,20 @@
       "when": 1785500000000,
       "tag": "0011_second_loyverse_receipts",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1785500001000,
+      "tag": "0012_balance_submission_records",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1785500002000,
+      "tag": "0013_financial_balance_reminder_runs",
+      "breakpoints": true
     }
   ]
 }

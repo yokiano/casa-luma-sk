@@ -2,18 +2,7 @@ import { AUTH_PASSWORD, MANAGER_PASSWORD } from '$env/static/private';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions } from './$types';
 import { createConfiguredToolsSessionCookie, SESSION_MAX_AGE_SECONDS } from '$lib/server/tools-session';
-
-const getSafeContinueTo = (continueTo: string | null) => {
-	if (!continueTo || !continueTo.startsWith('/tools') || continueTo.startsWith('//')) {
-		return '/tools';
-	}
-
-	if (continueTo === '/tools/login' || continueTo.startsWith('/tools/login?')) {
-		return '/tools';
-	}
-
-	return continueTo;
-};
+import { getSafeContinueTo } from '$lib/server/safe-login-continue';
 
 export const actions: Actions = {
 	default: async ({ request, cookies, url }) => {
