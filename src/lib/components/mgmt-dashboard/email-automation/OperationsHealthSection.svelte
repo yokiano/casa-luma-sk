@@ -17,7 +17,7 @@
   <div class="grid gap-3 border-t border-[#eee5dc] p-5 lg:grid-cols-2">
     <article class={`rounded-2xl border p-4 ${health.oldestDueAt ? 'border-amber-200 bg-amber-50' : 'border-emerald-200 bg-emerald-50'}`}>
       <h3 class="font-semibold">Due work</h3>
-      {#if health.oldestDueAt}<p class="mt-1 text-sm"><b>Oldest due: {formatAge(health.oldestDueAt)}</b> ({formatDateTime(health.oldestDueAt)}).</p><p class="mt-2 text-sm">This item is waiting for processing. Automatic retries are not configured, so open its event and use the recovery control shown there. Ledger retries still require the same canary gates as intake.</p>{:else}<p class="mt-1 text-sm">No action or Telegram item is currently overdue. Processing is manual until an automatic scheduler is configured.</p>{/if}
+      {#if health.oldestDueAt}<p class="mt-1 text-sm"><b>Oldest due: {formatAge(health.oldestDueAt)}</b> ({formatDateTime(health.oldestDueAt)}).</p><p class="mt-2 text-sm">This item is waiting for processing. Automatic retries are not configured, so open its event and use the recovery control shown there. Ledger retries still require the same production safety controls as intake.</p>{:else}<p class="mt-1 text-sm">No action or Telegram item is currently overdue. Processing is manual until an automatic scheduler is configured.</p>{/if}
     </article>
     <article class={`rounded-2xl border p-4 ${staleCount ? 'border-red-200 bg-red-50' : 'border-emerald-200 bg-emerald-50'}`}>
       <h3 class="font-semibold">Interrupted work reservations</h3><p class="mt-1 text-sm"><b>{staleCount}</b> active past their expiry ({health.staleActionLeases} actions, {health.staleNotificationLeases} notifications).</p>

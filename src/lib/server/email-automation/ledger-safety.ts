@@ -5,19 +5,17 @@ const LEDGER_HANDLER_CLASSIFICATIONS: Record<typeof LEDGER_HANDLER_KEYS[number],
   company_ledger_expense: 'expense',
   financial_ledger_income: 'income'
 };
-const CANARY_ENV_KEY = 'EMAIL_AUTOMATION_LEDGER_CANARY_ENABLED';
 const DEFAULT_MAX_AMOUNT_THB = 5_000;
 
-export const LEDGER_CANARY_NOT_ENABLED_REASON = 'Financial Ledger automation is not active. Turn on the dashboard Ledger canary, set EMAIL_AUTOMATION_LEDGER_CANARY_ENABLED=true, and configure the dashboard sender allowlist before Ledger actions can run.';
-export const LEDGER_SENDER_NOT_ALLOWED_REASON = 'Financial Ledger automation canary blocked this email because its visible sender is not in the explicit allowlist. Review the original email before any manual Ledger entry.';
-export const LEDGER_MIME_INCOMPLETE_REASON = 'Financial Ledger automation canary blocked this email because the parsed MIME content is incomplete or unsupported.';
-export const LEDGER_AMOUNT_LIMIT_REASON = 'Financial Ledger automation canary blocked this email because the amount is above the configured canary limit.';
-export const LEDGER_REQUIRED_FIELDS_REASON = 'Financial Ledger automation canary blocked this email because the extracted transaction reference, amount, currency, or classification was not complete.';
-export const LEDGER_AUTHENTICITY_GAP_WARNING = 'Sender authenticity is not yet verified with SPF/DKIM/DMARC evidence. This canary relies on a strict visible-sender allowlist plus amount and MIME safeguards until transport authentication is implemented.';
+export const LEDGER_AUTOMATION_NOT_ENABLED_REASON = 'Financial Ledger automation is not active. Turn on the dashboard Ledger switch and configure the dashboard sender allowlist before Ledger actions can run.';
+export const LEDGER_SENDER_NOT_ALLOWED_REASON = 'Financial Ledger automation blocked this email because its visible sender is not in the explicit allowlist. Review the original email before any manual Ledger entry.';
+export const LEDGER_MIME_INCOMPLETE_REASON = 'Financial Ledger automation blocked this email because the parsed MIME content is incomplete or unsupported.';
+export const LEDGER_AMOUNT_LIMIT_REASON = 'Financial Ledger automation blocked this email because the amount is above the configured limit.';
+export const LEDGER_REQUIRED_FIELDS_REASON = 'Financial Ledger automation blocked this email because the extracted transaction reference, amount, currency, or classification was not complete.';
+export const LEDGER_AUTHENTICITY_GAP_WARNING = 'Sender authenticity is not yet verified with SPF/DKIM/DMARC evidence. Production automation relies on a strict visible-sender allowlist plus amount and MIME safeguards until transport authentication is implemented.';
 
 export type LedgerAutomationPolicyStatus = {
-  mode: 'canary' | 'blocked';
-  canaryEnvEnabled: boolean;
+  mode: 'active' | 'blocked';
   dashboardLedgerEnabled: boolean;
   senderAllowlistConfigured: boolean;
   senderAllowlistLabels: string[];
@@ -33,8 +31,6 @@ export type LedgerAutomationPolicyDecision = {
   status: LedgerAutomationPolicyStatus;
 };
 
-const rawEnv = (key: string) => process.env[key]?.trim() || '';
-const envFlag = (key: string) => /^(1|true|yes|on)$/i.test(rawEnv(key));
 const normalizeAllowlist = (allowlist: string[]) => Array.from(new Set(allowlist.map((value) => value.trim().toLowerCase()).filter(Boolean)));
 const normalizeMaxAmountThb = (value: number) => Number.isFinite(value) && value > 0 ? value : DEFAULT_MAX_AMOUNT_THB;
 
@@ -63,27 +59,24 @@ export const financialLedgerHandlerKeys = LEDGER_HANDLER_KEYS;
 
 export const getLedgerAutomationPolicyStatus = (dashboardLedgerEnabled: boolean, senderAllowlist: string[] = [], maxAmountThb = DEFAULT_MAX_AMOUNT_THB): LedgerAutomationPolicyStatus => {
   const allowlist = normalizeAllowlist(senderAllowlist);
-  const canaryEnvEnabled = envFlag(CANARY_ENV_KEY);
-  const active = canaryEnvEnabled && dashboardLedgerEnabled && allowlist.length > 0;
+  const active = dashboardLedgerEnabled && allowlist.length > 0;
   return {
-    mode: active ? 'canary' : 'blocked',
-    canaryEnvEnabled,
+    mode: active ? 'active' : 'blocked',
     dashboardLedgerEnabled,
     senderAllowlistConfigured: allowlist.length > 0,
     senderAllowlistLabels: allowlist,
     maxAmountThb: normalizeMaxAmountThb(maxAmountThb),
     safeguards: [
-      'Dashboard Ledger canary switch must be on.',
-      `${CANARY_ENV_KEY}=true must be present in the deployment environment.`,
-      'Dashboard settings must name exact sender emails or domains allowed for the canary.',
-      'Each action must use an approved Financial Ledger expense or income handler with a transaction reference, THB amount, complete MIME parse, and amount at or below the dashboard canary limit.',
+      'Dashboard Ledger switch must be on.',
+      'Dashboard settings must name exact sender emails or domains allowed for automatic writes.',
+      'Each action must use an approved Financial Ledger expense or income handler with a transaction reference, THB amount, complete MIME parse, and amount at or below the dashboard limit.',
       'Handler idempotency uses transaction reference plus amount, and the Ledger writer reconciles only an existing matching reference, amount, and Ledger Type instead of creating a duplicate.',
-      'Turning off either the dashboard switch or the canary environment flag is the emergency circuit breaker.'
+      'Turning off the dashboard Ledger switch is the emergency circuit breaker.'
     ],
     risks: [LEDGER_AUTHENTICITY_GAP_WARNING, 'Automatic retries run only when the bounded processor is invoked; no scheduler is configured yet.'],
     nextAction: active
-      ? 'Canary is eligible for matching allowed senders. Watch the dashboard after each incoming transaction email and turn the dashboard Ledger switch off if anything looks wrong.'
-      : 'Set the canary env flag, configure the dashboard sender allowlist and amount limit, deploy the app, then turn on the dashboard Ledger canary after reviewing the risks.'
+      ? 'Automation is active for matching allowed senders. Watch new Financial Ledger records and turn the dashboard Ledger switch off if anything looks wrong.'
+      : 'Configure the dashboard sender allowlist and amount limit, then turn on the dashboard Ledger switch.'
   };
 };
 
@@ -102,7 +95,7 @@ export const evaluateLedgerAutomationPolicy = (
     return { allowed: false, reason: LEDGER_REQUIRED_FIELDS_REASON, status };
   }
   if (input.mime?.completeness !== 'complete') return { allowed: false, reason: LEDGER_MIME_INCOMPLETE_REASON, status };
-  if (!status.canaryEnvEnabled || !status.dashboardLedgerEnabled || !status.senderAllowlistConfigured) return { allowed: false, reason: LEDGER_CANARY_NOT_ENABLED_REASON, status };
+  if (!status.dashboardLedgerEnabled || !status.senderAllowlistConfigured) return { allowed: false, reason: LEDGER_AUTOMATION_NOT_ENABLED_REASON, status };
   if (!senderMatchesAllowlist(input.from, allowlist)) return { allowed: false, reason: LEDGER_SENDER_NOT_ALLOWED_REASON, status };
   if (classification.amountMinor > status.maxAmountThb * 100) return { allowed: false, reason: `${LEDGER_AMOUNT_LIMIT_REASON} Limit: ${status.maxAmountThb.toLocaleString('en-US')} THB.`, status };
   return { allowed: true, status };

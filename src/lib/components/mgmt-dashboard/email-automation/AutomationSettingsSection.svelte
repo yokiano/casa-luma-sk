@@ -122,7 +122,7 @@
       </label>
       <label class="flex items-start gap-3 rounded-2xl border border-[#eee5dc] bg-[#fbf8f4] p-4 text-sm">
         <input class="mt-1" type="checkbox" bind:checked={form.ledgerEnabled} disabled={savingSettings} />
-        <span><b class="block text-[#2c2925]">Company Ledger canary</b><span class="text-[#7a6550]">When on, Ledger writes are still allowed only if the deployment canary flag, dashboard sender allowlist, complete MIME, amount limit, reference, and idempotency checks pass. Turn this off as the emergency stop.</span></span>
+        <span><b class="block text-[#2c2925]">Financial Ledger automation</b><span class="text-[#7a6550]">When on, Ledger writes are allowed only when the sender allowlist, complete MIME, amount limit, reference, and idempotency checks pass. Turn this off as the emergency stop.</span></span>
       </label>
       <label class="flex items-start gap-3 rounded-2xl border border-[#eee5dc] bg-[#fbf8f4] p-4 text-sm">
         <input class="mt-1" type="checkbox" bind:checked={form.notificationsEnabled} disabled={savingSettings} />
@@ -131,13 +131,13 @@
     </div>
     <div class="mt-4 grid gap-3 lg:grid-cols-[2fr_1fr]">
       <label class="block rounded-2xl border border-[#eee5dc] bg-[#fbf8f4] p-4 text-sm">
-        <b class="block text-[#2c2925]">Ledger canary allowed senders</b>
+        <b class="block text-[#2c2925]">Ledger allowed senders</b>
         <span class="mt-1 block text-xs leading-5 text-[#7a6550]">One exact visible sender email or domain per line. Stored in Neon dashboard settings, not Vercel env.</span>
         <textarea class="mt-3 min-h-28 w-full rounded-xl border border-[#dfd2c5] bg-white p-3 font-mono text-xs" bind:value={form.ledgerAllowedSendersText} disabled={savingSettings} placeholder="kbiz@kasikornbank.com&#10;yardenavir@gmail.com"></textarea>
       </label>
       <label class="block rounded-2xl border border-[#eee5dc] bg-[#fbf8f4] p-4 text-sm">
         <b class="block text-[#2c2925]">Ledger max amount (THB)</b>
-        <span class="mt-1 block text-xs leading-5 text-[#7a6550]">Canary hard limit before a Ledger write can run.</span>
+        <span class="mt-1 block text-xs leading-5 text-[#7a6550]">Hard limit before an automatic Ledger write can run.</span>
         <input class="mt-3 w-full rounded-xl border border-[#dfd2c5] bg-white p-3 text-sm" type="number" min="1" step="1" bind:value={form.ledgerMaxAmountThb} disabled={savingSettings} />
       </label>
     </div>

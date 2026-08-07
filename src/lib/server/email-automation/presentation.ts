@@ -23,7 +23,7 @@ export const buildEmailAutomationOutcome = (facts: OutcomeFacts): EmailAutomatio
   const auth = facts.authenticityVerdict && facts.authenticityVerdict !== 'passed'
     ? ` Sender authenticity is ${facts.authenticityVerdict}.`
     : '';
-  const safetyBlocked = facts.actionState === 'failed' && facts.processingState === 'review' && /safety-locked|authenticity enforcement|canary blocked|canary is not active|not active/i.test(facts.reviewReason ?? '');
+  const safetyBlocked = facts.actionState === 'failed' && facts.processingState === 'review' && /safety-locked|safety.blocked|authenticity enforcement|automation blocked|automation is not active|not active/i.test(facts.reviewReason ?? '');
   const action = facts.actionState === 'succeeded' || facts.actionState === 'reconciled'
     ? `The configured action completed${facts.externalObjectId ? ` (external record ${facts.externalObjectId})` : ''}.`
     : facts.actionState === 'claimed'
@@ -41,7 +41,7 @@ export const buildEmailAutomationOutcome = (facts: OutcomeFacts): EmailAutomatio
               : 'No external action was run.';
   const state = `${humanize(facts.processingState)}${facts.actionState ? ` · action ${humanize(facts.actionState)}` : ''}${facts.notificationState ? ` · notification ${humanize(facts.notificationState)}` : ''}.${auth}`;
   const nextStep = safetyBlocked
-    ? 'A manager should inspect the original email. Ledger automation runs only inside the explicit canary gates until sender-authenticity enforcement is implemented.'
+    ? 'A manager should inspect the original email. Ledger automation remains limited by the dashboard switch, sender allowlist, MIME, amount, and idempotency safeguards.'
     : facts.actionState === 'failed'
       ? 'A manager should open this event, inspect the attempt history, then retry or reconcile it.'
     : facts.actionState === 'retry_scheduled'

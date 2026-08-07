@@ -15,8 +15,8 @@ const DEFAULT_LEDGER_MAX_AMOUNT_THB = 5_000;
 
 export const DEFAULT_SETTINGS: EmailAutomationSettings = {
   automationEnabled: true,
-  // Default closed. The dashboard switch can enable the guarded canary only when
-  // deployment env also opts in.
+  // Default closed. Managers explicitly enable production Ledger writes after
+  // configuring the sender allowlist and amount limit.
   ledgerEnabled: false,
   notificationsEnabled: true,
   ignoredSenders: [],

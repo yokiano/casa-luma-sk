@@ -91,7 +91,7 @@ export const renderDurableEmailAutomationNotification = (
 ) => {
   const status = outcome.actionStatus ?? (classification.processingState === 'review' ? 'review' : 'no_action');
   const succeeded = status === 'succeeded' || status === 'reconciled';
-  const safetyBlocked = status === 'failed' && /safety-locked|safety.blocked|authenticity enforcement|canary blocked|canary is not active|not active/i.test(outcome.actionMessage ?? '');
+  const safetyBlocked = status === 'failed' && /safety-locked|safety.blocked|authenticity enforcement|automation blocked|automation is not active|not active/i.test(outcome.actionMessage ?? '');
   const actionTaken = status === 'succeeded'
     ? outcome.externalObjectId
       ? `Financial Ledger record created (${escapeHtml(outcome.externalObjectId)}).`
@@ -111,7 +111,7 @@ export const renderDurableEmailAutomationNotification = (
     ? 'Attach a receipt from the button below if one is available.'
     : succeeded ? 'No action is needed.'
     : status === 'retry_scheduled' ? 'A manager should open the event and wait for or trigger the safe retry.'
-    : safetyBlocked ? 'A manager should inspect the original email. Ledger automation runs only inside the explicit canary gates until sender-authenticity enforcement is implemented.'
+    : safetyBlocked ? 'A manager should inspect the original email. Ledger automation remains limited by the dashboard switch, sender allowlist, MIME, amount, and idempotency safeguards.'
     : status === 'failed' ? 'A manager should open the event, inspect the attempt, then retry or reconcile.'
     : 'A manager should open the event and review the evidence before acting.';
   const titleState = succeeded ? 'recorded' as const

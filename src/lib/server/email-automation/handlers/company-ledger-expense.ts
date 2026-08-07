@@ -4,7 +4,7 @@ import type { EmailAutomationHandler } from './types';
 const defaults = (value: unknown) => value && typeof value === 'object' ? value as Record<string, string> : {};
 export const companyLedgerExpenseHandler: EmailAutomationHandler = {
   key: 'company_ledger_expense', version: '1', supportedClassifications: ['expense'], sideEffectRisk: 'external_write',
-  validate: (c) => c.classification !== 'expense' ? 'Company Ledger automation only supports expense classifications.' : c.processingState !== 'ready' ? 'This expense is not ready for automatic processing.' : !c.externalRef ? 'A transaction reference is required.' : c.amountMinor === undefined ? 'An amount is required.' : c.currency !== 'THB' ? 'Company Ledger canary currently supports only THB expenses.' : null,
+  validate: (c) => c.classification !== 'expense' ? 'Company Ledger automation only supports expense classifications.' : c.processingState !== 'ready' ? 'This expense is not ready for automatic processing.' : !c.externalRef ? 'A transaction reference is required.' : c.amountMinor === undefined ? 'An amount is required.' : c.currency !== 'THB' ? 'Financial Ledger automation currently supports only THB expenses.' : null,
   idempotencyKey: (_input, c) => `ledger-expense:${c.externalRef ?? 'missing'}:${c.amountMinor ?? 'missing'}`,
   execute: async ({ input, classification, eventId, actionId }) => {
     const config = defaults(classification.ledgerDefaults);

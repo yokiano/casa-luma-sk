@@ -483,7 +483,7 @@ export const sendTestForRule = async (ruleId: number): Promise<TestSendResult> =
   if (!input) return { ok: false, error: 'This rule has no dummy_input. Add one before sending a test.' };
   const ruleInput = toRuleInput(row);
   if (!matchesClassificationRule(input, ruleInput)) return { ok: false, error: 'The dummy_input does not match this rule\'s patterns.' };
-  // Use the same classifier and final canary policy as live intake.
+  // Use the same classifier and final production safety policy as live intake.
   const settings = await loadAutomationSettings();
   const classification = applyEmailAutomationSafetyPolicy(input, classifyEmail(input, [ruleInput], settings.ignoredSenders), settings.ledgerEnabled, settings.ledgerAllowedSenders, settings.ledgerMaxAmountThb);
   const sent = await sendEmailAutomationTestNotification(input, classification);

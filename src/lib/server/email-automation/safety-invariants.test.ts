@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { isCurrentLease, redactAutomationError } from './store';
 import { canReconcileActionState } from './reconcile';
 import { renderDurableEmailAutomationNotification } from './notifications/render';
-import { applyEmailAutomationSafetyPolicy, evaluateLedgerAutomationPolicy, LEDGER_AMOUNT_LIMIT_REASON, LEDGER_CANARY_NOT_ENABLED_REASON, LEDGER_MIME_INCOMPLETE_REASON, LEDGER_SENDER_NOT_ALLOWED_REASON } from './ledger-safety';
+import { applyEmailAutomationSafetyPolicy, evaluateLedgerAutomationPolicy, LEDGER_AMOUNT_LIMIT_REASON, LEDGER_AUTOMATION_NOT_ENABLED_REASON, LEDGER_MIME_INCOMPLETE_REASON, LEDGER_SENDER_NOT_ALLOWED_REASON } from './ledger-safety';
 
 const input = { receivedAt: '2026-07-11T00:00:00Z', from: 'Bank <bank@example.test>', to: 'automation@example.test', subject: 'Transfer', attachmentCount: 0, mime: { completeness: 'complete' as const } };
 const classification = { classification: 'expense' as const, subtype: 'transfer_success', processingState: 'ready' as const, notify: true, handlerKey: 'company_ledger_expense', externalRef: 'ABC123456', amountMinor: 9999, currency: 'THB' };
@@ -39,27 +39,24 @@ describe('durable safety invariants', () => {
   it('distinguishes retry, external failure, and safety blocking truthfully', () => {
     expect(renderDurableEmailAutomationNotification(input, classification, { actionStatus: 'retry_scheduled' })).toContain('retry was scheduled');
     expect(renderDurableEmailAutomationNotification(input, classification, { actionStatus: 'failed' })).toContain('failed permanently');
-    const blocked = renderDurableEmailAutomationNotification(input, classification, { actionStatus: 'failed', actionMessage: LEDGER_CANARY_NOT_ENABLED_REASON });
+    const blocked = renderDurableEmailAutomationNotification(input, classification, { actionStatus: 'failed', actionMessage: LEDGER_AUTOMATION_NOT_ENABLED_REASON });
     expect(blocked).toContain('safety-blocked');
     expect(blocked).toContain('before any external change');
   });
 
-  it('blocks ready Ledger classifications unless the explicit canary gates are satisfied', () => {
+  it('blocks ready Ledger classifications unless production dashboard controls are satisfied', () => {
     const policyResult = applyEmailAutomationSafetyPolicy(input, classification, false);
     expect(policyResult.processingState).toBe('review');
-    expect(policyResult.reviewReason).toBe(LEDGER_CANARY_NOT_ENABLED_REASON);
+    expect(policyResult.reviewReason).toBe(LEDGER_AUTOMATION_NOT_ENABLED_REASON);
   });
 
-  it('applies the existing canary, MIME, and amount safeguards to income handlers', () => {
-    process.env.EMAIL_AUTOMATION_LEDGER_CANARY_ENABLED = 'true';
-    expect(evaluateLedgerAutomationPolicy(input, incomeClassification, false, ['example.test'], 100).reason).toBe(LEDGER_CANARY_NOT_ENABLED_REASON);
+  it('applies the dashboard, MIME, and amount safeguards to income handlers without an environment feature flag', () => {
+    expect(evaluateLedgerAutomationPolicy(input, incomeClassification, false, ['example.test'], 100).reason).toBe(LEDGER_AUTOMATION_NOT_ENABLED_REASON);
     expect(evaluateLedgerAutomationPolicy({ ...input, mime: { completeness: 'partial' as const } }, incomeClassification, true, ['example.test'], 100).reason).toBe(LEDGER_MIME_INCOMPLETE_REASON);
     expect(evaluateLedgerAutomationPolicy(input, { ...incomeClassification, amountMinor: 10001 }, true, ['example.test'], 100).reason).toContain(LEDGER_AMOUNT_LIMIT_REASON);
-    delete process.env.EMAIL_AUTOMATION_LEDGER_CANARY_ENABLED;
   });
 
-  it('allows the canary only for configured senders within the amount and MIME safeguards', () => {
-    process.env.EMAIL_AUTOMATION_LEDGER_CANARY_ENABLED = 'true';
+  it('allows production automation only for configured senders within the amount and MIME safeguards', () => {
     const allowed = evaluateLedgerAutomationPolicy({ ...input, from: 'Bank <bank@example.test>' }, { ...classification, externalRef: 'ABC123456', amountMinor: 9999, currency: 'THB' }, true, ['example.test'], 100);
     expect(allowed.allowed).toBe(true);
     const blocked = evaluateLedgerAutomationPolicy({ ...input, from: 'Bank <bank@evil.test>' }, { ...classification, externalRef: 'ABC123456', amountMinor: 9999, currency: 'THB' }, true, ['example.test'], 100);
@@ -69,6 +66,5 @@ describe('durable safety invariants', () => {
     expect(allowedIncome.allowed).toBe(true);
     const mismatchedHandler = evaluateLedgerAutomationPolicy(input, { ...incomeClassification, classification: 'expense', handlerKey: 'financial_ledger_income' }, true, ['example.test'], 100);
     expect(mismatchedHandler.allowed).toBe(false);
-    delete process.env.EMAIL_AUTOMATION_LEDGER_CANARY_ENABLED;
   });
 });
