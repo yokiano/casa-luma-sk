@@ -16,7 +16,13 @@ import {
 } from '$lib/receipts/automations';
 import { createDefaultReceiptAutomationSuite } from '$lib/server/membership-automation';
 import { buildReceiptReportUrl } from '$lib/server/incidents/urls';
+import {
+  buildCashierReceiptUrl,
+  collectCashierAlertCandidates,
+  publishCashierReceiptAlert
+} from '$lib/server/incidents/cashier-telegram';
 import { incidentReporter } from '$lib/server/incidents';
+import type { AlertPublisher } from '$lib/server/alerts/types';
 import type { ReportIncidentInput } from '$lib/server/incidents/types';
 import { db } from '$lib/server/db/client';
 import {
@@ -46,6 +52,8 @@ export interface ReceiptWebhookProcessOptions {
   automationSuite?: ReceiptAutomation[];
   validationSuite?: ReceiptValidationSuite;
   reportIncident?: (input: ReportIncidentInput) => Promise<unknown>;
+  /** Test/operational override. The default is the dedicated cashier destination only. */
+  cashierAlertPublisher?: AlertPublisher | null;
 }
 
 export interface ReceiptWebhookProcessResult {
@@ -433,7 +441,29 @@ export const processReceiptWebhook = async (
     stages.validation = { status: 'not_requested' };
   }
 
-    return {
+  const cashierCandidates = collectCashierAlertCandidates({
+    receiptNumber: payload.items.receipt_number,
+    receiptType: payload.items.receipt_type,
+    cancelledAt: payload.items.cancelled_at,
+    validationFindings: validationReport?.findings,
+    automationResults
+  });
+
+  // Cashier alerts are deliberately published once, after both stages, so a
+  // validation finding and its automation counterpart cannot create two messages.
+  if (mode === 'live' && options.notify !== false && cashierCandidates.length) {
+    try {
+      await publishCashierReceiptAlert({
+        receiptNumber: payload.items.receipt_number,
+        receiptUrl: buildCashierReceiptUrl(payload.items.receipt_number),
+        issues: cashierCandidates
+      }, options.cashierAlertPublisher);
+    } catch (cashierError) {
+      console.error('[receipt-webhook] cashier alert publisher failed', getSafeErrorSummary(cashierError));
+    }
+  }
+
+  return {
       receiptKey,
       receiptNumber: payload.items.receipt_number,
       mode,
