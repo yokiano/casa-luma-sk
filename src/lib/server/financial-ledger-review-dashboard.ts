@@ -154,4 +154,3 @@ export const updateFinancialLedgerReview = async ({
       : 'Saved. Financial Ledger completeness is satisfied and the attention review is closed.'
   };
 };
-EOF
