@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { extractMemo, extractTransactionReference } from '$lib/expense-scan/parsers/kbank-parser-utils';
 import { mimeReviewReason, requiresMimeReview, type BodyExtractionMetadata, type MimeMetadata } from './mime-contract';
+import { KSHOP_DAILY_SETTLEMENT_SUBTYPE, kShopRuleBodyText, parseKShopDailySettlement } from './parsers/kshop';
 
 export type EmailAutomationInput = {
   receivedAt: string;
@@ -192,7 +193,10 @@ const matchesBodyPatterns = (text: string, bodyPatterns: unknown) => {
 
 export const matchesClassificationRule = (input: EmailAutomationInput, rule: EmailClassificationRuleInput) => {
   const subject = normalize(input.subject);
-  const text = bodyText(input);
+  // The Worker may strip a forwarded K SHOP block from extractedBody. Only
+  // this focused family matcher inspects the raw body fallbacks as well;
+  // generic expense rules retain their existing latest-body semantics.
+  const text = rule.subtype === KSHOP_DAILY_SETTLEMENT_SUBTYPE ? kShopRuleBodyText(input) : bodyText(input);
   return matchesPattern(input.from, rule.senderPattern)
     && matchesPattern(subject, rule.subjectPattern)
     && matchesBodyPatterns(text, rule.bodyPatterns);
@@ -224,13 +228,32 @@ export const classificationFromRule = (input: EmailAutomationInput, rule: EmailC
   if (!classification) return null;
   const subject = normalize(input.subject);
   const text = `${subject} ${bodyText(input)}`;
+  const handlerKey = rule.handlerKey ?? undefined;
+  const matchedRuleName = rule.name;
+  const notifyPolicy = rule.notifyPolicy ?? 'review_and_success';
+
+  if (classification === 'income' && rule.subtype === KSHOP_DAILY_SETTLEMENT_SUBTYPE) {
+    const parsed = parseKShopDailySettlement(input);
+    return {
+      classification: 'income',
+      subtype: KSHOP_DAILY_SETTLEMENT_SUBTYPE,
+      processingState: parsed.ready ? 'ready' : 'review',
+      reviewReason: parsed.ready ? undefined : `K SHOP daily settlement requires review: ${parsed.issues.join(' ')}`,
+      externalRef: parsed.externalRef,
+      amountMinor: parsed.amountMinor,
+      currency: parsed.amountMinor === undefined ? undefined : 'THB',
+      notify: shouldNotify(notifyPolicy, 'income', parsed.ready ? 'ready' : 'review'),
+      handlerKey: handlerKey ?? 'financial_ledger_income',
+      ledgerDefaults: rule.ledgerDefaults,
+      notifyPolicy,
+      matchedRuleName
+    };
+  }
+
   const externalRef = extractReference(text);
   const amountMinor = extractAmount(text);
   const description = extractDescription(text);
   const counterparty = extractCounterparty(text);
-  const handlerKey = rule.handlerKey ?? undefined;
-  const matchedRuleName = rule.name;
-  const notifyPolicy = rule.notifyPolicy ?? 'review_and_success';
 
   if (classification === 'ignore') {
     return {

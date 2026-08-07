@@ -26,6 +26,56 @@ const dbExpenseRule = (overrides: Partial<EmailClassificationRuleInput> = {}): E
   ...overrides
 });
 
+const dbKShopRule = (overrides: Partial<EmailClassificationRuleInput> = {}): EmailClassificationRuleInput => ({
+  name: 'K SHOP daily settlement income',
+  classification: 'income',
+  subtype: 'kshop_daily_settlement',
+  senderPattern: null,
+  subjectPattern: null,
+  bodyPatterns: {
+    mode: 'all',
+    patterns: [
+      'regex:K(?:\\s*PLUS)?\\s*SHOP|เค\\s*ช็อป',
+      'regex:daily|ประจำวัน',
+      'regex:settlement|summary|สรุปยอด|ยอดขาย',
+      'regex:completed?|successfully|successful|เรียบร้อย|สำเร็จ'
+    ]
+  },
+  handlerKey: 'financial_ledger_income',
+  ledgerDefaults: {
+    type: 'Scan Income',
+    category: 'Revenue',
+    department: 'General',
+    bankAccount: 'KBank',
+    paymentMethod: 'Scan',
+    receiptNotRequired: true
+  },
+  notifyPolicy: 'review_and_success',
+  ...overrides
+});
+
+const kShopEmail = (overrides: Partial<EmailAutomationInput> = {}): EmailAutomationInput => ({
+  receivedAt: '2026-08-07T03:30:00.000Z',
+  from: 'Surisa Surisa <surisa0737@gmail.com>',
+  to: 'automations@casalumakpg.com',
+  subject: 'Fwd: K SHOP Daily Settlement Summary',
+  messageId: '<kshop-classifier@example.test>',
+  attachmentCount: 0,
+  textBody: [
+    '---------- Forwarded message ---------',
+    'From: KSHOP <KPLUSSHOP@kasikornbank.com>',
+    'Date: Fri, 07 Aug 2026 09:00:00 +0700',
+    'Subject: K SHOP Daily Settlement Summary',
+    'To: surisa0737@gmail.com',
+    '',
+    'K SHOP daily settlement summary was completed successfully for CASA LUMA KPG.',
+    'Merchant Code: 123456789',
+    'ยอดเงินจำนวน(บาท): 12,345.67'
+  ].join('\n'),
+  mime: { parserVersion: 'test', completeness: 'complete', attachmentCount: 0 },
+  ...overrides
+});
+
 describe('email automation classifier', () => {
   it('uses enabled DB-backed rules before built-in defaults', () => {
     const result = classifyEmail(baseEmail(), [dbExpenseRule()]);
@@ -172,6 +222,51 @@ describe('email automation classifier', () => {
     expect(shouldCreateLedgerExpense(classifyEmail(baseEmail(), [dbExpenseRule({ handlerKey: 'notify_only' })]))).toBe(false);
     expect(shouldCreateLedgerExpense(classifyEmail(baseEmail(), [dbExpenseRule({ classification: 'income' })]))).toBe(false);
     expect(shouldCreateLedgerExpense(classifyEmail(baseEmail({ textBody: 'Reference Number: PPFS260711TEST01' }), [dbExpenseRule()]))).toBe(false);
+  });
+
+  it('classifies a proven K SHOP settlement as income with a deterministic reference', () => {
+    const result = classifyEmail(kShopEmail(), [dbKShopRule()]);
+
+    expect(result).toMatchObject({
+      classification: 'income',
+      subtype: 'kshop_daily_settlement',
+      processingState: 'ready',
+      externalRef: 'kshop:123456789:2026-08-07',
+      amountMinor: 1_234_567,
+      currency: 'THB',
+      notify: true,
+      handlerKey: 'financial_ledger_income',
+      ledgerDefaults: expect.objectContaining({ type: 'Scan Income', category: 'Revenue', department: 'General', bankAccount: 'KBank', paymentMethod: 'Scan' })
+    });
+  });
+
+  it('keeps K SHOP candidates as income+review when exact required data conflicts or is missing', () => {
+    const missingMerchant = classifyEmail(kShopEmail({
+      textBody: kShopEmail().textBody?.replace('Merchant Code: 123456789\n', '')
+    }), [dbKShopRule()]);
+    expect(missingMerchant).toMatchObject({ classification: 'income', subtype: 'kshop_daily_settlement', processingState: 'review', notify: true });
+    expect(missingMerchant.reviewReason).toMatch(/merchant code/i);
+
+    const conflictingAmount = classifyEmail(kShopEmail({
+      textBody: `${kShopEmail().textBody}\nยอดเงินจำนวน(บาท): 99.00`
+    }), [dbKShopRule()]);
+    expect(conflictingAmount).toMatchObject({ classification: 'income', subtype: 'kshop_daily_settlement', processingState: 'review' });
+    expect(conflictingAmount.reviewReason).toMatch(/conflicting/i);
+
+    const wrongVisibleSender = classifyEmail(kShopEmail({ from: 'Other Sender <other@example.com>' }), [dbKShopRule()]);
+    expect(wrongVisibleSender).toMatchObject({ classification: 'income', subtype: 'kshop_daily_settlement', processingState: 'review' });
+    expect(wrongVisibleSender.reviewReason).toMatch(/visible sender/i);
+  });
+
+  it('keeps the K SHOP parser MIME gate independent from generic expense extraction', () => {
+    const result = classifyEmail(kShopEmail({
+      mime: { parserVersion: 'test', completeness: 'incomplete', attachmentCount: 0 }
+    }), [dbKShopRule()]);
+    expect(result).toMatchObject({ classification: 'income', subtype: 'kshop_daily_settlement', processingState: 'review' });
+    expect(result.reviewReason).toMatch(/incomplete|before acting/i);
+
+    const expense = classifyEmail(baseEmail(), [dbExpenseRule()]);
+    expect(expense).toMatchObject({ classification: 'expense', processingState: 'ready', amountMinor: 12345 });
   });
 });
 

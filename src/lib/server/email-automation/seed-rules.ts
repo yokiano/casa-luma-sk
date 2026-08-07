@@ -1,19 +1,21 @@
 import type { EmailAutomationInput, EmailClassificationRuleInput } from './classifier';
 
 /**
- * Default `email_classification_rules` rows, seeded by migration
- * `drizzle/0005_email_classification_rules_dummy_input.sql`.
+ * Default `email_classification_rules` rows, seeded by migrations
+ * `drizzle/0005_email_classification_rules_dummy_input.sql` and
+ * `drizzle/0014_email_kshop_daily_settlement_rule.sql`.
  *
- * These mirror the built-in matchers in `classifier.ts` (`builtInClassify`).
- * The array is ordered by priority to mirror the built-in match order. The DB
- * rules run first by priority; once they are proven in production the
- * duplicated built-in matchers are meant to be removed from code, leaving only
- * the catch-all `unrecognized_*` fallback in `builtInClassify`. See the
- * deprecation note in `classifier.ts`.
+ * Most entries mirror the built-in matchers in `classifier.ts`
+ * (`builtInClassify`). The K SHOP income entry is intentionally rule-backed
+ * with a focused parser because it has no built-in fallback matcher. The array
+ * is ordered by priority to mirror the built-in match order; DB rules run first.
+ * Once the mirrored rules are proven in production, their duplicated built-in
+ * matchers are meant to be removed, leaving only the catch-all fallbacks. See
+ * the deprecation note in `classifier.ts`.
  *
- * Keep this array in sync with the INSERT statements in migration 0005. The
- * `seed-rules.test.ts` suite guards the equivalence between these DB rules and
- * the built-in classifier.
+ * Keep this array in sync with the INSERT statements in migrations 0005 and
+ * 0014. The `seed-rules.test.ts` suite guards the equivalence of mirrored rules
+ * and the focused semantics of the K SHOP rule.
  */
 export type SeedClassificationRule = EmailClassificationRuleInput & {
   priority: number;
@@ -108,6 +110,47 @@ export const SEED_CLASSIFICATION_RULES: SeedClassificationRule[] = [
       messageId: '<seed-promptpay-success@example.test>',
       attachmentCount: 0,
       textBody: 'Reference Number: PPFS260707254721403 Amount (THB): 4,000.00'
+    }
+  },
+  {
+    priority: 45,
+    name: 'K SHOP daily settlement income',
+    classification: 'income',
+    subtype: 'kshop_daily_settlement',
+    // The family rule stays broad so malformed K SHOP candidates become
+    // income+review; the parser enforces the exact visible/embedded senders
+    // and transaction fields.
+    senderPattern: null,
+    subjectPattern: null,
+    bodyPatterns: {
+      mode: 'all',
+      patterns: [
+        'regex:K(?:\\s*PLUS)?\\s*SHOP|เค\\s*ช็อป',
+        'regex:daily|ประจำวัน',
+        'regex:settlement|summary|สรุปยอด|ยอดขาย',
+        'regex:completed?|successfully|successful|เรียบร้อย|สำเร็จ'
+      ]
+    },
+    handlerKey: 'financial_ledger_income',
+    ledgerDefaults: {
+      type: 'Scan Income',
+      category: 'Revenue',
+      department: 'General',
+      bankAccount: 'KBank',
+      paymentMethod: 'Scan',
+      receiptNotRequired: true
+    },
+    notifyPolicy: 'review_and_success',
+    description: 'Forwarded K SHOP daily settlement. The focused parser requires proven Casa Luma and bank markers before any later income handler can write.',
+    dummyInput: {
+      receivedAt: '2026-08-07T03:30:00.000Z',
+      from: 'Surisa Surisa <surisa0737@gmail.com>',
+      to: 'automations@casalumakpg.com',
+      subject: 'Fwd: K SHOP Daily Settlement Summary',
+      messageId: '<seed-kshop-daily-settlement@example.test>',
+      attachmentCount: 0,
+      textBody: '---------- Forwarded message ---------\nFrom: KSHOP <KPLUSSHOP@kasikornbank.com>\nDate: Fri, 07 Aug 2026 09:00:00 +0700\nSubject: K SHOP Daily Settlement Summary\nTo: surisa0737@gmail.com\n\nK SHOP daily settlement summary was completed successfully for CASA LUMA KPG.\nMerchant Code: 123456789\nยอดเงินจำนวน(บาท): 12,345.67',
+      mime: { parserVersion: 'seed', completeness: 'complete', attachmentCount: 0 }
     }
   },
   {

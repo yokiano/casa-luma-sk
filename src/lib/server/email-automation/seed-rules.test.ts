@@ -17,8 +17,8 @@ describe('seed classification rules', () => {
     }
   });
 
-  it('seed DB rules use the same final MIME safety policy as built-in classification', () => {
-    for (const rule of SEED_CLASSIFICATION_RULES) {
+  it('mirrored seed DB rules use the same final MIME safety policy as built-in classification', () => {
+    for (const rule of SEED_CLASSIFICATION_RULES.filter((candidate) => BUILTIN_CLASSIFIERS.some((entry) => entry.subtype === candidate.subtype))) {
       const fromRule = classifyEmail(rule.dummyInput, [rule]);
       const fromBuiltin = classifyEmail(rule.dummyInput, []);
       expect(fromRule.classification).toBe(fromBuiltin.classification);
@@ -26,6 +26,34 @@ describe('seed classification rules', () => {
       expect(fromRule.processingState).toBe(fromBuiltin.processingState);
       expect(fromRule.notify).toBe(fromBuiltin.notify);
     }
+  });
+
+  it('seeds the focused K SHOP income rule with the exact future-handler contract', () => {
+    const rule = SEED_CLASSIFICATION_RULES.find((candidate) => candidate.subtype === 'kshop_daily_settlement');
+    expect(rule).toBeDefined();
+    expect(rule).toMatchObject({
+      classification: 'income',
+      subtype: 'kshop_daily_settlement',
+      handlerKey: 'financial_ledger_income',
+      notifyPolicy: 'review_and_success',
+      ledgerDefaults: {
+        type: 'Scan Income',
+        category: 'Revenue',
+        department: 'General',
+        bankAccount: 'KBank',
+        paymentMethod: 'Scan',
+        receiptNotRequired: true
+      }
+    });
+    expect(classifyEmail(rule!.dummyInput, [rule!])).toMatchObject({
+      classification: 'income',
+      subtype: 'kshop_daily_settlement',
+      processingState: 'ready',
+      externalRef: 'kshop:123456789:2026-08-07',
+      amountMinor: 1_234_567,
+      handlerKey: 'financial_ledger_income',
+      notify: true
+    });
   });
 
   it('seed priorities are unique and ordered to mirror the built-in match order', () => {
