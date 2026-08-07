@@ -62,18 +62,28 @@ export const upsertTransferDiscovery = async (
     return inserted[0];
   }
 
-  // Never recalculate persisted cohort decision.
+  const isTerminal = existing.status === 'succeeded' || existing.status === 'ambiguous';
+  const algorithmChanged = existing.cohortAlgorithmVersion !== input.cohortAlgorithmVersion;
+
+  // Cohort decisions stay fixed within an algorithm version. A version change is
+  // an intentional policy migration, so reclassify non-terminal rows once.
   let nextStatus = existing.status as TransferStatus;
-  if (existing.status === 'succeeded' || existing.status === 'ambiguous') {
-    nextStatus =
-      existing.sourceFingerprint !== input.sourceFingerprint ? 'source_changed' : (existing.status as TransferStatus);
+  if (isTerminal) {
+    nextStatus = existing.sourceFingerprint !== input.sourceFingerprint ? 'source_changed' : (existing.status as TransferStatus);
   } else if (
-    existing.status === 'not_selected' ||
     existing.status === 'skipped_refund' ||
     existing.status === 'skipped_cancelled' ||
     existing.status === 'unsupported'
   ) {
     nextStatus = existing.status as TransferStatus;
+  } else if (algorithmChanged) {
+    nextStatus = input.status === 'queued' && !input.cohortSelected ? 'not_selected' : input.status;
+  } else if (existing.status === 'not_selected' && existing.sourceFingerprint === input.sourceFingerprint) {
+    nextStatus = existing.status as TransferStatus;
+  } else if (existing.status === 'not_selected') {
+    // A changed source receipt may have a new payment type, so apply the
+    // current selection policy instead of preserving the stale decision.
+    nextStatus = input.status === 'queued' && !input.cohortSelected ? 'not_selected' : input.status;
   } else if (input.status === 'queued' && (existing.status === 'failed' || existing.status === 'queued')) {
     nextStatus = existing.status as TransferStatus;
   } else {
@@ -81,10 +91,14 @@ export const upsertTransferDiscovery = async (
   }
 
   // Refresh marker for non-terminal rows so algorithm fixes (e.g. max length) apply.
-  const nextMarker =
-    existing.status === 'succeeded' || existing.status === 'ambiguous'
-      ? (existing.targetOrderMarker ?? input.targetOrderMarker)
-      : input.targetOrderMarker;
+  const nextMarker = isTerminal ? (existing.targetOrderMarker ?? input.targetOrderMarker) : input.targetOrderMarker;
+  const cohortUpdate = algorithmChanged && !isTerminal
+    ? {
+        cohortAlgorithmVersion: input.cohortAlgorithmVersion,
+        cohortBucket: input.cohortBucket,
+        cohortSelected: input.cohortSelected
+      }
+    : {};
 
   const updated = await db
     .update(secondLoyverseReceiptTransfers)
@@ -95,6 +109,7 @@ export const upsertTransferDiscovery = async (
       sourceFingerprint: input.sourceFingerprint,
       status: nextStatus,
       targetOrderMarker: nextMarker,
+      ...cohortUpdate,
       lastSeenAt: now,
       updatedAt: now
     })

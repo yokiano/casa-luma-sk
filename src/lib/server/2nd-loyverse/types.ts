@@ -2,9 +2,11 @@ import type { LoyverseReceipt } from '$lib/receipts/types';
 import type { CreateLoyverseReceiptPayload } from '$lib/server/loyverse-client';
 
 export const SECOND_LOYVERSE_SOURCE = 'casa-luma-2nd-loyverse';
-export const COHORT_ALGORITHM_VERSION = 'v1-sha256-50pct';
+export const COHORT_ALGORITHM_VERSION = 'v2-payment-aware-sha256-cash-30pct';
 export const COHORT_BUCKET_MOD = 10_000;
-export const COHORT_SELECT_THRESHOLD = 5_000;
+export const COHORT_SELECT_THRESHOLD = 3_000;
+
+export type ReceiptPaymentCategory = 'scan' | 'credit_card' | 'cash' | 'unsupported';
 
 export type TransferTrigger = 'webhook' | 'backfill' | 'manual' | 'reconcile';
 

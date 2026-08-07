@@ -65,7 +65,7 @@
       <p class="text-xs font-bold uppercase tracking-[0.18em] text-[#7a6550]/70">How save / mirror works</p>
       <ul class="mt-3 list-disc space-y-2 pl-5 text-sm leading-6 text-[#5c4a3d]">
         <li>Eligible non-cancelled <span class="font-semibold">SALE</span> receipts only. Refunds and cancelled receipts are skipped.</li>
-        <li>Deterministic ~50% cohort (<code class="text-xs">v1-sha256-50pct</code>); cohort decision is persisted and never recalculated.</li>
+        <li>Scan and credit card receipts are mirrored at 100%; cash receipts use a deterministic 30% cohort (<code class="text-xs">v2-payment-aware-sha256-cash-30pct</code>); other or missing payment types are not selected.</li>
         <li>Live path: after production webhook processing, best-effort mirror if the live flag is enabled. Failures do not change the webhook response; Telegram only on live failures.</li>
         <li>Backfill CLI uses the same transfer service with <code class="text-xs">forceProcess</code>, so historical windows can run while live mirroring stays off.</li>
         <li>Unsupported cases (e.g. composite items, points discounts) are recorded as <code class="text-xs">unsupported</code>, not successes.</li>

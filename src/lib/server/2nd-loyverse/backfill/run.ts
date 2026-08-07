@@ -5,7 +5,7 @@ import { createSecondLoyverseClients } from '../clients';
 import type { SecondLoyverseConfigInput } from '../config';
 import { EntityInventoryCache } from '../entities/inventory';
 import { considerAndMirrorReceipt } from '../transfers/service';
-import type { MirrorAttemptResult, TransferStatus } from '../types';
+import { COHORT_ALGORITHM_VERSION, type MirrorAttemptResult, type TransferStatus } from '../types';
 import { countTransfersByStatus, queryBackfillReceiptPage } from './query';
 
 export interface BackfillOptions {
@@ -111,12 +111,12 @@ export const runBackfill = async (db: MirrorDatabase, options: BackfillOptions):
   const shouldWrite = Boolean(options.process || options.reconcile);
   const discoverOnly = Boolean(options.discoverOnly || options.dryRun || (!shouldWrite && !options.reportOnly));
 
-  // When processing, prefer due rows (queued/failed) so --limit is not wasted on already-succeeded.
+  // When processing, prefer queued rows and stale not-selected rows so --limit is not wasted on succeeded rows.
   const processStatuses =
     options.failedOnly || options.ambiguousOnly || options.status
       ? undefined
       : shouldWrite
-        ? ['queued']
+        ? ['queued', 'not_selected']
         : undefined;
 
   while (remaining > 0) {
@@ -131,7 +131,8 @@ export const runBackfill = async (db: MirrorDatabase, options: BackfillOptions):
       failedOnly: options.failedOnly,
       ambiguousOnly: options.ambiguousOnly,
       transferStatuses: options.status ? [options.status] : processStatuses,
-      selectedOnly: options.failedOnly || options.ambiguousOnly || Boolean(options.process)
+      selectedOnly: options.failedOnly || options.ambiguousOnly || Boolean(options.process),
+      selectionAlgorithmVersion: shouldWrite ? COHORT_ALGORITHM_VERSION : undefined
     });
 
     if (!page.rows.length) break;

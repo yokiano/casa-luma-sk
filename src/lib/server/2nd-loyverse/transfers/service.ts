@@ -6,6 +6,7 @@ import {
   buildSourceFingerprint,
   buildSourceReceiptKey,
   buildTargetOrderMarker,
+  classifyReceiptPayment,
   computeCohortDecision,
   buildRequestFingerprint
 } from '../cohort';
@@ -73,7 +74,10 @@ const discoverTransfer = async (
   context: SourceReceiptContext,
   status: TransferStatus
 ) => {
-  const cohort = computeCohortDecision(context.sourceReceiptKey);
+  const cohort = computeCohortDecision(
+    context.sourceReceiptKey,
+    classifyReceiptPayment(context.receipt)
+  );
   return upsertTransferDiscovery(runtime.db, {
     sourceReceiptKey: context.sourceReceiptKey,
     sourceMerchantId: context.merchantId,

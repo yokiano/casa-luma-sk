@@ -1,5 +1,5 @@
 import { Buffer } from 'node:buffer';
-import { and, asc, eq, gt, gte, inArray, isNull, lte, or, sql, type SQL } from 'drizzle-orm';
+import { and, asc, eq, gt, gte, inArray, isNull, lte, ne, or, sql, type SQL } from 'drizzle-orm';
 import type { LoyverseReceipt } from '$lib/receipts/types';
 import type { MirrorDatabase } from '../db/types';
 import {
@@ -185,6 +185,7 @@ export const queryBackfillReceiptPage = async (
     failedOnly?: boolean;
     ambiguousOnly?: boolean;
     selectedOnly?: boolean;
+    selectionAlgorithmVersion?: string;
   }
 ): Promise<{ rows: BackfillReceiptRow[]; cursor: string | null; hasMore: boolean }> => {
   const pageSize = Math.min(Math.max(input.limit ?? 25, 1), 100);
@@ -245,7 +246,16 @@ export const queryBackfillReceiptPage = async (
   if (joinTransfer) {
     if (input.failedOnly) filters.push(eq(secondLoyverseReceiptTransfers.status, 'failed'));
     if (input.ambiguousOnly) filters.push(eq(secondLoyverseReceiptTransfers.status, 'ambiguous'));
-    if (input.selectedOnly) filters.push(eq(secondLoyverseReceiptTransfers.cohortSelected, true));
+    if (input.selectedOnly) {
+      filters.push(
+        input.selectionAlgorithmVersion
+          ? or(
+              eq(secondLoyverseReceiptTransfers.cohortSelected, true),
+              ne(secondLoyverseReceiptTransfers.cohortAlgorithmVersion, input.selectionAlgorithmVersion)
+            )!
+          : eq(secondLoyverseReceiptTransfers.cohortSelected, true)
+      );
+    }
     if (input.transferStatuses?.length) {
       filters.push(inArray(secondLoyverseReceiptTransfers.status, input.transferStatuses));
     }
