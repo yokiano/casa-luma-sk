@@ -140,12 +140,20 @@
         Aggregates receipt validation incidents by underlying validation code from incident context/payload.
       </p>
     </div>
-    <a
-      href="/mgmt-dashboard/incidents"
-      class="inline-flex items-center gap-2 rounded-2xl border border-[#dfd2c5] bg-white px-4 py-3 text-sm font-semibold text-[#7a6550] shadow-sm hover:border-[#b99f86]"
-    >
-      All incident records <ArrowUpRight size={16} />
-    </a>
+    <div class="flex flex-wrap gap-3">
+      <a
+        href="/mgmt-dashboard/receipt-validations"
+        class="inline-flex items-center gap-2 rounded-2xl border border-[#dfd2c5] bg-white px-4 py-3 text-sm font-semibold text-[#7a6550] shadow-sm hover:border-[#b99f86]"
+      >
+        Validation catalog <ArrowUpRight size={16} />
+      </a>
+      <a
+        href="/mgmt-dashboard/incidents"
+        class="inline-flex items-center gap-2 rounded-2xl border border-[#dfd2c5] bg-white px-4 py-3 text-sm font-semibold text-[#7a6550] shadow-sm hover:border-[#b99f86]"
+      >
+        All incident records <ArrowUpRight size={16} />
+      </a>
+    </div>
   </div>
 
   <aside class="rounded-3xl border border-sky-200 bg-sky-50 p-4 text-sm leading-6 text-sky-950 shadow-sm">
