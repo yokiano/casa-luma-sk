@@ -44,4 +44,15 @@ describe('receipt validation metadata', () => {
     expect(receiptValidationMetadataByCode.ONE_HOUR_NOT_CONVERTED.telegramRoutes).toEqual(['manager', 'cashier']);
     expect(receiptValidationMetadataByCode.FORCED_TEST_FAILURE.telegramRoutes).toEqual([]);
   });
+
+  it('documents that historical Flexi diagnostics remain manager-only', () => {
+    for (const code of [
+      'FLEXI_CHECKIN_WITHOUT_AVAILABLE_PASS',
+      'FLEXI_CHECKIN_INVALID_VARIANT',
+      'FLEXI_CHECKOUT_WITHOUT_AVAILABLE_PASS',
+      'FLEXI_CHECKOUT_INVALID_VARIANT'
+    ]) {
+      expect(receiptValidationMetadataByCode[code].telegramRoutingNote).toContain('manager-only');
+    }
+  });
 });

@@ -10,6 +10,7 @@ export interface ReceiptValidationCodeMetadata {
   protectsFrom: string;
   severity: 'info' | 'warning' | 'critical';
   telegramRoutes: ReceiptValidationTelegramRoute[];
+  telegramRoutingNote?: string;
   cashierAction?: string;
 }
 
@@ -43,6 +44,7 @@ const metadataByCode: Record<string, ReceiptValidationMetadataDefinition> = {
     protectsFrom: 'Flexi Entrance check-ins that cannot be tied to a customer or supported by remaining pass balance.',
     severity: 'warning',
     telegramRoutes: ['manager', 'cashier'],
+    telegramRoutingNote: 'Cashier alerts cover missing customers and insufficient balance. Unknown historical checkout diagnostics remain manager-only.',
     cashierAction: 'Check that the customer is attached and that a usable Flexi balance remains. Escalate to a manager rather than guessing or selling another pass.'
   },
   FLEXI_CHECKIN_INVALID_VARIANT: {
@@ -53,6 +55,7 @@ const metadataByCode: Record<string, ReceiptValidationMetadataDefinition> = {
     protectsFrom: 'Incorrect child counts and unsafe Flexi balance decisions caused by malformed check-in or history data.',
     severity: 'warning',
     telegramRoutes: ['manager', 'cashier'],
+    telegramRoutingNote: 'Cashier alerts cover malformed current Entrance lines. Unknown historical checkout diagnostics remain manager-only.',
     cashierAction: 'Select the correct 1 to 5 kid Flexi Entrance variant and keep quantity at 1. Do not guess the child count.'
   },
   FLEXI_CHECKOUT_WITHOUT_AVAILABLE_PASS: {
@@ -63,6 +66,7 @@ const metadataByCode: Record<string, ReceiptValidationMetadataDefinition> = {
     protectsFrom: 'Flexi Checkout visit punches that exceed the customer\'s remaining Flexi balance or cannot be attributed to a customer.',
     severity: 'warning',
     telegramRoutes: ['manager', 'cashier'],
+    telegramRoutingNote: 'Cashier alerts cover missing customers and insufficient balance. Unknown historical checkout diagnostics remain manager-only.',
     cashierAction: 'Check the customer and remaining Flexi balance before punching. If the balance is insufficient, stop and ask a manager.'
   },
   FLEXI_CHECKOUT_INVALID_VARIANT: {
@@ -73,6 +77,7 @@ const metadataByCode: Record<string, ReceiptValidationMetadataDefinition> = {
     protectsFrom: 'Incorrect holes punched and unsafe balance mutations caused by malformed or duplicated Checkout data.',
     severity: 'warning',
     telegramRoutes: ['manager', 'cashier'],
+    telegramRoutingNote: 'Cashier alerts cover malformed current Checkout lines. Unknown historical checkout diagnostics remain manager-only.',
     cashierAction: 'Choose one Checkout option for the total holes used during this visit and keep quantity at 1. Do not use elapsed time or cumulative card holes.'
   },
   /** Historical code retained so existing incidents render correctly. */

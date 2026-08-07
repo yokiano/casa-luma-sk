@@ -84,6 +84,9 @@
               {/each}
             </div>
           {/if}
+          {#if validation.telegramRoutingNote}
+            <p class="mt-3 text-sm leading-6 text-[#5c4a3d]"><b>Routing detail:</b> {validation.telegramRoutingNote}</p>
+          {/if}
           {#if validation.cashierAction}
             <div class="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-sm leading-6 text-emerald-950">
               <b>Cashier guidance:</b> {validation.cashierAction}
