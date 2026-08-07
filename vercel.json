@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/financial-balance-reminder",
-      "schedule": "30 13 * * *"
+      "schedule": "30 12 * * *"
     }
   ]
 }
