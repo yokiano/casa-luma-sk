@@ -311,6 +311,27 @@ export const financialBalanceReminderRuns = pgTable(
   ]
 );
 
+export const financialLedgerReviewSummaryRuns = pgTable(
+  'financial_ledger_review_summary_runs',
+  {
+    id: bigint('id', { mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+    localDate: text('local_date').notNull(),
+    status: text('status').notNull().default('pending'),
+    attemptCount: integer('attempt_count').notNull().default(0),
+    summarySnapshot: jsonb('summary_snapshot').notNull().default({}),
+    lastError: text('last_error'),
+    leaseToken: text('lease_token'),
+    leaseExpiresAt: timestamp('lease_expires_at', { withTimezone: true }),
+    sentAt: timestamp('sent_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    uniqueIndex('financial_ledger_review_summary_runs_date_uidx').on(table.localDate),
+    index('financial_ledger_review_summary_runs_status_updated_idx').on(table.status, table.updatedAt)
+  ]
+);
+
 export const emailReceiptUploadSessions = pgTable(
   'email_receipt_upload_sessions',
   {
