@@ -37,6 +37,3 @@ export const actions: Actions = {
     }
   }
 };
-EOF
-
-mkdir -p src/routes/mgmt-dashboard/financial-ledger-reviews

@@ -2815,6 +2815,18 @@
           "varName": "description",
           "readOnly": false
         },
+        "%3DDhs": {
+          "_name": "Review Required",
+          "_type": "checkbox",
+          "varName": "reviewRequired",
+          "readOnly": false
+        },
+        "CKzW": {
+          "_name": "Receipt Not Required",
+          "_type": "checkbox",
+          "varName": "receiptNotRequired",
+          "readOnly": false
+        },
         "B%5B~A": {
           "_name": "Created by",
           "_type": "created_by",
