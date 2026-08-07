@@ -9,7 +9,7 @@ vi.mock('$lib/server/financial-ledger-review-summary', () => ({
   runFinancialLedgerReviewSummary: mocks.run
 }));
 
-import { GET } from './+server';
+import { GET } from '../../routes/api/cron/financial-ledger-review-summary/+server';
 
 describe('Financial Ledger review summary cron endpoint', () => {
   beforeEach(() => mocks.run.mockReset());
