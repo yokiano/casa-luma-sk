@@ -1,10 +1,9 @@
 import { createHash } from 'node:crypto';
-import { and, eq, gt, inArray, lte, sql } from 'drizzle-orm';
+import { and, eq, gt, inArray, lte } from 'drizzle-orm';
 import { env } from '$env/dynamic/private';
 import { db } from '$lib/server/db/client';
 import {
   emailAutomationActions,
-  emailAutomationAuditLog,
   emailEvents,
   emailReceiptUploadSessions
 } from '$lib/server/db/schema';
@@ -299,33 +298,23 @@ export const processEmailReceiptUpload = async ({
       eq(emailReceiptUploadSessions.status, 'processing')
     ));
 
-    await db.transaction(async (tx) => {
-      // Serialize the Notion files read-modify-write per Ledger page so two
-      // receipt uploads cannot overwrite each other's snapshot.
-      await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${session.notionPageId}, 0))`);
-      const appendResult = await appendCompanyLedgerReceipt(session.notionPageId, upload);
-      const completedAt = new Date();
-      const [completed] = await tx.update(emailReceiptUploadSessions).set({
-        status: 'succeeded',
-        consumedAt: completedAt,
-        updatedAt: completedAt,
-        lastError: null
-      }).where(and(
-        eq(emailReceiptUploadSessions.id, session.id),
-        eq(emailReceiptUploadSessions.status, 'processing')
-      )).returning({ id: emailReceiptUploadSessions.id });
-      if (!completed) throw new Error('Receipt upload session lost its processing claim.');
-      await tx.insert(emailAutomationAuditLog).values({
-        eventId: session.eventId,
-        actionId: session.actionId,
-        actor: `telegram:${telegramUserId}`,
-        action: 'attach_ledger_receipt',
-        reason: appendResult.alreadyAttached
-          ? 'A prior ambiguous attempt had already attached this Telegram image; local state was reconciled.'
-          : 'Manager attached an image from the Ledger Telegram notification.',
-        after: { sessionId: session.id, notionPageId: session.notionPageId, fileName: filename, mimeType: image.mimeType, sizeBytes: image.bytes.length, alreadyAttached: appendResult.alreadyAttached }
-      });
+    await appendCompanyLedgerReceipt(session.notionPageId, upload, {
+      eventId: session.eventId,
+      actionId: session.actionId,
+      actor: `telegram:${telegramUserId}`
     });
+
+    const completedAt = new Date();
+    const [completed] = await db.update(emailReceiptUploadSessions).set({
+      status: 'succeeded',
+      consumedAt: completedAt,
+      updatedAt: completedAt,
+      lastError: null
+    }).where(and(
+      eq(emailReceiptUploadSessions.id, session.id),
+      eq(emailReceiptUploadSessions.status, 'processing')
+    )).returning({ id: emailReceiptUploadSessions.id });
+    if (!completed) throw new Error('Receipt upload session lost its processing claim.');
 
     return { matched: true as const, attached: true as const, eventId: session.eventId, fileName: filename };
   } catch (error) {

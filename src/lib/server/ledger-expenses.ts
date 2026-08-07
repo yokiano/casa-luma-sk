@@ -1,8 +1,8 @@
 import { error } from '@sveltejs/kit';
 import { NOTION_API_KEY } from '$env/static/private';
 import { FinancialLedgerDatabase } from '$lib/notion-sdk/dbs/financial-ledger/db';
-import { FinancialLedgerPatchDTO } from '$lib/notion-sdk/dbs/financial-ledger/patch.dto';
 import type { FinancialLedgerResponse } from '$lib/notion-sdk/dbs/financial-ledger/types';
+import { createFinancialLedgerPage, mutateFinancialLedger } from '$lib/server/financial-ledger-completeness';
 import type { NotionFileUpload } from '$lib/server/notion/upload';
 
 export const COMPANY_LEDGER_EXPENSE_TYPES = {
@@ -28,6 +28,9 @@ export type CompanyLedgerExpenseInput = {
   bankAccount?: string;
   paymentMethod?: string;
   notes?: string;
+  eventId?: number;
+  actionId?: number;
+  actor?: string;
 };
 
 /**
@@ -62,36 +65,17 @@ export async function findCompanyLedgerExpenseByReference(transactionId: string,
   return { state: 'missing' as const };
 }
 
-/** Appends a Telegram-uploaded receipt without removing existing Ledger files. */
-export async function appendCompanyLedgerReceipt(pageId: string, upload: NotionFileUpload) {
-  const ledger = new FinancialLedgerDatabase({ notionSecret: NOTION_API_KEY });
-  const page = await ledger.getPage(pageId);
-  const existingFiles = page.properties['Invoice / Receipt']?.files ?? [];
-  if (existingFiles.length >= 100) {
-    throw new Error('The Ledger receipt field already contains the maximum number of files.');
-  }
-  if (existingFiles.some((file) => file.name === upload.name)) {
-    return { alreadyAttached: true as const };
-  }
-
-  try {
-    await ledger.updatePage(pageId, new FinancialLedgerPatchDTO({
-      properties: {
-        // The generated SDK predates Notion's file_upload request variant, but
-        // the current API accepts it alongside the existing file objects.
-        invoiceReceipt: [...existingFiles, upload] as unknown as FinancialLedgerResponse['properties']['Invoice / Receipt']['files']
-      }
-    }));
-  } catch (error) {
-    // A timeout can happen after Notion accepted the PATCH. Re-read before
-    // declaring failure so retrying the same Telegram file stays idempotent.
-    const reconciled = await ledger.getPage(pageId).catch(() => null);
-    if (reconciled?.properties['Invoice / Receipt']?.files.some((file) => file.name === upload.name)) {
-      return { alreadyAttached: true as const };
-    }
-    throw error;
-  }
-  return { alreadyAttached: false as const };
+/** Appends a Telegram-uploaded receipt through the centralized completeness path. */
+export async function appendCompanyLedgerReceipt(pageId: string, upload: NotionFileUpload, options: { eventId?: number; actionId?: number; actor?: string } = {}) {
+  const result = await mutateFinancialLedger({
+    pageId,
+    eventId: options.eventId,
+    actionId: options.actionId,
+    actor: options.actor ?? 'manager',
+    reason: 'Receipt evidence was attached to the Financial Ledger record.',
+    changes: { appendInvoiceReceipt: upload }
+  });
+  return { alreadyAttached: result.duplicateUpload } as const;
 }
 
 export async function createCompanyLedgerExpense(data: CompanyLedgerExpenseInput) {
@@ -121,6 +105,7 @@ export async function createCompanyLedgerExpense(data: CompanyLedgerExpenseInput
       }
       // A previous attempt may have created this page before its local result was persisted.
       // The verified reference and amount make this a safe reconciliation, not a retry error.
+      await mutateFinancialLedger({ pageId: existing.results[0].id, eventId: data.eventId, actionId: data.actionId, actor: data.actor ?? 'email-automation', reason: 'Existing Financial Ledger record was reconciled.' });
       return { id: existing.results[0].id, externalUrl: notionPageUrl(existing.results[0].id, existing.results[0].url), reconciled: true as const };
     }
     if (existing.results.length > 1) {
@@ -160,25 +145,28 @@ export async function createCompanyLedgerExpense(data: CompanyLedgerExpenseInput
     ? `${trimmedNotes}\n${sourceFileNote}`
     : trimmedNotes || sourceFileNote || 'synced via expense tool';
 
-  const response = await db.createPage(
-    new FinancialLedgerPatchDTO({
-      properties: {
-        description: data.title,
-        type: data.ledgerType,
-        status: { name: 'Paid' },
-        amountThb: data.amount,
-        date: { start: normalizedDate },
-        department: data.department as any,
-        category: data.category as any,
-        referenceNumber: data.transactionId?.trim() ?? undefined,
-        paymentMethod: (data.paymentMethod as any) ?? 'Scan',
-        bankAccount: (data.bankAccount as any) ?? undefined,
-        notes: mergedNotes,
-        supplier: data.supplierId ? [{ id: data.supplierId }] : undefined,
-        invoiceReceipt
-      }
-    })
-  );
+  const response = await createFinancialLedgerPage({
+    properties: {
+      description: data.title,
+      type: data.ledgerType,
+      status: { name: 'Paid' },
+      amountThb: data.amount,
+      date: { start: normalizedDate },
+      department: data.department as any,
+      category: data.category as any,
+      referenceNumber: data.transactionId?.trim() ?? undefined,
+      paymentMethod: (data.paymentMethod as any) ?? 'Scan',
+      bankAccount: (data.bankAccount as any) ?? undefined,
+      notes: mergedNotes,
+      supplier: data.supplierId ? [{ id: data.supplierId }] : undefined,
+      invoiceReceipt,
+      receiptNotRequired: false
+    },
+    eventId: data.eventId,
+    actionId: data.actionId,
+    actor: data.actor ?? 'email-automation',
+    reason: 'Financial Ledger record created by the supported expense flow.'
+  });
 
-  return { id: response.id, externalUrl: notionPageUrl(response.id, response.url), reconciled: false as const };
+  return { id: response.id, externalUrl: response.externalUrl, reconciled: false as const };
 }

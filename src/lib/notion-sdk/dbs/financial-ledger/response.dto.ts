@@ -75,6 +75,8 @@ export class FinancialLedgerPropertiesResponseDTO {
       category: this.__props['Category'],
       bankAccount: this.__props['Bank Account'],
       description: this.__props['Description'],
+      reviewRequired: this.__props['Review Required'],
+      receiptNotRequired: this.__props['Receipt Not Required'],
       createdBy: this.__props['Created by'],
       lastEditedTime: this.__props['Last edited time'],
       createdTime: this.__props['Created time'],
@@ -155,6 +157,14 @@ export class FinancialLedgerPropertiesResponseDTO {
       links: this.__props['Description']?.title ? this.__props['Description'].title.filter((item) => item.href?.length).map((item) => item.href) : [],
       title: this.__props['Description']?.title,
     }
+  }
+
+  get reviewRequired() {
+    return this.__props['Review Required']?.checkbox
+  }
+
+  get receiptNotRequired() {
+    return this.__props['Receipt Not Required']?.checkbox
   }
 
   get createdBy() {

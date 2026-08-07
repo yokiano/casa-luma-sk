@@ -15,6 +15,9 @@ export const companyLedgerExpenseHandler: EmailAutomationHandler = {
       transactionId: classification.externalRef, bankAccount: config.bankAccount ?? 'KBank',
       paymentMethod: config.paymentMethod ?? 'Scan', category: config.category, department: config.department,
       supplierId: config.supplierId,
+      eventId,
+      actionId,
+      actor: `email-automation:${eventId}`,
       // Keep the Neon trace before email-derived text so it cannot be lost in a truncated note.
       notes: [traceNote, `Created by email automation from ${input.from}.`, 'Review and attach the invoice/receipt image.'].join('\n')
     });

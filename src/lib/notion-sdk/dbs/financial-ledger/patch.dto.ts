@@ -20,6 +20,8 @@ export type FinancialLedgerPropertiesPatch = {
   category?: FinancialLedgerResponse['properties']['Category']['select']['name']
   bankAccount?: FinancialLedgerResponse['properties']['Bank Account']['select']['name']
   description?: string | { text: string; url?: string; annotations?: RichTextItemRequest['annotations'] } | RichTextItemRequest[]
+  reviewRequired?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'checkbox' }>['checkbox']
+  receiptNotRequired?: TypeFromRecord<UpdatePageBodyParameters['properties'], { type?: 'checkbox' }>['checkbox']
 }
 
   
@@ -180,6 +182,20 @@ export class FinancialLedgerPatchDTO {
                     annotations: props.description.annotations
                   },
                 ]
+      }
+    }
+
+    if (props?.reviewRequired !== undefined) {
+      this.__data.properties['%3DDhs'] = {
+        type: 'checkbox',
+        checkbox: props.reviewRequired,
+      }
+    }
+
+    if (props?.receiptNotRequired !== undefined) {
+      this.__data.properties['CKzW'] = {
+        type: 'checkbox',
+        checkbox: props.receiptNotRequired,
       }
     }
   }

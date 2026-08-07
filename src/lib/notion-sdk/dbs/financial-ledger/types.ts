@@ -2,6 +2,7 @@ import { WithOptional, Join, PathsToStringProps } from '../../core/types/helper.
 import {
 DatabaseObjectResponse,
 StringRequest,
+CheckboxPropertyItemObjectResponse,
 CreatedByPropertyItemObjectResponse,
 CreatedTimePropertyItemObjectResponse,
 DatePropertyItemObjectResponse,
@@ -18,6 +19,7 @@ ExistencePropertyFilter,
 QueryDatabaseBodyParameters,
 TimestampCreatedTimeFilter,
 TimestampLastEditedTimeFilter,
+CheckboxPropertyFilter,
 DatePropertyFilter,
 NumberPropertyFilter,
 PeoplePropertyFilter,
@@ -42,6 +44,8 @@ export interface FinancialLedgerResponse extends WithOptional<Omit<DatabaseObjec
     "Category": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'Revenue', color: 'green' } | { id: StringRequest, name: 'Salary', color: 'red' } | { id: StringRequest, name: 'Owner Capital', color: 'purple' } | { id: StringRequest, name: 'Legal', color: 'red' } | { id: StringRequest, name: 'Bills', color: 'yellow' } | { id: StringRequest, name: 'Rent', color: 'gray' } | { id: StringRequest, name: 'Food & Groceries', color: 'orange' } | { id: StringRequest, name: 'Staff Food', color: 'blue' } | { id: StringRequest, name: 'Consumable Product', color: 'purple' } | { id: StringRequest, name: 'Physical Product', color: 'blue' } | { id: StringRequest, name: 'Maintenance', color: 'brown' } | { id: StringRequest, name: 'Entertainment', color: 'pink' } | { id: StringRequest, name: 'Miscellaneous', color: 'default' } | { id: StringRequest, name: 'Marketing', color: 'blue' }},
     "Bank Account": Omit<SelectPropertyItemObjectResponse, 'select'> & { select: { id: StringRequest, name: 'KBank', color: 'green' } | { id: StringRequest, name: 'Cash Register', color: 'orange' }},
     "Description": TitlePropertyItemObjectResponse,
+    "Review Required": CheckboxPropertyItemObjectResponse,
+    "Receipt Not Required": CheckboxPropertyItemObjectResponse,
     "Created by": CreatedByPropertyItemObjectResponse,
     "Last edited time": LastEditedTimePropertyItemObjectResponse,
     "Created time": CreatedTimePropertyItemObjectResponse,
@@ -143,12 +147,14 @@ type FinancialLedgerBankAccountPropertyFilter =
   | ExistencePropertyFilter      
 
 type FinancialLedgerDescriptionPropertyFilter = TextPropertyFilter
+type FinancialLedgerReviewRequiredPropertyFilter = CheckboxPropertyFilter
+type FinancialLedgerReceiptNotRequiredPropertyFilter = CheckboxPropertyFilter
 type FinancialLedgerCreatedByPropertyFilter = PeoplePropertyFilter
 type FinancialLedgerLastEditedTimePropertyFilter = DatePropertyFilter
 type FinancialLedgerCreatedTimePropertyFilter = DatePropertyFilter
 type FinancialLedgerLastEditedByPropertyFilter = PeoplePropertyFilter
 
-export type FinancialLedgerPropertyFilter = { type: FinancialLedgerTypePropertyFilter } | { amountThb: FinancialLedgerAmountThbPropertyFilter } | { notes: FinancialLedgerNotesPropertyFilter } | { date: FinancialLedgerDatePropertyFilter } | { supplier: FinancialLedgerSupplierPropertyFilter } | { status: FinancialLedgerStatusPropertyFilter } | { referenceNumber: FinancialLedgerReferenceNumberPropertyFilter } | { department: FinancialLedgerDepartmentPropertyFilter } | { invoiceReceipt: FinancialLedgerInvoiceReceiptPropertyFilter } | { approvedBy: FinancialLedgerApprovedByPropertyFilter } | { paymentMethod: FinancialLedgerPaymentMethodPropertyFilter } | { category: FinancialLedgerCategoryPropertyFilter } | { bankAccount: FinancialLedgerBankAccountPropertyFilter } | { description: FinancialLedgerDescriptionPropertyFilter } | { createdBy: FinancialLedgerCreatedByPropertyFilter } | { lastEditedTime: FinancialLedgerLastEditedTimePropertyFilter } | { createdTime: FinancialLedgerCreatedTimePropertyFilter } | { lastEditedBy: FinancialLedgerLastEditedByPropertyFilter }
+export type FinancialLedgerPropertyFilter = { type: FinancialLedgerTypePropertyFilter } | { amountThb: FinancialLedgerAmountThbPropertyFilter } | { notes: FinancialLedgerNotesPropertyFilter } | { date: FinancialLedgerDatePropertyFilter } | { supplier: FinancialLedgerSupplierPropertyFilter } | { status: FinancialLedgerStatusPropertyFilter } | { referenceNumber: FinancialLedgerReferenceNumberPropertyFilter } | { department: FinancialLedgerDepartmentPropertyFilter } | { invoiceReceipt: FinancialLedgerInvoiceReceiptPropertyFilter } | { approvedBy: FinancialLedgerApprovedByPropertyFilter } | { paymentMethod: FinancialLedgerPaymentMethodPropertyFilter } | { category: FinancialLedgerCategoryPropertyFilter } | { bankAccount: FinancialLedgerBankAccountPropertyFilter } | { description: FinancialLedgerDescriptionPropertyFilter } | { reviewRequired: FinancialLedgerReviewRequiredPropertyFilter } | { receiptNotRequired: FinancialLedgerReceiptNotRequiredPropertyFilter } | { createdBy: FinancialLedgerCreatedByPropertyFilter } | { lastEditedTime: FinancialLedgerLastEditedTimePropertyFilter } | { createdTime: FinancialLedgerCreatedTimePropertyFilter } | { lastEditedBy: FinancialLedgerLastEditedByPropertyFilter }
 
 export type FinancialLedgerQuery = Omit<QueryDatabaseBodyParameters, 'filter' | 'sorts'> & {
   sorts?: Array<
