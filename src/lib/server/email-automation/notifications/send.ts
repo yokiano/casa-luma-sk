@@ -1,5 +1,5 @@
 import { env } from '$env/dynamic/private';
-import { createTelegramAlertPublisher } from '$lib/server/alerts/telegram';
+import { createTelegramDestinationPublisher, type TelegramDestination } from '$lib/server/alerts/destinations';
 import { loadAutomationSettings } from '../settings';
 import type { EmailAutomationInput, EmailClassification } from '../classifier';
 import { renderDurableEmailAutomationNotification, renderEmailAutomationNotification, renderTestEmailAutomationNotification, type DurableNotificationOutcome } from './render';
@@ -12,18 +12,30 @@ export const getEmailAutomationEventUrl = (eventId: number) => {
   return `${baseUrl}/mgmt-dashboard/email-automation/${eventId}`;
 };
 
-const publish = async (body: string, replyMarkup?: ReturnType<typeof buildEmailAutomationKeyboard>) => {
-  const botToken = env.TELEGRAM_BOT_TOKEN;
-  const chatId = env.EMAIL_AUTOMATION_TELEGRAM_CHAT_ID;
-  if (!botToken || !chatId) return 'not_configured' as const;
-  await createTelegramAlertPublisher({
-    botToken,
-    chatId,
-    messageThreadId: env.EMAIL_AUTOMATION_TELEGRAM_MESSAGE_THREAD_ID,
-    timeoutMs: Number(env.TELEGRAM_ALERT_TIMEOUT_MS || 3000)
-  }).publish({ title: '', body, parseMode: 'HTML', replyMarkup });
+const publish = async (
+  destination: TelegramDestination,
+  body: string,
+  replyMarkup?: ReturnType<typeof buildEmailAutomationKeyboard>
+) => {
+  const publisher = createTelegramDestinationPublisher(destination);
+  if (!publisher) return 'not_configured' as const;
+  await publisher.publish({ title: '', body, parseMode: 'HTML', replyMarkup });
   return 'sent' as const;
 };
+
+const isRecordedLedgerAction = (classification: EmailClassification, outcome?: DurableNotificationOutcome) =>
+  (classification.classification === 'expense' || classification.classification === 'income')
+  && (outcome?.actionStatus === 'succeeded' || outcome?.actionStatus === 'reconciled')
+  && Boolean(outcome.externalObjectId);
+
+/** Recorded Ledger transactions use the dedicated financial group; all other
+ * email automation notifications retain the existing review destination. */
+export const selectEmailAutomationDestination = (
+  classification: EmailClassification,
+  outcome?: DurableNotificationOutcome
+): TelegramDestination => isRecordedLedgerAction(classification, outcome)
+  ? 'financial_transactions'
+  : 'email_default';
 
 /** Sends the production notification for a classified email event. */
 export const sendEmailAutomationNotification = async (
@@ -36,7 +48,12 @@ export const sendEmailAutomationNotification = async (
   const body = durableOutcome
     ? renderDurableEmailAutomationNotification(input, classification, durableOutcome)
     : renderEmailAutomationNotification(input, classification, notionPageId);
-  return publish(body, buildEmailAutomationKeyboard({
+  // Keep compatibility with callers that only provide the known Ledger page ID;
+  // processor notifications pass durable action truth and take precedence.
+  const routingOutcome = durableOutcome ?? (notionPageId
+    ? { actionStatus: 'succeeded', externalObjectId: notionPageId }
+    : undefined);
+  return publish(selectEmailAutomationDestination(classification, routingOutcome), body, buildEmailAutomationKeyboard({
     eventId,
     dashboardUrl: getEmailAutomationEventUrl(eventId),
     review: durableOutcome?.hasOpenReview === true || classification.processingState === 'review' || classification.classification === 'review',
@@ -61,5 +78,5 @@ export const sendEmailAutomationTestNotification = async (
   const settings = await loadAutomationSettings();
   const body = renderTestEmailAutomationNotification(input, classification, settings.ledgerEnabled);
   const dashboardUrl = getEmailAutomationEventUrl(0).replace(/\/0$/, '');
-  return publish(body, buildEmailAutomationTestKeyboard(dashboardUrl));
+  return publish('email_default', body, buildEmailAutomationTestKeyboard(dashboardUrl));
 };

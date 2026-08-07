@@ -14,7 +14,9 @@ vi.mock('$env/dynamic/private', () => ({
     EMAIL_AUTOMATION_TELEGRAM_WEBHOOK_SECRET: 'test_webhook_secret_32_chars_long_',
     EMAIL_AUTOMATION_TELEGRAM_ALLOWED_USER_IDS: '99,100',
     EMAIL_AUTOMATION_TELEGRAM_CHAT_ID: '-1234',
-    EMAIL_AUTOMATION_TELEGRAM_MESSAGE_THREAD_ID: '55'
+    EMAIL_AUTOMATION_TELEGRAM_MESSAGE_THREAD_ID: '55',
+    EMAIL_AUTOMATION_FINANCIAL_TELEGRAM_CHAT_ID: '-5678',
+    EMAIL_AUTOMATION_FINANCIAL_TELEGRAM_MESSAGE_THREAD_ID: '66'
   }
 }));
 vi.mock('$lib/server/email-automation/telegram-actions', () => ({
@@ -51,6 +53,15 @@ const callbackRequest = ({ secret = 'test_webhook_secret_32_chars_long_', userId
   }
 }, secret);
 
+const financialCallbackRequest = ({ userId = 101, data = 'email:dismiss:42', threadId = 66 } = {}) => requestForUpdate({
+  callback_query: {
+    id: 'financial-callback-1',
+    from: { id: userId },
+    data,
+    message: { message_id: 9, message_thread_id: threadId, chat: { id: -5678 } }
+  }
+});
+
 describe('email automation Telegram webhook', () => {
   beforeEach(() => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 200 })));
@@ -84,6 +95,18 @@ describe('email automation Telegram webhook', () => {
     expect(fetch).toHaveBeenCalledTimes(2);
     expect((fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]).toContain('/answerCallbackQuery');
     expect((fetch as ReturnType<typeof vi.fn>).mock.calls[1][0]).toContain('/editMessageReplyMarkup');
+  });
+
+  it('trusts callbacks from the exact financial group without the legacy user allowlist', async () => {
+    const response = await POST({ request: financialCallbackRequest() } as never);
+    expect(response.status).toBe(200);
+    expect(mocks.perform).toHaveBeenCalledWith({ action: 'dismiss', eventId: 42, telegramUserId: 101, confirmationToken: undefined });
+  });
+
+  it('does not trust another topic in the financial group', async () => {
+    const response = await POST({ request: financialCallbackRequest({ threadId: 67 }) } as never);
+    expect(response.status).toBe(200);
+    expect(mocks.perform).not.toHaveBeenCalled();
   });
 
   it('starts a user-bound receipt upload session from the Ledger button', async () => {

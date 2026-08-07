@@ -1,4 +1,4 @@
-import { createTelegramAlertPublisherFromEnv } from '$lib/server/alerts/telegram';
+import { createTelegramDestinationPublisher } from '$lib/server/alerts/destinations';
 import { buildIncidentReportUrl } from './urls';
 import { db } from '$lib/server/db/client';
 import { reportedErrors } from '$lib/server/db/schema';
@@ -168,5 +168,5 @@ export const createIncidentReporter = (options: IncidentReporterOptions = {}) =>
 };
 
 export const incidentReporter = createIncidentReporter({
-  publisher: createTelegramAlertPublisherFromEnv()
+  publisher: createTelegramDestinationPublisher('manager_incidents')
 });

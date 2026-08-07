@@ -1,6 +1,7 @@
 import { timingSafeEqual } from 'node:crypto';
 import { env } from '$env/dynamic/private';
 import { json } from '@sveltejs/kit';
+import { resolveTelegramDestination, type TelegramDestination } from '$lib/server/alerts/destinations';
 import type { RequestHandler } from './$types';
 import { performEmailAutomationTelegramAction } from '$lib/server/email-automation/telegram-actions';
 import { parseEmailAutomationCallbackData } from '$lib/server/email-automation/notifications/telegram-buttons';
@@ -69,13 +70,19 @@ const callTelegram = async <T = unknown>(method: string, body: Record<string, un
   }
 };
 
+const isAtDestination = (destination: TelegramDestination, chatId: number, threadId: number | undefined) => {
+  const resolved = resolveTelegramDestination(destination);
+  return resolved.status === 'configured'
+    && String(chatId) === resolved.chatId
+    && (!resolved.messageThreadId || String(threadId) === resolved.messageThreadId);
+};
+
 const isAuthorizedLocation = (userId: number, chatId: number, threadId: number | undefined) => {
-  const allowedUserIds = parseAllowedUserIds(env.EMAIL_AUTOMATION_TELEGRAM_ALLOWED_USER_IDS);
-  const expectedChatId = env.EMAIL_AUTOMATION_TELEGRAM_CHAT_ID;
-  const expectedThreadId = env.EMAIL_AUTOMATION_TELEGRAM_MESSAGE_THREAD_ID;
-  return Boolean(expectedChatId && String(chatId) === expectedChatId)
-    && (!expectedThreadId || String(threadId) === expectedThreadId)
-    && allowedUserIds.has(userId);
+  // The legacy email group keeps its explicit user allowlist. The dedicated
+  // financial group is trusted for email actions, but only at its exact chat/topic.
+  if (isAtDestination('financial_transactions', chatId, threadId)) return true;
+  if (!isAtDestination('email_default', chatId, threadId)) return false;
+  return parseAllowedUserIds(env.EMAIL_AUTOMATION_TELEGRAM_ALLOWED_USER_IDS).has(userId);
 };
 
 const sendReceiptPrompt = async (chatId: number, threadId: number | undefined, sourceMessageId: number) => {
@@ -227,7 +234,9 @@ export const POST: RequestHandler = async ({ request }) => {
   }
 
   // A valid Telegram webhook secret proves the update came from Telegram. The
-  // separate user allowlist is still required because group membership is not a manager role.
+  // legacy email group still requires its user allowlist; the exact financial
+  // group is the explicitly trusted exception. Existing command confirmations,
+  // safety gates, idempotency, and audit checks remain in the action handlers.
   if (!isAuthorizedLocation(userId!, chatId!, callback.message?.message_thread_id)) {
     await callTelegram('answerCallbackQuery', {
       callback_query_id: callbackId,
