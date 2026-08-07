@@ -5,7 +5,7 @@ import {
   FLEXI_CHECKOUT_ITEM_IDS,
   FLEXI_PASS_ENTRIES_PER_CARD
 } from '$lib/receipts/open-play-items';
-import { classifyFlexiLineItem } from '$lib/receipts/flexi-line-items';
+import { classifyFlexiHistoryLineItem } from '$lib/receipts/flexi-line-items';
 import { db } from './client';
 import { receiptLineItems, receipts } from './schema';
 
@@ -97,7 +97,7 @@ export const calculateFlexiPassBalance = ({
   for (const [receiptKey, receiptRows] of checkoutRowsByReceipt) {
     const classifications = receiptRows.map((row) => ({
       row,
-      classification: classifyFlexiLineItem(toLineItem(row))
+      classification: classifyFlexiHistoryLineItem(toLineItem(row))
     }));
     const valid = classifications.flatMap((entry) =>
       entry.classification.kind === 'checkout' ? [entry.classification] : []
@@ -105,6 +105,12 @@ export const calculateFlexiPassBalance = ({
     const invalid = classifications.flatMap((entry) =>
       entry.classification.kind === 'invalid-checkout' ? [entry.classification] : []
     );
+    // Legacy receipts may contain one valid line per punch. Keep that compatibility
+    // in history only, while modern receipts still require one Checkout line.
+    if (valid.length > 0 && invalid.length === 0 && valid.every((classification) => classification.legacy)) {
+      entriesUsedIncludingCurrent += valid.reduce((total, classification) => total + classification.hours, 0);
+      continue;
+    }
     if (valid.length === 1 && invalid.length === 0) {
       entriesUsedIncludingCurrent += valid[0].hours;
       continue;

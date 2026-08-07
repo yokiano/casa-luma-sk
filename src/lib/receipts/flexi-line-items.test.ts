@@ -11,6 +11,7 @@ import {
   OPEN_PLAY_CUSTOMER_REQUIRED_ITEM_IDS
 } from '$lib/receipts/open-play-items';
 import {
+  classifyFlexiHistoryLineItem,
   classifyFlexiLineItem,
   summarizeFlexiCheckout,
   summarizeFlexiEntrance
@@ -60,17 +61,30 @@ describe('Flexi line item classification', () => {
     }))).toEqual({ kind: 'checkout', hours: 3, quantity: 1, legacy: false, variantId });
   });
 
-  it('preserves historical one-punch-per-quantity receipts', () => {
-    expect(classifyFlexiLineItem(line({
+  it('does not accept the deleted legacy item as current POS behavior', () => {
+    const result = classifyFlexiLineItem(line({
+      item_id: LEGACY_FLEXI_CHECKOUT_ITEM_ID,
+      variant_id: LEGACY_FLEXI_SINGLE_HOUR_VARIANT_ID,
+      sku: '10143',
+      quantity: 3
+    }));
+
+    expect(result).toMatchObject({ kind: 'invalid-checkout' });
+    expect(summarizeFlexiCheckout([line({
+      item_id: LEGACY_FLEXI_CHECKOUT_ITEM_ID,
+      sku: '10143',
+      quantity: 2
+    })])).toMatchObject({ matched: true, hours: 0, validLineCount: 0 });
+  });
+
+  it('interprets supported legacy lines only for historical balance calculation', () => {
+    expect(classifyFlexiHistoryLineItem(line({
       item_id: LEGACY_FLEXI_CHECKOUT_ITEM_ID,
       variant_id: LEGACY_FLEXI_SINGLE_HOUR_VARIANT_ID,
       sku: '10143',
       quantity: 3
     }))).toEqual({ kind: 'checkout', hours: 3, quantity: 1, legacy: true, variantId: LEGACY_FLEXI_SINGLE_HOUR_VARIANT_ID });
-  });
-
-  it('preserves the explicitly supported missing-variant legacy shape', () => {
-    expect(classifyFlexiLineItem(line({
+    expect(classifyFlexiHistoryLineItem(line({
       item_id: LEGACY_FLEXI_CHECKOUT_ITEM_ID,
       sku: '10143',
       quantity: 2

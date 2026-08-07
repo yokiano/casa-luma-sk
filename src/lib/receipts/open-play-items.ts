@@ -5,7 +5,7 @@ import { MEMBERSHIP_PURCHASE_ITEMS } from './automations/membership-items';
 // these UUIDs via the Notion item ID/userDefined ID field, while the LoyverseID field is blank.
 export const MEMBER_VALID_VISIT_ITEM_ID = 'dd4303a3-0bfb-49ed-95bc-fd65b853d22b';
 export const LEGACY_FLEXI_CHECKOUT_ITEM_ID = 'a94027fa-dd55-43d2-a031-b358877f4752';
-/** Active variant-based Checkout item. Keep the legacy ID above forever. */
+/** Active variant-based Checkout item. Keep the legacy ID above forever for history lookup. */
 export const FLEXI_CHECKOUT_ITEM_ID = 'cf3ea669-d995-4d46-8d31-d2d6e3f91410';
 export const FLEXI_CHECKOUT_ITEM_IDS: readonly string[] = Array.from(new Set([
   FLEXI_CHECKOUT_ITEM_ID,

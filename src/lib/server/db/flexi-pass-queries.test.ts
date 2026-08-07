@@ -5,6 +5,7 @@ import {
   LEGACY_FLEXI_CHECKOUT_ITEM_ID,
   LEGACY_FLEXI_SINGLE_HOUR_VARIANT_ID
 } from '$lib/receipts/open-play-items';
+import { classifyFlexiLineItem } from '$lib/receipts/flexi-line-items';
 import { calculateFlexiPassBalance, type FlexiBalanceRow } from './flexi-pass-queries';
 
 const row = (overrides: Partial<FlexiBalanceRow>): FlexiBalanceRow => ({
@@ -77,15 +78,56 @@ describe('Flexi balance calculation', () => {
         row({ itemId: FLEXI_CARD_ITEM_IDS[0], quantity: 1 }),
         row({ itemId: 'entrance-item', sku: 'FLEXI-ENTRANCE-KIDS-05', quantity: 1 }),
         row({ receiptKey: 'm1:R-NEW', sku: 'FLEXI-CHECKOUT-HOURS-02', quantity: 1 }),
-        row({ receiptKey: 'm1:R-OLD', itemId: LEGACY_FLEXI_CHECKOUT_ITEM_ID, variantId: LEGACY_FLEXI_SINGLE_HOUR_VARIANT_ID, sku: '10143', quantity: 3 })
+        row({ receiptKey: 'm1:R-OLD', itemId: LEGACY_FLEXI_CHECKOUT_ITEM_ID, variantId: LEGACY_FLEXI_SINGLE_HOUR_VARIANT_ID, sku: '10143', quantity: 3 }),
+        row({ receiptKey: 'm1:R-OLD', itemId: LEGACY_FLEXI_CHECKOUT_ITEM_ID, variantId: LEGACY_FLEXI_SINGLE_HOUR_VARIANT_ID, sku: '10143', quantity: 2 })
       ]
     });
 
-    expect(result.entriesUsedIncludingCurrent).toBe(5);
+    expect(result.entriesUsedIncludingCurrent).toBe(7);
     expect(result.unknownVariantDiagnostics).toEqual([]);
   });
 
-  it('does not guess malformed or multiple Checkout usage', () => {
+  it('keeps receipt 1-7057 modern lines valid and does not let legacy history poison its balance', () => {
+    const currentEntrance = { item_id: '04f17ebd-9bf1-4bb2-85d1-535872de5622', sku: 'FLEXI-ENTRANCE-KIDS-01', quantity: 1 };
+    const currentCheckout = { item_id: FLEXI_CHECKOUT_ITEM_ID, sku: 'FLEXI-CHECKOUT-HOURS-02', quantity: 1 };
+
+    expect(classifyFlexiLineItem(currentEntrance)).toMatchObject({ kind: 'entrance', kids: 1 });
+    expect(classifyFlexiLineItem(currentCheckout)).toMatchObject({ kind: 'checkout', hours: 2, legacy: false });
+
+    const result = calculateFlexiPassBalance({
+      customerId: 'cust-1',
+      rows: [
+        row({ itemId: FLEXI_CARD_ITEM_IDS[0], quantity: 1 }),
+        row({ receiptKey: 'm1:1-4017', itemId: LEGACY_FLEXI_CHECKOUT_ITEM_ID, variantId: LEGACY_FLEXI_SINGLE_HOUR_VARIANT_ID, sku: '10143', quantity: 3 }),
+        row({ receiptKey: 'm1:1-4017', itemId: LEGACY_FLEXI_CHECKOUT_ITEM_ID, variantId: LEGACY_FLEXI_SINGLE_HOUR_VARIANT_ID, sku: '10143', quantity: 2 }),
+        row({ receiptKey: 'm1:1-7057', ...currentCheckout })
+      ],
+      currentReceiptKey: 'm1:1-7057',
+      currentVisitPunches: 2
+    });
+
+    expect(result.entriesUsedIncludingCurrent).toBe(7);
+    expect(result.currentVisitPunches).toBe(2);
+    expect(result.unknownVariantDiagnostics).toEqual([]);
+  });
+
+  it('does not guess malformed legacy or mixed Checkout usage', () => {
+    const result = calculateFlexiPassBalance({
+      customerId: 'cust-1',
+      rows: [
+        row({ itemId: FLEXI_CARD_ITEM_IDS[0], quantity: 1 }),
+        row({ receiptKey: 'm1:R-BAD-LEGACY', itemId: LEGACY_FLEXI_CHECKOUT_ITEM_ID, sku: '10143', quantity: 0 }),
+        row({ receiptKey: 'm1:R-UNKNOWN-LEGACY', itemId: LEGACY_FLEXI_CHECKOUT_ITEM_ID, variantId: 'unknown-legacy', sku: '10143', quantity: 1 }),
+        row({ receiptKey: 'm1:R-MIXED', itemId: LEGACY_FLEXI_CHECKOUT_ITEM_ID, variantId: LEGACY_FLEXI_SINGLE_HOUR_VARIANT_ID, sku: '10143', quantity: 1 }),
+        row({ receiptKey: 'm1:R-MIXED', sku: 'FLEXI-CHECKOUT-HOURS-02', quantity: 1 })
+      ]
+    });
+
+    expect(result.entriesUsedIncludingCurrent).toBe(0);
+    expect(result.unknownVariantDiagnostics).toHaveLength(3);
+  });
+
+  it('does not guess malformed or multiple modern Checkout usage', () => {
     const result = calculateFlexiPassBalance({
       customerId: 'cust-1',
       rows: [

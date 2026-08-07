@@ -9,6 +9,7 @@ import {
   FLEXI_ENTRANCE_MAX_KIDS,
   FLEXI_ENTRANCE_SKU_PREFIX,
   FLEXI_ENTRANCE_VARIANT_KIDS_BY_ID,
+  LEGACY_FLEXI_CHECKOUT_ITEM_ID,
   LEGACY_FLEXI_SINGLE_HOUR_SKU,
   LEGACY_FLEXI_SINGLE_HOUR_VARIANT_ID
 } from '$lib/receipts/open-play-items';
@@ -50,7 +51,40 @@ const invalidQuantity = (quantity: number | undefined, label: string) =>
     ? `${label} quantity is missing; it must be exactly 1.`
     : `${label} quantity must be 1; select the value as the variant.`;
 
-export function classifyFlexiLineItem(lineItem: LoyverseReceiptLineItem): FlexiLineClassification {
+export type FlexiLineClassificationOptions = {
+  /** Legacy interpretation is reserved for stored receipt history, never live POS validation. */
+  allowLegacyHistory?: boolean;
+};
+
+export function classifyFlexiLineItem(
+  lineItem: LoyverseReceiptLineItem,
+  options: FlexiLineClassificationOptions = {}
+): FlexiLineClassification {
+  const itemId = normalize(lineItem.item_id);
+  if (itemId === LEGACY_FLEXI_CHECKOUT_ITEM_ID) {
+    if (!options.allowLegacyHistory) {
+      return {
+        kind: 'invalid-checkout',
+        reason: 'The deleted legacy Flexi Checkout item is not valid current POS behavior.'
+      };
+    }
+
+    const quantity = getQuantity(lineItem);
+    const variantId = normalize(lineItem.variant_id) || undefined;
+    const sku = normalize(lineItem.sku);
+    const validLegacyShape =
+      (variantId === LEGACY_FLEXI_SINGLE_HOUR_VARIANT_ID && (!sku || sku === LEGACY_FLEXI_SINGLE_HOUR_SKU)) ||
+      (!variantId && sku === LEGACY_FLEXI_SINGLE_HOUR_SKU);
+
+    if (!validLegacyShape) {
+      return { kind: 'invalid-checkout', reason: 'Legacy Flexi Checkout line has an unknown variant or SKU.' };
+    }
+    if (quantity === undefined || !Number.isInteger(quantity) || quantity <= 0) {
+      return { kind: 'invalid-checkout', reason: 'Legacy Flexi quantity must be a positive integer.' };
+    }
+    return { kind: 'checkout', hours: quantity, quantity: 1, legacy: true, variantId };
+  }
+
   if (isConfiguredCheckoutLine(lineItem)) {
     const quantity = getQuantity(lineItem);
     const variantId = normalize(lineItem.variant_id) || undefined;
@@ -62,15 +96,6 @@ export function classifyFlexiLineItem(lineItem: LoyverseReceiptLineItem): FlexiL
     }
     if (mappedHours !== undefined && skuHours !== null && (!Number.isFinite(skuHours) || mappedHours !== skuHours)) {
       return { kind: 'invalid-checkout', reason: 'Checkout variant ID and SKU select different visit punch totals.' };
-    }
-
-    // Historical receipts used the optionless first variant and quantity as the
-    // number of punches. New variants carry the visit's total punches and require quantity 1.
-    if ((variantId === LEGACY_FLEXI_SINGLE_HOUR_VARIANT_ID || (!variantId && normalize(lineItem.sku) === LEGACY_FLEXI_SINGLE_HOUR_SKU)) && skuHours === null) {
-      if (quantity === undefined || !Number.isInteger(quantity) || quantity <= 0) {
-        return { kind: 'invalid-checkout', reason: 'Legacy Flexi quantity must be a positive integer.' };
-      }
-      return { kind: 'checkout', hours: quantity, quantity: 1, legacy: true, variantId };
     }
 
     // Once exact variant IDs have been captured, an explicit unknown ID must not
@@ -121,6 +146,9 @@ export function classifyFlexiLineItem(lineItem: LoyverseReceiptLineItem): FlexiL
 
   return { kind: 'unrelated' };
 }
+
+export const classifyFlexiHistoryLineItem = (lineItem: LoyverseReceiptLineItem): FlexiLineClassification =>
+  classifyFlexiLineItem(lineItem, { allowLegacyHistory: true });
 
 export const isFlexiOperationalLineItem = (lineItem: LoyverseReceiptLineItem) =>
   classifyFlexiLineItem(lineItem).kind !== 'unrelated';
