@@ -88,9 +88,14 @@
             </p>
           </div>
         </div>
-        <a class={openLinkClass} href={daily?.links.companyLedger} target="_blank" rel="noreferrer">
-          Open ledger <ExternalLink size={13} />
-        </a>
+        <div class="flex flex-wrap gap-2">
+          <a class={openLinkClass} href="/mgmt-dashboard/financial-ledger-reviews">
+            Review incomplete records <AlertTriangle size={13} />
+          </a>
+          <a class={openLinkClass} href={daily?.links.companyLedger} target="_blank" rel="noreferrer">
+            Open ledger <ExternalLink size={13} />
+          </a>
+        </div>
       </div>
 
       <div class="mt-5 space-y-3">
