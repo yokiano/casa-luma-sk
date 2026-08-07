@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from '$app/state';
   import type { Snippet } from 'svelte';
-  import { Activity, AlertTriangle, ArrowLeftRight, BarChart3, HeartPulse, Mail, ReceiptText, Scale, TrendingUp } from 'lucide-svelte';
+  import { Activity, AlertTriangle, ArrowLeftRight, Banknote, BarChart3, HeartPulse, Mail, ReceiptText, Scale, TrendingUp } from 'lucide-svelte';
   import { Toaster } from '$lib/components/ui/sonner';
 
   let { children }: { children?: Snippet } = $props();
@@ -9,6 +9,7 @@
   const sections = [
     { href: '/mgmt-dashboard', label: 'Daily meeting', icon: BarChart3 },
     { href: '/mgmt-dashboard/reconciliation', label: 'Reconciliation', icon: Scale },
+    { href: '/mgmt-dashboard/balances/submit', label: 'Submit balances', icon: Banknote },
     { href: '/mgmt-dashboard/analytics', label: 'Analytics', icon: TrendingUp },
     { href: '/mgmt-dashboard/receipts', label: 'Receipts', icon: ReceiptText },
     { href: '/mgmt-dashboard/loyverse-test', label: 'Loyverse test', icon: ArrowLeftRight },

@@ -9,14 +9,14 @@ The management dashboard is an internal, meeting-friendly dashboard. The overvie
 ## Daily meeting agenda
 
 1. **Expenses / ledger records**
-   - Source: Notion `Company Ledger` database.
+   - Source: Notion `Financial Ledger` database.
    - Shows all ledger records from the last two Bangkok calendar days: yesterday through today.
    - The Notion `Date` filter uses Bangkok calendar-day UTC bounds, so late-night UTC timestamps still appear under the correct local day.
    - Dates are formatted for quick reading in the meeting.
    - Each row links to the Notion page, and the section includes an external link to open the ledger database in Notion.
 
 2. **Balance reconciliation**
-   - Overview: minimal panel on the daily meeting page after Company Ledger.
+   - Overview: minimal panel on the daily meeting page after Financial Ledger.
    - Detail page: `src/routes/mgmt-dashboard/reconciliation/+page.svelte`, linked from the sidebar and the overview “Details” button.
    - Server read model: `getBalanceReconciliationDashboard()` in `src/lib/mgmt-dashboard.remote.ts`, backed by `src/lib/server/balance-reconciliation.ts`.
    - Operating model and manual setup steps: `docs/casa-luma/tools/mgmt-dashboard/balance-reconciliation.md`.
@@ -45,12 +45,16 @@ Below the agenda, the overview keeps the existing receipt operations snapshot:
 - Gross profit by department from Neon receipt data.
 - Department/category mapping comes from Notion when configured, otherwise fallback config is used.
 
+## Analytics filters
+
+The analytics route at `src/routes/mgmt-dashboard/analytics/+page.svelte` supports receipt-level filters for a specific customer, customer assignment, included items, and payment types. Item and payment selections use lazy searches against locally ingested receipt data; customer selection reuses the existing lazy family search and its Loyverse customer ID. Multiple items or payment types use OR within that filter, while different filter types combine with AND. Active filters appear above the analytics and apply consistently to both management and receipt analytics queries.
+
 ## Server data
 
 The server-side remote functions live in `src/lib/mgmt-dashboard.remote.ts`:
 
 - `getDailyMeetingDashboard()` loads the daily meeting agenda data from Notion.
-- `getBalanceReconciliationDashboard()` loads expected vs observed bank/safe balances from Notion snapshots, Company Ledger, and Loyverse receipt payments.
+- `getBalanceReconciliationDashboard()` loads expected vs observed bank/safe balances from Notion snapshots, Financial Ledger, and Loyverse receipt payments.
 - `getTodayDashboardOverview()` loads the receipt operations snapshot from Neon/Loyverse/Notion mapping.
 
 The Notion data requires `NOTION_API_KEY`. If it is missing or Notion fails, the daily meeting and reconciliation sections render empty states with a warning instead of breaking the whole dashboard.

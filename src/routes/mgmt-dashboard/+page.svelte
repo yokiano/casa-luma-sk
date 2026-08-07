@@ -81,7 +81,7 @@
           </span>
           <div>
             <p class="text-xs font-bold uppercase tracking-[0.18em] text-[#7a6550]/60">1. Expenses</p>
-            <h2 class="mt-1 text-2xl font-bold tracking-tight">Company Ledger</h2>
+            <h2 class="mt-1 text-2xl font-bold tracking-tight">Financial Ledger</h2>
             <p class="mt-1 text-sm text-[#7a6550]">Ledger records dated {daily?.yesterday} through {daily?.today}.</p>
             <p class="mt-1 text-xs text-[#7a6550]/70">
               Note: approvals are temporarily recorded as Yarden. Once auth is implemented, this should use the logged-in user.
@@ -151,7 +151,7 @@
           </article>
         {:else}
           <p class="rounded-2xl border border-dashed border-[#dfd2c5] p-4 text-sm text-[#7a6550]">
-            No Company Ledger records found for the last two days.
+            No Financial Ledger records found for the last two days.
           </p>
         {/each}
       </div>

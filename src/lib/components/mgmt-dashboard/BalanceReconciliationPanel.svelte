@@ -12,6 +12,10 @@
   });
 
   const formatMoney = (value: number | null | undefined) => (value === null ? '—' : money.format(value ?? 0));
+  const formatSignedMoney = (value: number | null | undefined) => {
+    if (value === null || value === undefined) return '—';
+    return `${value > 0 ? '+' : ''}${money.format(value)}`;
+  };
   const formatDateTime = (value: string | undefined) =>
     value
       ? new Intl.DateTimeFormat('en-GB', {
@@ -37,6 +41,12 @@
     'inline-flex items-center gap-1.5 rounded-full border border-[#dfd2c5] bg-white px-3 py-1.5 text-xs font-bold text-[#7a6550] transition hover:border-[#7a6550] hover:text-[#2c2925]';
 
   const actualFor = (accountKey: string) => data?.actual?.snapshots?.find((snapshot: any) => snapshot.accountKey === accountKey);
+  const varianceClass = (value: number | null | undefined) =>
+    value === null || value === undefined
+      ? 'text-[#7a6550]'
+      : Math.abs(value) <= 20
+        ? 'text-emerald-700'
+        : 'font-bold text-red-700';
 </script>
 
 <section class="rounded-3xl border border-[#dfd2c5] bg-white p-6 shadow-sm" id="balance-reconciliation">
@@ -51,11 +61,12 @@
         <p class="mt-1 text-sm text-[#7a6550]">
           {variant === 'overview'
             ? 'Expected KBank + safe cash vs latest snapshots. Loyverse moves cash to the safe and scan/card to KBank automatically — no ledger row for daily register→safe.'
-            : 'Full breakdown: baselines, Loyverse receipts, Company Ledger movements, and what to enter in Notion.'}
+            : 'Full breakdown: baselines, Loyverse receipts, Financial Ledger movements, and what to enter in Notion.'}
         </p>
       </div>
     </div>
     <div class="flex flex-wrap gap-2">
+      <a class={openLinkClass} href="/mgmt-dashboard/balances/submit">Submit balances</a>
       {#if variant === 'overview'}
         <a class={openLinkClass} href="/mgmt-dashboard/reconciliation">Details</a>
       {/if}
@@ -93,9 +104,33 @@
           <strong>Snapshot Role = Accepted Baseline</strong> and <strong>Status = Accepted</strong>.
         </p>
         <p class="mt-2">
-          KBank baseline exists (฿600k). Still needed: <strong>Safe / Cash on hand</strong> — count everything in the
-          safe (daily bags + backup/change bag) at the baseline date.
+          For <strong>Safe / Cash on hand</strong>, count everything in the safe (daily bags + backup/change bag) at
+          the baseline time. Use real values from one clear cutover time, not estimates.
         </p>
+      </div>
+    {/if}
+
+    {#if data?.difference?.status !== 'ok'}
+      <div class="mt-5 rounded-2xl border border-[#eadfd3] bg-[#fffaf4] p-4">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p class="text-xs font-bold uppercase tracking-[0.16em] text-[#7a6550]/65">Next action</p>
+            {#if data?.actual?.missingAccounts?.length}
+              <h3 class="mt-1 font-bold text-[#2c2925]">Submit the missing observed balances.</h3>
+              <p class="mt-1 text-sm text-[#7a6550]">The comparison cannot be complete until {data.actual.missingAccounts.join(' and ')} has a current Observed snapshot.</p>
+            {:else if data?.difference?.status === 'stale'}
+              <h3 class="mt-1 font-bold text-[#2c2925]">Refresh the stale balance evidence.</h3>
+              <p class="mt-1 text-sm text-[#7a6550]">Submit a new KBank balance and full safe count before investigating the variance.</p>
+            {:else if data?.difference?.status === 'attention'}
+              <h3 class="mt-1 font-bold text-[#2c2925]">Investigate the time-aligned variance.</h3>
+              <p class="mt-1 text-sm text-[#7a6550]">Check Financial Ledger expenses, bank fees, and transfer entries. Do not replace an accepted baseline to make the difference disappear.</p>
+            {:else}
+              <h3 class="mt-1 font-bold text-[#2c2925]">Complete the reconciliation setup.</h3>
+              <p class="mt-1 text-sm text-[#7a6550]">Review accepted KBank and safe baseline snapshots before relying on expected balances.</p>
+            {/if}
+          </div>
+          <a class={`${openLinkClass} shrink-0`} href="/mgmt-dashboard/balances/submit">Submit current balances</a>
+        </div>
       </div>
     {/if}
 
@@ -108,8 +143,8 @@
             bag automatically via Loyverse cash sales. Only record ledger rows for expenses and weekly safe→bank deposits.
           </p>
           <ul class="list-disc space-y-1 pl-5">
-            <li><strong>Company Ledger (daily):</strong> Register Expense for cash, Scan Expense for scan/QR vendor payments, backup-cash expenses.</li>
-            <li><strong>Company Ledger (weekly):</strong> safe→bank deposit with “cash deposit” or “safe deposit” in description.</li>
+            <li><strong>Financial Ledger (daily):</strong> Register Expense for cash, Scan Expense for scan/QR vendor payments, backup-cash expenses.</li>
+            <li><strong>Financial Ledger (weekly):</strong> safe→bank deposit with “cash deposit” or “safe deposit” in description.</li>
             <li><strong>Balance Snapshots (Observed):</strong> KBiz balance and safe cash count after close — for comparison only.</li>
             <li><strong>Balance Snapshots (Accepted Baseline):</strong> reviewed cutover anchors only — not every daily count.</li>
           </ul>
@@ -124,7 +159,7 @@
       <article class="rounded-2xl border border-[#eadfd3] bg-[#fffaf4] p-4">
         <p class="flex items-center gap-2 text-sm font-bold text-[#2c2925]"><Banknote size={16} /> Expected bank + safe</p>
         <p class="mt-3 text-3xl font-bold tracking-tight tabular-nums">{formatMoney(data?.expected?.totalCashAndBankThb)}</p>
-        <p class="mt-2 text-xs text-[#7a6550]/75">Accepted baseline + Loyverse receipts + Company Ledger.</p>
+        <p class="mt-2 text-xs text-[#7a6550]/75">Accepted baseline + Loyverse receipts + Financial Ledger.</p>
       </article>
 
       <article class="rounded-2xl border border-[#eadfd3] bg-[#fffaf4] p-4">
@@ -136,9 +171,9 @@
       </article>
 
       <article class={`rounded-2xl border p-4 ${reconciliationStatusClass(data?.difference?.status)}`}>
-        <p class="text-sm font-bold">Difference: actual − expected</p>
-        <p class="mt-3 text-3xl font-bold tracking-tight tabular-nums">{formatMoney(data?.difference?.totalThb)}</p>
-        <p class="mt-2 text-xs capitalize opacity-80">{data?.difference?.status?.replace('_', ' ') ?? 'unknown'}</p>
+        <p class="text-sm font-bold">Time-aligned difference</p>
+        <p class="mt-3 text-3xl font-bold tracking-tight tabular-nums">{formatSignedMoney(data?.difference?.totalThb)}</p>
+        <p class="mt-2 text-xs opacity-80">Actual − expected at each snapshot time · {data?.difference?.status?.replace('_', ' ') ?? 'unknown'}</p>
       </article>
     </div>
 
@@ -155,6 +190,7 @@
               {/if}
               <th class="px-3 py-2 text-right">Expected</th>
               <th class="px-3 py-2 text-right">Latest snapshot</th>
+              <th class="px-3 py-2 text-right">Variance</th>
               <th class="px-3 py-2">Status</th>
             </tr>
           </thead>
@@ -172,6 +208,12 @@
                 {/if}
                 <td class="px-3 py-3 text-right font-bold tabular-nums">{formatMoney(account.expectedThb)}</td>
                 <td class="px-3 py-3 text-right tabular-nums">{formatMoney(snapshot?.balanceThb ?? null)}</td>
+                <td class={`px-3 py-3 text-right tabular-nums ${varianceClass(snapshot?.varianceThb)}`}>
+                  {formatSignedMoney(snapshot?.varianceThb)}
+                  {#if snapshot?.expectedAtObservationThb !== null && snapshot?.expectedAtObservationThb !== undefined}
+                    <span class="block text-[10px] font-normal text-[#7a6550]/65">vs {formatMoney(snapshot.expectedAtObservationThb)} then</span>
+                  {/if}
+                </td>
                 <td class="px-3 py-3 text-xs text-[#7a6550]">
                   {#if snapshot}
                     <span class={snapshot.stale ? 'font-bold text-amber-700' : 'font-bold text-emerald-700'}>{snapshot.stale ? 'stale' : 'fresh'}</span>
@@ -187,7 +229,7 @@
                 </td>
               </tr>
             {:else}
-              <tr><td class="py-3 text-[#7a6550]" colspan={variant === 'detail' ? 6 : 4}>No accepted baseline snapshots yet.</td></tr>
+              <tr><td class="py-3 text-[#7a6550]" colspan={variant === 'detail' ? 7 : 5}>No accepted baseline snapshots yet.</td></tr>
             {/each}
           </tbody>
         </table>
@@ -201,7 +243,7 @@
           <p class="mt-2 text-sm text-[#7a6550]">
             Loyverse scan/QR and card payments increase expected KBank on the sale date because KBank receives them the
             same business day. Card processing fees (if bank deposit is net of fees) should be recorded as KBank expenses
-            in Company Ledger.
+            in Financial Ledger.
           </p>
           <div class="mt-3 grid gap-3 sm:grid-cols-2">
             <div class="rounded-xl bg-[#fffaf4] p-3">
@@ -250,7 +292,7 @@
           </section>
 
           <section>
-            <h4 class="font-bold text-[#2c2925]">Company Ledger conventions</h4>
+            <h4 class="font-bold text-[#2c2925]">Financial Ledger conventions</h4>
             <ul class="mt-2 list-disc space-y-1 pl-5">
               <li>Always enter <strong>positive</strong> amounts in Amount (THB).</li>
               <li><strong>Type = Register Expense</strong> for cash expenses at close shift; <strong>Type = Scan Expense</strong> for scan/QR vendor payments; <strong>Type = Refund</strong> for manual customer refunds (POS refunds come from Loyverse).</li>
@@ -265,14 +307,14 @@
             <ul class="mt-2 list-disc space-y-1 pl-5">
               <li><strong>Accepted Baseline + Accepted</strong> — starting anchor per account (KBank + Safe required). Clears setup_required.</li>
               <li><strong>Observed</strong> — KBiz balance and physical safe count after close. Used for “Latest observed” comparison.</li>
-              <li>Do not put snapshot balances into Company Ledger.</li>
+              <li>Do not put snapshot balances into Financial Ledger.</li>
             </ul>
           </section>
 
           <section>
             <h4 class="font-bold text-[#2c2925]">Weekly operating rhythm</h4>
             <ul class="mt-2 list-disc space-y-1 pl-5">
-              <li><strong>Daily close:</strong> enter cash + scan expenses in Company Ledger; add Observed snapshots for KBank and safe if checking difference.</li>
+              <li><strong>Daily close:</strong> enter cash + scan expenses in Financial Ledger; add Observed snapshots for KBank and safe if checking difference.</li>
               <li><strong>Weekly:</strong> deposit safe cash to KBank (leave backup/change in safe); record one safe-deposit ledger row; refresh Observed snapshots.</li>
               <li><strong>When difference &gt; ฿20:</strong> look for missing expenses, card fees, or stale/missing snapshots before changing baselines.</li>
             </ul>

@@ -2,6 +2,7 @@
   import { getMgmtDashboardAnalytics } from '$lib/mgmt-dashboard.remote';
   import { getReceiptAnalytics } from '$lib/receipts.remote';
   import AnalyticsToolbar from '$lib/components/mgmt-dashboard/analytics/AnalyticsToolbar.svelte';
+  import AnalyticsFilterIndicators from '$lib/components/mgmt-dashboard/analytics/AnalyticsFilterIndicators.svelte';
   import { analyticsSections, type AnalyticsSectionId } from '$lib/components/mgmt-dashboard/analytics/AnalyticsSectionNav.svelte';
   import ReceiptsAnalytics from '$lib/components/mgmt-dashboard/analytics/ReceiptsAnalytics.svelte';
   import RevenueTimingBreakdown from '$lib/components/mgmt-dashboard/analytics/RevenueTimingBreakdown.svelte';
@@ -71,9 +72,15 @@
 
     try {
       const range = dateRangeForPeriod(filters.period);
+      const dimensions = {
+        customerId: filters.customer?.id,
+        itemIds: filters.items.map(({ id }) => id),
+        paymentTypeIds: filters.paymentTypes.map(({ id }) => id),
+        customerPresence: filters.customerPresence === 'all' ? undefined : filters.customerPresence
+      };
       const [dashboard, receipts] = await Promise.all([
-        getMgmtDashboardAnalytics({ period: filters.period, groupBy: filters.groupBy }),
-        getReceiptAnalytics(range)
+        getMgmtDashboardAnalytics({ period: filters.period, groupBy: filters.groupBy, ...dimensions }),
+        getReceiptAnalytics({ ...range, ...dimensions })
       ]);
       if (requestKey === key) {
         data = dashboard;
@@ -202,6 +209,7 @@
   </header>
 
   <AnalyticsToolbar {filters} {loading} {activeSection} />
+  <AnalyticsFilterIndicators {filters} />
 
   <div class="min-w-0 space-y-6">
   {#if error}

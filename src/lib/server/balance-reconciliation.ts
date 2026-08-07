@@ -1,8 +1,8 @@
 import { env } from '$env/dynamic/private';
 import { Client } from '@notionhq/client';
 import { sql } from 'drizzle-orm';
-import { CompanyLedgerDatabase } from '$lib/notion-sdk/dbs/company-ledger/db';
-import { CompanyLedgerResponseDTO } from '$lib/notion-sdk/dbs/company-ledger/response.dto';
+import { FinancialLedgerDatabase } from '$lib/notion-sdk/dbs/financial-ledger/db';
+import { FinancialLedgerResponseDTO } from '$lib/notion-sdk/dbs/financial-ledger/response.dto';
 import { db } from '$lib/server/db/client';
 import {
   RECONCILIATION_ACCOUNTS,
@@ -10,10 +10,12 @@ import {
   accountByKey,
   accountKeyFromPayment,
   buildExpectedAccounts,
+  buildExpectedAccountsAt,
   deriveReconciliationStatus,
   isCashOrBank,
   isDashboardReviewAccount,
   isRequiredBaselineAccount,
+  isUsableObservedSnapshot,
   latestByAccount,
   ledgerMovementsFromRecord,
   movementsAfterBaseline,
@@ -107,7 +109,7 @@ const loadSnapshots = async (notionSecret: string): Promise<Snapshot[]> => {
 };
 
 const loadLedgerMovements = async (notionSecret: string, earliestBaseline: string, asOf: Date): Promise<Movement[]> => {
-  const ledgerDb = new CompanyLedgerDatabase({ notionSecret });
+  const ledgerDb = new FinancialLedgerDatabase({ notionSecret });
   const movements: Movement[] = [];
   let cursor: string | undefined;
 
@@ -122,7 +124,7 @@ const loadLedgerMovements = async (notionSecret: string, earliestBaseline: strin
     } as any);
 
     for (const result of response.results) {
-      const item = new CompanyLedgerResponseDTO(result as any);
+      const item = new FinancialLedgerResponseDTO(result as any);
       movements.push(
         ...ledgerMovementsFromRecord({
           id: item.id,
@@ -203,6 +205,7 @@ export const getBalanceReconciliationSummary = async ({ asOf = new Date() }: { a
 
   try {
     const snapshots = await loadSnapshots(notionSecret);
+    const observedSnapshots = snapshots.filter(isUsableObservedSnapshot);
     const acceptedBaselines = latestByAccount(
       snapshots.filter((snapshot) => snapshot.role === 'Accepted Baseline' && snapshot.status === 'Accepted')
     );
@@ -219,18 +222,18 @@ export const getBalanceReconciliationSummary = async ({ asOf = new Date() }: { a
         expected: { totalCashAndBankThb: 0, accounts: [] },
         actual: {
           comparableTotalThb: null,
-          snapshots: snapshots
+          snapshots: Array.from(latestByAccount(observedSnapshots).values())
             .filter((snapshot) => isDashboardReviewAccount(snapshot.accountKey))
             .map((snapshot) => ({
-            accountKey: snapshot.accountKey,
-            accountName: snapshot.accountName,
-            balanceThb: snapshot.balanceThb,
-            observedAt: snapshot.observedAt,
-            ageHours: Math.max(0, Math.round((asOf.getTime() - new Date(snapshot.observedAt).getTime()) / 3600000)),
-            source: snapshot.source ?? 'Manual',
-            stale: true,
-            url: snapshot.url
-          })),
+              accountKey: snapshot.accountKey,
+              accountName: snapshot.accountName,
+              balanceThb: snapshot.balanceThb,
+              observedAt: snapshot.observedAt,
+              ageHours: Math.max(0, Math.round((asOf.getTime() - new Date(snapshot.observedAt).getTime()) / 3600000)),
+              source: snapshot.source ?? 'Manual',
+              stale: true,
+              url: snapshot.url
+            })),
           missingAccounts: requiredBaselineAccounts.map((account) => account.name)
         },
         difference: { totalThb: null, explainedThb: 0, unexplainedThb: null, status: 'setup_required' as const },
@@ -247,18 +250,22 @@ export const getBalanceReconciliationSummary = async ({ asOf = new Date() }: { a
     const allMovements = movementsAfterBaseline([...ledgerMovements, ...receiptMovements], acceptedBaselines);
     const expectedAccounts = buildExpectedAccounts(acceptedBaselines, allMovements);
 
-    const latestSnapshots = latestByAccount(
-      snapshots.filter((snapshot) => snapshot.status !== 'Draft' && snapshot.status !== 'Superseded')
-    );
+    // Baselines anchor expected balances. Only explicit Observed snapshots represent actual balances.
+    const latestSnapshots = latestByAccount(observedSnapshots);
     const actualSnapshots = Array.from(latestSnapshots.values())
       .sort((a, b) => (accountByKey.get(a.accountKey)?.displayOrder ?? 999) - (accountByKey.get(b.accountKey)?.displayOrder ?? 999))
       .map((snapshot) => {
         const account = accountByKey.get(snapshot.accountKey)!;
+        const expectedAtObservation = buildExpectedAccountsAt(acceptedBaselines, allMovements, snapshot.observedAt)
+          .find((expected) => expected.key === snapshot.accountKey);
         const ageHours = Math.max(0, Math.round((asOf.getTime() - new Date(snapshot.observedAt).getTime()) / 3600000));
+        const balanceThb = roundThb(snapshot.balanceThb);
         return {
           accountKey: snapshot.accountKey,
           accountName: snapshot.accountName,
-          balanceThb: roundThb(snapshot.balanceThb),
+          balanceThb,
+          expectedAtObservationThb: expectedAtObservation?.expectedThb ?? null,
+          varianceThb: expectedAtObservation ? roundThb(balanceThb - expectedAtObservation.expectedThb) : null,
           observedAt: snapshot.observedAt,
           ageHours,
           source: snapshot.source ?? 'Manual',
@@ -279,7 +286,14 @@ export const getBalanceReconciliationSummary = async ({ asOf = new Date() }: { a
       ? null
       : roundThb(comparableActualSnapshots.reduce((sum, snapshot) => sum + snapshot.balanceThb, 0));
     const expectedComparableTotal = sumComparableExpected(expectedAccounts);
-    const differenceTotalThb = comparableTotalThb === null ? null : roundThb(comparableTotalThb - expectedComparableTotal);
+    // Compare each account with the expected balance at that account's observation time.
+    // This avoids blaming a stale morning cash count for movements recorded later in the day.
+    const timeAlignedExpectedTotalThb = missingActualAccounts.length
+      ? null
+      : roundThb(comparableActualSnapshots.reduce((sum, snapshot) => sum + (snapshot.expectedAtObservationThb ?? 0), 0));
+    const differenceTotalThb = missingActualAccounts.length
+      ? null
+      : roundThb(comparableActualSnapshots.reduce((sum, snapshot) => sum + (snapshot.varianceThb ?? 0), 0));
     const hasStaleSnapshots = comparableActualSnapshots.some((snapshot) => snapshot.stale);
     const status = deriveReconciliationStatus({ hasOpeningBalances, hasStaleSnapshots, differenceTotalThb });
 
@@ -296,13 +310,15 @@ export const getBalanceReconciliationSummary = async ({ asOf = new Date() }: { a
       actual: { comparableTotalThb, snapshots: reviewSnapshots, missingAccounts: missingActualAccounts },
       difference: {
         totalThb: differenceTotalThb,
+        expectedAtObservationThb: timeAlignedExpectedTotalThb,
         explainedThb: 0,
         unexplainedThb: differenceTotalThb,
+        basis: 'per_account_observation_time' as const,
         status
       },
       recent: {
         unreconciledLedgerItems: ledgerMovements
-          .filter((movement) => !movement.description.toLowerCase().includes('reconciled'))
+          .filter((movement) => !movement.reconciled)
           .slice(-5)
           .reverse()
           .map((movement) => ({

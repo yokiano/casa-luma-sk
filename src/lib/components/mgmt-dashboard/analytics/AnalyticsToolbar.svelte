@@ -1,6 +1,7 @@
 <script lang="ts">
   import AnalyticsSectionNav, { type AnalyticsSectionId } from './AnalyticsSectionNav.svelte';
   import type { MgmtAnalyticsFilters } from '$lib/mgmt-dashboard/analytics-filters.svelte';
+  import AnalyticsFilterModal from './AnalyticsFilterModal.svelte';
 
   interface Props {
     filters: MgmtAnalyticsFilters;
@@ -19,6 +20,8 @@
     </div>
 
     <div class="flex flex-wrap items-center gap-3">
+      <AnalyticsFilterModal {filters} />
+
       <div class="flex flex-wrap gap-2 rounded-2xl bg-[#f6f1eb] p-1">
         {#each filters.periodOptions as option}
           <button

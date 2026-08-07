@@ -50,9 +50,10 @@ export type Movement = {
   occurredAt: string;
   accountKey: AccountKey;
   amountThb: number;
-  source: 'company_ledger' | 'loyverse_receipt';
+  source: 'financial_ledger' | 'loyverse_receipt';
   sourceId: string;
   description: string;
+  reconciled?: boolean;
   url?: string;
 };
 
@@ -101,6 +102,9 @@ export const isRequiredBaselineAccount = (account: ReconciliationAccount) =>
 /** Accounts shown in the dashboard review table — KBank + safe only. */
 export const isDashboardReviewAccount = (key: AccountKey) => key === 'kbank' || key === 'safe_cash';
 
+export const isUsableObservedSnapshot = (snapshot: { role?: string | null; status?: string | null }) =>
+  snapshot.role === 'Observed' && (snapshot.status === 'Accepted' || snapshot.status === 'Needs Review');
+
 export const accountKeyFromNotionName = (value: string | null | undefined): AccountKey | null => {
   if (!value) return null;
   return accountByName.get(value.trim().toLowerCase())?.key ?? null;
@@ -139,7 +143,11 @@ export const isSafeDepositText = (searchableText: string) =>
 export const isBankDepositTransferType = (typeKey: string) => typeKey === 'bank deposit income';
 
 export const isLedgerExpenseType = (typeKey: string) =>
-  typeKey === 'expense' || typeKey === 'register expense' || typeKey === 'scan expense';
+  typeKey === 'expense' ||
+  typeKey === 'register expense' ||
+  typeKey === 'scan expense' ||
+  typeKey === 'expense from backup' ||
+  typeKey === 'bank transfer expense';
 
 /** Legacy generic Income rows only — not Bank/Scan/Credit Card Income types. */
 export const isLedgerIncomeType = (typeKey: string) => typeKey === 'income';
@@ -158,7 +166,8 @@ export const ledgerMovementsFromRecord = (record: LedgerRecordInput): Movement[]
 
   const typeKey = normalize(type);
   const categoryKey = normalize(category);
-  const description = record.description?.trim() || type || 'Company Ledger record';
+  const description = record.description?.trim() || type || 'Financial Ledger record';
+  const reconciled = normalize(status) === 'reconciled';
   const searchableText = normalize(
     [description, record.notes, record.referenceNumber, type, category].filter(Boolean).join(' ')
   );
@@ -172,18 +181,20 @@ export const ledgerMovementsFromRecord = (record: LedgerRecordInput): Movement[]
         occurredAt: date,
         accountKey: bankAccountKey,
         amountThb: transferAmount,
-        source: 'company_ledger',
+        source: 'financial_ledger',
         sourceId: `${record.id}:bank-side`,
         description: `${description} · bank side`,
+        reconciled,
         url: record.url
       },
       {
         occurredAt: date,
         accountKey: 'safe_cash',
         amountThb: -transferAmount,
-        source: 'company_ledger',
+        source: 'financial_ledger',
         sourceId: `${record.id}:safe-side`,
         description: `${description} · safe side`,
+        reconciled,
         url: record.url
       }
     ];
@@ -206,9 +217,10 @@ export const ledgerMovementsFromRecord = (record: LedgerRecordInput): Movement[]
       occurredAt: date,
       accountKey: accountKeyFromLedger(record.bankAccount, record.paymentMethod),
       amountThb: signedAmount,
-      source: 'company_ledger',
+      source: 'financial_ledger',
       sourceId: record.id,
       description,
+      reconciled,
       url: record.url
     }
   ];
@@ -256,6 +268,19 @@ export const buildExpectedAccounts = (
       movementTotalThb: roundThb(movementTotalThb)
     };
   });
+
+/** Builds the expected balance at an evidence timestamp, not at dashboard load time. */
+export const buildExpectedAccountsAt = (
+  baselines: Map<AccountKey, BaselineSnapshot>,
+  movements: Movement[],
+  asOf: string | Date
+) => {
+  const cutoff = typeof asOf === 'string' ? asOf : asOf.toISOString();
+  return buildExpectedAccounts(
+    baselines,
+    movements.filter((movement) => movement.occurredAt <= cutoff)
+  );
+};
 
 export type ReconciliationStatus = 'ok' | 'stale' | 'attention' | 'setup_required';
 

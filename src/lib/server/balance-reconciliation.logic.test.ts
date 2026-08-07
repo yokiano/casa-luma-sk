@@ -3,7 +3,9 @@ import {
   accountKeyFromLedger,
   accountKeyFromPayment,
   buildExpectedAccounts,
+  buildExpectedAccountsAt,
   deriveReconciliationStatus,
+  isUsableObservedSnapshot,
   ledgerMovementsFromRecord,
   movementsAfterBaseline,
   sumComparableExpected,
@@ -75,6 +77,43 @@ describe('balance reconciliation ledger mapping', () => {
       accountKey: 'kbank',
       amountThb: -900
     });
+  });
+
+  it('maps current backup and bank-transfer expense types', () => {
+    const [backup] = ledgerMovementsFromRecord({
+      ...baseRecord,
+      id: 'ledger-backup',
+      amountThb: 300,
+      type: 'Expense from Backup',
+      description: 'Emergency cash purchase',
+      paymentMethod: 'Cash',
+      bankAccount: 'Cash Register'
+    });
+    const [bankTransfer] = ledgerMovementsFromRecord({
+      ...baseRecord,
+      id: 'ledger-bank-transfer',
+      amountThb: 1200,
+      type: 'Bank Transfer Expense',
+      description: 'Supplier transfer',
+      bankAccount: 'KBank'
+    });
+
+    expect(backup).toMatchObject({ accountKey: 'safe_cash', amountThb: -300 });
+    expect(bankTransfer).toMatchObject({ accountKey: 'kbank', amountThb: -1200 });
+  });
+
+  it('marks Financial Ledger rows with Reconciled status', () => {
+    const [movement] = ledgerMovementsFromRecord({
+      ...baseRecord,
+      amountThb: 240,
+      type: 'Register Expense',
+      status: 'Reconciled',
+      description: 'Ice',
+      paymentMethod: 'Cash',
+      bankAccount: 'Cash Register'
+    });
+
+    expect(movement).toMatchObject({ reconciled: true });
   });
 
   it('still treats legacy expense rows as negative movements', () => {
@@ -253,6 +292,32 @@ describe('balance reconciliation expected balances', () => {
     ['safe_cash', { accountKey: 'safe_cash', observedAt: '2026-05-27', balanceThb: 25_000 }]
   ]);
 
+  it('aligns expected balance to the observation timestamp', () => {
+    const movements: Movement[] = [
+      {
+        occurredAt: '2026-05-28T12:00:00.000Z',
+        accountKey: 'safe_cash',
+        amountThb: 3000,
+        source: 'loyverse_receipt',
+        sourceId: 'r-before',
+        description: 'Cash sale before count'
+      },
+      {
+        occurredAt: '2026-05-28T18:00:00.000Z',
+        accountKey: 'safe_cash',
+        amountThb: 2000,
+        source: 'loyverse_receipt',
+        sourceId: 'r-after',
+        description: 'Cash sale after count'
+      }
+    ];
+
+    expect(buildExpectedAccountsAt(baselines, movements, '2026-05-28T15:00:00.000Z').find((account) => account.key === 'safe_cash')).toMatchObject({
+      expectedThb: 28_000,
+      movementTotalThb: 3000
+    });
+  });
+
   it('adds cash sales and subtracts cash expenses after baseline', () => {
     const movements: Movement[] = [
       {
@@ -267,7 +332,7 @@ describe('balance reconciliation expected balances', () => {
         occurredAt: '2026-05-28T13:00:00.000Z',
         accountKey: 'safe_cash',
         amountThb: -240,
-        source: 'company_ledger',
+        source: 'financial_ledger',
         sourceId: 'l1',
         description: 'Ice'
       }
@@ -290,7 +355,7 @@ describe('balance reconciliation expected balances', () => {
         occurredAt: '2026-05-29T09:00:00.000Z',
         accountKey: 'kbank',
         amountThb: 10_000,
-        source: 'company_ledger',
+        source: 'financial_ledger',
         sourceId: 'l2:bank-side',
         description: 'Weekly cash deposit · bank side'
       },
@@ -298,7 +363,7 @@ describe('balance reconciliation expected balances', () => {
         occurredAt: '2026-05-29T09:00:00.000Z',
         accountKey: 'safe_cash',
         amountThb: -10_000,
-        source: 'company_ledger',
+        source: 'financial_ledger',
         sourceId: 'l2:safe-side',
         description: 'Weekly cash deposit · safe side'
       }
@@ -347,7 +412,18 @@ describe('balance reconciliation expected balances', () => {
     const accounts = buildExpectedAccounts(baselines, afterBaseline);
 
     expect(accounts.find((account) => account.key === 'safe_cash')?.expectedThb).toBe(30_000);
-    expect(afterBaseline.filter((movement) => movement.source === 'company_ledger')).toHaveLength(0);
+    expect(afterBaseline.filter((movement) => movement.source === 'financial_ledger')).toHaveLength(0);
+  });
+});
+
+describe('balance reconciliation observed snapshots', () => {
+  it('uses only explicit non-draft Observed snapshots as actual balances', () => {
+    expect(isUsableObservedSnapshot({ role: 'Observed', status: 'Accepted' })).toBe(true);
+    expect(isUsableObservedSnapshot({ role: 'Observed', status: 'Needs Review' })).toBe(true);
+    expect(isUsableObservedSnapshot({ role: 'Accepted Baseline', status: 'Accepted' })).toBe(false);
+    expect(isUsableObservedSnapshot({ role: 'Observed', status: 'Draft' })).toBe(false);
+    expect(isUsableObservedSnapshot({ role: 'Observed', status: 'Superseded' })).toBe(false);
+    expect(isUsableObservedSnapshot({ role: 'Observed', status: null })).toBe(false);
   });
 });
 

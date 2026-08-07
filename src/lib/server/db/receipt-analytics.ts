@@ -9,12 +9,15 @@ import {
   getDepartmentMapping,
   normalizeCategory
 } from '$lib/server/analytics/department-mapping';
+import {
+  receiptDimensionFilterSql,
+  type ReceiptDimensionFilters
+} from '$lib/server/analytics/receipt-filters';
 
-interface ReceiptAnalyticsQueryInput {
+interface ReceiptAnalyticsQueryInput extends ReceiptDimensionFilters {
   dateFrom?: string;
   dateTo?: string;
   storeId?: string;
-  customerId?: string;
 }
 
 type Row = Record<string, unknown>;
@@ -144,29 +147,65 @@ const buildTimeSeries = (dailyRows: DailyTimeSeriesRow[]): Record<ReceiptAnalyti
   };
 };
 
-const baseFilterSql = (dateFrom: Date | null, dateTo: Date | null, storeId?: string, customerId?: string) => {
-  const conditions = [];
+const baseFilterSql = (
+  dateFrom: Date | null,
+  dateTo: Date | null,
+  storeId: string | undefined,
+  dimensions: ReceiptDimensionFilters
+) => {
+  const conditions = [receiptDimensionFilterSql(dimensions)];
 
   // Drizzle raw sql + postgres-js does not encode Date objects here, so pass ISO strings
   // and cast explicitly in SQL.
   if (dateFrom) conditions.push(sql`r.created_at >= ${dateFrom.toISOString()}::timestamptz`);
   if (dateTo) conditions.push(sql`r.created_at <= ${dateTo.toISOString()}::timestamptz`);
   if (storeId) conditions.push(sql`r.store_id = ${storeId}`);
-  if (customerId) conditions.push(sql`r.customer_id = ${customerId}`);
 
-  if (!conditions.length) return sql`true`;
   return sql.join(conditions, sql` and `);
+};
+
+export const searchReceiptAnalyticsFilterOptionsFromDb = async (
+  kind: 'item' | 'payment',
+  search: string
+): Promise<Array<{ id: string; label: string }>> => {
+  const term = search.trim();
+
+  if (kind === 'item') {
+    return rowsOf<{ id: string; label: string }>(sql`
+      select li.item_id as id, max(coalesce(li.item_name, 'Unknown item')) as label
+      from receipt_line_items li
+      where li.item_id is not null
+        and strpos(lower(coalesce(li.item_name, '')), lower(${term})) > 0
+      group by li.item_id
+      order by count(*) desc, max(coalesce(li.item_name, 'Unknown item'))
+      limit 20
+    `);
+  }
+
+  return rowsOf<{ id: string; label: string }>(sql`
+    select p.payment_type_id as id, max(coalesce(p.name, p.type, 'Unknown payment')) as label
+    from receipt_payments p
+    where p.payment_type_id is not null
+      and strpos(lower(coalesce(p.name, p.type, '')), lower(${term})) > 0
+    group by p.payment_type_id
+    order by count(*) desc, max(coalesce(p.name, p.type, 'Unknown payment'))
+    limit 20
+  `);
 };
 
 export const queryReceiptAnalyticsFromDb = async ({
   dateFrom,
   dateTo,
   storeId,
-  customerId
+  customerId,
+  itemIds,
+  paymentTypeIds,
+  customerPresence
 }: ReceiptAnalyticsQueryInput): Promise<ReceiptAnalytics> => {
   const from = toDate(dateFrom);
   const to = toDate(dateTo);
-  const filterSql = () => baseFilterSql(from, to, storeId, customerId);
+  const dimensions = { customerId, itemIds, paymentTypeIds, customerPresence };
+  const filterSql = () => baseFilterSql(from, to, storeId, dimensions);
 
   const [
     summaryRows,

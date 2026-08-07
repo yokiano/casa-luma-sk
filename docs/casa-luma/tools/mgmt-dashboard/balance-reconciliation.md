@@ -5,8 +5,6 @@ Route context:
 - Daily overview: `src/routes/mgmt-dashboard/+page.svelte`
 - Dedicated detail page: `src/routes/mgmt-dashboard/reconciliation/+page.svelte`
 
-Detailed local implementation plan: `temp/balance-reconciliation-dashboard-implementation-plan.md`
-
 ## Purpose
 
 The reconciliation view shows what Casa Luma **should have** according to accepted baselines plus recorded movements, then compares that with observed evidence from KBank and the safe.
@@ -24,12 +22,12 @@ Casa Luma does **not** track the cashier/register as a reconciliation account, a
 Cash flow is represented as:
 
 1. Customers pay cash during the day.
-2. Cash starts in the cashier/register operationally, then moves to the safe at end of day — **no Company Ledger row for this handoff**.
+2. Cash starts in the cashier/register operationally, then moves to the safe at end of day — **no Financial Ledger row for this handoff**.
 3. Small cash expenses can be paid from the cashier/register or backup bag during the day.
-4. At end of day, those cash expenses are entered in Notion `Company Ledger`.
+4. At end of day, those cash expenses are entered in Notion `Financial Ledger`.
 5. Remaining daily cash goes to the safe (one bag per day).
 6. Safe cash is deposited to KBank weekly; a backup/change bag stays in the safe.
-7. Weekly deposit events are documented in `Company Ledger` with “cash deposit” or “safe deposit” text.
+7. Weekly deposit events are documented in `Financial Ledger` with “cash deposit” or “safe deposit” text.
 
 For reconciliation, this is one cash bucket:
 
@@ -43,7 +41,7 @@ Loyverse scan/QR and credit card payments **settle to KBank the same business da
 
 This avoids a false bank difference where actual KBank (already including settled scan/card) is compared against expected KBank that still treats those sales as “pending clearing.”
 
-Optional `Scan/QR Clearing` and `Credit Card Clearing` snapshot accounts remain available for manual tracking, but Loyverse does not populate them. If card processing fees reduce the KBiz deposit below gross Loyverse card sales, record the fee as a KBank expense in Company Ledger.
+Optional `Scan/QR Clearing` and `Credit Card Clearing` snapshot accounts remain available for manual tracking, but Loyverse does not populate them. If card processing fees reduce the KBiz deposit below gross Loyverse card sales, record the fee as a KBank expense in Financial Ledger.
 
 ## Accounting model
 
@@ -101,9 +99,9 @@ Current Notion `Balance Snapshots.Account` options:
 | 1 | Loyverse sales daily | Loyverse receipt payments after baseline | No |
 | 2 | Scan/card settle to KBank EOD | Non-cash payments → expected **KBank** | No |
 | 3 | Daily cash → safe bag | Cash payments → expected **Safe / Cash on hand** | **No** (register→safe is implicit) |
-| 4 | Cash expenses from day’s bag | Company Ledger expense, Cash payment method | Yes |
+| 4 | Cash expenses from day’s bag | Financial Ledger expense, Cash payment method | Yes |
 | 5 | Weekly safe → bank deposit | `Type = Bank Deposit Income` → transfer | Yes (weekly) |
-| 6 | Scan/QR vendor expenses | Company Ledger expense, Scan/Wire, KBank | Yes |
+| 6 | Scan/QR vendor expenses | Financial Ledger expense, Scan/Wire, KBank | Yes |
 | 7 | Backup cash used | Same as cash expense | Yes |
 
 ### Loyverse receipts
@@ -113,7 +111,7 @@ Current Notion `Balance Snapshots.Account` options:
 - Credit card payment: increases `KBank` (same-day settlement at Casa Luma).
 - Refund: reverses the original payment direction.
 
-### Company Ledger
+### Financial Ledger
 
 Use **positive numbers** in `Amount (THB)` for every row. The dashboard applies direction from `Type`, payment method, and special transfer text — do not enter negative amounts unless you intentionally want to override a convention (deposits still use `Math.abs` internally).
 
@@ -125,7 +123,7 @@ Use **positive numbers** in `Amount (THB)` for every row. The dashboard applies 
 
 ### Weekly safe → bank deposit
 
-Use **`Type = Bank Deposit Income`** in Company Ledger:
+Use **`Type = Bank Deposit Income`** in Financial Ledger:
 
 - `Amount (THB)`: positive deposit amount
 - `Payment Method`: `Wire Transfer` or `Scan`
@@ -140,10 +138,12 @@ Legacy rows with `cash deposit`, `safe deposit`, or `bank deposit` in descriptio
 
 `Scan Income` and `Credit Card Income` are valid **ledger labels for audit**, but the dashboard **ignores them in expected-balance math** because Loyverse receipt payments already credit **KBank** for same-day scan/card sales. Do not enter both a Loyverse sale total and a matching Scan Income row for the same money.
 
-### Company Ledger types (current)
+### Financial Ledger types (current)
 
 - `Register Expense` — cash paid from the day’s cash / backup bag (decreases safe)
 - `Scan Expense` — scan/QR paid to vendor from bank (decreases KBank)
+- `Expense from Backup`: cash paid from the safe backup bag (decreases safe)
+- `Bank Transfer Expense`: bank transfer paid to a vendor (decreases the selected bank)
 - `Bank Deposit Income` — safe → bank transfer
 - `Scan Income` / `Credit Card Income` — audit trail only in reconciliation
 - `Refund` — manual refund outflow (non-POS)
@@ -162,11 +162,27 @@ The daily meeting page keeps a minimal reconciliation overview:
 
 The dedicated `Reconciliation` page adds:
 
+- A manager CTA to submit current KBank and safe balances.
+- A “Next action” panel for missing/stale evidence, setup, or variance review.
+- Per-account time-aligned variance: actual snapshot balance minus expected balance at that snapshot's `Observed At` time. This avoids comparing an old cash count with movements that happened later.
 - Baseline and movement columns in the same table.
 - Notion links on each snapshot row.
 - Settlement model notes (same-day scan/card → KBank).
 - Recent ledger movements.
 - Staff instructions: what to enter in Snapshots vs Ledger, setup_required, weekly rhythm.
+
+## Daily Telegram reminder
+
+The protected endpoint `/api/cron/financial-balance-reminder` is scheduled in `vercel.json` for `12:30 UTC` (`19:30 Asia/Bangkok`). It requires `Authorization: Bearer <CRON_SECRET>` and records one durable run per Bangkok calendar date in Neon, so duplicate invocations do not send twice after a successful run.
+
+The reminder uses the dedicated `EMAIL_AUTOMATION_FINANCIAL_TELEGRAM_CHAT_ID` destination and optional `EMAIL_AUTOMATION_FINANCIAL_TELEGRAM_MESSAGE_THREAD_ID`. The dry-run and delivery test is:
+
+```bash
+pnpm telegram:financial-test
+pnpm telegram:financial-test -- --send
+```
+
+Before deployment, configure a strong `CRON_SECRET` in Vercel. The app returns `503` rather than exposing an unprotected cron endpoint when it is missing.
 
 ## Data ownership
 
@@ -174,7 +190,7 @@ The dedicated `Reconciliation` page adds:
 - Balance snapshots: observed reality from KBiz, safe counts, or settlement reports.
 - Reconciliation explanations: future human classification of differences.
 
-Do not put balance snapshots into the Company Ledger as normal records.
+Do not put balance snapshots into the Financial Ledger as normal records.
 
 ## Implementation notes
 
@@ -190,6 +206,16 @@ Snapshot properties:
 - `Source`
 - `Proof`
 - `Notes`
+
+Manager submissions create exactly two pages with fixed server-side values:
+
+- `Account`: KBank and `Safe / Cash on hand`
+- `Snapshot Role`: `Observed`
+- `Status`: `Needs Review`
+- `Source`: `Manual`
+- One shared Bangkok observation timestamp
+
+The submitted observations are evidence for review. They are not verified baselines, and the May 2026 baseline authenticity remains unconfirmed.
 
 If Notion database properties/options used by `src/lib/notion-sdk/**` change, run:
 

@@ -1,4 +1,5 @@
 import type { EmailAutomationInput, EmailClassification } from './classifier';
+import { parseKShopDailySettlement } from './parsers/kshop';
 
 const LEDGER_HANDLER_KEYS = ['company_ledger_expense', 'financial_ledger_income'] as const;
 const LEDGER_HANDLER_CLASSIFICATIONS: Record<typeof LEDGER_HANDLER_KEYS[number], EmailClassification['classification']> = {
@@ -52,6 +53,10 @@ const senderMatchesAllowlist = (from: string, allowlist: string[]) => {
   });
 };
 
+const isKShopIncome = (classification: EmailClassification) => classification.handlerKey === 'financial_ledger_income'
+  && classification.classification === 'income'
+  && classification.subtype === 'kshop_daily_settlement';
+
 export const isFinancialLedgerHandler = (handlerKey?: string | null): handlerKey is typeof LEDGER_HANDLER_KEYS[number] => Boolean(handlerKey && (LEDGER_HANDLER_KEYS as readonly string[]).includes(handlerKey));
 /** Backward-compatible expense-specific predicate for callers that need it. */
 export const isCompanyLedgerHandler = (handlerKey?: string | null) => handlerKey === 'company_ledger_expense';
@@ -91,12 +96,23 @@ export const evaluateLedgerAutomationPolicy = (
   const status = getLedgerAutomationPolicyStatus(dashboardLedgerEnabled, allowlist, maxAmountThb);
   if (!isFinancialLedgerHandler(classification.handlerKey)) return { allowed: true, status };
   const expectedClassification = LEDGER_HANDLER_CLASSIFICATIONS[classification.handlerKey];
+  const kShopIncome = isKShopIncome(classification);
   if (classification.processingState !== 'ready' || classification.classification !== expectedClassification || !classification.externalRef || classification.amountMinor === undefined || classification.currency !== 'THB') {
     return { allowed: false, reason: LEDGER_REQUIRED_FIELDS_REASON, status };
   }
+  if (!Number.isSafeInteger(classification.amountMinor) || classification.amountMinor <= 0) {
+    return { allowed: false, reason: LEDGER_REQUIRED_FIELDS_REASON, status };
+  }
   if (input.mime?.completeness !== 'complete') return { allowed: false, reason: LEDGER_MIME_INCOMPLETE_REASON, status };
-  if (!status.dashboardLedgerEnabled || !status.senderAllowlistConfigured) return { allowed: false, reason: LEDGER_AUTOMATION_NOT_ENABLED_REASON, status };
-  if (!senderMatchesAllowlist(input.from, allowlist)) return { allowed: false, reason: LEDGER_SENDER_NOT_ALLOWED_REASON, status };
+  if (kShopIncome) {
+    const parsed = parseKShopDailySettlement(input);
+    if (!parsed.ready || parsed.externalRef !== classification.externalRef || parsed.amountMinor !== classification.amountMinor) {
+      return { allowed: false, reason: LEDGER_REQUIRED_FIELDS_REASON, status };
+    }
+  } else {
+    if (!status.dashboardLedgerEnabled || !status.senderAllowlistConfigured) return { allowed: false, reason: LEDGER_AUTOMATION_NOT_ENABLED_REASON, status };
+    if (!senderMatchesAllowlist(input.from, allowlist)) return { allowed: false, reason: LEDGER_SENDER_NOT_ALLOWED_REASON, status };
+  }
   if (classification.amountMinor > status.maxAmountThb * 100) return { allowed: false, reason: `${LEDGER_AMOUNT_LIMIT_REASON} Limit: ${status.maxAmountThb.toLocaleString('en-US')} THB.`, status };
   return { allowed: true, status };
 };

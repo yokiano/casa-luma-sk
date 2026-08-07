@@ -4,7 +4,7 @@
 	"version": "0.0.1",
 	"type": "module",
 	"scripts": {
-		"dev": "NODE_OPTIONS='--no-network-family-autoselection --dns-result-order=ipv4first' portless casa vite dev",
+		"dev": "portless casa vite dev",
 		"dev-non-portless": "vite dev",
 		"build": "vite build",
 		"preview": "vite preview",
@@ -25,6 +25,7 @@
 		"2nd-loyverse:backfill": "NODE_OPTIONS='--no-network-family-autoselection --dns-result-order=ipv4first' node ./node_modules/tsx/dist/cli.mjs scripts/2nd-loyverse/backfill.ts",
 		"close-shift:live-test": "tsx scripts/live-test-close-shift-submit.ts",
 		"telegram:chat-ids": "tsx scripts/email-automations/telegram-list-chat-ids.ts",
+		"telegram:financial-test": "tsx scripts/email-automations/test-financial-balance-telegram.ts",
 		"telegram:email-webhook": "tsx scripts/email-automations/telegram-configure-email-automation-webhook.ts",
 		"email:test-eml": "tsx scripts/email-automations/test-email-automation-eml-telegram.ts",
 		"cf:email:deploy": "pnpm dlx wrangler@latest deploy --config scripts/cloudflare/process-email-trigger/wrangler.toml",

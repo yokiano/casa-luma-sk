@@ -6,9 +6,9 @@ import { db, getDatabaseEnvKey } from '$lib/server/db/client';
 import { incidentReporter } from '$lib/server/incidents';
 import { buildReceiptReportUrl } from '$lib/server/incidents/urls';
 import { error } from '@sveltejs/kit';
-import { CompanyLedgerDatabase } from '$lib/notion-sdk/dbs/company-ledger/db';
-import { CompanyLedgerPatchDTO } from '$lib/notion-sdk/dbs/company-ledger/patch.dto';
-import { CompanyLedgerResponseDTO } from '$lib/notion-sdk/dbs/company-ledger/response.dto';
+import { FinancialLedgerDatabase } from '$lib/notion-sdk/dbs/financial-ledger/db';
+import { FinancialLedgerPatchDTO } from '$lib/notion-sdk/dbs/financial-ledger/patch.dto';
+import { FinancialLedgerResponseDTO } from '$lib/notion-sdk/dbs/financial-ledger/response.dto';
 import { SalaryAdjustmentsDatabase } from '$lib/notion-sdk/dbs/salary-adjustments/db';
 import { SalaryAdjustmentsResponseDTO } from '$lib/notion-sdk/dbs/salary-adjustments/response.dto';
 import { EmployeesDatabase } from '$lib/notion-sdk/dbs/employees/db';
@@ -27,12 +27,13 @@ import {
   normalizeCategory,
   type DashboardDepartment
 } from '$lib/server/analytics/department-mapping';
+import { receiptDimensionFilterSql } from '$lib/server/analytics/receipt-filters';
 
 type Row = Record<string, unknown>;
 
 const RECEIPT_FRESHNESS_MIN_COUNT = 5;
 const MEMBERSHIP_CREATION_WINDOW_DAYS = 7;
-const COMPANY_LEDGER_DATABASE_ID = '8c565c29798a4ac39e3b23c35db93c5b';
+const FINANCIAL_LEDGER_DATABASE_ID = '39afc77db4f380c09fdfef3e7936c9c3';
 const SALARY_ADJUSTMENTS_DATABASE_ID = 'eb751fe68e764a618c4398560a0ae114';
 const EMPLOYEES_DATABASE_ID = 'cf220f8b4efc4caeb7e46723c4f5e3e9';
 const TASKS_DATABASE_ID = '0df7129c34034bf0937088586b557c2a';
@@ -142,7 +143,7 @@ const departmentToRevenueChannel = (department: DashboardDepartment): RevenueCha
   return 'others';
 };
 
-const buildExpenseMissingFields = (expense: CompanyLedgerResponseDTO) => {
+const buildExpenseMissingFields = (expense: FinancialLedgerResponseDTO) => {
   const missing: string[] = [];
   const props = expense.properties;
 
@@ -154,7 +155,7 @@ const buildExpenseMissingFields = (expense: CompanyLedgerResponseDTO) => {
   if (!props.department?.name) missing.push('department');
   if (!props.category?.name) missing.push('category');
   if (!props.supplierIds.length) missing.push('supplier');
-  if (!props.invoiceReceipt.urls.filter(Boolean).length) missing.push('receipt scan');
+  if (!props.invoiceReceipt.urls.filter(Boolean).length && !props.receiptNotRequired) missing.push('receipt scan');
   if (!props.paymentMethod?.name) missing.push('payment method');
   if (!props.bankAccount?.name) missing.push('bank account');
 
@@ -294,7 +295,7 @@ export const getDailyMeetingDashboard = query(async () => {
   const ledgerDateRange = bangkokDateRangeUtc(yesterday, tomorrow);
 
   const links = {
-    companyLedger: notionDatabaseUrl(COMPANY_LEDGER_DATABASE_ID),
+    companyLedger: notionDatabaseUrl(FINANCIAL_LEDGER_DATABASE_ID),
     salaryAdjustments: notionDatabaseUrl(SALARY_ADJUSTMENTS_DATABASE_ID),
     employees: notionDatabaseUrl(EMPLOYEES_DATABASE_ID),
     tasks: TASKS_VIEW_URL,
@@ -315,12 +316,12 @@ export const getDailyMeetingDashboard = query(async () => {
   }
 
   try {
-    const companyLedgerDb = new CompanyLedgerDatabase({ notionSecret });
+    const financialLedgerDb = new FinancialLedgerDatabase({ notionSecret });
     const salaryAdjustmentsDb = new SalaryAdjustmentsDatabase({ notionSecret });
     const employeesDb = new EmployeesDatabase({ notionSecret });
 
     const [ledgerResponse, salaryResponse, employeeResponse] = await Promise.all([
-      companyLedgerDb.query({
+      financialLedgerDb.query({
         page_size: 12,
         filter: {
           and: [{ date: { on_or_after: ledgerDateRange.start } }, { date: { before: ledgerDateRange.endExclusive } }]
@@ -358,7 +359,7 @@ export const getDailyMeetingDashboard = query(async () => {
     );
 
     const expenses = ledgerResponse.results.map((result) => {
-      const expense = new CompanyLedgerResponseDTO(result as any);
+      const expense = new FinancialLedgerResponseDTO(result as any);
       return {
         id: expense.id,
         title: expense.properties.description.text || 'Untitled expense',
@@ -368,7 +369,7 @@ export const getDailyMeetingDashboard = query(async () => {
         status: expense.properties.status?.name ?? null,
         department: expense.properties.department?.name ?? null,
         category: expense.properties.category?.name ?? null,
-        owner: expense.properties.owner?.name ?? null,
+        owner: expense.properties.approvedBy?.name ?? null,
         missingFields: buildExpenseMissingFields(expense),
         url: expense.url
       };
@@ -435,11 +436,11 @@ export const approveLedgerExpense = command(ApproveExpenseSchema, async ({ expen
   const notionSecret = getNotionSecret();
   if (!notionSecret) throw error(500, { message: 'NOTION_API_KEY is not configured.' });
 
-  const companyLedgerDb = new CompanyLedgerDatabase({ notionSecret });
-  await companyLedgerDb.updatePage(
+  const financialLedgerDb = new FinancialLedgerDatabase({ notionSecret });
+  await financialLedgerDb.updatePage(
     expenseId,
-    new CompanyLedgerPatchDTO({
-      properties: { owner: DASHBOARD_APPROVER }
+    new FinancialLedgerPatchDTO({
+      properties: { approvedBy: DASHBOARD_APPROVER }
     })
   );
 
@@ -448,13 +449,28 @@ export const approveLedgerExpense = command(ApproveExpenseSchema, async ({ expen
 
 export const getBalanceReconciliationDashboard = query(async () => getBalanceReconciliationSummary({ asOf: new Date() }));
 
+const DashboardAnalyticsIdListSchema = v.optional(
+  v.pipe(v.array(v.pipe(v.string(), v.trim(), v.minLength(1))), v.maxLength(20))
+);
 const DashboardAnalyticsSchema = v.object({
   period: v.optional(v.picklist(DASHBOARD_PERIODS)),
-  groupBy: v.optional(v.picklist(DASHBOARD_GROUP_BY))
+  groupBy: v.optional(v.picklist(DASHBOARD_GROUP_BY)),
+  customerId: v.optional(v.pipe(v.string(), v.trim(), v.minLength(1))),
+  itemIds: DashboardAnalyticsIdListSchema,
+  paymentTypeIds: DashboardAnalyticsIdListSchema,
+  customerPresence: v.optional(v.picklist(['assigned', 'unassigned']))
 });
 
-export const getMgmtDashboardAnalytics = query(DashboardAnalyticsSchema, async ({ period = 'today', groupBy = 'day' }) => {
+export const getMgmtDashboardAnalytics = query(DashboardAnalyticsSchema, async ({
+  period = 'today',
+  groupBy = 'day',
+  customerId,
+  itemIds,
+  paymentTypeIds,
+  customerPresence
+}) => {
   const periodCondition = dashboardPeriodCondition(period);
+  const dimensionCondition = receiptDimensionFilterSql({ customerId, itemIds, paymentTypeIds, customerPresence });
   const bucketExpression = dashboardBucketExpression(groupBy);
 
   const [row, lineRows, passMixRows, openPlayDurationRows, categoryMaps, departmentMapping] = await Promise.all([
@@ -474,7 +490,7 @@ export const getMgmtDashboardAnalytics = query(DashboardAnalyticsSchema, async (
         count(*) filter (where receipt_type is distinct from 'REFUND')::text as sale_count,
         count(*) filter (where receipt_type = 'REFUND')::text as refund_count
       from receipts r
-      where ${periodCondition}
+      where ${periodCondition} and ${dimensionCondition}
     `).then((rows) => rows[0]),
     rowsOf<{
       bucket_start: string | Date | null;
@@ -493,7 +509,7 @@ export const getMgmtDashboardAnalytics = query(DashboardAnalyticsSchema, async (
         count(*)::text as line_count
       from receipt_line_items li
       join receipts r on r.receipt_key = li.receipt_key
-      where ${periodCondition} and r.receipt_type is distinct from 'REFUND'
+      where ${periodCondition} and ${dimensionCondition} and r.receipt_type is distinct from 'REFUND'
       group by ${bucketExpression}, li.item_id, li.variant_id
       order by ${bucketExpression}
     `),
@@ -509,6 +525,7 @@ export const getMgmtDashboardAnalytics = query(DashboardAnalyticsSchema, async (
       from receipt_line_items li
       join receipts r on r.receipt_key = li.receipt_key
       where ${periodCondition}
+        and ${dimensionCondition}
         and r.receipt_type is distinct from 'REFUND'
         and li.item_id in (${ONE_HOUR_ITEM_ID}, ${ONE_HOUR_TO_DAY_ITEM_ID})
       group by ${bucketExpression}
@@ -533,6 +550,7 @@ export const getMgmtDashboardAnalytics = query(DashboardAnalyticsSchema, async (
         from receipts r
         join receipt_line_items li on li.receipt_key = r.receipt_key
         where ${periodCondition}
+          and ${dimensionCondition}
           and r.receipt_type is distinct from 'REFUND'
           and li.item_id in (${ONE_HOUR_ITEM_ID}, ${ONE_HOUR_TO_DAY_ITEM_ID})
         group by r.receipt_key, r.created_at, r.receipt_date, r."order"
@@ -803,6 +821,10 @@ export const getMgmtDashboardAnalytics = query(DashboardAnalyticsSchema, async (
     filters: {
       period,
       groupBy,
+      customerId: customerId ?? null,
+      itemIds: itemIds ?? [],
+      paymentTypeIds: paymentTypeIds ?? [],
+      customerPresence: customerPresence ?? null,
       label: dashboardPeriodLabel(period)
     },
     summary: {
