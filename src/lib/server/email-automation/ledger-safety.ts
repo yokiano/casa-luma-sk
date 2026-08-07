@@ -1,14 +1,18 @@
 import type { EmailAutomationInput, EmailClassification } from './classifier';
 
-const LEDGER_HANDLER_KEY = 'company_ledger_expense';
+const LEDGER_HANDLER_KEYS = ['company_ledger_expense', 'financial_ledger_income'] as const;
+const LEDGER_HANDLER_CLASSIFICATIONS: Record<typeof LEDGER_HANDLER_KEYS[number], EmailClassification['classification']> = {
+  company_ledger_expense: 'expense',
+  financial_ledger_income: 'income'
+};
 const CANARY_ENV_KEY = 'EMAIL_AUTOMATION_LEDGER_CANARY_ENABLED';
 const DEFAULT_MAX_AMOUNT_THB = 5_000;
 
-export const LEDGER_CANARY_NOT_ENABLED_REASON = 'Company Ledger automation is not active. Turn on the dashboard Ledger canary, set EMAIL_AUTOMATION_LEDGER_CANARY_ENABLED=true, and configure the dashboard sender allowlist before Ledger actions can run.';
-export const LEDGER_SENDER_NOT_ALLOWED_REASON = 'Company Ledger automation canary blocked this email because its visible sender is not in the explicit allowlist. Review the original email before any manual Ledger entry.';
-export const LEDGER_MIME_INCOMPLETE_REASON = 'Company Ledger automation canary blocked this email because the parsed MIME content is incomplete or unsupported.';
-export const LEDGER_AMOUNT_LIMIT_REASON = 'Company Ledger automation canary blocked this email because the amount is above the configured canary limit.';
-export const LEDGER_REQUIRED_FIELDS_REASON = 'Company Ledger automation canary blocked this email because the extracted transaction reference, amount, currency, or classification was not complete.';
+export const LEDGER_CANARY_NOT_ENABLED_REASON = 'Financial Ledger automation is not active. Turn on the dashboard Ledger canary, set EMAIL_AUTOMATION_LEDGER_CANARY_ENABLED=true, and configure the dashboard sender allowlist before Ledger actions can run.';
+export const LEDGER_SENDER_NOT_ALLOWED_REASON = 'Financial Ledger automation canary blocked this email because its visible sender is not in the explicit allowlist. Review the original email before any manual Ledger entry.';
+export const LEDGER_MIME_INCOMPLETE_REASON = 'Financial Ledger automation canary blocked this email because the parsed MIME content is incomplete or unsupported.';
+export const LEDGER_AMOUNT_LIMIT_REASON = 'Financial Ledger automation canary blocked this email because the amount is above the configured canary limit.';
+export const LEDGER_REQUIRED_FIELDS_REASON = 'Financial Ledger automation canary blocked this email because the extracted transaction reference, amount, currency, or classification was not complete.';
 export const LEDGER_AUTHENTICITY_GAP_WARNING = 'Sender authenticity is not yet verified with SPF/DKIM/DMARC evidence. This canary relies on a strict visible-sender allowlist plus amount and MIME safeguards until transport authentication is implemented.';
 
 export type LedgerAutomationPolicyStatus = {
@@ -52,7 +56,10 @@ const senderMatchesAllowlist = (from: string, allowlist: string[]) => {
   });
 };
 
-export const isCompanyLedgerHandler = (handlerKey?: string | null) => handlerKey === LEDGER_HANDLER_KEY;
+export const isFinancialLedgerHandler = (handlerKey?: string | null): handlerKey is typeof LEDGER_HANDLER_KEYS[number] => Boolean(handlerKey && (LEDGER_HANDLER_KEYS as readonly string[]).includes(handlerKey));
+/** Backward-compatible expense-specific predicate for callers that need it. */
+export const isCompanyLedgerHandler = (handlerKey?: string | null) => handlerKey === 'company_ledger_expense';
+export const financialLedgerHandlerKeys = LEDGER_HANDLER_KEYS;
 
 export const getLedgerAutomationPolicyStatus = (dashboardLedgerEnabled: boolean, senderAllowlist: string[] = [], maxAmountThb = DEFAULT_MAX_AMOUNT_THB): LedgerAutomationPolicyStatus => {
   const allowlist = normalizeAllowlist(senderAllowlist);
@@ -69,8 +76,8 @@ export const getLedgerAutomationPolicyStatus = (dashboardLedgerEnabled: boolean,
       'Dashboard Ledger canary switch must be on.',
       `${CANARY_ENV_KEY}=true must be present in the deployment environment.`,
       'Dashboard settings must name exact sender emails or domains allowed for the canary.',
-      'Each action must be a Company Ledger expense with a transaction reference, THB amount, complete MIME parse, and amount at or below the dashboard canary limit.',
-      'Handler idempotency uses transaction reference plus amount, and the Ledger writer reconciles an existing matching reference instead of creating a duplicate.',
+      'Each action must use an approved Financial Ledger expense or income handler with a transaction reference, THB amount, complete MIME parse, and amount at or below the dashboard canary limit.',
+      'Handler idempotency uses transaction reference plus amount, and the Ledger writer reconciles only an existing matching reference, amount, and Ledger Type instead of creating a duplicate.',
       'Turning off either the dashboard switch or the canary environment flag is the emergency circuit breaker.'
     ],
     risks: [LEDGER_AUTHENTICITY_GAP_WARNING, 'Automatic retries run only when the bounded processor is invoked; no scheduler is configured yet.'],
@@ -89,8 +96,9 @@ export const evaluateLedgerAutomationPolicy = (
 ): LedgerAutomationPolicyDecision => {
   const allowlist = normalizeAllowlist(senderAllowlist);
   const status = getLedgerAutomationPolicyStatus(dashboardLedgerEnabled, allowlist, maxAmountThb);
-  if (!isCompanyLedgerHandler(classification.handlerKey)) return { allowed: true, status };
-  if (classification.processingState !== 'ready' || classification.classification !== 'expense' || !classification.externalRef || classification.amountMinor === undefined || classification.currency !== 'THB') {
+  if (!isFinancialLedgerHandler(classification.handlerKey)) return { allowed: true, status };
+  const expectedClassification = LEDGER_HANDLER_CLASSIFICATIONS[classification.handlerKey];
+  if (classification.processingState !== 'ready' || classification.classification !== expectedClassification || !classification.externalRef || classification.amountMinor === undefined || classification.currency !== 'THB') {
     return { allowed: false, reason: LEDGER_REQUIRED_FIELDS_REASON, status };
   }
   if (input.mime?.completeness !== 'complete') return { allowed: false, reason: LEDGER_MIME_INCOMPLETE_REASON, status };
@@ -108,7 +116,7 @@ export const applyEmailAutomationSafetyPolicy = (
   senderAllowlist: string[] = [],
   maxAmountThb = DEFAULT_MAX_AMOUNT_THB
 ): EmailClassification => {
-  if (!isCompanyLedgerHandler(classification.handlerKey) || classification.processingState !== 'ready') return classification;
+  if (!isFinancialLedgerHandler(classification.handlerKey) || classification.processingState !== 'ready') return classification;
   const decision = evaluateLedgerAutomationPolicy(input, classification, dashboardLedgerEnabled, senderAllowlist, maxAmountThb);
   if (decision.allowed) return classification;
   return { ...classification, processingState: 'review', reviewReason: decision.reason, notify: true };

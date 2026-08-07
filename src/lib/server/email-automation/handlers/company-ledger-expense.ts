@@ -8,9 +8,10 @@ export const companyLedgerExpenseHandler: EmailAutomationHandler = {
   idempotencyKey: (_input, c) => `ledger-expense:${c.externalRef ?? 'missing'}:${c.amountMinor ?? 'missing'}`,
   execute: async ({ input, classification, eventId, actionId }) => {
     const config = defaults(classification.ledgerDefaults);
+    const ledgerType = (config.ledgerType ?? 'Scan Expense') as CompanyLedgerExpenseType;
     const traceNote = `Neon processing ID: email_event=${eventId}, action=${actionId}`;
     const ledger = await createCompanyLedgerExpense({
-      ledgerType: (config.ledgerType ?? 'Scan Expense') as CompanyLedgerExpenseType,
+      ledgerType,
       title: classification.description ?? input.subject, amount: (classification.amountMinor ?? 0) / 100, date: input.receivedAt,
       transactionId: classification.externalRef, bankAccount: config.bankAccount ?? 'KBank',
       paymentMethod: config.paymentMethod ?? 'Scan', category: config.category, department: config.department,
@@ -25,7 +26,9 @@ export const companyLedgerExpenseHandler: EmailAutomationHandler = {
   },
   reconcile: async ({ classification }) => {
     if (!classification.externalRef) return { state: 'review', message: 'Reconciliation requires a transaction reference.' };
-    const found = await findCompanyLedgerExpenseByReference(classification.externalRef, classification.amountMinor === undefined ? undefined : classification.amountMinor / 100);
+    const config = defaults(classification.ledgerDefaults);
+    const ledgerType = (config.ledgerType ?? 'Scan Expense') as CompanyLedgerExpenseType;
+    const found = await findCompanyLedgerExpenseByReference(classification.externalRef, classification.amountMinor === undefined ? undefined : classification.amountMinor / 100, ledgerType);
     if (found.state === 'verified') return { state: 'reconciled', externalObjectId: found.id, externalUrl: found.externalUrl, message: 'Existing Financial Ledger page matched both reference and amount.' };
     if (found.state === 'amount_mismatch') return { state: 'review', message: 'A Ledger page has the same reference but a different amount. Do not retry automatically.' };
     if (found.state === 'ambiguous') return { state: 'review', message: 'Multiple Ledger pages match this reference and amount. Resolve the duplicates manually.' };

@@ -51,14 +51,18 @@ const sourceBodies = (input: EmailAutomationInput) => unique([
  */
 export const kShopRuleBodyText = (input: EmailAutomationInput) => sourceBodies(input).join('\n');
 
-const headerName = /^(From|Date|Sent|Subject|To|Cc|Reply-To):\s*(.*)$/i;
+const headerName = /^(From|Date|Sent|Subject|To|Cc|Reply-To|จาก|วันที่|เรื่อง|ถึง):\s*(.*)$/iu;
 
 const forwardedHeaderBlocks = (body: string): ForwardedHeaderBlock[] => {
-  const lines = normalizeLineEndings(body).split('\n');
+  // PostalMime/Gmail can flatten Thai forwarded headers onto one line. Split
+  // before known header labels so both line-oriented and flattened forwards
+  // use the same strict extraction path.
+  const headerSeparated = normalizeLineEndings(body).replace(/\s+(?=(?:From|Date|Sent|Subject|To|Cc|Reply-To|จาก|วันที่|เรื่อง|ถึง)\s*[:：])/giu, '\n');
+  const lines = headerSeparated.split('\n');
   const blocks: ForwardedHeaderBlock[] = [];
 
   for (let index = 0; index < lines.length; index += 1) {
-    const fromMatch = lines[index].match(/^\s*From:\s*(.+?)\s*$/i);
+    const fromMatch = lines[index].match(/^\s*(?:From|จาก)\s*[:：]\s*(.+?)\s*$/iu);
     if (!fromMatch) continue;
 
     const fields = new Map<string, string>();
@@ -70,7 +74,8 @@ const forwardedHeaderBlocks = (body: string): ForwardedHeaderBlock[] => {
       if (!line) break;
       const match = line.match(headerName);
       if (!match) break;
-      const key = match[1].toLowerCase();
+      const rawKey = match[1].toLowerCase();
+      const key = rawKey === 'จาก' ? 'from' : rawKey === 'วันที่' ? 'date' : rawKey === 'เรื่อง' ? 'subject' : rawKey === 'ถึง' ? 'to' : rawKey;
       fields.set(key, match[2].trim());
       if (key === 'date' || key === 'sent' || key === 'subject' || key === 'to') hasHeaderEvidence = true;
       if (key === 'date' || key === 'sent') dateValues.push(match[2].trim());
@@ -128,25 +133,34 @@ const formatBangkokDate = (date: Date) => {
   return `${values.year}-${values.month}-${values.day}`;
 };
 
+const dateFromBangkokParts = (year: number, month: number, day: number) => {
+  if (year < 1900 || month < 1 || month > 12 || day < 1 || day > 31) return undefined;
+  const date = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
+  if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return undefined;
+  return formatBangkokDate(date);
+};
+
+const THAI_MONTHS: Record<string, number> = {
+  'ม.ค.': 1, 'ก.พ.': 2, 'มี.ค.': 3, 'เม.ย.': 4, 'พ.ค.': 5, 'มิ.ย.': 6,
+  'ก.ค.': 7, 'ส.ค.': 8, 'ก.ย.': 9, 'ต.ค.': 10, 'พ.ย.': 11, 'ธ.ค.': 12
+};
+
 const parseDateValue = (value: string) => {
   const trimmed = value.trim();
-  const dateOnly = trimmed.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/);
-  if (dateOnly) {
-    const year = Number(dateOnly[1]);
-    const month = Number(dateOnly[2]);
-    const day = Number(dateOnly[3]);
-    if (year < 1900 || month < 1 || month > 12 || day < 1 || day > 31) return undefined;
-    return formatBangkokDate(new Date(Date.UTC(year, month - 1, day, 0, 0, 0)));
+  const thaiNamedDate = trimmed.match(/(?:วัน\S+\s+)?(\d{1,2})\s+(ม\.ค\.|ก\.พ\.|มี\.ค\.|เม\.ย\.|พ\.ค\.|มิ\.ย\.|ก\.ค\.|ส\.ค\.|ก\.ย\.|ต\.ค\.|พ\.ย\.|ธ\.ค\.)\s+(\d{4})/u);
+  if (thaiNamedDate) {
+    const month = THAI_MONTHS[thaiNamedDate[2]];
+    const year = Number(thaiNamedDate[3]) - 543;
+    return month ? dateFromBangkokParts(year, month, Number(thaiNamedDate[1])) : undefined;
   }
 
-  const thaiDate = trimmed.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+  const dateOnly = trimmed.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
+  if (dateOnly) return dateFromBangkokParts(Number(dateOnly[1]), Number(dateOnly[2]), Number(dateOnly[3]));
+
+  const thaiDate = trimmed.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})/);
   if (thaiDate) {
-    const day = Number(thaiDate[1]);
-    const month = Number(thaiDate[2]);
-    const rawYear = Number(thaiDate[3]);
-    const year = rawYear >= 2400 ? rawYear - 543 : rawYear;
-    if (year < 1900 || month < 1 || month > 12 || day < 1 || day > 31) return undefined;
-    return formatBangkokDate(new Date(Date.UTC(year, month - 1, day, 0, 0, 0)));
+    const year = Number(thaiDate[3]) >= 2400 ? Number(thaiDate[3]) - 543 : Number(thaiDate[3]);
+    return dateFromBangkokParts(year, Number(thaiDate[2]), Number(thaiDate[1]));
   }
 
   return formatBangkokDate(new Date(trimmed));

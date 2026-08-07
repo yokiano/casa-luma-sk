@@ -45,6 +45,29 @@ describe('K SHOP daily settlement parser', () => {
     });
   });
 
+  it('parses the Thai flattened forwarded header used by stored K SHOP events', () => {
+    const result = parseKShopDailySettlement(validInput({
+      subject: 'Fwd: เรียน ร้านค้า K SHOP CASA LUMA KPG',
+      textBody: [
+        'จาก: KSHOP <KPLUSSHOP@kasikornbank.com>',
+        'เรื่อง: เรียน ร้านค้า K SHOP CASA LUMA KPG',
+        'ธนาคารกสิกรไทยได้ทำการสรุปยอดประจำวันสำหรับรายการของร้านค้า K SHOP (CASA LUMA KPG) เรียบร้อยแล้ว',
+        'ยอดเงินจำนวน(บาท) : 4,595.00',
+        '---------- ข้อความที่ส่งต่อ --------- จาก: KSHOP <KPLUSSHOP@kasikornbank.com> วันที่: ศุกร์ 7 ส.ค. 2569 เวลา 04:00 เรื่อง: เรียน ร้านค้า K SHOP CASA LUMA KPG ถึง: <surisa0737@gmail.com>',
+        'รหัสร้านค้า : KB000002285279 ยอดเงินจำนวน(บาท) : 4,595.00 นำเข้าบัญชี : xxx (บจก. คาซ่า ลูม่า เคพีจี)'
+      ].join('\n')
+    }));
+
+    expect(result).toMatchObject({
+      ready: true,
+      merchantCode: 'KB000002285279',
+      amountMinor: 459500,
+      settlementDate: '2026-08-07',
+      settlementDateSource: 'forwarded_header',
+      externalRef: 'kshop:KB000002285279:2026-08-07'
+    });
+  });
+
   it('uses the Bangkok receive date only when the proven forwarded sender has no date header', () => {
     const body = forwardedBody().replace('Date: Fri, 07 Aug 2026 09:00:00 +0700\n', '');
     const result = parseKShopDailySettlement(validInput({ textBody: body }));

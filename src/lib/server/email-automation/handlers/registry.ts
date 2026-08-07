@@ -1,10 +1,11 @@
 import type { EmailClassification } from '../classifier';
 import { companyLedgerExpenseHandler } from './company-ledger-expense';
+import { financialLedgerIncomeHandler } from './financial-ledger-income';
 import { noneHandler } from './none';
 import { notifyOnlyHandler } from './notify-only';
 import type { EmailAutomationHandler } from './types';
 
-const handlers = [companyLedgerExpenseHandler, notifyOnlyHandler, noneHandler] as const;
+const handlers = [companyLedgerExpenseHandler, financialLedgerIncomeHandler, notifyOnlyHandler, noneHandler] as const;
 const byKey = new Map<string, EmailAutomationHandler>();
 for (const handler of handlers) {
   if (byKey.has(handler.key)) throw new Error(`Duplicate email automation handler: ${handler.key}`);

@@ -6,7 +6,7 @@ import { getEmailAutomationHandler } from './handlers/registry';
 import type { EmailAutomationInput, EmailClassification } from './classifier';
 import { getEmailAutomationEventUrl, sendEmailAutomationNotification } from './notifications';
 import { claimDueAction, claimDueNotification, deferNotificationUntil, markActionFailure, markActionResult, markNotificationResult, releaseStaleClaims } from './store';
-import { evaluateLedgerAutomationPolicy, isCompanyLedgerHandler } from './ledger-safety';
+import { evaluateLedgerAutomationPolicy, isFinancialLedgerHandler } from './ledger-safety';
 import { loadAutomationSettings } from './settings';
 
 const asSnapshot = (value: unknown) => value as { input: EmailAutomationInput; classification: EmailClassification };
@@ -15,7 +15,7 @@ const executeAction = async (action: typeof emailAutomationActions.$inferSelect)
   if (!action.leaseToken) throw new Error('Claimed action is missing its fencing token.');
   const leaseToken = action.leaseToken;
   const snapshot = asSnapshot(action.payloadSnapshot);
-  if (isCompanyLedgerHandler(action.handlerKey)) {
+  if (isFinancialLedgerHandler(action.handlerKey)) {
     const settings = await loadAutomationSettings();
     const policy = evaluateLedgerAutomationPolicy(snapshot.input, snapshot.classification, settings.ledgerEnabled, settings.ledgerAllowedSenders, settings.ledgerMaxAmountThb);
     if (!policy.allowed) {

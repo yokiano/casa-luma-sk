@@ -6,6 +6,11 @@ describe('email automation handler registry', () => {
     const handler = getEmailAutomationHandler('company_ledger_expense');
     expect(handler?.idempotencyKey({} as any, { classification: 'expense', subtype: 'x', processingState: 'ready', externalRef: 'ABC', amountMinor: 100, notify: true, handlerKey: 'company_ledger_expense' })).toBe('ledger-expense:ABC:100');
   });
+  it('registers the K SHOP income handler with a reference-and-amount key', () => {
+    const handler = getEmailAutomationHandler('financial_ledger_income');
+    expect(handler?.idempotencyKey({} as any, { classification: 'income', subtype: 'kshop_daily_settlement', processingState: 'ready', externalRef: 'kshop:SHOP:2026-08-07', amountMinor: 1234, notify: true, handlerKey: 'financial_ledger_income' })).toBe('ledger-income:kshop:SHOP:2026-08-07:1234');
+    expect(handler?.supportedClassifications).toEqual(['income']);
+  });
   it('uses a per-email key for notification-only work', () => {
     const handler = getEmailAutomationHandler('notify_only');
     const classification = { classification: 'review' as const, subtype: 'x', processingState: 'review' as const, notify: true, handlerKey: 'notify_only' };

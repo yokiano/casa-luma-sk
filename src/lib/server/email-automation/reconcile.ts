@@ -4,7 +4,7 @@ import { db } from '$lib/server/db/client';
 import { emailAutomationActions, emailAutomationAuditLog, emailEvents } from '$lib/server/db/schema';
 import { getEmailAutomationHandler } from './handlers/registry';
 import type { EmailAutomationInput, EmailClassification } from './classifier';
-import { evaluateLedgerAutomationPolicy, isCompanyLedgerHandler } from './ledger-safety';
+import { evaluateLedgerAutomationPolicy, isFinancialLedgerHandler } from './ledger-safety';
 import { loadAutomationSettings } from './settings';
 
 const ELIGIBLE_RECONCILIATION_STATES = ['failed', 'retry_scheduled'] as const;
@@ -21,7 +21,7 @@ export const reconcileEmailAutomationAction = async (actionId: number, reason: s
   const snapshot = action.payloadSnapshot as { input: EmailAutomationInput; classification: EmailClassification };
   let result;
   try {
-    if (isCompanyLedgerHandler(action.handlerKey)) {
+    if (isFinancialLedgerHandler(action.handlerKey)) {
       const settings = await loadAutomationSettings();
       const policy = evaluateLedgerAutomationPolicy(snapshot.input, snapshot.classification, settings.ledgerEnabled, settings.ledgerAllowedSenders, settings.ledgerMaxAmountThb);
       if (!policy.allowed) {
