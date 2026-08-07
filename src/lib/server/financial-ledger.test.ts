@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { FinancialLedgerPatchDTO } from '$lib/notion-sdk/dbs/financial-ledger/patch.dto';
 
 const { query, createFinancialLedgerPage, mutateFinancialLedger } = vi.hoisted(() => ({
   query: vi.fn(),
@@ -54,12 +55,19 @@ describe('neutral Financial Ledger helpers', () => {
       receiptNotRequired: true
     });
 
-    expect(createFinancialLedgerPage).toHaveBeenCalledWith(expect.objectContaining({
+    const createCall = createFinancialLedgerPage.mock.calls[0][0];
+    expect(createCall).toEqual(expect.objectContaining({
       properties: expect.objectContaining({
         status: { name: 'Paid' },
         receiptNotRequired: true
       })
     }));
+
+    const patch = new FinancialLedgerPatchDTO({ properties: createCall.properties });
+    expect(patch.__data.properties?.['TPaD']).toEqual({
+      type: 'status',
+      status: { name: 'Paid' }
+    });
   });
 
   it('never creates a second page for a same-reference amount conflict', async () => {

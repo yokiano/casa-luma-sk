@@ -105,6 +105,9 @@ describe('Financial Ledger income handler', () => {
     expect(financialLedgerIncomeHandler.validate({ ...classification, subtype: 'other_income' })).toMatch(/only supports K SHOP/);
     expect(financialLedgerIncomeHandler.validate({ ...classification, processingState: 'review' })).toMatch(/not ready/);
     expect(financialLedgerIncomeHandler.validate({ ...classification, currency: 'USD' })).toMatch(/THB/);
-    expect(financialLedgerIncomeHandler.validate({ ...classification, externalRef: 'kshop:123456789' })).toMatch(/YYYY-MM-DD/);
+    expect(financialLedgerIncomeHandler.validate({ ...classification, externalRef: 'kshop:123456789' })).toMatch(/kshop:<merchant-code>:YYYY-MM-DD/);
+    expect(financialLedgerIncomeHandler.validate({ ...classification, externalRef: 'kshop:bad merchant:2026-08-07' })).toMatch(/kshop:<merchant-code>/);
+    expect(financialLedgerIncomeHandler.validate({ ...classification, amountMinor: 0 })).toMatch(/positive whole number/);
+    expect(financialLedgerIncomeHandler.validate({ ...classification, amountMinor: 12.34 })).toMatch(/positive whole number/);
   });
 });

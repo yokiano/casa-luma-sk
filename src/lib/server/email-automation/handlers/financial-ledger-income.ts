@@ -7,11 +7,16 @@ import {
 import type { EmailAutomationHandler } from './types';
 
 const SCAN_INCOME_TYPE = 'Scan Income' as FinancialLedgerType;
-const KSHOP_REFERENCE = /^kshop:[^:]+:(\d{4}-\d{2}-\d{2})$/i;
+const KSHOP_REFERENCE = /^kshop:([a-z0-9][a-z0-9_-]{2,31}):(\d{4}-\d{2}-\d{2})$/i;
 
 const reviewResult = (message: string) => ({ state: 'review' as const, message });
 
-const settlementDateFromReference = (reference: string) => KSHOP_REFERENCE.exec(reference.trim())?.[1];
+const parseKShopReference = (reference: string) => {
+  const match = KSHOP_REFERENCE.exec(reference.trim());
+  return match ? { merchantCode: match[1].toUpperCase(), settlementDate: match[2] } : undefined;
+};
+
+const settlementDateFromReference = (reference: string) => parseKShopReference(reference)?.settlementDate;
 
 export const financialLedgerIncomeHandler: EmailAutomationHandler = {
   key: 'financial_ledger_income',
@@ -23,8 +28,9 @@ export const financialLedgerIncomeHandler: EmailAutomationHandler = {
     if (classification.subtype !== 'kshop_daily_settlement') return 'Financial Ledger income automation only supports K SHOP daily settlements.';
     if (classification.processingState !== 'ready') return 'This income is not ready for automatic processing.';
     if (!classification.externalRef) return 'A deterministic K SHOP settlement reference is required.';
-    if (!settlementDateFromReference(classification.externalRef)) return 'The K SHOP settlement reference must include a YYYY-MM-DD settlement date.';
+    if (!parseKShopReference(classification.externalRef)) return 'The K SHOP settlement reference must be kshop:<merchant-code>:YYYY-MM-DD.';
     if (classification.amountMinor === undefined) return 'An amount is required.';
+    if (!Number.isSafeInteger(classification.amountMinor) || classification.amountMinor <= 0) return 'The K SHOP amount must be a positive whole number of satang.';
     if (classification.currency !== 'THB') return 'Financial Ledger income automation currently supports only THB income.';
     return null;
   },

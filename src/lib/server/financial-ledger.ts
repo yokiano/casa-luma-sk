@@ -150,11 +150,13 @@ export async function createFinancialLedgerRecord(data: FinancialLedgerRecordInp
     ? `${trimmedNotes}\n${sourceFileNote}`
     : trimmedNotes || sourceFileNote || 'synced via Financial Ledger tool';
 
+  // Notion's generated patch DTO expects a status property object, not the selected status name string.
+  const status: NonNullable<FinancialLedgerPropertiesPatch['status']> = { name: data.status ?? 'Paid' };
   const response = await createFinancialLedgerPage({
     properties: {
       description: data.title,
       type: data.ledgerType,
-      status: { name: data.status ?? 'Paid' },
+      status,
       amountThb: data.amount,
       date: { start: normalizedDate },
       department: data.department as FinancialLedgerPropertiesPatch['department'],
